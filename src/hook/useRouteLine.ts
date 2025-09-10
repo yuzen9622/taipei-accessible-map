@@ -13,7 +13,10 @@ export default function useRouteLine() {
       lat: newOrigin.location.lat(),
       lng: newOrigin.location.lng(),
     };
-    setOrigin({ ...newOrigin, position: pos } as PlaceDetail);
+    const origin = setOrigin({
+      place: newOrigin,
+      position: pos,
+    } as PlaceDetail);
   };
 
   const handleDestinationChange = (
@@ -24,7 +27,7 @@ export default function useRouteLine() {
       lat: newDestination?.location.lat(),
       lng: newDestination?.location.lng(),
     };
-    setDestination({ ...newDestination, position: pos } as PlaceDetail);
+    setDestination({ place: newDestination, position: pos } as PlaceDetail);
   };
 
   useEffect(() => {

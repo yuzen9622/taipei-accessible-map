@@ -4,7 +4,7 @@ import { Crosshair } from "lucide-react";
 import usePin from "@/hook/usePin";
 import useMapStore from "@/stores/useMapStore";
 
-import { Button } from "./ui/button";
+import { Button } from "../ui/button";
 
 export default function GotoNowButton() {
   const { handlePinClick } = usePin();

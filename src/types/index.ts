@@ -11,16 +11,30 @@ export type Marker = {
   zIndex: number;
   a11yType: A11yEnum;
 };
-
-export type PlaceDetail = {
-  place: google.maps.places.Place;
+// --- 基底只給 PlaceDetail 用 ---
+type Base = {
   position: google.maps.LatLngLiteral;
 };
 
-export type InfoShow = {
-  isOpen: boolean;
-  place: google.maps.places.Place | null;
+// --- 兩個實際類型 ---
+type PlaceType = {
+  kind: "place";
+  place: google.maps.places.Place;
 };
+
+type GeocoderType = {
+  kind: "geocoder";
+  place: google.maps.Geocoder;
+};
+
+// --- Detail 需要帶座標 ---
+export type PlaceDetail = (PlaceType | GeocoderType) & Base;
+
+// --- InfoShow 只需要控制開關，不要 Base ---
+export type InfoShow =
+  | (PlaceType & { isOpen: boolean })
+  | (GeocoderType & { isOpen: boolean })
+  | { isOpen: boolean; kind: null };
 
 export type metroA11yData = {
   _id: number;

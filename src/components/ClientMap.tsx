@@ -1,30 +1,32 @@
 "use client";
 
-import { useCallback, useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 
+import { getLocation } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
-import { Map as GoogleMap, useMap } from "@vis.gl/react-google-maps";
+import {
+  Map as GoogleMap,
+  useMap,
+  useMapsLibrary,
+} from "@vis.gl/react-google-maps";
 
-import GotoNowButton from "./GotoNowButton";
 import AccessibilityPin from "./MetroA11yWrapper";
-import NowPin from "./NowPin";
-import RoutePlanInput from "./RoutePlanInput";
-import SearchPin from "./SearchPin";
+import GotoNowButton from "./shared/GotoNowButton";
+import NowPin from "./shared/NowPin";
+import SearchPin from "./shared/SearchPin";
 
-import type { PlaceDetail } from "@/types";
 export default function ClientMap() {
   const {
-    map,
     setMap,
     userLocation,
     setUserLocation,
-    setOrigin,
-    setDestination,
     destination,
+    searchPlace,
+    setSearchPlace,
   } = useMapStore();
 
   const mapHook = useMap();
-
+  const placesLib = useMapsLibrary("places");
   const bounds = useMemo(() => {
     if (!userLocation) return;
     return {
@@ -48,45 +50,6 @@ export default function ClientMap() {
     });
   }, [mapHook, setUserLocation]);
 
-  const handleStartPlace = useCallback(
-    (places: google.maps.places.Place) => {
-      if (!map) return;
-
-      if (!places.location) return;
-
-      map.panBy(20, 20);
-      const placeViewPort = places.location;
-
-      const pos = {
-        lat: placeViewPort.lat(),
-        lng: placeViewPort.lng(),
-      };
-      setOrigin({ place: places, position: pos });
-    },
-    [map, setOrigin]
-  );
-
-  const handlePlace = useCallback(
-    (places: google.maps.places.Place) => {
-      if (!map) return;
-      console.log(places.location);
-      if (!places.location) return;
-
-      map.panBy(20, 20);
-      const placeViewPort = places.location;
-
-      const pos = {
-        lat: placeViewPort.lat(),
-        lng: placeViewPort.lng(),
-      };
-      map.panTo(pos);
-      map.setZoom(16);
-
-      setDestination({ place: places, position: pos });
-    },
-    [map, setDestination]
-  );
-
   return (
     <GoogleMap
       defaultZoom={15}
@@ -95,21 +58,27 @@ export default function ClientMap() {
       defaultCenter={userLocation ?? { lat: 25.03, lng: 121.55 }}
       gestureHandling={"auto"}
       disableDefaultUI={true}
+      onClick={async (e) => {
+        e.stop();
+        console.log(e.detail);
+        if (!placesLib || !e.detail?.placeId) return;
+        const place = new placesLib.Place({ id: e.detail.placeId });
+        await place.fetchFields({ fields: ["*"] });
+
+        const latLng = getLocation(place);
+        if (!latLng) return;
+        setSearchPlace({ kind: "place", place, position: latLng });
+      }}
       mapId={"9b39d2c1e16cb61adfef5521"}
       defaultBounds={bounds}
-      className=" w-dvw h-dvh bg-background"
+      className=" w-dvw h-dvh bg-background  "
     >
-      {/* <SearchInput onPlaceSelect={handlePlace} /> */}
-      <RoutePlanInput
-        onOriginPlace={handleStartPlace}
-        onDestinationPlace={handlePlace}
-      />
       <AccessibilityPin />
 
       <GotoNowButton />
       <NowPin />
-
-      {destination && <SearchPin />}
+      {destination && <SearchPin destination={destination} />}
+      {searchPlace && <SearchPin destination={searchPlace} />}
     </GoogleMap>
   );
 }
