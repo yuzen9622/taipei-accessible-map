@@ -1,6 +1,8 @@
 import type { InfoShow, PlaceDetail } from "@/types";
 import { create } from "zustand";
 
+import type { Route } from "@/types/route.t";
+
 interface MapState {
   map: google.maps.Map | null;
   userLocation: google.maps.LatLngLiteral | null;
@@ -8,6 +10,8 @@ interface MapState {
   destination: PlaceDetail | null;
   infoShow: InfoShow;
   searchPlace: PlaceDetail | null;
+  computeRoute: Route | null;
+  routePolyline: google.maps.Polyline | null;
 }
 interface MapAction {
   setMap: (map: google.maps.Map) => void;
@@ -16,6 +20,8 @@ interface MapAction {
   setDestination: (destination: PlaceDetail | null) => void;
   setInfoShow: (infoShow: InfoShow) => void;
   setSearchPlace: (place: PlaceDetail | null) => void;
+  setComputeRoute: (route: Route | null) => void;
+  setRoutePolyline: (polyline: google.maps.Polyline | null) => void;
 }
 
 type MapStore = MapState & MapAction;
@@ -33,6 +39,10 @@ const useMapStore = create<MapStore>((set) => ({
   setInfoShow: (infoShow) => set({ infoShow }),
   searchPlace: null,
   setSearchPlace: (place) => set({ searchPlace: place }),
+  computeRoute: null,
+  setComputeRoute: (route) => set({ computeRoute: route }),
+  routePolyline: null,
+  setRoutePolyline: (polyline) => set({ routePolyline: polyline }),
 }));
 
 export default useMapStore;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 
 import { getLocation } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
@@ -11,6 +11,8 @@ import {
 } from "@vis.gl/react-google-maps";
 
 import AccessibilityPin from "./MetroA11yWrapper";
+import RouteLine from "./RouteWrapper";
+import SearchInput from "./SearchInput";
 import GotoNowButton from "./shared/GotoNowButton";
 import NowPin from "./shared/NowPin";
 import SearchPin from "./shared/SearchPin";
@@ -18,7 +20,7 @@ import SearchPin from "./shared/SearchPin";
 export default function ClientMap() {
   const {
     setMap,
-    userLocation,
+
     setUserLocation,
     destination,
     searchPlace,
@@ -27,15 +29,12 @@ export default function ClientMap() {
 
   const mapHook = useMap();
   const placesLib = useMapsLibrary("places");
-  const bounds = useMemo(() => {
-    if (!userLocation) return;
-    return {
-      north: userLocation.lat + 0.01,
-      south: userLocation.lat - 0.01,
-      east: userLocation.lng + 0.01,
-      west: userLocation.lng - 0.01,
-    };
-  }, [userLocation]);
+  const taipeiNewTaipeiBounds = {
+    north: 25.3, // 北到淡水、金山一帶
+    south: 24.8, // 南到鶯歌、新店深山
+    east: 121.8, // 東到瑞芳、貢寮
+    west: 121.25, // 西到林口、八里
+  };
 
   useEffect(() => {
     if (!mapHook) return;
@@ -55,8 +54,12 @@ export default function ClientMap() {
       defaultZoom={15}
       reuseMaps
       colorScheme="FOLLOW_SYSTEM"
-      defaultCenter={userLocation ?? { lat: 25.03, lng: 121.55 }}
+      defaultCenter={{ lat: 25.03, lng: 121.55 }}
       gestureHandling={"auto"}
+      restriction={{
+        latLngBounds: taipeiNewTaipeiBounds,
+        strictBounds: true,
+      }}
       disableDefaultUI={true}
       onClick={async (e) => {
         e.stop();
@@ -70,12 +73,13 @@ export default function ClientMap() {
         setSearchPlace({ kind: "place", place, position: latLng });
       }}
       mapId={"9b39d2c1e16cb61adfef5521"}
-      defaultBounds={bounds}
-      className=" w-dvw h-dvh bg-background  "
+      defaultBounds={taipeiNewTaipeiBounds}
+      className=" w-dvw h-dvh bg-background   "
     >
       <AccessibilityPin />
-
+      <SearchInput />
       <GotoNowButton />
+      <RouteLine />
       <NowPin />
       {destination && <SearchPin destination={destination} />}
       {searchPlace && <SearchPin destination={searchPlace} />}

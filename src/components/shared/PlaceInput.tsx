@@ -61,8 +61,8 @@ function PlaceInput({
   return (
     <div
       className={cn(
-        " relative w-full bg-background p-2  rounded-t-2xl",
-        !open && "rounded-2xl"
+        " relative w-full bg-background px-3 py-1  rounded-t-3xl",
+        !open && "rounded-3xl"
       )}
     >
       <div className="w-full flex items-center gap-2 px-2">
@@ -99,7 +99,7 @@ function PlaceInput({
         )}
       </div>
       <div className=" absolute inset-0 z-10 top-10/12">
-        <Command className="w-full relative h-fit overflow-auto">
+        <Command className="w-full relative h-fit overflow-auto rounded-b-3xl">
           <CommandList>
             {searchInput !== "" && open && (
               <CommandGroup heading="搜尋結果：">
