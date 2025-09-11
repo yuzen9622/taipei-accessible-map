@@ -3,5 +3,5 @@ type RouteLineProps = {
   destination: google.maps.LatLngLiteral | null;
 };
 export default function RouteLine({ origin, destination }: RouteLineProps) {
-  return <div>123</div>;
+  return <div></div>;
 }
