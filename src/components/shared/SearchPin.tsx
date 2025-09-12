@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 
 import useMapStore from "@/stores/useMapStore";
 import { AdvancedMarker, Pin } from "@vis.gl/react-google-maps";
@@ -34,23 +34,6 @@ export default function SearchPin({
     },
     [map, setInfoShow, destination]
   );
-
-  useEffect(() => {
-    if (destination)
-      if (destination.kind === "place") {
-        setInfoShow({
-          isOpen: true,
-          place: destination.place,
-          kind: "place",
-        });
-      } else if (destination.kind === "geocoder") {
-        setInfoShow({
-          isOpen: true,
-          place: destination.place,
-          kind: "geocoder",
-        });
-      }
-  }, [destination, setInfoShow]);
 
   if (!destination) return null;
 

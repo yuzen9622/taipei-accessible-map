@@ -14,7 +14,7 @@ export default function RouteLine() {
   const { computeRoute } = useMapStore();
   const geometry = useMapsLibrary("geometry");
   const polylinesElement = useMemo(() => {
-    if (!computeRoute?.legs?.[0]?.steps) return null;
+    if (!computeRoute) return null;
 
     return computeRoute.legs[0].steps
       .map((step, index) => {

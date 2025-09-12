@@ -12,56 +12,71 @@ import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import useComputeRoute from "@/hook/useComputeRoute";
-import { getLocation } from "@/lib/utils";
+import { cn, getLocation } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 
+import { BusinessHours } from "./BusinessHours";
+import DrawerWrapper from "./DrawerWrapper";
+import LoadingDrawer from "./shared/LoadingDrawer";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "./ui/accordion";
+import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import {
-  Drawer,
   DrawerContent,
   DrawerDescription,
   DrawerHeader,
   DrawerTitle,
 } from "./ui/drawer";
 
-import type { Route } from "@/types/route.t";
-
-const snap = ["500px", 1];
 export default function InfoDrawer() {
-  const { infoShow, setInfoShow, userLocation, setComputeRoute, map } =
-    useMapStore();
-  const { computeRoute } = useComputeRoute();
-
-  const [direction, setDirection] = useState<
-    "left" | "right" | "top" | "bottom"
-  >("bottom");
+  const {
+    infoShow,
+    setInfoShow,
+    userLocation,
+    setRouteInfoShow,
+    setComputeRoute,
+    setDestination,
+    map,
+  } = useMapStore();
+  const { computeRoute, isLoading } = useComputeRoute();
+  const [isOpen, setIsOpen] = useState(false);
 
   const [imgLoaded, setImgLoaded] = useState(false);
-  const [snapTo, setSnapTo] = useState<string | number | null>(snap[0]);
 
   const placeImg = useMemo(() => {
     if (infoShow.kind !== "place" || !infoShow?.place?.photos) return null;
-    setImgLoaded(false);
+
     return infoShow.place.photos[0].getURI({ maxWidth: 700, maxHeight: 500 });
   }, [infoShow]);
 
+  const placeHours = useMemo(() => {
+    if (infoShow.kind !== "place" || !infoShow?.place?.regularOpeningHours)
+      return null;
+    return infoShow?.place?.regularOpeningHours;
+  }, [infoShow]);
+
   useEffect(() => {
-    const observer = new ResizeObserver((el) => {
-      el.forEach((e) => {
-        if (e.contentRect.width > 1024) {
-          setDirection("left");
-          setSnapTo(1);
-        } else {
-          setDirection("bottom");
-          setSnapTo(snap[0]);
-        }
-      });
+    let cancelled = false;
+
+    if (infoShow.kind !== "place" || !infoShow.place?.isOpen) {
+      setIsOpen(false);
+
+      return;
+    }
+
+    infoShow.place.isOpen().then((b: boolean | null | undefined) => {
+      if (!cancelled) setIsOpen(Boolean(b));
     });
-    observer.observe(document.body);
+
     return () => {
-      observer.disconnect();
+      cancelled = true;
     };
-  }, []);
+  }, [infoShow.kind, infoShow]);
 
   const handlePlanRoute = useCallback(async () => {
     if (!infoShow.kind || infoShow.kind !== "place") return;
@@ -71,7 +86,8 @@ export default function InfoDrawer() {
       { lat: 25.0475613, lng: 121.5173399 },
       latLng
     );
-    const [route] = result.routes as Route[];
+
+    const [route] = result.routes;
     setComputeRoute(route);
     const { high, low } = route.viewport;
     const bounds: google.maps.LatLngBoundsLiteral = {
@@ -82,35 +98,38 @@ export default function InfoDrawer() {
     };
 
     map.fitBounds(bounds);
-  }, [computeRoute, infoShow, map, setComputeRoute, userLocation]);
+    setDestination({ kind: "place", place: infoShow.place, position: latLng });
+    setInfoShow({ isOpen: false, kind: null });
+    setRouteInfoShow(true);
+  }, [
+    setDestination,
+    computeRoute,
+    setInfoShow,
+    setRouteInfoShow,
+    infoShow,
+    map,
+    setComputeRoute,
+    userLocation,
+  ]);
 
-  if (!infoShow.kind) return null;
   return (
-    <Drawer
-      key={direction}
-      modal={false}
+    <DrawerWrapper
       open={infoShow.isOpen}
-      direction={direction}
-      snapPoints={direction === "bottom" ? snap : [2]}
-      activeSnapPoint={snapTo}
-      setActiveSnapPoint={setSnapTo}
-      dismissible
       onOpenChange={(b) => setInfoShow({ ...infoShow, isOpen: b })}
     >
-      {infoShow.kind === "place" && infoShow.place && (
-        <DrawerContent className="  fixed p-2 flex gap-3 flex-col  items-center lg:items-start z-20  pointer-events-auto overflow-auto   select-text! text-center ">
-          <DrawerHeader className=" w-full  flex flex-col   lg:items-start items-center gap-2 ">
-            <div className=" w-full flex justify-end">
-              <Button
-                onClick={() => setInfoShow({ ...infoShow, isOpen: false })}
-                className="w-fit"
-                variant={"outline"}
-              >
-                <XIcon />
-              </Button>
-            </div>
-
-            <DrawerTitle className=" text-3xl space-y-1  max-lg:max-w-10/12 ">
+      <DrawerContent className="  fixed p-2 flex gap-3 after:hidden flex-col  items-center lg:items-start z-20  pointer-events-auto overflow-auto   select-text! text-center ">
+        {infoShow.kind === "place" && infoShow.place ? (
+          <>
+            <DrawerHeader className=" w-full  flex flex-col    lg:items-start items-center gap-3 ">
+              <div className=" w-full flex justify-end">
+                <Button
+                  onClick={() => setInfoShow({ ...infoShow, isOpen: false })}
+                  className="w-fit"
+                  variant={"outline"}
+                >
+                  <XIcon />
+                </Button>
+              </div>
               {placeImg && (
                 <div
                   className=" relative rounded-md object-cover w-full max-w-lg aspect-video  "
@@ -143,56 +162,79 @@ export default function InfoDrawer() {
                   )}
                 </div>
               )}
-              {infoShow.place.displayName}
-            </DrawerTitle>
-            <DrawerDescription>
-              <span className="text-muted-foreground text-sm ">
-                {infoShow.place.formattedAddress}
-              </span>
-            </DrawerDescription>
-            {infoShow.place.accessibilityOptions && (
-              <DrawerDescription className=" flex gap-2 flex-wrap max-lg:justify-center">
-                <span className="text-xs flex gap-2">
-                  <DoorOpenIcon size={16} />
-                  無障礙路口：
-                  {infoShow.place.accessibilityOptions
-                    .hasWheelchairAccessibleEntrance
-                    ? "有"
-                    : "無"}
-                </span>
-                <span className="text-xs flex gap-2">
-                  <CircleParkingIcon size={16} />
-                  無障礙停車位：
-                  {infoShow.place.accessibilityOptions
-                    .hasWheelchairAccessibleParking
-                    ? "有"
-                    : "無"}
-                </span>
-                <span className="text-xs flex gap-2">
-                  <ToiletIcon size={16} />
-                  無障礙衛生間：
-                  {infoShow.place.accessibilityOptions
-                    .hasWheelchairAccessibleRestroom
-                    ? "有"
-                    : "無"}
-                </span>
-                <span className="text-xs flex gap-2">
-                  <ArmchairIcon size={16} />
-                  無障礙座位：
-                  {infoShow.place.accessibilityOptions
-                    .hasWheelchairAccessibleSeating
-                    ? "有"
-                    : "無"}
-                </span>
-              </DrawerDescription>
-            )}
+              <DrawerTitle className=" text-3xl space-y-1  max-lg:max-w-10/12 ">
+                {infoShow.place.displayName}
+              </DrawerTitle>
+              <Badge
+                className={cn(isOpen && "bg-green-500")}
+                variant={isOpen ? "default" : "outline"}
+              >
+                {isOpen ? "營業中" : "休息中"}
+              </Badge>
 
-            <div>
-              <Button onClick={handlePlanRoute}>規劃路線</Button>
+              {infoShow.place.accessibilityOptions && (
+                <DrawerDescription className=" flex gap-2 flex-wrap max-lg:justify-center">
+                  <span className="text-base flex gap-2 items-center">
+                    <DoorOpenIcon size={16} />
+                    無障礙路口：
+                    {infoShow.place.accessibilityOptions
+                      .hasWheelchairAccessibleEntrance
+                      ? "有"
+                      : "無"}
+                  </span>
+                  <span className="text-base flex gap-2 items-center ">
+                    <CircleParkingIcon size={16} />
+                    無障礙停車位：
+                    {infoShow.place.accessibilityOptions
+                      .hasWheelchairAccessibleParking
+                      ? "有"
+                      : "無"}
+                  </span>
+                  <span className="text-base  flex gap-2 items-center">
+                    <ToiletIcon size={16} />
+                    無障礙衛生間：
+                    {infoShow.place.accessibilityOptions
+                      .hasWheelchairAccessibleRestroom
+                      ? "有"
+                      : "無"}
+                  </span>
+                  <span className="text-base flex gap-2 items-center">
+                    <ArmchairIcon size={16} />
+                    無障礙座位：
+                    {infoShow.place.accessibilityOptions
+                      .hasWheelchairAccessibleSeating
+                      ? "有"
+                      : "無"}
+                  </span>
+                </DrawerDescription>
+              )}
+              <div>
+                <Button disabled={isLoading} onClick={handlePlanRoute}>
+                  規劃路線
+                  {isLoading && <Loader2Icon className="animate-spin" />}
+                </Button>
+              </div>
+            </DrawerHeader>
+            <div className="px-4">
+              <span>{infoShow.place.formattedAddress}</span>
+              <span>
+                <Accordion collapsible type="single">
+                  <AccordionItem value="hours">
+                    <AccordionTrigger>
+                      {isOpen ? "營業中" : "休息中"} - 營業時間
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      {placeHours && <BusinessHours hours={placeHours} />}
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </span>
             </div>
-          </DrawerHeader>
-        </DrawerContent>
-      )}
-    </Drawer>
+          </>
+        ) : (
+          <LoadingDrawer />
+        )}
+      </DrawerContent>
+    </DrawerWrapper>
   );
 }

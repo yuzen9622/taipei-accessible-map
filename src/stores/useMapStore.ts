@@ -9,6 +9,7 @@ interface MapState {
   origin: PlaceDetail | null;
   destination: PlaceDetail | null;
   infoShow: InfoShow;
+  routeInfoShow: boolean;
   searchPlace: PlaceDetail | null;
   computeRoute: Route | null;
   routePolyline: google.maps.Polyline | null;
@@ -22,11 +23,12 @@ interface MapAction {
   setSearchPlace: (place: PlaceDetail | null) => void;
   setComputeRoute: (route: Route | null) => void;
   setRoutePolyline: (polyline: google.maps.Polyline | null) => void;
+  setRouteInfoShow: (show: boolean) => void;
 }
 
 type MapStore = MapState & MapAction;
 
-const useMapStore = create<MapStore>((set) => ({
+const useMapStore = create<MapStore>((set, get) => ({
   map: null,
   setMap: (map) => set({ map }),
   userLocation: null,
@@ -35,8 +37,11 @@ const useMapStore = create<MapStore>((set) => ({
   setOrigin: (origin) => set({ origin }),
   destination: null,
   setDestination: (destination) => set({ destination }),
+  routeInfoShow: false,
+  setRouteInfoShow: (show) => set({ routeInfoShow: show }),
   infoShow: { isOpen: false, kind: null },
-  setInfoShow: (infoShow) => set({ infoShow }),
+  setInfoShow: (infoShow) =>
+    set({ infoShow: { ...get().infoShow, ...infoShow } }),
   searchPlace: null,
   setSearchPlace: (place) => set({ searchPlace: place }),
   computeRoute: null,

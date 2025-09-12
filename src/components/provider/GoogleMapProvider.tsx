@@ -8,7 +8,10 @@ export default function GoogleMapProvider({
   children: React.ReactNode;
 }) {
   return (
-    <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAP_API_KEY ?? ""}>
+    <APIProvider
+      version="beta"
+      apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAP_API_KEY ?? ""}
+    >
       {children}
     </APIProvider>
   );
