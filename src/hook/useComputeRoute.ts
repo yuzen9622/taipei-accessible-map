@@ -1,13 +1,18 @@
-import type { RoutesResponse } from "@/types/route.t";
 import { useState } from "react";
 
+import useMapStore from "@/stores/useMapStore";
+
+import type { RoutesResponse } from "@/types/route.t";
 export default function useComputeRoute() {
   const [isLoading, setIsLoading] = useState(false);
+
+  const { setComputeRoute, map } = useMapStore();
   const computeRoute = async (
     origin: google.maps.LatLngLiteral,
     destination: google.maps.LatLngLiteral
   ): Promise<RoutesResponse> => {
     try {
+      if (!map) throw new Error("Map is not initialized");
       setIsLoading(true);
       const ROUTES_API_ENDPOINT =
         "https://routes.googleapis.com/directions/v2:computeRoutes";
@@ -22,7 +27,7 @@ export default function useComputeRoute() {
             latLng: { longitude: destination.lng, latitude: destination.lat },
           },
         },
-
+        travelMode: "TRANSIT",
         computeAlternativeRoutes: true,
         polylineQuality: "HIGH_QUALITY",
       };
@@ -42,6 +47,17 @@ export default function useComputeRoute() {
       }
       const data = await response.json();
       console.log("Directions API response data:", data);
+      const [route] = data.routes;
+      setComputeRoute(route);
+      const { high, low } = route.viewport;
+      const bounds: google.maps.LatLngBoundsLiteral = {
+        north: high.latitude,
+        south: low.latitude,
+        east: high.longitude,
+        west: low.longitude,
+      };
+
+      map.fitBounds(bounds);
 
       setIsLoading(false);
       return data;

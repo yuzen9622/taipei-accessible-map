@@ -98,7 +98,7 @@ function PlaceInput({
         )}
       </div>
       <div className=" absolute inset-0 z-10 top-10/12">
-        <Command className="w-full relative h-fit overflow-auto rounded-b-3xl">
+        <Command className="w-full  shadow relative h-fit overflow-auto rounded-b-3xl">
           <CommandList>
             {value !== "" && open && (
               <CommandGroup heading="搜尋結果：">

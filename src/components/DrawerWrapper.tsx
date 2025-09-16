@@ -41,6 +41,7 @@ export default function DrawerWrapper({
     <Drawer
       key={direction}
       modal={false}
+      dismissible={direction === "bottom"}
       open={open}
       direction={direction}
       snapPoints={direction === "bottom" ? snapPoints : [2]}

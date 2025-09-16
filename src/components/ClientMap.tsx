@@ -22,6 +22,7 @@ export default function ClientMap() {
     setMap,
     setInfoShow,
     setUserLocation,
+    routeInfoShow,
     destination,
     searchPlace,
     setSearchPlace,
@@ -80,7 +81,7 @@ export default function ClientMap() {
       className=" w-dvw h-dvh bg-background overflow-hidden"
     >
       <AccessibilityPin />
-      <SearchInput />
+      {!routeInfoShow && <SearchInput />}
       <GotoNowButton />
       <RouteLine />
       <NowPin />

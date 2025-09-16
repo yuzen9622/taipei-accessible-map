@@ -82,22 +82,8 @@ export default function InfoDrawer() {
     if (!infoShow.kind || infoShow.kind !== "place") return;
     const latLng = getLocation(infoShow.place);
     if (!latLng || !userLocation || !map) return;
-    const result = await computeRoute(
-      { lat: 25.0475613, lng: 121.5173399 },
-      latLng
-    );
+    await computeRoute({ lat: 25.0475613, lng: 121.5173399 }, latLng);
 
-    const [route] = result.routes;
-    setComputeRoute(route);
-    const { high, low } = route.viewport;
-    const bounds: google.maps.LatLngBoundsLiteral = {
-      north: high.latitude,
-      south: low.latitude,
-      east: high.longitude,
-      west: low.longitude,
-    };
-
-    map.fitBounds(bounds);
     setDestination({ kind: "place", place: infoShow.place, position: latLng });
     setInfoShow({ isOpen: false, kind: null });
     setRouteInfoShow(true);
@@ -108,16 +94,20 @@ export default function InfoDrawer() {
     setRouteInfoShow,
     infoShow,
     map,
-    setComputeRoute,
+
     userLocation,
   ]);
 
   return (
     <DrawerWrapper
       open={infoShow.isOpen}
+      snapPoints={["500px", 1]}
       onOpenChange={(b) => setInfoShow({ ...infoShow, isOpen: b })}
     >
-      <DrawerContent className="  fixed p-2 flex gap-3 after:hidden flex-col  items-center lg:items-start z-20  pointer-events-auto overflow-auto   select-text! text-center ">
+      <DrawerContent
+        tabIndex={void 0}
+        className="  fixed p-2 flex gap-3 after:hidden flex-col  items-center lg:items-start z-20  pointer-events-auto overflow-auto   select-text! text-center "
+      >
         {infoShow.kind === "place" && infoShow.place ? (
           <>
             <DrawerHeader className=" w-full  flex flex-col    lg:items-start items-center gap-3 ">
