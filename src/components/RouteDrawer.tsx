@@ -1,43 +1,24 @@
 "use client";
-import { ArrowLeft, Flag, TriangleAlertIcon } from "lucide-react";
-import { useMemo } from "react";
+import { ArrowLeft } from "lucide-react";
 
 import useMapStore from "@/stores/useMapStore";
 
 import DrawerWrapper from "./DrawerWrapper";
 import RoutePlanInput from "./PlanInput";
+import RouteCard from "./shared/RouteCard";
 import { Button } from "./ui/button";
-import { Card, CardHeader, CardTitle } from "./ui/card";
-import { DrawerContent, DrawerHeader, DrawerTitle } from "./ui/drawer";
+import { DrawerContent, DrawerHeader } from "./ui/drawer";
 
 export default function RouteDrawer() {
   const {
-    computeRoute,
+    computeRoutes,
     routeInfoShow,
     setRouteInfoShow,
     setInfoShow,
     destination,
   } = useMapStore();
-  const routeLocalValue = useMemo(() => {
-    const result = {
-      distance: "",
-      duration: "",
-      desc: "",
-    };
-    if (!computeRoute) return result;
-    if (computeRoute.localizedValues?.distance) {
-      result.distance = computeRoute.localizedValues.distance.text;
-    }
 
-    if (computeRoute.localizedValues?.duration) {
-      result.duration = computeRoute.localizedValues.duration.text;
-    }
-
-    result.desc = computeRoute.description || "";
-    return result;
-  }, [computeRoute]);
-
-  if (!computeRoute) return null;
+  if (!computeRoutes) return null;
 
   const handleBack = () => {
     setRouteInfoShow(false);
@@ -65,34 +46,13 @@ export default function RouteDrawer() {
             <h1 className="text-2xl">路線規劃</h1>
           </div>
           <RoutePlanInput />
-          <Card>
-            <CardHeader>
-              <CardTitle className=" flex  justify-between items-center">
-                <DrawerTitle className="text-2xl">
-                  {routeLocalValue?.distance}
-                </DrawerTitle>
+          <p>{computeRoutes.length} 條路線建議</p>
 
-                {routeLocalValue.duration && (
-                  <p className=" text-muted-foreground  font-bold">
-                    {routeLocalValue?.duration}
-                  </p>
-                )}
-              </CardTitle>
-
-              <div className="flex justify-between items-center">
-                推薦路徑．{computeRoute.description ?? "最快"}
-                <Button variant={"outline"}>
-                  開始 <Flag />
-                </Button>
-              </div>
-              {computeRoute.warnings && (
-                <div className=" flex items-center gap-2  text-yellow-600 font-bold">
-                  <TriangleAlertIcon size={20} />
-                  {computeRoute.warnings?.join(" ")}
-                </div>
-              )}
-            </CardHeader>
-          </Card>
+          <section className=" space-y-2 ">
+            {computeRoutes?.map((route) => (
+              <RouteCard key={Math.random()} route={route} />
+            ))}
+          </section>
         </DrawerHeader>
       </DrawerContent>
     </DrawerWrapper>

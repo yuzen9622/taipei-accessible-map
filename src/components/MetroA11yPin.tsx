@@ -40,6 +40,9 @@ export default function MetroA11yPin({ place }: { place: Marker }) {
       <HoverCardContent>
         <h1>{place.content?.title}</h1>
         <p className=" text-sm">{place.content?.desc}</p>
+        <p>
+          {place.position.lat}, {place.position.lng}
+        </p>
       </HoverCardContent>
     </HoverCard>
   );

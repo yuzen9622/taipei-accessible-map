@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 
 import { cn, getLocation } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
@@ -6,15 +6,17 @@ import useMapStore from "@/stores/useMapStore";
 import PlaceInput from "./shared/PlaceInput";
 
 export default function SearchInput() {
-  const { setSearchPlace, infoShow, routeInfoShow } = useMapStore();
-
+  const { setSearchPlace, infoShow, routeInfoShow, setInfoShow } =
+    useMapStore();
+  const [input, setInput] = useState("");
   const handlePlaceChange = useCallback(
     (place: google.maps.places.Place) => {
       const latLng = getLocation(place);
       if (!latLng) return;
       setSearchPlace({ kind: "place", place, position: latLng });
+      setInfoShow({ isOpen: true, kind: "place", place: place });
     },
-    [setSearchPlace]
+    [setSearchPlace, setInfoShow]
   );
 
   return (
@@ -27,6 +29,8 @@ export default function SearchInput() {
       <div className=" relative w-10/12 mx-auto">
         <PlaceInput
           className="border-none"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
           placeholder="搜尋想去的地點~"
           onPlaceSelect={handlePlaceChange}
         />

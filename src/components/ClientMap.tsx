@@ -32,10 +32,10 @@ export default function ClientMap() {
   const placesLib = useMapsLibrary("places");
   //定義台北新北市邊界
   const taipeiNewTaipeiBounds = {
-    north: 25.3, // 北到淡水、金山一帶
-    south: 24.8, // 南到鶯歌、新店深山
-    east: 121.8, // 東到瑞芳、貢寮
-    west: 121.25, // 西到林口、八里
+    north: 25.3167, // 北到淡水、金山一帶
+    south: 24.9338, // 南到鶯歌、新店深山
+    east: 122.0348, // 東到瑞芳、貢寮
+    west: 121.3179, // 西到林口、八里
   };
 
   //初始化map
