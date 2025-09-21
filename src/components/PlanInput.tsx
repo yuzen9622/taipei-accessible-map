@@ -14,6 +14,7 @@ export default function RoutePlanInput() {
     userLocation,
     setDestination,
     setOrigin,
+    a11yDrawerOpen,
     origin,
     destination,
     setSearchPlace,
@@ -94,6 +95,7 @@ export default function RoutePlanInput() {
       setDestinationSearchInput(destination.place.displayName || "");
     }
   }, [destination]);
+  if (a11yDrawerOpen) return null;
   return (
     <span className=" relative w-full  flex   rounded-2xl items-center bg-background gap-2">
       <div className="w-full space-y-2">

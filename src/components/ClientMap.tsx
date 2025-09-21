@@ -8,6 +8,8 @@ import {
 import { useEffect } from "react";
 import { getLocation } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
+import AccessibleToolBar from "./AccessibleToolBar";
+import AccessibilityPin from "./MetroA11yWrapper";
 
 export default function ClientMap() {
   const { setMap, setInfoShow, setUserLocation, setSearchPlace } =
@@ -64,6 +66,9 @@ export default function ClientMap() {
       mapId={"9b39d2c1e16cb61adfef5521"}
       defaultBounds={taipeiNewTaipeiBounds}
       className=" relative flex-1 bg-background overflow-hidden"
-    ></GoogleMap>
+    >
+      <AccessibleToolBar />
+      <AccessibilityPin />
+    </GoogleMap>
   );
 }
