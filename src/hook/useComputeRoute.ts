@@ -2,11 +2,11 @@ import { useState } from "react";
 
 import useMapStore from "@/stores/useMapStore";
 
-import type { RoutesResponse } from "@/types/route.t";
+import type { Route, RoutesResponse } from "@/types/route.t";
 export default function useComputeRoute() {
   const [isLoading, setIsLoading] = useState(false);
 
-  const { setComputeRoute, map } = useMapStore();
+  const { setComputeRoutes, map, setRouteSelect } = useMapStore();
   const computeRoute = async (
     origin: google.maps.LatLngLiteral,
     destination: google.maps.LatLngLiteral
@@ -28,7 +28,7 @@ export default function useComputeRoute() {
           },
         },
         travelMode: "TRANSIT",
-        computeAlternativeRoutes: true,
+
         polylineQuality: "HIGH_QUALITY",
       };
       const response = await fetch(url, {
@@ -47,8 +47,10 @@ export default function useComputeRoute() {
       }
       const data = await response.json();
       console.log("Directions API response data:", data);
-      const [route] = data.routes;
-      setComputeRoute(route);
+      const [route] = data.routes as Route[];
+      setComputeRoutes(data.routes as Route[]);
+      setRouteSelect(route);
+
       const { high, low } = route.viewport;
       const bounds: google.maps.LatLngBoundsLiteral = {
         north: high.latitude,

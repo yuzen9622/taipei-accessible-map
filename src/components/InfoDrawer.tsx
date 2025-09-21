@@ -39,7 +39,7 @@ export default function InfoDrawer() {
     setInfoShow,
     userLocation,
     setRouteInfoShow,
-    setComputeRoute,
+
     setDestination,
     map,
   } = useMapStore();

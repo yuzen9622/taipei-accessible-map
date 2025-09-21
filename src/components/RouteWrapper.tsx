@@ -11,12 +11,12 @@ const defaultAppearance = {
 };
 
 export default function RouteLine() {
-  const { computeRoute } = useMapStore();
+  const { selectRoute } = useMapStore();
   const geometry = useMapsLibrary("geometry");
   const polylinesElement = useMemo(() => {
-    if (!computeRoute) return null;
+    if (!selectRoute) return null;
 
-    return computeRoute.legs[0].steps
+    return selectRoute.legs[0].steps
       .map((step, index) => {
         if (!step.polyline?.encodedPolyline) return null;
 
@@ -71,7 +71,7 @@ export default function RouteLine() {
         );
       })
       .filter(Boolean);
-  }, [computeRoute, geometry]);
+  }, [selectRoute, geometry]);
 
   return <div>{polylinesElement}</div>;
 }

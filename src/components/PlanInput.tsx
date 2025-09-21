@@ -1,7 +1,6 @@
-import { useCommandState } from "cmdk";
-import { set } from "lodash";
+"use client";
 import { ArrowDownUpIcon } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import useComputeRoute from "@/hook/useComputeRoute";
 import { getLocation } from "@/lib/utils";
@@ -12,6 +11,7 @@ import { Button } from "./ui/button";
 
 export default function RoutePlanInput() {
   const {
+    userLocation,
     setDestination,
     setOrigin,
     origin,
@@ -22,12 +22,12 @@ export default function RoutePlanInput() {
 
   const { computeRoute } = useComputeRoute();
 
-  const [OriginSearchInput, setOriginSearchInput] = useState<string>(
+  const [originSearchInput, setOriginSearchInput] = useState<string>(
     origin?.kind === "place" && origin.place.displayName
       ? origin.place.displayName
       : ""
   );
-  const [DestinationSearchInput, setDestinationSearchInput] = useState<string>(
+  const [destinationSearchInput, setDestinationSearchInput] = useState<string>(
     destination?.kind === "place" && destination.place.displayName
       ? destination.place.displayName
       : ""
@@ -37,24 +37,41 @@ export default function RoutePlanInput() {
     (place: google.maps.places.Place) => {
       const latLng = getLocation(place);
       if (!latLng) return;
+
+      if (!latLng) return;
       setOriginSearchInput(place.displayName || "");
       setOrigin({ kind: "place", place: place, position: latLng });
+      if (destination?.position) {
+        computeRoute(latLng, destination.position);
+      }
     },
-    [setOrigin]
+    [setOrigin, destination, computeRoute]
   );
 
   const handleDestinationPlace = useCallback(
     (place: google.maps.places.Place) => {
+      console.log(place.displayName);
+      console.log(place.location);
       if (!place.location) return;
       const latLng = getLocation(place);
+
       if (!latLng) return;
-      setDestinationSearchInput(place.displayName || "");
+      //setDestinationSearchInput(place.displayName || "");
       setDestination({ kind: "place", place: place, position: latLng });
       setInfoShow({ isOpen: false, kind: "place", place: place });
       setSearchPlace(null);
-      computeRoute({ lat: 25.0475613, lng: 121.5173399 }, latLng);
+      if (origin?.position) {
+        computeRoute(userLocation || origin.position, latLng);
+      }
     },
-    [setDestination, setInfoShow, setSearchPlace, computeRoute]
+    [
+      setDestination,
+      setInfoShow,
+      setSearchPlace,
+      computeRoute,
+      origin,
+      userLocation,
+    ]
   );
 
   const handleSwitch = () => {
@@ -66,7 +83,17 @@ export default function RoutePlanInput() {
     setOrigin(destination);
     setDestination(origin);
   };
+  useEffect(() => {
+    if (origin?.kind === "place") {
+      setOriginSearchInput(origin.place.displayName || "");
+    }
+  }, [origin]);
 
+  useEffect(() => {
+    if (destination?.kind === "place") {
+      setDestinationSearchInput(destination.place.displayName || "");
+    }
+  }, [destination]);
   return (
     <span className=" relative w-full  flex   rounded-2xl items-center bg-background gap-2">
       <div className="w-full space-y-2">
@@ -74,14 +101,14 @@ export default function RoutePlanInput() {
           <SearchInput
             className=" border-none rounded-3xl  "
             placeholder="起始點"
-            value={OriginSearchInput}
+            value={originSearchInput}
             onChange={(e) => setOriginSearchInput(e.target.value)}
             onPlaceSelect={handleOriginPlace}
           />
         </div>{" "}
         <div className="border rounded-3xl">
           <SearchInput
-            value={DestinationSearchInput}
+            value={destinationSearchInput}
             placeholder="終點"
             className=" border-none  rounded-3xl "
             onChange={(e) => setDestinationSearchInput(e.target.value)}
