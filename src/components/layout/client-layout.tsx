@@ -1,4 +1,5 @@
 import Header from "@/components/Header";
+import AccessibleDrawer from "../AccessibleDrawer";
 
 export default function ClientLayout({
   children,
@@ -8,7 +9,7 @@ export default function ClientLayout({
   return (
     <div className="w-full h-dvh flex flex-col">
       <Header />
-
+      <AccessibleDrawer />
       {children}
     </div>
   );
