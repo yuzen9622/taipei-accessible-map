@@ -6,8 +6,7 @@ import useMapStore from "@/stores/useMapStore";
 import PlaceInput from "./shared/PlaceInput";
 
 export default function SearchInput() {
-  const { setSearchPlace, infoShow, routeInfoShow, setInfoShow } =
-    useMapStore();
+  const { setSearchPlace, setInfoShow } = useMapStore();
   const [input, setInput] = useState("");
   const handlePlaceChange = useCallback(
     (place: google.maps.places.Place) => {
@@ -22,11 +21,10 @@ export default function SearchInput() {
   return (
     <div
       className={cn(
-        "     fixed inset-0 top-5 h-fit w-full  flex justify-center z-[99] transition-all duration-300",
-        (infoShow.isOpen || routeInfoShow) && "lg:ml-[360px] lg:max-w-8/12"
+        "      absolute inset-0 top-5 h-fit w-full  flex justify-center z-[99] transition-all duration-300"
       )}
     >
-      <div className=" relative w-10/12 mx-auto">
+      <div className="  w-10/12 mx-auto">
         <PlaceInput
           className="border-none"
           value={input}

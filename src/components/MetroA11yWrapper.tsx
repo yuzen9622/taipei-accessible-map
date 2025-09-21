@@ -1,10 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
-
-import { A11yEnum } from '@/types/index';
-
-import MetroA11yPin from './MetroA11yPin';
-
+import { useCallback, useEffect, useState } from "react";
+import MetroA11yPin from "@/components/MetroA11yPin";
 import type { Marker, metroA11yAPI } from "@/types";
+import { A11yEnum } from "@/types/index";
 
 export default function AccessibilityPin() {
   const [accessibilityPlaces, setAccessibilityPlaces] = useState<

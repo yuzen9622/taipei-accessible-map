@@ -1,16 +1,14 @@
 "use client";
 
+import { useMapsLibrary } from "@vis.gl/react-google-maps";
 import { LoaderCircle, SearchIcon } from "lucide-react";
+import type { InputHTMLAttributes } from "react";
 import { useCallback, useState } from "react";
-
 import usePlacePredictions from "@/hook/usePlacePredictions";
 import { cn } from "@/lib/utils";
-import { useMapsLibrary } from "@vis.gl/react-google-maps";
-
 import { Command, CommandGroup, CommandItem, CommandList } from "../ui/command";
 import { Input } from "../ui/input";
 
-import type { InputHTMLAttributes } from "react";
 type InputProps = InputHTMLAttributes<HTMLInputElement> & {
   onPlaceSelect: (places: google.maps.places.Place) => void;
 };
@@ -49,7 +47,7 @@ function PlaceInput({
 
       const placeDetails = place.placePrediction.toPlace();
       await placeDetails.fetchFields({ fields: ["*"] });
-
+      console.log(placeDetails);
       onPlaceSelect(placeDetails);
 
       setOpen(false);
