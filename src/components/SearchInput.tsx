@@ -27,7 +27,7 @@ export default function SearchInput() {
       <div className=" relative w-10/12 mx-auto">
         <PlaceInput
           className="border-none"
-          placeholder="搜尋想去的地點~"
+          placeholder="搜尋想去的地點"
           onPlaceSelect={handlePlaceChange}
         />
       </div>
