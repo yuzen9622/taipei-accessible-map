@@ -1,12 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import MetroA11yPin from "@/components/MetroA11yPin";
+import useMapStore from "@/stores/useMapStore";
 import type { Marker, metroA11yAPI } from "@/types";
 import { A11yEnum } from "@/types/index";
 
 export default function AccessibilityPin() {
-  const [accessibilityPlaces, setAccessibilityPlaces] = useState<
-    Marker[] | null
-  >(null);
+  const { selectedA11yTypes, a11yPlaces, setA11yPlaces } = useMapStore();
 
   const fetchMarketA11yPlace = useCallback(async () => {
     try {
@@ -31,18 +30,25 @@ export default function AccessibilityPin() {
           a11yType,
         };
       });
-      console.log(formatData);
-      setAccessibilityPlaces(formatData);
+
+      setA11yPlaces(formatData);
     } catch (error) {
       console.log(error);
     }
-  }, []);
+  }, [setA11yPlaces]);
+
   useEffect(() => {
     fetchMarketA11yPlace();
   }, [fetchMarketA11yPlace]);
+
+  // 根據選擇的類型過濾要顯示的標籤
+  const filteredPlaces =
+    a11yPlaces?.filter((place) => selectedA11yTypes.includes(place.a11yType)) ||
+    [];
+
   return (
     <>
-      {accessibilityPlaces?.map((place) => (
+      {filteredPlaces.map((place) => (
         <MetroA11yPin key={place.id} place={place} />
       ))}
     </>

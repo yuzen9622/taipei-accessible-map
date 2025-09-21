@@ -1,5 +1,7 @@
-import type { InfoShow, PlaceDetail } from "@/types";
 import { create } from "zustand";
+import type { InfoShow, Marker, PlaceDetail } from "@/types";
+import { A11yEnum } from "@/types/index";
+
 import type { Route } from "@/types/route.t";
 
 interface MapState {
@@ -13,9 +15,10 @@ interface MapState {
   computeRoutes: Route[] | null;
   routePolyline: google.maps.Polyline | null;
   selectRoute: Route | null;
-  searchHistory: string[];
-  savedPlaces: string[];
-  timeline: string[];
+  // 新增無障礙設施相關狀態
+  selectedA11yTypes: A11yEnum[];
+  a11yDrawerOpen: boolean;
+  a11yPlaces: Marker[] | null;
 }
 
 interface MapAction {
@@ -29,8 +32,10 @@ interface MapAction {
   setRoutePolyline: (polyline: google.maps.Polyline | null) => void;
   setRouteInfoShow: (show: boolean) => void;
   setRouteSelect: (route: Route | null) => void;
-  setSearchHistory: (history: string[]) => void;
-  addSearchHistory: (item: string) => void; // 新增
+  // 新增無障礙設施相關動作
+  toggleA11yType: (type: A11yEnum) => void;
+  setA11yDrawerOpen: (open: boolean) => void;
+  setA11yPlaces: (places: Marker[] | null) => void;
 }
 
 type MapStore = MapState & MapAction;
@@ -57,14 +62,30 @@ const useMapStore = create<MapStore>((set, get) => ({
   setRoutePolyline: (polyline) => set({ routePolyline: polyline }),
   selectRoute: null,
   setRouteSelect: (route) => set({ selectRoute: route }),
-  searchHistory: [],
-  savedPlaces: ["家", "公司"],
-  timeline: [],
-  setSearchHistory: (history) => set({ searchHistory: history }),
-  addSearchHistory: (item) =>
+  // 新增無障礙設施相關實作
+  selectedA11yTypes: [],
+  toggleA11yType: (type: A11yEnum) => {
+    const { selectedA11yTypes } = get();
+    if (type === A11yEnum.NONE) {
+      set({
+        selectedA11yTypes: [],
+        a11yDrawerOpen: false,
+      });
+      return;
+    }
+    const newTypes = selectedA11yTypes.includes(type)
+      ? selectedA11yTypes.filter((t) => t !== type)
+      : [...selectedA11yTypes, type];
+
     set({
-      searchHistory: [...get().searchHistory.filter(i => i !== item), item],
-    }),
+      selectedA11yTypes: newTypes,
+      a11yDrawerOpen: newTypes.length > 0,
+    });
+  },
+  a11yDrawerOpen: false,
+  setA11yDrawerOpen: (open) => set({ a11yDrawerOpen: open }),
+  a11yPlaces: null,
+  setA11yPlaces: (places) => set({ a11yPlaces: places }),
 }));
 
 export default useMapStore;
