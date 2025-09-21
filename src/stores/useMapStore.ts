@@ -39,6 +39,8 @@ interface MapAction {
   toggleA11yType: (type: A11yEnum) => void;
   setA11yDrawerOpen: (open: boolean) => void;
   setA11yPlaces: (places: Marker[] | null) => void;
+  addSearchHistory: (searchTerm: PlaceDetail) => void;
+  clearSearchHistory: () => void;
 }
 
 type MapStore = MapState & MapAction;
@@ -90,6 +92,16 @@ const useMapStore = create<MapStore>((set, get) => ({
   a11yPlaces: null,
   setA11yPlaces: (places) => set({ a11yPlaces: places }),
   searchHistory: [],
+  addSearchHistory: (searchTerm: PlaceDetail) => {
+    const { searchHistory } = get();
+    // 避免重複項目和空字串
+    if (searchHistory.includes(searchTerm)) return;
+
+    // 新項目加到最前面，保持最多10筆歷史記錄
+    const newHistory = [searchTerm, ...searchHistory.slice(0, 9)];
+    set({ searchHistory: newHistory });
+  },
+  clearSearchHistory: () => set({ searchHistory: [] }),
   savedPlaces: [],
   timeline: [],
 }));

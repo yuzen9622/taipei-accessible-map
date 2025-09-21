@@ -39,7 +39,7 @@ export default function RoutePlanInput() {
       if (!latLng) return;
       setOriginSearchInput(place.displayName || "");
       setOrigin({ kind: "place", place: place, position: latLng });
-      addSearchHistory(place.displayName || ""); // 新增到搜尋歷史
+      addSearchHistory({ kind: "place", place: place, position: latLng }); // 新增到搜尋歷史
       if (destination?.position) {
         computeRoute(latLng, destination.position);
       }
@@ -55,12 +55,20 @@ export default function RoutePlanInput() {
       setDestination({ kind: "place", place: place, position: latLng });
       setInfoShow({ isOpen: false, kind: "place", place: place });
       setSearchPlace(null);
-      addSearchHistory(place.displayName || ""); // 新增到搜尋歷史
+      addSearchHistory({ kind: "place", place: place, position: latLng }); // 新增到搜尋歷史
       if (origin?.position) {
         computeRoute(userLocation || origin.position, latLng);
       }
     },
-    [setDestination, setInfoShow, setSearchPlace, computeRoute, origin, userLocation, addSearchHistory]
+    [
+      setDestination,
+      setInfoShow,
+      setSearchPlace,
+      computeRoute,
+      origin,
+      userLocation,
+      addSearchHistory,
+    ]
   );
 
   const handleSwitch = () => {
@@ -74,11 +82,13 @@ export default function RoutePlanInput() {
   };
 
   useEffect(() => {
-    if (origin?.kind === "place") setOriginSearchInput(origin.place.displayName || "");
+    if (origin?.kind === "place")
+      setOriginSearchInput(origin.place.displayName || "");
   }, [origin]);
 
   useEffect(() => {
-    if (destination?.kind === "place") setDestinationSearchInput(destination.place.displayName || "");
+    if (destination?.kind === "place")
+      setDestinationSearchInput(destination.place.displayName || "");
   }, [destination]);
   if (a11yDrawerOpen) return null;
   return (
