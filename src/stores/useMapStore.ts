@@ -1,6 +1,5 @@
 import type { InfoShow, PlaceDetail } from "@/types";
 import { create } from "zustand";
-
 import type { Route } from "@/types/route.t";
 
 interface MapState {
@@ -14,7 +13,11 @@ interface MapState {
   computeRoutes: Route[] | null;
   routePolyline: google.maps.Polyline | null;
   selectRoute: Route | null;
+  searchHistory: string[];
+  savedPlaces: string[];
+  timeline: string[];
 }
+
 interface MapAction {
   setMap: (map: google.maps.Map) => void;
   setUserLocation: (location: google.maps.LatLngLiteral | null) => void;
@@ -26,6 +29,8 @@ interface MapAction {
   setRoutePolyline: (polyline: google.maps.Polyline | null) => void;
   setRouteInfoShow: (show: boolean) => void;
   setRouteSelect: (route: Route | null) => void;
+  setSearchHistory: (history: string[]) => void;
+  addSearchHistory: (item: string) => void; // 新增
 }
 
 type MapStore = MapState & MapAction;
@@ -52,6 +57,14 @@ const useMapStore = create<MapStore>((set, get) => ({
   setRoutePolyline: (polyline) => set({ routePolyline: polyline }),
   selectRoute: null,
   setRouteSelect: (route) => set({ selectRoute: route }),
+  searchHistory: [],
+  savedPlaces: ["家", "公司"],
+  timeline: [],
+  setSearchHistory: (history) => set({ searchHistory: history }),
+  addSearchHistory: (item) =>
+    set({
+      searchHistory: [...get().searchHistory.filter(i => i !== item), item],
+    }),
 }));
 
 export default useMapStore;
