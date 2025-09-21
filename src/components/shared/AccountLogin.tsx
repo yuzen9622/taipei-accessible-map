@@ -1,6 +1,14 @@
-"use client"
+"use client";
 
-import React, { useState, useEffect } from "react"
+import { HelpCircle, LogOut, Moon, Settings, User } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,56 +16,51 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Button } from "../ui/button"
-import { User, Settings, HelpCircle, Moon, LogOut } from "lucide-react"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog"
-import { Switch } from "@/components/ui/switch"
+} from "@/components/ui/dropdown-menu";
+import { Switch } from "@/components/ui/switch";
+import { Button } from "../ui/button";
 
 export default function AccountLogin() {
-  const [openDialog, setOpenDialog] = useState<null | "settings" | "feedback">(null)
-  const [darkMode, setDarkMode] = useState(false)
-  const [notifications, setNotifications] = useState(true)
-  const [feedbackText, setFeedbackText] = useState("")
+  const [openDialog, setOpenDialog] = useState<null | "settings" | "feedback">(
+    null
+  );
+  const [darkMode, setDarkMode] = useState(false);
+  const [notifications, setNotifications] = useState(true);
+  const [feedbackText, setFeedbackText] = useState("");
 
   /** 模擬登入狀態 */
-  const [loggedIn, setLoggedIn] = useState(false)
-  const [userName, setUserName] = useState("使用者")
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [userName, setUserName] = useState("使用者");
 
   /** 初始化 localStorage 設定 */
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const dark = localStorage.getItem("darkMode") === "true"
-      const notify = localStorage.getItem("notifications") !== "false"
-      setDarkMode(dark)
-      setNotifications(notify)
+      const dark = localStorage.getItem("darkMode") === "true";
+      const notify = localStorage.getItem("notifications") !== "false";
+      setDarkMode(dark);
+      setNotifications(notify);
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      if (darkMode) document.documentElement.classList.add("dark")
-      else document.documentElement.classList.remove("dark")
-      localStorage.setItem("darkMode", String(darkMode))
+      if (darkMode) document.documentElement.classList.add("dark");
+      else document.documentElement.classList.remove("dark");
+      localStorage.setItem("darkMode", String(darkMode));
     }
-  }, [darkMode])
+  }, [darkMode]);
 
   const handleNotificationChange = (checked: boolean) => {
-    setNotifications(checked)
-    if (typeof window !== "undefined") localStorage.setItem("notifications", String(checked))
-  }
+    setNotifications(checked);
+    if (typeof window !== "undefined")
+      localStorage.setItem("notifications", String(checked));
+  };
 
   const handleSubmitFeedback = () => {
-    console.log("送出問題回饋:", feedbackText)
-    setFeedbackText("")
-    setOpenDialog(null)
-  }
+    console.log("送出問題回饋:", feedbackText);
+    setFeedbackText("");
+    setOpenDialog(null);
+  };
 
   return (
     <>
@@ -82,8 +85,8 @@ export default function AccountLogin() {
             <DropdownMenuItem
               className="text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
               onClick={() => {
-                setLoggedIn(true)
-                setUserName("測試使用者")
+                setLoggedIn(true);
+                setUserName("測試使用者");
               }}
             >
               模擬登入
@@ -123,7 +126,10 @@ export default function AccountLogin() {
       </DropdownMenu>
 
       {/* 設定 Dialog */}
-      <Dialog open={openDialog === "settings"} onOpenChange={() => setOpenDialog(null)}>
+      <Dialog
+        open={openDialog === "settings"}
+        onOpenChange={() => setOpenDialog(null)}
+      >
         <DialogContent className="max-w-md rounded-lg p-6">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold">設定</DialogTitle>
@@ -141,18 +147,28 @@ export default function AccountLogin() {
             </div>
 
             <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">通知設定</span>
-              <Switch checked={notifications} onCheckedChange={handleNotificationChange} />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                通知設定
+              </span>
+              <Switch
+                checked={notifications}
+                onCheckedChange={handleNotificationChange}
+              />
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
       {/* 問題回饋 Dialog */}
-      <Dialog open={openDialog === "feedback"} onOpenChange={() => setOpenDialog(null)}>
+      <Dialog
+        open={openDialog === "feedback"}
+        onOpenChange={() => setOpenDialog(null)}
+      >
         <DialogContent className="max-w-md rounded-lg p-6">
           <DialogHeader>
-            <DialogTitle className="text-lg font-semibold">問題回饋</DialogTitle>
+            <DialogTitle className="text-lg font-semibold">
+              問題回饋
+            </DialogTitle>
             <DialogDescription className="text-sm text-gray-500">
               請描述您遇到的問題或建議，我們將盡快改善！
             </DialogDescription>
@@ -165,11 +181,14 @@ export default function AccountLogin() {
             value={feedbackText}
             onChange={(e) => setFeedbackText(e.target.value)}
           />
-          <Button className="w-full mt-2 text-sm" onClick={handleSubmitFeedback}>
+          <Button
+            className="w-full mt-2 text-sm"
+            onClick={handleSubmitFeedback}
+          >
             送出
           </Button>
         </DialogContent>
       </Dialog>
     </>
-  )
+  );
 }

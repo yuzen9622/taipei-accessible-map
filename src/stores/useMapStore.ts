@@ -19,6 +19,9 @@ interface MapState {
   selectedA11yTypes: A11yEnum[];
   a11yDrawerOpen: boolean;
   a11yPlaces: Marker[] | null;
+  searchHistory: PlaceDetail[];
+  savedPlaces: PlaceDetail[];
+  timeline: { time: string; event: string }[];
 }
 
 interface MapAction {
@@ -86,6 +89,9 @@ const useMapStore = create<MapStore>((set, get) => ({
   setA11yDrawerOpen: (open) => set({ a11yDrawerOpen: open }),
   a11yPlaces: null,
   setA11yPlaces: (places) => set({ a11yPlaces: places }),
+  searchHistory: [],
+  savedPlaces: [],
+  timeline: [],
 }));
 
 export default useMapStore;
