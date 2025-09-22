@@ -112,6 +112,11 @@ function PlaceInput({
             onFocus={() => {
               setOpen(true);
             }}
+            onBlur={() => {
+              setTimeout(() => {
+                setOpen(false);
+              }, 100);
+            }}
             {...props}
           />
         </form>
