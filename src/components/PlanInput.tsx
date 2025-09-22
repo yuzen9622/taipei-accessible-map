@@ -16,6 +16,7 @@ export default function RoutePlanInput() {
     a11yDrawerOpen,
     origin,
     destination,
+    searchPlace,
     setSearchPlace,
     setInfoShow,
     addSearchHistory, // 取得 function
@@ -98,7 +99,7 @@ export default function RoutePlanInput() {
     <div
       className={cn(
         "  w-full p-2 flex rounded-2xl transition-all items-center bg-transparent gap-2",
-        a11yDrawerOpen && "  hidden"
+        (a11yDrawerOpen || !searchPlace) && "  hidden"
       )}
     >
       <div className="w-full space-y-2">
