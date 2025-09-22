@@ -2,8 +2,9 @@
 import { ArrowDownUpIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import useComputeRoute from "@/hook/useComputeRoute";
-import { getLocation } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
+import type { PlaceDetail } from "@/types";
 import SearchInput from "./shared/PlaceInput";
 import { Button } from "./ui/button";
 
@@ -34,30 +35,35 @@ export default function RoutePlanInput() {
   );
 
   const handleOriginPlace = useCallback(
-    (place: google.maps.places.Place) => {
-      const latLng = getLocation(place);
-      if (!latLng) return;
-      setOriginSearchInput(place.displayName || "");
-      setOrigin({ kind: "place", place: place, position: latLng });
-      addSearchHistory({ kind: "place", place: place, position: latLng }); // 新增到搜尋歷史
+    (placeDetail: PlaceDetail) => {
+      if (placeDetail.kind === "place") {
+        setOriginSearchInput(placeDetail.place.displayName || "");
+      }
+
+      setOrigin(placeDetail);
+      addSearchHistory(placeDetail); // 新增到搜尋歷史
       if (destination?.position) {
-        computeRoute(latLng, destination.position);
+        computeRoute(placeDetail.position, destination.position);
       }
     },
     [setOrigin, destination, computeRoute, addSearchHistory]
   );
 
   const handleDestinationPlace = useCallback(
-    (place: google.maps.places.Place) => {
-      if (!place.location) return;
-      const latLng = getLocation(place);
-      if (!latLng) return;
-      setDestination({ kind: "place", place: place, position: latLng });
-      setInfoShow({ isOpen: false, kind: "place", place: place });
+    (placeDetail: PlaceDetail) => {
+      setDestination(placeDetail);
+      if (placeDetail.kind === "place") {
+        setDestinationSearchInput(placeDetail.place.displayName || "");
+        setInfoShow({
+          isOpen: true,
+          kind: "place",
+          place: placeDetail.place,
+        });
+      }
       setSearchPlace(null);
-      addSearchHistory({ kind: "place", place: place, position: latLng }); // 新增到搜尋歷史
+      addSearchHistory(placeDetail); // 新增到搜尋歷史
       if (origin?.position) {
-        computeRoute(userLocation || origin.position, latLng);
+        computeRoute(userLocation || origin.position, placeDetail.position);
       }
     },
     [
@@ -72,27 +78,29 @@ export default function RoutePlanInput() {
   );
 
   const handleSwitch = () => {
-    if (origin?.kind === "place" && destination?.kind === "place") {
-      setOriginSearchInput(destination.place.displayName || "");
-      setDestinationSearchInput(origin.place.displayName || "");
-      setInfoShow({ isOpen: false, kind: "place", place: origin.place });
-    }
     setOrigin(destination);
     setDestination(origin);
   };
 
   useEffect(() => {
+    setOriginSearchInput("");
     if (origin?.kind === "place")
       setOriginSearchInput(origin.place.displayName || "");
   }, [origin]);
 
   useEffect(() => {
+    setDestinationSearchInput("");
     if (destination?.kind === "place")
       setDestinationSearchInput(destination.place.displayName || "");
   }, [destination]);
-  if (a11yDrawerOpen) return null;
+
   return (
-    <span className="relative w-full flex rounded-2xl items-center bg-background gap-2">
+    <div
+      className={cn(
+        "  w-full p-2 flex rounded-2xl transition-all items-center bg-transparent gap-2",
+        a11yDrawerOpen && "  hidden"
+      )}
+    >
       <div className="w-full space-y-2">
         <div className="border rounded-3xl">
           <SearchInput
@@ -118,6 +126,6 @@ export default function RoutePlanInput() {
           <ArrowDownUpIcon size={16} />
         </Button>
       </div>
-    </span>
+    </div>
   );
 }

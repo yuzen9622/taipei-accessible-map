@@ -1,7 +1,6 @@
-import { useCallback } from "react";
-
-import useMapStore from "@/stores/useMapStore";
 import { AdvancedMarker, Pin } from "@vis.gl/react-google-maps";
+import { useCallback } from "react";
+import useMapStore from "@/stores/useMapStore";
 
 import type { PlaceDetail } from "@/types";
 export default function SearchPin({

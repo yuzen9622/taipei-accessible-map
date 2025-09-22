@@ -39,6 +39,7 @@ interface MapAction {
   toggleA11yType: (type: A11yEnum) => void;
   setA11yDrawerOpen: (open: boolean) => void;
   setA11yPlaces: (places: Marker[] | null) => void;
+  initSearchHistory: (history: PlaceDetail[]) => void;
   addSearchHistory: (searchTerm: PlaceDetail) => void;
   clearSearchHistory: () => void;
 }
@@ -92,13 +93,21 @@ const useMapStore = create<MapStore>((set, get) => ({
   a11yPlaces: null,
   setA11yPlaces: (places) => set({ a11yPlaces: places }),
   searchHistory: [],
+  initSearchHistory: (history) => set({ searchHistory: history }),
   addSearchHistory: (searchTerm: PlaceDetail) => {
     const { searchHistory } = get();
-    // 避免重複項目和空字串
-    if (searchHistory.includes(searchTerm)) return;
 
-    // 新項目加到最前面，保持最多10筆歷史記錄
+    if (
+      searchTerm.kind === "place" &&
+      searchHistory.find(
+        (item) => item.kind === "place" && item.place.id === searchTerm.place.id
+      )
+    ) {
+      return;
+    }
+
     const newHistory = [searchTerm, ...searchHistory.slice(0, 9)];
+    localStorage.setItem("searchHistory", JSON.stringify(newHistory));
     set({ searchHistory: newHistory });
   },
   clearSearchHistory: () => set({ searchHistory: [] }),

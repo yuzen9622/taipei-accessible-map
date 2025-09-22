@@ -1,19 +1,24 @@
 import { useCallback, useState } from "react";
 
-import { cn, getLocation } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
-
+import type { PlaceDetail } from "@/types";
 import PlaceInput from "./shared/PlaceInput";
 
 export default function SearchInput() {
   const { setSearchPlace, setInfoShow } = useMapStore();
   const [input, setInput] = useState("");
   const handlePlaceChange = useCallback(
-    (place: google.maps.places.Place) => {
-      const latLng = getLocation(place);
-      if (!latLng) return;
-      setSearchPlace({ kind: "place", place, position: latLng });
-      setInfoShow({ isOpen: true, kind: "place", place: place });
+    (placeDetail: PlaceDetail) => {
+      setSearchPlace(placeDetail);
+      if (placeDetail.kind === "place") {
+        setInput(placeDetail.place.displayName || "");
+        setInfoShow({
+          isOpen: true,
+          kind: "place",
+          place: placeDetail.place,
+        });
+      }
     },
     [setSearchPlace, setInfoShow]
   );
