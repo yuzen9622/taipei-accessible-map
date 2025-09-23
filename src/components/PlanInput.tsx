@@ -19,7 +19,6 @@ export default function RoutePlanInput() {
     searchPlace,
     setSearchPlace,
     setInfoShow,
-    addSearchHistory, // 取得 function
   } = useMapStore();
 
   const { computeRoute } = useComputeRoute();
@@ -42,12 +41,12 @@ export default function RoutePlanInput() {
       }
 
       setOrigin(placeDetail);
-      addSearchHistory(placeDetail); // 新增到搜尋歷史
+
       if (destination?.position) {
         computeRoute(placeDetail.position, destination.position);
       }
     },
-    [setOrigin, destination, computeRoute, addSearchHistory]
+    [setOrigin, destination, computeRoute]
   );
 
   const handleDestinationPlace = useCallback(
@@ -62,7 +61,7 @@ export default function RoutePlanInput() {
         });
       }
       setSearchPlace(null);
-      addSearchHistory(placeDetail); // 新增到搜尋歷史
+
       if (origin?.position) {
         computeRoute(userLocation || origin.position, placeDetail.position);
       }
@@ -74,7 +73,6 @@ export default function RoutePlanInput() {
       computeRoute,
       origin,
       userLocation,
-      addSearchHistory,
     ]
   );
 

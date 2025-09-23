@@ -5,11 +5,14 @@ import {
   useMap,
   useMapsLibrary,
 } from "@vis.gl/react-google-maps";
+
 import { useEffect } from "react";
 import { getLocation } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import AccessibleToolBar from "./AccessibleToolBar";
+import InfoDrawer from "./InfoDrawer";
 import AccessibilityPin from "./MetroA11yWrapper";
+import RouteDrawer from "./RouteDrawer";
 import RouteLine from "./RouteWrapper";
 import SearchInput from "./SearchInput";
 
@@ -72,7 +75,8 @@ export default function ClientMap() {
       <SearchInput />
       <AccessibleToolBar />
       <AccessibilityPin />
-
+      <InfoDrawer />
+      <RouteDrawer />
       <RouteLine />
     </GoogleMap>
   );

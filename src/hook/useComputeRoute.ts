@@ -28,7 +28,6 @@ export default function useComputeRoute() {
           },
         },
         travelMode: "TRANSIT",
-
         polylineQuality: "HIGH_QUALITY",
       };
       const response = await fetch(url, {

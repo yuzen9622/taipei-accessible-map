@@ -27,7 +27,7 @@ function PlaceInput({
   const placesLib = useMapsLibrary("places");
 
   const [open, setOpen] = useState(false);
-  const { searchHistory } = useMapStore();
+  const { searchHistory, addSearchHistory } = useMapStore();
   const { suggestions, loading } = usePlacePredictions((value as string) || "");
 
   const handlePlaceSubmit = useCallback(
@@ -38,10 +38,16 @@ function PlaceInput({
         fields: ["*"],
         textQuery: text,
       });
-
+      const latLng = getLocation(places.places[0]);
+      if (!latLng) return;
+      addSearchHistory({
+        kind: "place",
+        place: places.places[0],
+        position: latLng,
+      });
       return places.places[0];
     },
-    [placesLib]
+    [placesLib, addSearchHistory]
   );
 
   const handlePlaceClick = useCallback(
@@ -50,22 +56,40 @@ function PlaceInput({
 
       const placeDetails = place.placePrediction.toPlace();
       await placeDetails.fetchFields({ fields: ["*"] });
-      console.log(placeDetails);
+      console.log(placeDetails.toJSON());
       const latLng = getLocation(placeDetails);
       if (!latLng) return;
+      addSearchHistory({
+        kind: "place",
+        place: placeDetails,
+        position: latLng,
+      });
       onPlaceSelect({ kind: "place", place: placeDetails, position: latLng });
 
       setOpen(false);
     },
-    [onPlaceSelect, placesLib]
+    [onPlaceSelect, placesLib, addSearchHistory]
   );
 
   const handleHistoryClick = useCallback(
     async (place: PlaceDetail) => {
-      onPlaceSelect(place);
+      if (!placesLib) return;
+      const { Place } = placesLib;
+      if (place.kind === "place") {
+        const newPlace = new Place({ id: place.place.id });
+        await newPlace.fetchFields({ fields: ["*"] });
+        const latLng = getLocation(newPlace);
+        if (!latLng) return;
+        onPlaceSelect({
+          kind: "place",
+          place: newPlace,
+          position: latLng,
+        });
+      }
+
       setOpen(false);
     },
-    [onPlaceSelect]
+    [onPlaceSelect, placesLib]
   );
 
   return (
@@ -105,9 +129,6 @@ function PlaceInput({
             onChange={(e) => {
               onChange?.(e);
               setOpen(true);
-              if (e.target.value === "") {
-                setOpen(false);
-              }
             }}
             onFocus={() => {
               setOpen(true);
