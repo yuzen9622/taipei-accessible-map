@@ -28,7 +28,7 @@ export default function AccessibleToolBar() {
   ];
 
   return (
-    <div className="absolute inset-5 w-fit h-fit flex flex-col space-y-2">
+    <div className="absolute inset-5 top-18 w-fit h-fit flex flex-col space-y-2">
       {toolbarItems.map((item) => {
         const isSelected = selectedA11yTypes.includes(item.type);
 
