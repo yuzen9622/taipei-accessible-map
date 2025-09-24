@@ -1,7 +1,8 @@
 "use client";
 
+import { useGoogleLogin } from "@react-oauth/google";
 import { HelpCircle, LogOut, Moon, Settings, User } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -18,50 +19,60 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
-import { Button } from "../ui/button";
+import useAuthStore from "@/stores/useAuthStore";
 
+import { Button } from "../ui/button";
 export default function AccountLogin() {
   const [openDialog, setOpenDialog] = useState<null | "settings" | "feedback">(
     null
   );
-  const [darkMode, setDarkMode] = useState(false);
-  const [notifications, setNotifications] = useState(true);
+  const { user, setUser, setSession } = useAuthStore();
   const [feedbackText, setFeedbackText] = useState("");
 
-  /** 模擬登入狀態 */
-  const [loggedIn, setLoggedIn] = useState(false);
-  const [userName, setUserName] = useState("使用者");
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      console.log(tokenResponse);
+      try {
+        const userInfo = await fetch(
+          "https://www.googleapis.com/oauth2/v3/userinfo",
+          { headers: { Authorization: `Bearer ${tokenResponse.access_token}` } }
+        );
+        const infoData = await userInfo.json();
+        console.log(infoData);
+        setUser({
+          name: infoData.name,
+          email: infoData.email,
+          avatar: infoData.picture,
+          client_id: infoData.sub,
+        });
+        const userRes = await fetch("http://localhost:5000/api/user/login", {
+          method: "POST",
+          body: JSON.stringify({
+            email: infoData.email,
+            name: infoData.name,
+            avatar: infoData.picture,
+            client_id: infoData.sub,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        const userData = await userRes.json();
+        const { ok, data, message } = userData;
+        if (!ok) throw new Error(message);
 
-  /** 初始化 localStorage 設定 */
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const dark = localStorage.getItem("darkMode") === "true";
-      const notify = localStorage.getItem("notifications") !== "false";
-      setDarkMode(dark);
-      setNotifications(notify);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      if (darkMode) document.documentElement.classList.add("dark");
-      else document.documentElement.classList.remove("dark");
-      localStorage.setItem("darkMode", String(darkMode));
-    }
-  }, [darkMode]);
-
-  const handleNotificationChange = (checked: boolean) => {
-    setNotifications(checked);
-    if (typeof window !== "undefined")
-      localStorage.setItem("notifications", String(checked));
-  };
-
-  const handleSubmitFeedback = () => {
-    console.log("送出問題回饋:", feedbackText);
-    setFeedbackText("");
-    setOpenDialog(null);
-  };
-
+        console.log(data);
+        setUser(data.user);
+        setSession({
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
+        });
+      } catch (error) {
+        console.log("Google 登入失敗", error);
+      }
+    },
+    onError: (errorResponse) => console.log(errorResponse),
+  });
   return (
     <>
       <DropdownMenu>
@@ -77,23 +88,22 @@ export default function AccountLogin() {
 
         <DropdownMenuContent className="w-56 bg-white dark:bg-gray-800 shadow-lg rounded-lg p-2">
           <DropdownMenuLabel className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-            {loggedIn ? userName : "未登入"}
+            {user ? `歡迎，${user.name}` : "請先登入"}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
 
-          {!loggedIn && (
+          {!user && (
             <DropdownMenuItem
               className="text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
               onClick={() => {
-                setLoggedIn(true);
-                setUserName("測試使用者");
+                googleLogin();
               }}
             >
-              模擬登入
+              Google 登入
             </DropdownMenuItem>
           )}
 
-          {loggedIn && (
+          {user && (
             <>
               <DropdownMenuItem
                 onClick={() => setOpenDialog("settings")}
@@ -113,10 +123,7 @@ export default function AccountLogin() {
 
               <DropdownMenuSeparator />
 
-              <DropdownMenuItem
-                onClick={() => setLoggedIn(false)}
-                className="text-sm text-red-500 hover:text-red-600 rounded-md"
-              >
+              <DropdownMenuItem className="text-sm text-red-500 hover:text-red-600 rounded-md">
                 <LogOut className="mr-2 h-4 w-4" />
                 登出
               </DropdownMenuItem>
@@ -143,17 +150,14 @@ export default function AccountLogin() {
               <span className="text-sm font-medium text-gray-700 dark:text-gray-200 flex items-center gap-1">
                 <Moon className="h-4 w-4" /> 深色模式
               </span>
-              <Switch checked={darkMode} onCheckedChange={setDarkMode} />
+              <Switch />
             </div>
 
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
                 通知設定
               </span>
-              <Switch
-                checked={notifications}
-                onCheckedChange={handleNotificationChange}
-              />
+              <Switch />
             </div>
           </div>
         </DialogContent>
@@ -181,12 +185,7 @@ export default function AccountLogin() {
             value={feedbackText}
             onChange={(e) => setFeedbackText(e.target.value)}
           />
-          <Button
-            className="w-full mt-2 text-sm"
-            onClick={handleSubmitFeedback}
-          >
-            送出
-          </Button>
+          <Button className="w-full mt-2 text-sm">送出</Button>
         </DialogContent>
       </Dialog>
     </>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import { Geist, Geist_Mono } from "next/font/google";
 import ClientLayout from "@/components/layout/client-layout";
 import GoogleMapProvider from "@/components/provider/GoogleMapProvider";
@@ -32,7 +33,11 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <GoogleMapProvider>
-          <ClientLayout>{children}</ClientLayout>
+          <GoogleOAuthProvider
+            clientId={process.env.NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID ?? ""}
+          >
+            <ClientLayout>{children}</ClientLayout>
+          </GoogleOAuthProvider>
         </GoogleMapProvider>
       </body>
     </html>
