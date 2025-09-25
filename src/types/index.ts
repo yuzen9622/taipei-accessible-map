@@ -5,6 +5,7 @@ export enum A11yEnum {
   NONE = "無",
 }
 
+
 export type Marker = {
   id: number;
   position: google.maps.LatLngLiteral;

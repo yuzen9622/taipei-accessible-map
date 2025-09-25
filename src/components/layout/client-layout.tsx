@@ -1,8 +1,10 @@
 "use client";
 import { useEffect } from "react";
-import Header from "@/components/Header";
+
 import useMapStore from "@/stores/useMapStore";
 import AccessibleDrawer from "../AccessibleDrawer";
+import InfoDrawer from "../InfoDrawer";
+import RouteDrawer from "../RouteDrawer";
 
 export default function ClientLayout({
   children,
@@ -18,8 +20,9 @@ export default function ClientLayout({
   }, [initSearchHistory]);
   return (
     <div className="w-full h-dvh flex flex-col">
-      <Header />
       <AccessibleDrawer />
+      <InfoDrawer />
+      <RouteDrawer />
       {children}
     </div>
   );

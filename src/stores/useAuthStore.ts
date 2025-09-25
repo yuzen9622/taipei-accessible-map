@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { ColorEnum, FontSizeEnum, LanguageEnum } from "@/lib/config";
 import type { UserConfig, UserDTO } from "@/types/user";
 
 interface AuthState {
@@ -17,11 +18,11 @@ type AuthStore = AuthState & AuthAction;
 const useAuthStore = create<AuthStore>((set) => ({
   user: null,
   userConfig: {
-    themeColor: "default",
+    themeColor: ColorEnum.Default,
     darkMode: false,
-    fontSize: 16,
+    fontSize: FontSizeEnum.Medium,
     notifications: false,
-    language: "en",
+    language: LanguageEnum.Chinese,
   },
   session: null,
   setSession: (session) =>
