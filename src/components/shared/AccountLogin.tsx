@@ -1,6 +1,15 @@
-"use client"
+"use client";
 
-import React, { useState, useEffect } from "react"
+import { useGoogleLogin } from "@react-oauth/google";
+import { HelpCircle, LogOut, Moon, Settings, User } from "lucide-react";
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,6 +17,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+
 } from "@/components/ui/dropdown-menu"
 import { Button } from "../ui/button"
 import {
@@ -30,74 +40,20 @@ import {
 } from "@/components/ui/dialog"
 import { Switch } from "@/components/ui/switch"
 
+
+import useAuthStore from "@/stores/useAuthStore";
+
+
+import { Button } from "../ui/button";
 export default function AccountLogin() {
+
   const [openDialog, setOpenDialog] = useState<null | "settings" | "feedback" | "help">(null)
   const [darkMode, setDarkMode] = useState(false)
   const [notifications, setNotifications] = useState(true)
   const [feedbackText, setFeedbackText] = useState("")
 
-  /** 新增語言、字體、主題顏色設定 */
-  const [language, setLanguage] = useState("zh")
-  const [fontSize, setFontSize] = useState("medium")
-  const [themeColor, setThemeColor] = useState("#3b82f6") // 預設 Tailwind blue-500
 
-  /** 模擬登入狀態 */
-  const [loggedIn, setLoggedIn] = useState(false)
-  const [userName, setUserName] = useState("使用者")
 
-  /** 初始化 localStorage 設定 */
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const dark = localStorage.getItem("darkMode") === "true"
-      const notify = localStorage.getItem("notifications") !== "false"
-      const lang = localStorage.getItem("language") || "zh"
-      const size = localStorage.getItem("fontSize") || "medium"
-      const color = localStorage.getItem("themeColor") || "#3b82f6"
-      setDarkMode(dark)
-      setNotifications(notify)
-      setLanguage(lang)
-      setFontSize(size)
-      setThemeColor(color)
-    }
-  }, [])
-
-  /** dark mode */
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      if (darkMode) document.documentElement.classList.add("dark")
-      else document.documentElement.classList.remove("dark")
-      localStorage.setItem("darkMode", String(darkMode))
-    }
-  }, [darkMode])
-
-  /** 字體大小 */
-  useEffect(() => {
-    document.documentElement.style.fontSize =
-      fontSize === "small" ? "14px" : fontSize === "large" ? "18px" : "16px"
-    localStorage.setItem("fontSize", fontSize)
-  }, [fontSize])
-
-  /** 主題顏色 */
-  useEffect(() => {
-    document.documentElement.style.setProperty("--theme-color", themeColor)
-    localStorage.setItem("themeColor", themeColor)
-  }, [themeColor])
-
-  /** 語言 */
-  useEffect(() => {
-    localStorage.setItem("language", language)
-  }, [language])
-
-  const handleNotificationChange = (checked: boolean) => {
-    setNotifications(checked)
-    if (typeof window !== "undefined") localStorage.setItem("notifications", String(checked))
-  }
-
-  const handleSubmitFeedback = () => {
-    console.log("送出問題回饋:", feedbackText)
-    setFeedbackText("")
-    setOpenDialog(null)
-  }
 
   // 預設提供的色塊
   const themeColors = [
@@ -108,6 +64,53 @@ export default function AccountLogin() {
     "#8b5cf6", // 紫
     "#0f172a", // 深藍
   ]
+  const { user, setUser, setSession } = useAuthStore();
+  const [feedbackText, setFeedbackText] = useState("");
+
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      console.log(tokenResponse);
+      try {
+        const userInfo = await fetch(
+          "https://www.googleapis.com/oauth2/v3/userinfo",
+          { headers: { Authorization: `Bearer ${tokenResponse.access_token}` } }
+        );
+        const infoData = await userInfo.json();
+        console.log(infoData);
+        setUser({
+          name: infoData.name,
+          email: infoData.email,
+          avatar: infoData.picture,
+          client_id: infoData.sub,
+        });
+        const userRes = await fetch("http://localhost:5000/api/user/login", {
+          method: "POST",
+          body: JSON.stringify({
+            email: infoData.email,
+            name: infoData.name,
+            avatar: infoData.picture,
+            client_id: infoData.sub,
+          }),
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        const userData = await userRes.json();
+        const { ok, data, message } = userData;
+        if (!ok) throw new Error(message);
+
+        console.log(data);
+        setUser(data.user);
+        setSession({
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
+        });
+      } catch (error) {
+        console.log("Google 登入失敗", error);
+      }
+    },
+    onError: (errorResponse) => console.log(errorResponse),
+  });
 
   return (
     <>
@@ -124,23 +127,22 @@ export default function AccountLogin() {
 
         <DropdownMenuContent className="w-56 bg-white dark:bg-gray-800 shadow-lg rounded-lg p-2">
           <DropdownMenuLabel className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-            {loggedIn ? userName : "未登入"}
+            {user ? `歡迎，${user.name}` : "請先登入"}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
 
-          {!loggedIn && (
+          {!user && (
             <DropdownMenuItem
               className="text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
               onClick={() => {
-                setLoggedIn(true)
-                setUserName("測試使用者")
+                googleLogin();
               }}
             >
-              模擬登入
+              Google 登入
             </DropdownMenuItem>
           )}
 
-          {loggedIn && (
+          {user && (
             <>
               <DropdownMenuItem
                 onClick={() => setOpenDialog("settings")}
@@ -168,10 +170,7 @@ export default function AccountLogin() {
 
               <DropdownMenuSeparator />
 
-              <DropdownMenuItem
-                onClick={() => setLoggedIn(false)}
-                className="text-sm text-red-500 hover:text-red-600 rounded-md"
-              >
+              <DropdownMenuItem className="text-sm text-red-500 hover:text-red-600 rounded-md">
                 <LogOut className="mr-2 h-4 w-4" />
                 登出
               </DropdownMenuItem>
@@ -181,7 +180,10 @@ export default function AccountLogin() {
       </DropdownMenu>
 
       {/* 設定 Dialog */}
-      <Dialog open={openDialog === "settings"} onOpenChange={() => setOpenDialog(null)}>
+      <Dialog
+        open={openDialog === "settings"}
+        onOpenChange={() => setOpenDialog(null)}
+      >
         <DialogContent className="max-w-md rounded-lg p-6">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold">設定</DialogTitle>
@@ -196,13 +198,15 @@ export default function AccountLogin() {
               <span className="text-sm font-medium text-gray-700 dark:text-gray-200 flex items-center gap-1">
                 <Moon className="h-4 w-4" /> 深色模式
               </span>
-              <Switch checked={darkMode} onCheckedChange={setDarkMode} />
+              <Switch />
             </div>
 
             {/* 通知 */}
             <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">通知設定</span>
-              <Switch checked={notifications} onCheckedChange={handleNotificationChange} />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                通知設定
+              </span>
+              <Switch />
             </div>
 
             {/* 語言 */}
@@ -211,8 +215,7 @@ export default function AccountLogin() {
                 <Globe className="h-4 w-4" /> 語言
               </label>
               <select
-                value={language}
-                onChange={(e) => setLanguage(e.target.value)}
+         
                 className="mt-1 border rounded-md p-1 text-sm"
               >
                 <option value="zh">中文</option>
@@ -226,8 +229,7 @@ export default function AccountLogin() {
                 <Type className="h-4 w-4" /> 字體大小
               </label>
               <select
-                value={fontSize}
-                onChange={(e) => setFontSize(e.target.value)}
+                
                 className="mt-1 border rounded-md p-1 text-sm"
               >
                 <option value="small">小</option>
@@ -245,7 +247,7 @@ export default function AccountLogin() {
                 {themeColors.map((color) => (
                   <button
                     key={color}
-                    onClick={() => setThemeColor(color)}
+                 
                     style={{ backgroundColor: color }}
                     className={`h-8 w-8 rounded-md border-2 ${
                       themeColor === color
@@ -261,7 +263,33 @@ export default function AccountLogin() {
       </Dialog>
 
       {/* 問題回饋 Dialog */}
-      {/* (保留你的程式碼不變) */}
+
+
+      <Dialog
+        open={openDialog === "feedback"}
+        onOpenChange={() => setOpenDialog(null)}
+      >
+        <DialogContent className="max-w-md rounded-lg p-6">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold">
+              問題回饋
+            </DialogTitle>
+            <DialogDescription className="text-sm text-gray-500">
+              請描述您遇到的問題或建議，我們將盡快改善！
+            </DialogDescription>
+          </DialogHeader>
+
+          <textarea
+            className="w-full border rounded-md p-2 text-sm mt-4"
+            rows={4}
+            placeholder="請輸入您的意見..."
+            value={feedbackText}
+            onChange={(e) => setFeedbackText(e.target.value)}
+          />
+          <Button className="w-full mt-2 text-sm">送出</Button>
+        </DialogContent>
+      </Dialog>
+
     </>
-  )
+  );
 }

@@ -1,6 +1,8 @@
 export enum A11yEnum {
   ELEVATOR = "電梯",
   RAMP = "波道",
+  RESTROOM = "廁所",
+  NONE = "無",
 }
 
 export type Marker = {

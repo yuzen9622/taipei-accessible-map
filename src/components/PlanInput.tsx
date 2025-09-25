@@ -1,11 +1,10 @@
 "use client";
 import { ArrowDownUpIcon } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-
 import useComputeRoute from "@/hook/useComputeRoute";
-import { getLocation } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
-
+import type { PlaceDetail } from "@/types";
 import SearchInput from "./shared/PlaceInput";
 import { Button } from "./ui/button";
 
@@ -14,8 +13,10 @@ export default function RoutePlanInput() {
     userLocation,
     setDestination,
     setOrigin,
+    a11yDrawerOpen,
     origin,
     destination,
+    searchPlace,
     setSearchPlace,
     setInfoShow,
   } = useMapStore();
@@ -34,34 +35,35 @@ export default function RoutePlanInput() {
   );
 
   const handleOriginPlace = useCallback(
-    (place: google.maps.places.Place) => {
-      const latLng = getLocation(place);
-      if (!latLng) return;
+    (placeDetail: PlaceDetail) => {
+      if (placeDetail.kind === "place") {
+        setOriginSearchInput(placeDetail.place.displayName || "");
+      }
 
-      if (!latLng) return;
-      setOriginSearchInput(place.displayName || "");
-      setOrigin({ kind: "place", place: place, position: latLng });
+      setOrigin(placeDetail);
+
       if (destination?.position) {
-        computeRoute(latLng, destination.position);
+        computeRoute(placeDetail.position, destination.position);
       }
     },
     [setOrigin, destination, computeRoute]
   );
 
   const handleDestinationPlace = useCallback(
-    (place: google.maps.places.Place) => {
-      console.log(place.displayName);
-      console.log(place.location);
-      if (!place.location) return;
-      const latLng = getLocation(place);
-
-      if (!latLng) return;
-      //setDestinationSearchInput(place.displayName || "");
-      setDestination({ kind: "place", place: place, position: latLng });
-      setInfoShow({ isOpen: false, kind: "place", place: place });
+    (placeDetail: PlaceDetail) => {
+      setDestination(placeDetail);
+      if (placeDetail.kind === "place") {
+        setDestinationSearchInput(placeDetail.place.displayName || "");
+        setInfoShow({
+          isOpen: true,
+          kind: "place",
+          place: placeDetail.place,
+        });
+      }
       setSearchPlace(null);
+
       if (origin?.position) {
-        computeRoute(userLocation || origin.position, latLng);
+        computeRoute(userLocation || origin.position, placeDetail.position);
       }
     },
     [
@@ -75,53 +77,54 @@ export default function RoutePlanInput() {
   );
 
   const handleSwitch = () => {
-    if (origin?.kind === "place" && destination?.kind === "place") {
-      setOriginSearchInput(destination.place.displayName || "");
-      setDestinationSearchInput(origin.place.displayName || "");
-      setInfoShow({ isOpen: false, kind: "place", place: origin.place });
-    }
     setOrigin(destination);
     setDestination(origin);
   };
+
   useEffect(() => {
-    if (origin?.kind === "place") {
+    setOriginSearchInput("");
+    if (origin?.kind === "place")
       setOriginSearchInput(origin.place.displayName || "");
-    }
   }, [origin]);
 
   useEffect(() => {
-    if (destination?.kind === "place") {
+    setDestinationSearchInput("");
+    if (destination?.kind === "place")
       setDestinationSearchInput(destination.place.displayName || "");
-    }
   }, [destination]);
+
   return (
-    <span className=" relative w-full  flex   rounded-2xl items-center bg-background gap-2">
+    <div
+      className={cn(
+        "  w-full p-2 flex rounded-2xl transition-all items-center bg-transparent gap-2",
+        (a11yDrawerOpen || !searchPlace) && "  hidden"
+      )}
+    >
       <div className="w-full space-y-2">
-        <div className="border rounded-3xl ">
+        <div className="border rounded-3xl">
           <SearchInput
-            className=" border-none rounded-3xl  "
+            className="border-none rounded-3xl"
             placeholder="起始點"
             value={originSearchInput}
             onChange={(e) => setOriginSearchInput(e.target.value)}
             onPlaceSelect={handleOriginPlace}
           />
-        </div>{" "}
+        </div>
         <div className="border rounded-3xl">
           <SearchInput
             value={destinationSearchInput}
             placeholder="終點"
-            className=" border-none  rounded-3xl "
+            className="border-none rounded-3xl"
             onChange={(e) => setDestinationSearchInput(e.target.value)}
             onPlaceSelect={handleDestinationPlace}
           />
         </div>
       </div>
-
       <div>
-        <Button onClick={handleSwitch} className="mx-auto" variant={"ghost"}>
+        <Button onClick={handleSwitch} className="mx-auto" variant="ghost">
           <ArrowDownUpIcon size={16} />
         </Button>
       </div>
-    </span>
+    </div>
   );
 }
