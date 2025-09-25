@@ -1,7 +1,17 @@
 "use client";
 
 import { useGoogleLogin } from "@react-oauth/google";
-import { HelpCircle, LogOut, Moon, Settings, User } from "lucide-react";
+import {
+  Globe,
+  HelpCircle,
+  Info,
+  LogOut,
+  Moon,
+  Palette,
+  Settings,
+  Type,
+  User,
+} from "lucide-react";
 import { useState } from "react";
 import {
   Dialog,
@@ -17,44 +27,18 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-
-} from "@/components/ui/dropdown-menu"
-import { Button } from "../ui/button"
-import {
-  User,
-  Settings,
-  HelpCircle,
-  Moon,
-  LogOut,
-  Palette,
-  Type,
-  Globe,
-  Info,
-} from "lucide-react"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog"
-import { Switch } from "@/components/ui/switch"
-
-
+} from "@/components/ui/dropdown-menu";
+import { Switch } from "@/components/ui/switch";
 import useAuthStore from "@/stores/useAuthStore";
-
-
 import { Button } from "../ui/button";
 export default function AccountLogin() {
-
-  const [openDialog, setOpenDialog] = useState<null | "settings" | "feedback" | "help">(null)
-  const [darkMode, setDarkMode] = useState(false)
-  const [notifications, setNotifications] = useState(true)
-  const [feedbackText, setFeedbackText] = useState("")
-
-
-
-
+  const [openDialog, setOpenDialog] = useState<
+    null | "settings" | "feedback" | "help"
+  >(null);
+  const [darkMode, setDarkMode] = useState(false);
+  const [notifications, setNotifications] = useState(true);
+  const [feedbackText, setFeedbackText] = useState("");
+  const [themeColor, setThemeColor] = useState("#3b82f6"); // 預設藍色
   // 預設提供的色塊
   const themeColors = [
     "#3b82f6", // 藍
@@ -63,9 +47,8 @@ export default function AccountLogin() {
     "#f59e0b", // 橘
     "#8b5cf6", // 紫
     "#0f172a", // 深藍
-  ]
+  ];
   const { user, setUser, setSession } = useAuthStore();
-  const [feedbackText, setFeedbackText] = useState("");
 
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -73,7 +56,9 @@ export default function AccountLogin() {
       try {
         const userInfo = await fetch(
           "https://www.googleapis.com/oauth2/v3/userinfo",
-          { headers: { Authorization: `Bearer ${tokenResponse.access_token}` } }
+          {
+            headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
+          }
         );
         const infoData = await userInfo.json();
         console.log(infoData);
@@ -213,41 +198,35 @@ export default function AccountLogin() {
             <div className="flex flex-col">
               <label className="text-sm font-medium text-gray-700 dark:text-gray-200 flex items-center gap-1">
                 <Globe className="h-4 w-4" /> 語言
+                <select className="mt-1 border rounded-md p-1 text-sm">
+                  <option value="zh">中文</option>
+                  <option value="en">English</option>
+                </select>
               </label>
-              <select
-         
-                className="mt-1 border rounded-md p-1 text-sm"
-              >
-                <option value="zh">中文</option>
-                <option value="en">English</option>
-              </select>
             </div>
 
             {/* 字體大小 */}
             <div className="flex flex-col">
               <label className="text-sm font-medium text-gray-700 dark:text-gray-200 flex items-center gap-1">
                 <Type className="h-4 w-4" /> 字體大小
+                <select className="mt-1 border rounded-md p-1 text-sm">
+                  <option value="small">小</option>
+                  <option value="medium">中</option>
+                  <option value="large">大</option>
+                </select>
               </label>
-              <select
-                
-                className="mt-1 border rounded-md p-1 text-sm"
-              >
-                <option value="small">小</option>
-                <option value="medium">中</option>
-                <option value="large">大</option>
-              </select>
             </div>
 
             {/* 主題顏色：改成色塊選擇 */}
             <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-200 flex items-center gap-1">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200 flex items-center gap-1">
                 <Palette className="h-4 w-4" /> 主題顏色
-              </label>
+              </span>
               <div className="flex gap-2 mt-2">
                 {themeColors.map((color) => (
                   <button
+                    type="button"
                     key={color}
-                 
                     style={{ backgroundColor: color }}
                     className={`h-8 w-8 rounded-md border-2 ${
                       themeColor === color
@@ -263,7 +242,6 @@ export default function AccountLogin() {
       </Dialog>
 
       {/* 問題回饋 Dialog */}
-
 
       <Dialog
         open={openDialog === "feedback"}
@@ -289,7 +267,6 @@ export default function AccountLogin() {
           <Button className="w-full mt-2 text-sm">送出</Button>
         </DialogContent>
       </Dialog>
-
     </>
   );
 }
