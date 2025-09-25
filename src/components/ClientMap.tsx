@@ -5,11 +5,16 @@ import {
   useMap,
   useMapsLibrary,
 } from "@vis.gl/react-google-maps";
+
 import { useEffect } from "react";
 import { getLocation } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import AccessibleToolBar from "./AccessibleToolBar";
+import InfoDrawer from "./InfoDrawer";
 import AccessibilityPin from "./MetroA11yWrapper";
+import RouteDrawer from "./RouteDrawer";
+import RouteLine from "./RouteWrapper";
+import SearchInput from "./SearchInput";
 
 export default function ClientMap() {
   const { setMap, setInfoShow, setUserLocation, setSearchPlace } =
@@ -20,9 +25,9 @@ export default function ClientMap() {
   //定義台北新北市邊界
   const taipeiNewTaipeiBounds = {
     north: 25.3167, // 北到淡水、金山一帶
-    south: 24.9338, // 南到鶯歌、新店深山
+    south: 24.8338, // 南到鶯歌、新店深山
     east: 122.0348, // 東到瑞芳、貢寮
-    west: 121.3179, // 西到林口、八里
+    west: 120.3179, // 西到林口、八里
   };
 
   //初始化map
@@ -67,8 +72,12 @@ export default function ClientMap() {
       defaultBounds={taipeiNewTaipeiBounds}
       className=" relative flex-1 bg-background overflow-hidden"
     >
+      <SearchInput />
       <AccessibleToolBar />
       <AccessibilityPin />
+      <InfoDrawer />
+      <RouteDrawer />
+      <RouteLine />
     </GoogleMap>
   );
 }

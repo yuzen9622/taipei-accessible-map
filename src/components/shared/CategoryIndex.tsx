@@ -1,13 +1,14 @@
 "use client";
-import React from "react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from "../ui/dropdown-menu";
-import { Button } from "../ui/button";
 import { Menu } from "lucide-react";
-import useMapStore from "@/stores/useMapStore";
+
+import { Button } from "../ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 
 export default function CategoryIndex() {
-  const { searchHistory, savedPlaces, timeline } = useMapStore();
-
   const shareLocation = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition((pos) => {
@@ -33,15 +34,18 @@ export default function CategoryIndex() {
         {/* 搜尋歷史紀錄 */}
         <div className="mb-4">
           <h3 className="font-semibold mb-2">🔍 搜尋歷史紀錄</h3>
-          <ul>
+          {/* <ul>
             {searchHistory.map((item, idx) => (
               <li key={idx} className="ml-2 text-sm">
-                <a href={`/search?query=${encodeURIComponent(item)}`} className="hover:underline">
+                <a
+                  href={`/search?query=${encodeURIComponent(item)}`}
+                  className="hover:underline"
+                >
                   {item}
                 </a>
               </li>
             ))}
-          </ul>
+          </ul> */}
         </div>
 
         {/* 分享目前位置 */}
@@ -55,21 +59,25 @@ export default function CategoryIndex() {
         {/* 儲存地點 */}
         <div className="mb-4">
           <h3 className="font-semibold mb-2">💾 儲存地點</h3>
-          <ul>
+          {/* <ul>
             {savedPlaces.map((place, idx) => (
-              <li key={idx} className="ml-2 text-sm">{place}</li>
+              <li key={idx} className="ml-2 text-sm">
+                {place}
+              </li>
             ))}
-          </ul>
+          </ul> */}
         </div>
 
         {/* 時間軸 */}
         <div>
           <h3 className="font-semibold mb-2">🕒 時間軸</h3>
-          <ul>
+          {/* <ul>
             {timeline.map((event, idx) => (
-              <li key={idx} className="ml-2 text-sm">{event}</li>
+              <li key={idx} className="ml-2 text-sm">
+                {event}
+              </li>
             ))}
-          </ul>
+          </ul> */}
         </div>
       </DropdownMenuContent>
     </DropdownMenu>

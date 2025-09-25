@@ -19,6 +19,9 @@ interface MapState {
   selectedA11yTypes: A11yEnum[];
   a11yDrawerOpen: boolean;
   a11yPlaces: Marker[] | null;
+  searchHistory: PlaceDetail[];
+  savedPlaces: PlaceDetail[];
+  timeline: { time: string; event: string }[];
 }
 
 interface MapAction {
@@ -36,6 +39,9 @@ interface MapAction {
   toggleA11yType: (type: A11yEnum) => void;
   setA11yDrawerOpen: (open: boolean) => void;
   setA11yPlaces: (places: Marker[] | null) => void;
+  initSearchHistory: (history: PlaceDetail[]) => void;
+  addSearchHistory: (searchTerm: PlaceDetail) => void;
+  clearSearchHistory: () => void;
 }
 
 type MapStore = MapState & MapAction;
@@ -86,6 +92,27 @@ const useMapStore = create<MapStore>((set, get) => ({
   setA11yDrawerOpen: (open) => set({ a11yDrawerOpen: open }),
   a11yPlaces: null,
   setA11yPlaces: (places) => set({ a11yPlaces: places }),
+  searchHistory: [],
+  initSearchHistory: (history) => set({ searchHistory: history }),
+  addSearchHistory: (searchTerm: PlaceDetail) => {
+    const { searchHistory } = get();
+
+    if (
+      searchTerm.kind === "place" &&
+      searchHistory.find(
+        (item) => item.kind === "place" && item.place.id === searchTerm.place.id
+      )
+    ) {
+      return;
+    }
+
+    const newHistory = [searchTerm, ...searchHistory.slice(0, 9)];
+    localStorage.setItem("searchHistory", JSON.stringify(newHistory));
+    set({ searchHistory: newHistory });
+  },
+  clearSearchHistory: () => set({ searchHistory: [] }),
+  savedPlaces: [],
+  timeline: [],
 }));
 
 export default useMapStore;

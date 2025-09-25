@@ -51,7 +51,7 @@ export default function InfoDrawer() {
   const placeImg = useMemo(() => {
     if (infoShow.kind !== "place" || !infoShow?.place?.photos) return null;
 
-    return infoShow.place.photos[0].getURI({ maxWidth: 700, maxHeight: 500 });
+    return infoShow.place.photos[0]?.getURI({ maxWidth: 700, maxHeight: 500 });
   }, [infoShow]);
 
   const placeHours = useMemo(() => {
@@ -94,7 +94,6 @@ export default function InfoDrawer() {
     setRouteInfoShow,
     infoShow,
     map,
-
     userLocation,
   ]);
 

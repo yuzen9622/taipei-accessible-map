@@ -5,12 +5,14 @@ import { LoaderCircle, SearchIcon } from "lucide-react";
 import type { InputHTMLAttributes } from "react";
 import { useCallback, useState } from "react";
 import usePlacePredictions from "@/hook/usePlacePredictions";
-import { cn } from "@/lib/utils";
+import { cn, getLocation } from "@/lib/utils";
+import useMapStore from "@/stores/useMapStore";
+import type { PlaceDetail } from "@/types";
 import { Command, CommandGroup, CommandItem, CommandList } from "../ui/command";
 import { Input } from "../ui/input";
 
 type InputProps = InputHTMLAttributes<HTMLInputElement> & {
-  onPlaceSelect: (places: google.maps.places.Place) => void;
+  onPlaceSelect: (places: PlaceDetail) => void;
 };
 
 function PlaceInput({
@@ -25,6 +27,7 @@ function PlaceInput({
   const placesLib = useMapsLibrary("places");
 
   const [open, setOpen] = useState(false);
+  const { searchHistory, addSearchHistory } = useMapStore();
   const { suggestions, loading } = usePlacePredictions((value as string) || "");
 
   const handlePlaceSubmit = useCallback(
@@ -35,10 +38,16 @@ function PlaceInput({
         fields: ["*"],
         textQuery: text,
       });
-
+      const latLng = getLocation(places.places[0]);
+      if (!latLng) return;
+      addSearchHistory({
+        kind: "place",
+        place: places.places[0],
+        position: latLng,
+      });
       return places.places[0];
     },
-    [placesLib]
+    [placesLib, addSearchHistory]
   );
 
   const handlePlaceClick = useCallback(
@@ -47,8 +56,36 @@ function PlaceInput({
 
       const placeDetails = place.placePrediction.toPlace();
       await placeDetails.fetchFields({ fields: ["*"] });
-      console.log(placeDetails);
-      onPlaceSelect(placeDetails);
+      console.log(placeDetails.toJSON());
+      const latLng = getLocation(placeDetails);
+      if (!latLng) return;
+      addSearchHistory({
+        kind: "place",
+        place: placeDetails,
+        position: latLng,
+      });
+      onPlaceSelect({ kind: "place", place: placeDetails, position: latLng });
+
+      setOpen(false);
+    },
+    [onPlaceSelect, placesLib, addSearchHistory]
+  );
+
+  const handleHistoryClick = useCallback(
+    async (place: PlaceDetail) => {
+      if (!placesLib) return;
+      const { Place } = placesLib;
+      if (place.kind === "place") {
+        const newPlace = new Place({ id: place.place.id });
+        await newPlace.fetchFields({ fields: ["*"] });
+        const latLng = getLocation(newPlace);
+        if (!latLng) return;
+        onPlaceSelect({
+          kind: "place",
+          place: newPlace,
+          position: latLng,
+        });
+      }
 
       setOpen(false);
     },
@@ -69,7 +106,13 @@ function PlaceInput({
             e.preventDefault();
             const place = await handlePlaceSubmit(value as string);
             if (place) {
-              onPlaceSelect(place);
+              const latLng = getLocation(place);
+              if (!latLng) return;
+              onPlaceSelect({
+                kind: "place",
+                place: place,
+                position: latLng,
+              });
             }
             setOpen(false);
           }}
@@ -86,7 +129,14 @@ function PlaceInput({
             onChange={(e) => {
               onChange?.(e);
               setOpen(true);
-              if (e.target.value === "") setOpen(false);
+            }}
+            onFocus={() => {
+              setOpen(true);
+            }}
+            onBlur={() => {
+              setTimeout(() => {
+                setOpen(false);
+              }, 100);
             }}
             {...props}
           />
@@ -98,6 +148,31 @@ function PlaceInput({
       <div className=" absolute inset-0 z-10 top-10/12">
         <Command className="w-full  shadow relative h-fit overflow-auto rounded-b-3xl">
           <CommandList>
+            {value === "" && open && searchHistory.length > 0 && (
+              <CommandGroup heading="搜尋歷史紀錄">
+                {searchHistory.map((history) => {
+                  if (history.kind === "place") {
+                    const { place } = history;
+                    return (
+                      <CommandItem
+                        itemType="button"
+                        onSelect={() => {
+                          handleHistoryClick(history);
+                        }}
+                        key={place.id}
+                        className="block"
+                      >
+                        <p>{place.displayName}</p>
+                        <p className=" text-sm  text-muted-foreground/70">
+                          {place.formattedAddress}
+                        </p>
+                      </CommandItem>
+                    );
+                  }
+                  return null;
+                })}
+              </CommandGroup>
+            )}
             {value !== "" && open && (
               <CommandGroup heading="搜尋結果：">
                 {suggestions.map((suggestion) => {
