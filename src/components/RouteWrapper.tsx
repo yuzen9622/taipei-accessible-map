@@ -1,5 +1,5 @@
 import { useMapsLibrary } from "@vis.gl/react-google-maps";
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import useMapStore from "@/stores/useMapStore";
 
 import Polyline from "./Polyline";
@@ -28,7 +28,7 @@ export default function RouteLine() {
         : step.transit?.line?.color ?? defaultAppearance.defaultPolylineColor;
 
       return (
-        <>
+        <Fragment key={step.encoded_lat_lngs}>
           {!isWalking && (
             <Polyline
               path={path}
@@ -64,7 +64,7 @@ export default function RouteLine() {
                 : undefined
             }
           />{" "}
-        </>
+        </Fragment>
       );
     });
 
