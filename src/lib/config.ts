@@ -1,3 +1,5 @@
+export const END_POINT = process.env.END_POINT || "http://localhost:5000";
+
 export enum ColorEnum {
   Default = "default",
   Red = "red",

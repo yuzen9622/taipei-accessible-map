@@ -1,6 +1,7 @@
 "use client";
 
 import { useGoogleLogin } from "@react-oauth/google";
+
 import {
   Globe,
   HelpCircle,
@@ -29,6 +30,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
+import { login } from "@/lib/api/auth";
 import {
   ColorEnum,
   colorThemeConfig,
@@ -42,6 +44,7 @@ import useAuthStore from "@/stores/useAuthStore";
 
 import { Button } from "../ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "../ui/select";
+
 export default function AccountLogin() {
   const [openDialog, setOpenDialog] = useState<
     null | "settings" | "feedback" | "help"
@@ -78,7 +81,6 @@ export default function AccountLogin() {
 
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
-      console.log(tokenResponse);
       try {
         const userInfo = await fetch(
           "https://www.googleapis.com/oauth2/v3/userinfo",
@@ -87,35 +89,29 @@ export default function AccountLogin() {
           }
         );
         const infoData = await userInfo.json();
-        console.log(infoData);
+
         setUser({
           name: infoData.name,
           email: infoData.email,
           avatar: infoData.picture,
           client_id: infoData.sub,
         });
-        const userRes = await fetch("http://localhost:5000/api/user/login", {
-          method: "POST",
-          body: JSON.stringify({
-            email: infoData.email,
-            name: infoData.name,
-            avatar: infoData.picture,
-            client_id: infoData.sub,
-          }),
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        const userData = await userRes.json();
-        const { ok, data, message } = userData;
+        const userRes = await login(
+          infoData.email,
+          infoData.name,
+          infoData.picture,
+          infoData.sub
+        );
+
+        const { ok, data, message, accessToken } = userRes;
         if (!ok) throw new Error(message);
 
-        console.log(data);
-        setUser(data.user);
-        setSession({
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
-        });
+        if (data?.user) setUser(data.user);
+        if (accessToken) {
+          setSession({
+            accessToken,
+          });
+        }
       } catch (error) {
         console.log("Google 登入失敗", error);
       }
@@ -130,7 +126,7 @@ export default function AccountLogin() {
           <Button
             variant="ghost"
             size="icon"
-            className="text-white hover:bg-white/20 focus:ring-2  bg-blue-500  relative pointer-events-auto  focus:ring-white rounded-full transition-colors duration-200"
+            className="text-white  focus:ring-2  bg-blue-500  relative pointer-events-auto  focus:ring-white rounded-full transition-colors duration-200"
           >
             <User className="h-6 w-6" />
           </Button>

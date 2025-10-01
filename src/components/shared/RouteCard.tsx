@@ -1,4 +1,4 @@
-import { FlagIcon, TriangleAlertIcon } from "lucide-react";
+import { FlagIcon } from "lucide-react";
 import { useMemo } from "react";
 
 import useMapStore from "@/stores/useMapStore";
@@ -7,9 +7,8 @@ import { Button } from "../ui/button";
 import { Card, CardHeader, CardTitle } from "../ui/card";
 import { DrawerTitle } from "../ui/drawer";
 
-import type { Route } from "@/types/route.t";
 type RouteCardProps = {
-  route: Route;
+  route: google.maps.DirectionsRoute;
 };
 
 export default function RouteCard({ route }: RouteCardProps) {
@@ -18,18 +17,16 @@ export default function RouteCard({ route }: RouteCardProps) {
     const result = {
       distance: "",
       duration: "",
-      desc: "",
     };
     if (!route) return result;
-    if (route.localizedValues?.distance) {
-      result.distance = route.localizedValues.distance.text;
+    if (route.legs[0].distance?.text) {
+      result.distance = route.legs[0].distance.text;
     }
 
-    if (route.localizedValues?.duration) {
-      result.duration = route.localizedValues.duration.text;
+    if (route.legs[0].duration?.text) {
+      result.duration = route.legs[0].duration.text;
     }
 
-    result.desc = route.description || "";
     return result;
   }, [route]);
 
@@ -57,12 +54,6 @@ export default function RouteCard({ route }: RouteCardProps) {
             開始 <FlagIcon />
           </Button>
         </div>
-        {route.warnings && (
-          <div className=" flex items-center gap-2  text-yellow-600 font-bold">
-            <TriangleAlertIcon size={20} />
-            {route.warnings?.join(" ")}
-          </div>
-        )}
       </CardHeader>
     </Card>
   );

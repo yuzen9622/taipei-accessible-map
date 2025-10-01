@@ -43,7 +43,7 @@ export default function InfoDrawer() {
     setDestination,
     map,
   } = useMapStore();
-  const { computeRoute, isLoading } = useComputeRoute();
+  const {  isLoading, computeRouteService } = useComputeRoute();
   const [isOpen, setIsOpen] = useState(false);
 
   const [imgLoaded, setImgLoaded] = useState(false);
@@ -82,14 +82,14 @@ export default function InfoDrawer() {
     if (!infoShow.kind || infoShow.kind !== "place") return;
     const latLng = getLocation(infoShow.place);
     if (!latLng || !userLocation || !map) return;
-    await computeRoute({ lat: 25.0475613, lng: 121.5173399 }, latLng);
+    await computeRouteService({ lat: 25.0475613, lng: 121.5173399 }, latLng);
 
     setDestination({ kind: "place", place: infoShow.place, position: latLng });
     setInfoShow({ isOpen: false, kind: null });
     setRouteInfoShow(true);
   }, [
     setDestination,
-    computeRoute,
+    computeRouteService,
     setInfoShow,
     setRouteInfoShow,
     infoShow,

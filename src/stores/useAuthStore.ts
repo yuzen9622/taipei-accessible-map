@@ -5,13 +5,13 @@ import type { UserConfig, UserDTO } from "@/types/user";
 interface AuthState {
   user: UserDTO | null;
   userConfig: UserConfig;
-  session: { accessToken: string; refreshToken: string } | null;
+  session: { accessToken: string } | null;
 }
 
 interface AuthAction {
   setUser: (user: UserDTO | null) => void;
   setUserConfig: (config: Partial<UserConfig>) => void;
-  setSession: (session: { accessToken: string; refreshToken: string }) => void;
+  setSession: (session: { accessToken: string }) => void;
 }
 
 type AuthStore = AuthState & AuthAction;

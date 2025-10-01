@@ -46,7 +46,7 @@ export default function ClientMap() {
     <GoogleMap
       defaultZoom={15}
       reuseMaps
-      colorScheme="FOLLOW_SYSTEM"
+      colorScheme="LIGHT"
       defaultCenter={{ lat: 25.03, lng: 121.55 }}
       gestureHandling={"auto"}
       restriction={{
