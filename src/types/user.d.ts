@@ -1,3 +1,5 @@
+import type { ColorEnum, FontSizeEnum, LanguageEnum } from "@/lib/config";
+
 export interface UserDTO {
   _id?: string;
   name: string;
@@ -7,11 +9,12 @@ export interface UserDTO {
   createdAt?: string;
   updatedAt?: string;
 }
+
 export interface UserConfig {
-  language: string;
+  language: LanguageEnum;
   darkMode: boolean;
-  themeColor: string;
-  fontSize: number;
+  themeColor: ColorEnum;
+  fontSize: FontSizeEnum;
   notifications: boolean;
 }
 

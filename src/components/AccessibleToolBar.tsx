@@ -28,7 +28,7 @@ export default function AccessibleToolBar() {
   ];
 
   return (
-    <div className="absolute inset-5 top-18 w-fit h-fit flex flex-col space-y-2">
+    <div className="  pointer-events-auto w-fit h-fit flex flex-col space-y-2">
       {toolbarItems.map((item) => {
         const isSelected = selectedA11yTypes.includes(item.type);
 
@@ -39,9 +39,7 @@ export default function AccessibleToolBar() {
             onClick={() => toggleA11yType(item.type)}
             className={cn(
               "flex flex-col group items-center gap-2 p-2 rounded-lg transition-colors",
-              isSelected
-                ? "bg-primary text-primary-foreground"
-                : "hover:bg-secondary"
+              isSelected ? "bg-secondary " : "hover:bg-secondary"
             )}
           >
             <Image
@@ -53,12 +51,7 @@ export default function AccessibleToolBar() {
               width={50}
               height={50}
             />
-            <p
-              className={cn(
-                "text-xs group-hover:text-primary ",
-                isSelected ? "text-primary-foreground" : "text-secondary"
-              )}
-            >
+            <p className={cn("text-xs group-hover:text-primary ")}>
               {item.label}
             </p>
           </button>

@@ -25,7 +25,7 @@ export default function CategoryIndex() {
         <Button
           variant="ghost"
           size="icon"
-          className="text-white hover:bg-white/20 focus:ring-2 focus:ring-white rounded-full transition-colors duration-200"
+          className="text-white relative pointer-events-auto  focus:ring-2 bg-blue-500 focus:ring-white rounded-full transition-colors duration-200"
         >
           <Menu className="h-6 w-6" />
         </Button>

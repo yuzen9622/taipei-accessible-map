@@ -1,6 +1,7 @@
 "use client";
 
 import { useGoogleLogin } from "@react-oauth/google";
+
 import {
   Globe,
   HelpCircle,
@@ -29,30 +30,57 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
+import { login } from "@/lib/api/auth";
+import {
+  ColorEnum,
+  colorThemeConfig,
+  type FontSizeEnum,
+  fontSizeConfig,
+  LanguageConfig,
+  type LanguageEnum,
+} from "@/lib/config";
+import { cn } from "@/lib/utils";
 import useAuthStore from "@/stores/useAuthStore";
+
 import { Button } from "../ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "../ui/select";
+
 export default function AccountLogin() {
   const [openDialog, setOpenDialog] = useState<
     null | "settings" | "feedback" | "help"
   >(null);
-  const [darkMode, setDarkMode] = useState(false);
-  const [notifications, setNotifications] = useState(true);
+
   const [feedbackText, setFeedbackText] = useState("");
-  const [themeColor, setThemeColor] = useState("#3b82f6"); // 預設藍色
+
   // 預設提供的色塊
   const themeColors = [
-    "#3b82f6", // 藍
-    "#ef4444", // 紅
-    "#22c55e", // 綠
-    "#f59e0b", // 橘
-    "#8b5cf6", // 紫
-    "#0f172a", // 深藍
+    {
+      type: ColorEnum.Default,
+    },
+    {
+      type: ColorEnum.Red,
+    },
+    {
+      type: ColorEnum.Blue,
+    },
+    {
+      type: ColorEnum.Green,
+    },
+    {
+      type: ColorEnum.Purple,
+    },
+    {
+      type: ColorEnum.Orange,
+    },
+    {
+      type: ColorEnum.Yellow,
+    },
   ];
-  const { user, setUser, setSession } = useAuthStore();
+  const { user, setUser, setSession, userConfig, setUserConfig } =
+    useAuthStore();
 
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
-      console.log(tokenResponse);
       try {
         const userInfo = await fetch(
           "https://www.googleapis.com/oauth2/v3/userinfo",
@@ -61,35 +89,29 @@ export default function AccountLogin() {
           }
         );
         const infoData = await userInfo.json();
-        console.log(infoData);
+
         setUser({
           name: infoData.name,
           email: infoData.email,
           avatar: infoData.picture,
           client_id: infoData.sub,
         });
-        const userRes = await fetch("http://localhost:5000/api/user/login", {
-          method: "POST",
-          body: JSON.stringify({
-            email: infoData.email,
-            name: infoData.name,
-            avatar: infoData.picture,
-            client_id: infoData.sub,
-          }),
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        const userData = await userRes.json();
-        const { ok, data, message } = userData;
+        const userRes = await login(
+          infoData.email,
+          infoData.name,
+          infoData.picture,
+          infoData.sub
+        );
+
+        const { ok, data, message, accessToken } = userRes;
         if (!ok) throw new Error(message);
 
-        console.log(data);
-        setUser(data.user);
-        setSession({
-          accessToken: data.accessToken,
-          refreshToken: data.refreshToken,
-        });
+        if (data?.user) setUser(data.user);
+        if (accessToken) {
+          setSession({
+            accessToken,
+          });
+        }
       } catch (error) {
         console.log("Google 登入失敗", error);
       }
@@ -104,7 +126,7 @@ export default function AccountLogin() {
           <Button
             variant="ghost"
             size="icon"
-            className="text-white hover:bg-white/20 focus:ring-2 focus:ring-white rounded-full transition-colors duration-200"
+            className="text-white  focus:ring-2  bg-blue-500  relative pointer-events-auto  focus:ring-white rounded-full transition-colors duration-200"
           >
             <User className="h-6 w-6" />
           </Button>
@@ -127,7 +149,7 @@ export default function AccountLogin() {
             </DropdownMenuItem>
           )}
 
-          {user && (
+          {
             <>
               <DropdownMenuItem
                 onClick={() => setOpenDialog("settings")}
@@ -160,7 +182,7 @@ export default function AccountLogin() {
                 登出
               </DropdownMenuItem>
             </>
-          )}
+          }
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -196,25 +218,56 @@ export default function AccountLogin() {
 
             {/* 語言 */}
             <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-200 flex items-center gap-1">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200 flex items-center gap-1">
                 <Globe className="h-4 w-4" /> 語言
-                <select className="mt-1 border rounded-md p-1 text-sm">
-                  <option value="zh">中文</option>
-                  <option value="en">English</option>
-                </select>
-              </label>
+                <Select>
+                  <SelectTrigger>
+                    {LanguageConfig[userConfig.language].label}
+                  </SelectTrigger>
+
+                  <SelectContent>
+                    {Object.entries(LanguageConfig).map(([key, config]) => (
+                      <SelectItem
+                        key={key}
+                        value={key}
+                        onClick={() =>
+                          setUserConfig({
+                            language: key as LanguageEnum,
+                          })
+                        }
+                      >
+                        {config.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </span>
             </div>
 
             {/* 字體大小 */}
             <div className="flex flex-col">
-              <label className="text-sm font-medium text-gray-700 dark:text-gray-200 flex items-center gap-1">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200 flex items-center gap-1">
                 <Type className="h-4 w-4" /> 字體大小
-                <select className="mt-1 border rounded-md p-1 text-sm">
-                  <option value="small">小</option>
-                  <option value="medium">中</option>
-                  <option value="large">大</option>
-                </select>
-              </label>
+                <Select
+                  onValueChange={(v) =>
+                    setUserConfig({
+                      fontSize: v as FontSizeEnum,
+                    })
+                  }
+                  defaultValue={userConfig.fontSize}
+                >
+                  <SelectTrigger className="mt-1 border rounded-md p-1 text-sm">
+                    {fontSizeConfig[userConfig.fontSize].label}
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(fontSizeConfig).map(([key, config]) => (
+                      <SelectItem key={key} value={key}>
+                        {config.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </span>
             </div>
 
             {/* 主題顏色：改成色塊選擇 */}
@@ -224,15 +277,20 @@ export default function AccountLogin() {
               </span>
               <div className="flex gap-2 mt-2">
                 {themeColors.map((color) => (
-                  <button
+                  <Button
+                    variant={"outline"}
                     type="button"
-                    key={color}
-                    style={{ backgroundColor: color }}
-                    className={`h-8 w-8 rounded-md border-2 ${
-                      themeColor === color
-                        ? "border-black dark:border-white"
-                        : "border-transparent"
-                    }`}
+                    key={color.type}
+                    onClick={() => setUserConfig({ themeColor: color.type })}
+                    style={{
+                      backgroundColor: colorThemeConfig[color.type].primary,
+                    }}
+                    className={cn(
+                      `h-8 w-8 rounded-md `,
+
+                      userConfig.themeColor === color.type &&
+                        " ring-2  ring-offset-1 ring-ring "
+                    )}
                   />
                 ))}
               </div>

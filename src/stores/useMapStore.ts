@@ -12,9 +12,9 @@ interface MapState {
   infoShow: InfoShow;
   routeInfoShow: boolean;
   searchPlace: PlaceDetail | null;
-  computeRoutes: Route[] | null;
+  computeRoutes: google.maps.DirectionsRoute[] | null;
   routePolyline: google.maps.Polyline | null;
-  selectRoute: Route | null;
+  selectRoute: google.maps.DirectionsRoute | null;
   // 新增無障礙設施相關狀態
   selectedA11yTypes: A11yEnum[];
   a11yDrawerOpen: boolean;
@@ -31,10 +31,10 @@ interface MapAction {
   setDestination: (destination: PlaceDetail | null) => void;
   setInfoShow: (infoShow: InfoShow) => void;
   setSearchPlace: (place: PlaceDetail | null) => void;
-  setComputeRoutes: (route: Route[] | null) => void;
+  setComputeRoutes: (route: google.maps.DirectionsRoute[] | null) => void;
   setRoutePolyline: (polyline: google.maps.Polyline | null) => void;
   setRouteInfoShow: (show: boolean) => void;
-  setRouteSelect: (route: Route | null) => void;
+  setRouteSelect: (route: google.maps.DirectionsRoute | null) => void;
   // 新增無障礙設施相關動作
   toggleA11yType: (type: A11yEnum) => void;
   setA11yDrawerOpen: (open: boolean) => void;

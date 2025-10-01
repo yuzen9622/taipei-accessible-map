@@ -1,5 +1,5 @@
 import { useMapsLibrary } from "@vis.gl/react-google-maps";
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import useMapStore from "@/stores/useMapStore";
 
 import Polyline from "./Polyline";
@@ -12,90 +12,64 @@ const defaultAppearance = {
 export default function RouteLine() {
   const { selectRoute } = useMapStore();
   const geometry = useMapsLibrary("geometry");
+
   const polylinesElement = useMemo(() => {
-    if (!selectRoute) return null;
+    if (!selectRoute || !geometry) return null;
 
-    return selectRoute.legs[0].steps.map((step, index) => {
-      if (
-        !step.polyline?.encodedPolyline ||
-        !selectRoute.polyline.encodedPolyline
-      )
-        return null;
+    // 再針對 walking step 做點點 overlay
+    const stepLines = selectRoute.legs[0].steps.map((step) => {
+      if (!step.encoded_lat_lngs) return null;
 
-      const isWalking = step.travelMode === "WALK";
+      const isWalking = step.travel_mode === google.maps.TravelMode.WALKING;
+      console.log(step);
+      const path = geometry.encoding.decodePath(step.encoded_lat_lngs);
       const color = isWalking
         ? defaultAppearance.walkingPolylineColor
-        : step.transitDetails?.transitLine?.color ??
-          defaultAppearance.defaultPolylineColor;
+        : step.transit?.line?.color ?? defaultAppearance.defaultPolylineColor;
 
-      // 解碼成座標陣列
-
-      if (!geometry) return null;
-
-      const path = geometry.encoding.decodePath(step.polyline.encodedPolyline);
-      const overviewPath = geometry.encoding.decodePath(
-        selectRoute.polyline.encodedPolyline
-      );
       return (
-        <div key={`route-${index + 1}`}>
-          {/* 白色外框 */}
+        <Fragment key={step.encoded_lat_lngs}>
+          {!isWalking && (
+            <Polyline
+              path={path}
+              strokeColor={color}
+              strokeOpacity={1}
+              strokeWeight={8}
+              zIndex={1}
+            />
+          )}
           <Polyline
-            path={overviewPath}
-            strokeColor="#ffffff"
-            strokeOpacity={1}
-            strokeWeight={8}
-            clickable={false}
-          />
-          {/* 預覽線 */}
-          <Polyline
-            path={overviewPath}
-            strokeColor={color}
-            strokeOpacity={1}
-            strokeWeight={5}
-            zIndex={1}
-            icons={
-              isWalking
-                ? [
-                    {
-                      icon: {
-                        path: "M 0,-1 0,1",
-                        strokeOpacity: 1,
-                        scale: 4,
-                      },
-                      offset: "0",
-                      repeat: "20px",
-                    },
-                  ]
-                : undefined
-            }
-          />
-          {/* 主色線 */}
-          <Polyline
+            key={`walk-step-${step.encoded_lat_lngs}`}
             path={path}
-            strokeColor={color}
-            strokeOpacity={1}
-            strokeWeight={5}
+            strokeColor={"#ffffff"}
+            strokeOpacity={0}
+            strokeWeight={3} // 線不要太粗
             zIndex={2}
             icons={
               isWalking
                 ? [
                     {
                       icon: {
-                        path: "M 0,-1 0,1",
-                        strokeOpacity: 1,
-                        scale: 4,
+                        path: google.maps.SymbolPath.CIRCLE,
+                        fillColor: color,
+                        fillOpacity: 0.7,
+                        strokeColor: "#ffffff",
+                        strokeWeight: 1,
+                        scale: 5,
                       },
                       offset: "0",
-                      repeat: "20px",
+                      repeat: "15px",
                     },
                   ]
                 : undefined
             }
-          />
-        </div>
+          />{" "}
+        </Fragment>
       );
     });
+
+    return <div>{stepLines}</div>;
   }, [selectRoute, geometry]);
 
-  return <div>{polylinesElement}</div>;
+  return <>{polylinesElement}</>;
 }

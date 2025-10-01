@@ -26,7 +26,7 @@ export default function SearchInput() {
   return (
     <div
       className={cn(
-        "      absolute inset-0 top-5 h-fit w-full  flex justify-center transition-all duration-300"
+        "  relative pointer-events-auto h-fit w-full  flex justify-center transition-all duration-300"
       )}
     >
       <div className="  w-10/12 mx-auto">

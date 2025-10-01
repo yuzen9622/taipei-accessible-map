@@ -9,12 +9,11 @@ import {
 import { useEffect } from "react";
 import { getLocation } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
-import AccessibleToolBar from "./AccessibleToolBar";
-import InfoDrawer from "./InfoDrawer";
+
+import MapWrapper from "./MapWrapper";
 import AccessibilityPin from "./MetroA11yWrapper";
-import RouteDrawer from "./RouteDrawer";
+
 import RouteLine from "./RouteWrapper";
-import SearchInput from "./SearchInput";
 
 export default function ClientMap() {
   const { setMap, setInfoShow, setUserLocation, setSearchPlace } =
@@ -47,7 +46,7 @@ export default function ClientMap() {
     <GoogleMap
       defaultZoom={15}
       reuseMaps
-      colorScheme="FOLLOW_SYSTEM"
+      colorScheme="LIGHT"
       defaultCenter={{ lat: 25.03, lng: 121.55 }}
       gestureHandling={"auto"}
       restriction={{
@@ -72,11 +71,9 @@ export default function ClientMap() {
       defaultBounds={taipeiNewTaipeiBounds}
       className=" relative flex-1 bg-background overflow-hidden"
     >
-      <SearchInput />
-      <AccessibleToolBar />
+      <MapWrapper />
       <AccessibilityPin />
-      <InfoDrawer />
-      <RouteDrawer />
+
       <RouteLine />
     </GoogleMap>
   );
