@@ -54,28 +54,15 @@ export default function AccountLogin() {
 
   // 預設提供的色塊
   const themeColors = [
-    {
-      type: ColorEnum.Default,
-    },
-    {
-      type: ColorEnum.Red,
-    },
-    {
-      type: ColorEnum.Blue,
-    },
-    {
-      type: ColorEnum.Green,
-    },
-    {
-      type: ColorEnum.Purple,
-    },
-    {
-      type: ColorEnum.Orange,
-    },
-    {
-      type: ColorEnum.Yellow,
-    },
+    { type: ColorEnum.Default },
+    { type: ColorEnum.Red },
+    { type: ColorEnum.Blue },
+    { type: ColorEnum.Green },
+    { type: ColorEnum.Purple },
+    { type: ColorEnum.Orange },
+    { type: ColorEnum.Yellow },
   ];
+
   const { user, setUser, setSession, userConfig, setUserConfig } =
     useAuthStore();
 
@@ -126,7 +113,7 @@ export default function AccountLogin() {
           <Button
             variant="ghost"
             size="icon"
-            className="text-white  focus:ring-2  bg-blue-500  relative pointer-events-auto  focus:ring-white rounded-full transition-colors duration-200"
+            className="text-white focus:ring-2 bg-blue-500 relative pointer-events-auto focus:ring-white rounded-full transition-colors duration-200"
           >
             <User className="h-6 w-6" />
           </Button>
@@ -149,7 +136,7 @@ export default function AccountLogin() {
             </DropdownMenuItem>
           )}
 
-          {
+          {user && (
             <>
               <DropdownMenuItem
                 onClick={() => setOpenDialog("settings")}
@@ -182,9 +169,51 @@ export default function AccountLogin() {
                 登出
               </DropdownMenuItem>
             </>
-          }
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {/* 使用說明 Dialog */}
+      <Dialog
+        open={openDialog === "help"}
+        onOpenChange={() => setOpenDialog(null)}
+      >
+        <DialogContent className="max-w-md rounded-lg p-6">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold">使用說明</DialogTitle>
+            <DialogDescription className="text-sm text-gray-500">
+              說明本應用的主要功能，幫助您更方便地使用無障礙導航。
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 mt-4 text-sm text-gray-700 dark:text-gray-200">
+            <div>
+              <strong className="block font-medium">🧭 即時無障礙導航</strong>
+              <p>規劃安全且便捷的路線，自動避開樓梯、高坡等障礙。</p>
+            </div>
+
+            <div>
+              <strong className="block font-medium">📍 設施標註與搜尋</strong>
+              <p>地圖上清楚標示電梯、坡道與無障礙廁所的位置，您也可以直接搜尋這些設施。</p>
+            </div>
+
+            <div>
+              <strong className="block font-medium">📏 坡度提示</strong>
+              <p>提供路線的坡度資訊，方便使用者評估是否適合通行。</p>
+            </div>
+
+            <div>
+              <strong className="block font-medium">📢 群眾回報系統</strong>
+              <p>讓使用者即時回報設施維修或臨時封閉的狀況，使資訊保持最新。</p>
+            </div>
+
+            <div>
+              <strong className="block font-medium">🎨 友善介面設計</strong>
+              <p>介面支援字體、背景與對比調整，並提供高對比、多語言及語音播報功能，提升使用便利性。</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* 設定 Dialog */}
       <Dialog
@@ -270,7 +299,7 @@ export default function AccountLogin() {
               </span>
             </div>
 
-            {/* 主題顏色：改成色塊選擇 */}
+            {/* 主題顏色 */}
             <div className="flex flex-col">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-200 flex items-center gap-1">
                 <Palette className="h-4 w-4" /> 主題顏色
@@ -287,9 +316,8 @@ export default function AccountLogin() {
                     }}
                     className={cn(
                       `h-8 w-8 rounded-md `,
-
                       userConfig.themeColor === color.type &&
-                        " ring-2  ring-offset-1 ring-ring "
+                        " ring-2 ring-offset-1 ring-ring "
                     )}
                   />
                 ))}
@@ -300,7 +328,6 @@ export default function AccountLogin() {
       </Dialog>
 
       {/* 問題回饋 Dialog */}
-
       <Dialog
         open={openDialog === "feedback"}
         onOpenChange={() => setOpenDialog(null)}
