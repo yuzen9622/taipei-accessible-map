@@ -264,7 +264,7 @@ export default function InfoDrawer() {
               <div className="space-y-2 text-sm">
                 {Array.from({ length: 2 }, (_, idx) => (
                   <div
-                    key={}
+                    key={idx}
                     className="border rounded-lg p-3 shadow-sm bg-gray-50"
                   >
                     <p className="font-semibold">使用者 {idx + 1}</p>
