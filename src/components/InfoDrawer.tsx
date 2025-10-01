@@ -1,60 +1,27 @@
 "use client";
 
+import { Heart, MapPin, Share2, Star, X } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2Icon, X, Star, MapPin, Share2, Heart } from "lucide-react";
-
+import DrawerWrapper from "@/components/DrawerWrapper";
+import LoadingDrawer from "@/components/shared/LoadingDrawer";
 import useComputeRoute from "@/hook/useComputeRoute";
 import { getLocation } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
-
-import DrawerWrapper from "./DrawerWrapper";
-import LoadingDrawer from "./shared/LoadingDrawer";
-import { Button } from "./ui/button";
-import {
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerFooter,
-  DrawerClose,
-} from "./ui/drawer";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "./ui/accordion";
-
-type PlaceType = "restaurant" | "attraction" | "store" | string;
-
-interface Place {
-  displayName: string;
-  formattedAddress: string;
-  photos?: {
-    getURI: (options: { maxWidth: number; maxHeight: number }) => string;
-  }[];
-  regularOpeningHours?: {
-    periods: {
-      open?: { day: string; hour: number; minute: number };
-      close?: { hour: number; minute: number };
-    }[];
-  };
-  type: PlaceType;
-  isOpen?: () => Promise<boolean | null>;
-  accessibilityOptions?: {
-    hasWheelchairAccessibleEntrance?: boolean;
-    hasWheelchairAccessibleParking?: boolean;
-    hasWheelchairAccessibleRestroom?: boolean;
-    hasWheelchairAccessibleSeating?: boolean;
-  };
-}
-
-interface InfoShow {
-  isOpen: boolean;
-  kind: "place" | null;
-  place?: Place;
-}
+import { Button } from "./ui/button";
+import {
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "./ui/drawer";
 
 type TabType = "map" | "menu" | "reviews" | "facilities";
 
@@ -66,23 +33,18 @@ export default function InfoDrawer() {
     setRouteInfoShow,
     setDestination,
     map,
-
   } = useMapStore();
-  const {  isLoading, computeRouteService } = useComputeRoute();
+  const { isLoading, computeRouteService } = useComputeRoute();
   const [isOpen, setIsOpen] = useState(false);
 
-
-  const [isOpen, setIsOpen] = useState(false);
   const [galleryIndex, setGalleryIndex] = useState(0);
   const [tab, setTab] = useState<TabType>("map");
 
-  const place = infoShow.place;
+  const place = infoShow.kind === "place" ? infoShow.place : null;
 
   const galleryImages = useMemo(() => {
     if (!place?.photos) return [];
-    return place.photos.map((p) =>
-      p.getURI({ maxWidth: 400, maxHeight: 300 })
-    );
+    return place.photos.map((p) => p.getURI({ maxWidth: 400, maxHeight: 300 }));
   }, [place]);
 
   const placeHours = useMemo(() => {
@@ -111,7 +73,7 @@ export default function InfoDrawer() {
 
     await computeRouteService({ lat: 25.0475613, lng: 121.5173399 }, latLng);
 
-    setDestination({ kind: "place", place: infoShow.place, position: latLng });
+    setDestination({ kind: "place", place, position: latLng });
 
     setInfoShow({ isOpen: false, kind: null });
     setRouteInfoShow(true);
@@ -159,7 +121,9 @@ export default function InfoDrawer() {
                 key={idx}
                 className="border rounded-lg p-3 shadow-md bg-gradient-to-r from-pink-50 via-pink-100 to-pink-50"
               >
-                <h3 className="font-semibold text-gray-800">票券名稱 {idx + 1}</h3>
+                <h3 className="font-semibold text-gray-800">
+                  票券名稱 {idx + 1}
+                </h3>
                 <p className="text-gray-500 text-sm">票種 / 時間說明</p>
                 <p className="text-blue-600 font-bold mt-1">$300</p>
               </div>
@@ -176,7 +140,9 @@ export default function InfoDrawer() {
               >
                 <div className="w-20 h-20 bg-gray-200 rounded-lg" />
                 <div className="flex-1">
-                  <h3 className="font-semibold text-gray-800">商品 {idx + 1}</h3>
+                  <h3 className="font-semibold text-gray-800">
+                    商品 {idx + 1}
+                  </h3>
                   <p className="text-gray-500 text-sm">商品描述</p>
                   <p className="text-blue-600 font-bold mt-1">$200</p>
                 </div>
@@ -245,7 +211,8 @@ export default function InfoDrawer() {
                 <div className="absolute bottom-2 right-2 flex gap-1">
                   {galleryImages.map((_, idx) => (
                     <button
-                      key={idx}
+                      type="button"
+                      key={galleryIndex}
                       className={`w-3 h-3 rounded-full ${
                         idx === galleryIndex ? "bg-blue-500" : "bg-gray-300"
                       }`}
@@ -259,29 +226,32 @@ export default function InfoDrawer() {
 
           {/* Tabs */}
           <div className="flex border-b mt-4 w-full px-4">
-            {(["map", "menu", "reviews", "facilities"] as TabType[]).map((t) => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={`flex-1 py-2 text-center transition-colors ${
-                  tab === t
-                    ? "border-b-2 border-blue-500 font-semibold text-blue-600"
-                    : "text-gray-500 hover:text-blue-400"
-                }`}
-              >
-                {t === "map"
-                  ? "總覽"
-                  : t === "menu"
-                  ? place.type === "attraction"
-                    ? "票券"
-                    : place.type === "store"
-                    ? "商品"
-                    : "菜單"
-                  : t === "reviews"
-                  ? "評論"
-                  : "附近無障礙"}
-              </button>
-            ))}
+            {(["map", "menu", "reviews", "facilities"] as TabType[]).map(
+              (t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setTab(t)}
+                  className={`flex-1 py-2 text-center transition-colors ${
+                    tab === t
+                      ? "border-b-2 border-blue-500 font-semibold text-blue-600"
+                      : "text-gray-500 hover:text-blue-400"
+                  }`}
+                >
+                  {t === "map"
+                    ? "總覽"
+                    : t === "menu"
+                    ? place.type === "attraction"
+                      ? "票券"
+                      : place.type === "store"
+                      ? "商品"
+                      : "菜單"
+                    : t === "reviews"
+                    ? "評論"
+                    : "附近無障礙"}
+                </button>
+              )
+            )}
           </div>
 
           {/* Content */}
