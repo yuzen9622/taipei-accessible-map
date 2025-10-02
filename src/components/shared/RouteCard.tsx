@@ -46,10 +46,6 @@ export default function RouteCard({ route }: RouteCardProps) {
         </CardTitle>
 
         <div className="flex justify-between items-center">
-          <Button onClick={() => setRouteSelect(route)} variant={"outline"}>
-            規劃路線
-          </Button>
-
           <Button variant={"outline"}>
             開始 <FlagIcon />
           </Button>

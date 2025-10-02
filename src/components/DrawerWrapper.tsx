@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 
 import { Drawer } from "./ui/drawer";
 
@@ -9,7 +9,7 @@ type DrawerWrapperProps = {
   children: React.ReactNode;
 };
 
-export default function DrawerWrapper({
+const DrawerWrapper = memo(function DrawerWrapper({
   children,
   open,
   snapPoints = ["500px", 1],
@@ -41,6 +41,7 @@ export default function DrawerWrapper({
     <Drawer
       key={direction}
       modal={false}
+      handleOnly={true}
       dismissible={direction === "bottom"}
       open={open}
       direction={direction}
@@ -53,4 +54,6 @@ export default function DrawerWrapper({
       {children}
     </Drawer>
   );
-}
+});
+DrawerWrapper.displayName = "DrawerWrapper";
+export default DrawerWrapper;

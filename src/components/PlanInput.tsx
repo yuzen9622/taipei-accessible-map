@@ -21,7 +21,7 @@ export default function RoutePlanInput() {
     setInfoShow,
   } = useMapStore();
 
-  const { computeRoute } = useComputeRoute();
+  const { computeRouteService } = useComputeRoute();
 
   const [originSearchInput, setOriginSearchInput] = useState<string>(
     origin?.kind === "place" && origin.place.displayName
@@ -43,10 +43,10 @@ export default function RoutePlanInput() {
       setOrigin(placeDetail);
 
       if (destination?.position) {
-        computeRoute(placeDetail.position, destination.position);
+        computeRouteService(placeDetail.position, destination.position);
       }
     },
-    [setOrigin, destination, computeRoute]
+    [setOrigin, destination, computeRouteService]
   );
 
   const handleDestinationPlace = useCallback(
@@ -63,14 +63,17 @@ export default function RoutePlanInput() {
       setSearchPlace(null);
 
       if (origin?.position) {
-        computeRoute(userLocation || origin.position, placeDetail.position);
+        computeRouteService(
+          userLocation || origin.position,
+          placeDetail.position
+        );
       }
     },
     [
       setDestination,
       setInfoShow,
       setSearchPlace,
-      computeRoute,
+      computeRouteService,
       origin,
       userLocation,
     ]

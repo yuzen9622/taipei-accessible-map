@@ -9,11 +9,14 @@ import {
 import { useEffect } from "react";
 import { getLocation } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
-
+import AccessibleDrawer from "./AccessibleDrawer";
+import InfoDrawer from "./InfoDrawer";
 import MapWrapper from "./MapWrapper";
 import AccessibilityPin from "./MetroA11yWrapper";
-
+import RouteDrawer from "./RouteDrawer";
 import RouteLine from "./RouteWrapper";
+import TestDrawer from "./TestDrawer";
+import VaulDrawer from "./ui/costum-drawer";
 
 export default function ClientMap() {
   const { setMap, setInfoShow, setUserLocation, setSearchPlace } =
@@ -73,7 +76,10 @@ export default function ClientMap() {
     >
       <MapWrapper />
       <AccessibilityPin />
+      <AccessibleDrawer />
 
+      <TestDrawer />
+      <RouteDrawer />
       <RouteLine />
     </GoogleMap>
   );

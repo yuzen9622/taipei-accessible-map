@@ -121,8 +121,9 @@ function PlaceInput({
           <Input
             type={type}
             placeholder={placeholder}
+            tabIndex={0}
             className={cn(
-              "  shadow-none  ring-transparent focus-visible:ring-transparent",
+              "  shadow-none  pointer-events-auto ring-transparent focus-visible:ring-transparent",
               className
             )}
             value={value}

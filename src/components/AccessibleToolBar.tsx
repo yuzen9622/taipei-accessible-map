@@ -4,7 +4,13 @@ import useMapStore from "@/stores/useMapStore";
 import { A11yEnum } from "@/types/index";
 
 export default function AccessibleToolBar() {
-  const { selectedA11yTypes, toggleA11yType } = useMapStore();
+  const {
+    selectedA11yTypes,
+    toggleA11yType,
+    infoShow,
+    routeInfoShow,
+    a11yDrawerOpen,
+  } = useMapStore();
 
   const toolbarItems = [
     {
@@ -28,7 +34,11 @@ export default function AccessibleToolBar() {
   ];
 
   return (
-    <div className="  pointer-events-auto w-fit h-fit flex flex-col space-y-2">
+    <div
+      className={cn(
+        "  pointer-events-auto w-fit h-fit flex flex-col  transition-all"
+      )}
+    >
       {toolbarItems.map((item) => {
         const isSelected = selectedA11yTypes.includes(item.type);
 

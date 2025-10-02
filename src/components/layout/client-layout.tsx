@@ -35,9 +35,8 @@ export default function ClientLayout({
 
   return (
     <div className="w-full h-dvh flex flex-col">
-      <AccessibleDrawer />
-      <InfoDrawer />
-      <RouteDrawer />
+
+
       {children}
     </div>
   );

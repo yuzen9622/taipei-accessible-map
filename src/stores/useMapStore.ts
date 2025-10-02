@@ -31,6 +31,7 @@ interface MapAction {
   setDestination: (destination: PlaceDetail | null) => void;
   setInfoShow: (infoShow: InfoShow) => void;
   setSearchPlace: (place: PlaceDetail | null) => void;
+  toggleInfoShow: (open: boolean) => void;
   setComputeRoutes: (route: google.maps.DirectionsRoute[] | null) => void;
   setRoutePolyline: (polyline: google.maps.Polyline | null) => void;
   setRouteInfoShow: (show: boolean) => void;
@@ -60,6 +61,8 @@ const useMapStore = create<MapStore>((set, get) => ({
   infoShow: { isOpen: false, kind: null },
   setInfoShow: (infoShow) =>
     set({ infoShow: { ...get().infoShow, ...infoShow } }),
+  toggleInfoShow: (open) =>
+    set({ infoShow: { ...get().infoShow, isOpen: open } }),
   searchPlace: null,
   setSearchPlace: (place) => set({ searchPlace: place }),
   computeRoutes: null,
