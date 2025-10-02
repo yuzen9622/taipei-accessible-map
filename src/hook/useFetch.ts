@@ -43,7 +43,6 @@ export const useFetch = () => {
     if (responserData.data?.accessToken && responserData.data?.refreshToken) {
       setSession({
         accessToken: responserData.data.accessToken,
-        refreshToken: responserData.data.refreshToken,
       });
     }
     return responserData;

@@ -35,7 +35,7 @@ export default function TestDrawer() {
   const {
     infoShow,
     setInfoShow,
-    userLocation,
+
     setRouteInfoShow,
     setDestination,
     toggleInfoShow,

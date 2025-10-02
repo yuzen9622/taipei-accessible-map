@@ -4,9 +4,6 @@ import { refreshToken } from "@/lib/api/auth";
 import { getUserInfo } from "@/lib/api/user";
 import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
-import AccessibleDrawer from "../AccessibleDrawer";
-import InfoDrawer from "../InfoDrawer";
-import RouteDrawer from "../RouteDrawer";
 
 export default function ClientLayout({
   children,
@@ -33,11 +30,5 @@ export default function ClientLayout({
     }
   }, [initSearchHistory, getNewAccessToken]);
 
-  return (
-    <div className="w-full h-dvh flex flex-col">
-
-
-      {children}
-    </div>
-  );
+  return <div className="w-full h-dvh flex flex-col">{children}</div>;
 }
