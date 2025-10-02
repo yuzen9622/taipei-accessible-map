@@ -95,7 +95,7 @@ function PlaceInput({
   return (
     <div
       className={cn(
-        " relative w-full bg-background px-3 py-1  rounded-t-3xl",
+        " relative w-full bg-background px-3 py-1  pointer-events-auto rounded-t-3xl",
         !open && "rounded-3xl"
       )}
     >
@@ -123,7 +123,7 @@ function PlaceInput({
             placeholder={placeholder}
             tabIndex={0}
             className={cn(
-              "  shadow-none  pointer-events-auto ring-transparent focus-visible:ring-transparent",
+              "  shadow-none   ring-transparent focus-visible:ring-transparent",
               className
             )}
             value={value}

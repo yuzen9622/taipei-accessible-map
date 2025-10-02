@@ -22,14 +22,7 @@ export default function Drawer({
   children,
   title,
 }: DrawerProps) {
-  const triggerRef = useRef<HTMLElement | null>(null);
   const drawerRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (open) {
-      triggerRef.current = document.activeElement as HTMLElement;
-    }
-  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -38,16 +31,6 @@ export default function Drawer({
     return () => {
       document.body.style.overflow = orig;
     };
-  }, [open]);
-
-  useEffect(() => {
-    if (!open && triggerRef.current) {
-      try {
-        triggerRef.current.focus();
-      } catch (e) {
-        // ignore
-      }
-    }
   }, [open]);
 
   if (typeof document === "undefined") return null;

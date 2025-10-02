@@ -21,22 +21,16 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
-import LoadingDrawer from "@/components/shared/LoadingDrawer";
 import useComputeRoute from "@/hook/useComputeRoute";
 import { getLocation } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import { Button } from "./ui/button";
-import {
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-} from "./ui/drawer";
+import { DrawerFooter, DrawerHeader } from "./ui/drawer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
-import Drawer from "./ui/costum-drawer";
+import Drawer from "./ui/costume-drawer";
 export default function TestDrawer() {
   const {
     infoShow,
@@ -79,7 +73,7 @@ export default function TestDrawer() {
   const handlePlanRoute = useCallback(async () => {
     if (!place) return;
     const latLng = getLocation(place);
-    if (!latLng || !userLocation || !map) return;
+    if (!latLng || !map) return;
     console.log(place);
     await computeRouteService({ lat: 25.0475613, lng: 121.5173399 }, latLng);
 
@@ -95,7 +89,6 @@ export default function TestDrawer() {
 
     setRouteInfoShow,
     map,
-    userLocation,
   ]);
 
   return (

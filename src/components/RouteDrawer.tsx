@@ -1,5 +1,5 @@
 "use client";
-import { ArrowLeft } from "lucide-react";
+import { XIcon } from "lucide-react";
 
 import useMapStore from "@/stores/useMapStore";
 
@@ -37,16 +37,14 @@ export default function RouteDrawer() {
         tabIndex={void 0}
         className="  fixed p-2 flex gap-3 after:hidden flex-col  items-center lg:items-start z-20  pointer-events-auto overflow-auto   select-text! text-center "
       >
-        <DrawerHeader className="w-full space-y-2">
-          <div className=" flex gap-4  items-center">
-            <Button variant={"ghost"} onClick={handleBack}>
-              <ArrowLeft />
-            </Button>
-
+        <DrawerHeader className="w-full space-y-2 ">
+          <div className=" flex gap-4  ml-10   justify-between  items-center">
             <h1 className="text-2xl">路線規劃</h1>
+            <Button variant={"ghost"} onClick={handleBack}>
+              <XIcon />
+            </Button>
           </div>
           <RoutePlanInput />
-          <p>{computeRoutes.length} 條路線建議</p>
 
           <section className=" space-y-2 ">
             {computeRoutes?.map((route) => (

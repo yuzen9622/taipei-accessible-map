@@ -4,13 +4,7 @@ import useMapStore from "@/stores/useMapStore";
 import { A11yEnum } from "@/types/index";
 
 export default function AccessibleToolBar() {
-  const {
-    selectedA11yTypes,
-    toggleA11yType,
-    infoShow,
-    routeInfoShow,
-    a11yDrawerOpen,
-  } = useMapStore();
+  const { selectedA11yTypes, toggleA11yType } = useMapStore();
 
   const toolbarItems = [
     {

@@ -6,7 +6,7 @@ import type { PlaceDetail } from "@/types";
 import PlaceInput from "./shared/PlaceInput";
 
 export default function SearchInput() {
-  const { setSearchPlace, setInfoShow } = useMapStore();
+  const { setSearchPlace, setInfoShow, routeInfoShow } = useMapStore();
   const [input, setInput] = useState("");
   const handlePlaceChange = useCallback(
     (placeDetail: PlaceDetail) => {
@@ -26,7 +26,8 @@ export default function SearchInput() {
   return (
     <div
       className={cn(
-        "    relative pointer-events-auto h-fit w-full flex justify-center transition-all duration-300"
+        "    relative pointer-events-auto h-fit w-full flex justify-center transition-all duration-300",
+        routeInfoShow && "hidden"
       )}
     >
       <div className="  w-10/12 mx-auto rounded-3xl shadow-md  ">

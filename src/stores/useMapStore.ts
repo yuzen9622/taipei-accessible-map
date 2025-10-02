@@ -2,8 +2,6 @@ import { create } from "zustand";
 import type { InfoShow, Marker, PlaceDetail } from "@/types";
 import { A11yEnum } from "@/types/index";
 
-import type { Route } from "@/types/route.t";
-
 interface MapState {
   map: google.maps.Map | null;
   userLocation: google.maps.LatLngLiteral | null;
@@ -22,6 +20,7 @@ interface MapState {
   searchHistory: PlaceDetail[];
   savedPlaces: PlaceDetail[];
   timeline: { time: string; event: string }[];
+  navigationDrawerOpen: boolean;
 }
 
 interface MapAction {
@@ -43,6 +42,7 @@ interface MapAction {
   initSearchHistory: (history: PlaceDetail[]) => void;
   addSearchHistory: (searchTerm: PlaceDetail) => void;
   clearSearchHistory: () => void;
+  setNavigationDrawerOpen: (open: boolean) => void;
 }
 
 type MapStore = MapState & MapAction;
@@ -116,6 +116,8 @@ const useMapStore = create<MapStore>((set, get) => ({
   clearSearchHistory: () => set({ searchHistory: [] }),
   savedPlaces: [],
   timeline: [],
+  navigationDrawerOpen: false,
+  setNavigationDrawerOpen: (open) => set({ navigationDrawerOpen: open }),
 }));
 
 export default useMapStore;

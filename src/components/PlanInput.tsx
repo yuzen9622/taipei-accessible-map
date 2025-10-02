@@ -82,6 +82,9 @@ export default function RoutePlanInput() {
   const handleSwitch = () => {
     setOrigin(destination);
     setDestination(origin);
+    if (destination?.position && origin?.position) {
+      computeRouteService(destination?.position, origin?.position);
+    }
   };
 
   useEffect(() => {

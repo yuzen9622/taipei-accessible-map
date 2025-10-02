@@ -7,16 +7,15 @@ import {
 } from "@vis.gl/react-google-maps";
 
 import { useEffect } from "react";
+import AccessibleDrawer from "@/components/AccessibleDrawer";
+import MapWrapper from "@/components/MapWrapper";
+import AccessibilityPin from "@/components/MetroA11yWrapper";
+import RouteDrawer from "@/components/RouteDrawer";
+import RouteLine from "@/components/RouteWrapper";
+import NowPin from "@/components/shared/NowPin";
+import TestDrawer from "@/components/TestDrawer";
 import { getLocation } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
-import AccessibleDrawer from "./AccessibleDrawer";
-import InfoDrawer from "./InfoDrawer";
-import MapWrapper from "./MapWrapper";
-import AccessibilityPin from "./MetroA11yWrapper";
-import RouteDrawer from "./RouteDrawer";
-import RouteLine from "./RouteWrapper";
-import TestDrawer from "./TestDrawer";
-import VaulDrawer from "./ui/costum-drawer";
 
 export default function ClientMap() {
   const { setMap, setInfoShow, setUserLocation, setSearchPlace } =
@@ -40,9 +39,16 @@ export default function ClientMap() {
 
   //取得當前位置
   useEffect(() => {
-    navigator.geolocation.getCurrentPosition((pos) => {
-      setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-    });
+    navigator.geolocation.watchPosition(
+      (pos) => {
+        setUserLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+      },
+      () => console.log("無法取得位置"),
+      { enableHighAccuracy: true, timeout: 5000 }
+    );
   }, [setUserLocation]);
 
   return (
@@ -77,7 +83,7 @@ export default function ClientMap() {
       <MapWrapper />
       <AccessibilityPin />
       <AccessibleDrawer />
-
+      <NowPin />
       <TestDrawer />
       <RouteDrawer />
       <RouteLine />

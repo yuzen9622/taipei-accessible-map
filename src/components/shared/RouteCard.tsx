@@ -1,10 +1,17 @@
-import { FlagIcon } from "lucide-react";
+import {
+  Bus,
+  Clock,
+  FlagIcon,
+  FootprintsIcon,
+  MapPin,
+  Train,
+  TramFront,
+} from "lucide-react";
 import { useMemo } from "react";
-
+import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
-
 import { Button } from "../ui/button";
-import { Card, CardHeader, CardTitle } from "../ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { DrawerTitle } from "../ui/drawer";
 
 type RouteCardProps = {
@@ -13,6 +20,7 @@ type RouteCardProps = {
 
 export default function RouteCard({ route }: RouteCardProps) {
   const { setRouteSelect } = useMapStore();
+
   const routeLocalValue = useMemo(() => {
     const result = {
       distance: "",
@@ -30,27 +38,176 @@ export default function RouteCard({ route }: RouteCardProps) {
     return result;
   }, [route]);
 
+  // 獲取步驟的圖標
+  const getStepIcon = (step: google.maps.DirectionsStep) => {
+    if (step.travel_mode === google.maps.TravelMode.WALKING) {
+      return <FootprintsIcon className="h-4 w-4 text-blue-500" />;
+    }
+
+    if (step.travel_mode === google.maps.TravelMode.TRANSIT) {
+      const vehicleType = step.transit?.line.vehicle.type;
+
+      switch (vehicleType) {
+        case google.maps.VehicleType.BUS:
+          return <Bus className="h-4 w-4 text-green-500" />;
+        case google.maps.VehicleType.SUBWAY:
+          return <Train className="h-4 w-4 text-orange-500" />;
+        case google.maps.VehicleType.RAIL:
+          return <Train className="h-4 w-4 text-red-500" />;
+        case google.maps.VehicleType.TRAM:
+          return <TramFront className="h-4 w-4 text-purple-500" />;
+        default:
+          return <Bus className="h-4 w-4 text-gray-500" />;
+      }
+    }
+
+    return <MapPin className="h-4 w-4 text-gray-500" />;
+  };
+
+  // 獲取步驟顏色
+  const getStepColor = (step: google.maps.DirectionsStep) => {
+    if (step.travel_mode === google.maps.TravelMode.WALKING) {
+      return "border-blue-500 bg-blue-50 dark:bg-blue-950/20";
+    }
+
+    if (step.transit?.line.color) {
+      return `border-[${step.transit.line.color}]`;
+    }
+
+    return "border-gray-300 bg-gray-50 dark:bg-gray-950/20";
+  };
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className=" flex  justify-between items-center">
-          <DrawerTitle className="text-2xl">
+        <CardTitle className="flex justify-between items-center">
+          <DrawerTitle className="text-2xl font-bold">
             {routeLocalValue?.distance}
           </DrawerTitle>
 
           {routeLocalValue.duration && (
-            <p className=" text-muted-foreground  font-bold">
-              {routeLocalValue?.duration}
-            </p>
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Clock className="h-4 w-4" />
+              <span className="font-bold">{routeLocalValue?.duration}</span>
+            </div>
           )}
         </CardTitle>
+      </CardHeader>
 
-        <div className="flex justify-between items-center">
-          <Button variant={"outline"}>
-            開始 <FlagIcon />
+      <CardContent className="space-y-3">
+        {/* 路徑步驟 */}
+        <div className="relative space-y-2">
+          {route?.legs[0]?.steps?.map((step, index) => {
+            const isWalking =
+              step.travel_mode === google.maps.TravelMode.WALKING;
+            const isTransit =
+              step.travel_mode === google.maps.TravelMode.TRANSIT;
+
+            return (
+              <div
+                key={step.encoded_lat_lngs || index}
+                className="relative pl-8"
+              >
+                {/* 連接線 */}
+                {index !== route.legs[0].steps.length - 1 && (
+                  <div
+                    className={cn(
+                      "absolute left-3.5 top-11 bottom-0 w-0.5",
+                      isWalking ? "bg-blue-300" : "bg-orange-300"
+                    )}
+                  />
+                )}
+
+                {/* 步驟圖標 */}
+                <div className="absolute left-0 top-1">
+                  <div
+                    className={cn(
+                      "flex items-center justify-center w-8 h-8 rounded-full border-2",
+                      getStepColor(step)
+                    )}
+                  >
+                    {getStepIcon(step)}
+                  </div>
+                </div>
+
+                {/* 步驟內容 */}
+                <div className="pb-4 ml-4">
+                  {isWalking && (
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">
+                        步行 {step.distance?.text}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        約 {step.duration?.text}
+                      </p>
+                      {step.instructions && (
+                        <p className="text-xs text-muted-foreground">
+                          {step.instructions}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {isTransit && step.transit && (
+                    <div className="space-y-2">
+                      {/* 路線資訊 */}
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="px-2 py-1 rounded text-xs font-bold text-white"
+                          style={{
+                            backgroundColor: step.transit.line.color || "#666",
+                          }}
+                        >
+                          {step.transit.line.short_name ||
+                            step.transit.line.name}
+                        </div>
+                        <span className="text-sm font-medium">
+                          {step.transit.line.name}
+                        </span>
+                      </div>
+
+                      {/* 上下車資訊 */}
+                      <div className="space-y-1 text-xs">
+                        <div className="flex items-start gap-2">
+                          <span className="text-muted-foreground shrink-0">
+                            上車：
+                          </span>
+                          <span className="font-medium">
+                            {step.transit.departure_stop.name}
+                          </span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <span className="text-muted-foreground shrink-0">
+                            下車：
+                          </span>
+                          <span className="font-medium">
+                            {step.transit.arrival_stop.name}
+                          </span>
+                        </div>
+                        <div className="text-muted-foreground">
+                          {step.transit.num_stops} 站 • 約 {step.duration?.text}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* 開始導航按鈕 */}
+        <div className="flex justify-between items-center pt-4 border-t">
+          <Button
+            variant="default"
+            className="w-full"
+            onClick={() => setRouteSelect(route)}
+          >
+            <FlagIcon className="mr-2 h-4 w-4" />
+            開始導航
           </Button>
         </div>
-      </CardHeader>
+      </CardContent>
     </Card>
   );
 }
