@@ -41,13 +41,14 @@ export default function ClientMap() {
   useEffect(() => {
     navigator.geolocation.watchPosition(
       (pos) => {
+        console.log(pos.coords);
         setUserLocation({
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
         });
       },
       () => console.log("無法取得位置"),
-      { enableHighAccuracy: true, timeout: 5000 }
+      { enableHighAccuracy: true, maximumAge: Infinity }
     );
   }, [setUserLocation]);
 
@@ -58,10 +59,10 @@ export default function ClientMap() {
       colorScheme="LIGHT"
       defaultCenter={{ lat: 25.03, lng: 121.55 }}
       gestureHandling={"auto"}
-      restriction={{
-        latLngBounds: taipeiNewTaipeiBounds,
-        strictBounds: true,
-      }}
+      // restriction={{
+      //   latLngBounds: taipeiNewTaipeiBounds,
+      //   strictBounds: true,
+      // }}
       disableDefaultUI={true}
       onClick={async (e) => {
         e.stop();

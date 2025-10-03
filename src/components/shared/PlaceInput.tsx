@@ -1,13 +1,14 @@
 "use client";
 
 import { useMapsLibrary } from "@vis.gl/react-google-maps";
-import { LoaderCircle, SearchIcon } from "lucide-react";
+import { LoaderCircle, SearchIcon, XIcon } from "lucide-react";
 import type { InputHTMLAttributes } from "react";
 import { useCallback, useState } from "react";
 import usePlacePredictions from "@/hook/usePlacePredictions";
 import { cn, getLocation } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import type { PlaceDetail } from "@/types";
+import { Button } from "../ui/button";
 import { Command, CommandGroup, CommandItem, CommandList } from "../ui/command";
 import { Input } from "../ui/input";
 
@@ -147,9 +148,9 @@ function PlaceInput({
         )}
       </div>
       <div className=" absolute inset-0 z-10 top-10/12">
-        <Command className="w-full  shadow relative h-fit overflow-auto rounded-b-3xl">
+        <Command className="w-full  text-start   shadow relative h-fit overflow-auto rounded-b-3xl">
           <CommandList>
-            {value === "" && open && searchHistory.length > 0 && (
+            {value === "" && open && (
               <CommandGroup heading="搜尋歷史紀錄">
                 {searchHistory.map((history) => {
                   if (history.kind === "place") {
@@ -161,12 +162,22 @@ function PlaceInput({
                           handleHistoryClick(history);
                         }}
                         key={place.id}
-                        className="block"
+                        className=" flex justify-between rounded-3xl items-center"
                       >
-                        <p>{place.displayName}</p>
-                        <p className=" text-sm  text-muted-foreground/70">
-                          {place.formattedAddress}
-                        </p>
+                        <span className=" p-1 text-start">
+                          <p>{place.displayName}</p>
+                          <p className=" text-sm  text-muted-foreground/70">
+                            {place.formattedAddress}
+                          </p>
+                        </span>
+                        <Button
+                          onClick={() => {
+                            console.log("Delete", place.id);
+                          }}
+                          variant={"ghost"}
+                        >
+                          <XIcon />
+                        </Button>
                       </CommandItem>
                     );
                   }
@@ -184,7 +195,7 @@ function PlaceInput({
                         handlePlaceClick(suggestion);
                       }}
                       key={suggestion.placePrediction?.placeId}
-                      className="block"
+                      className="block rounded-3xl"
                     >
                       <p>{suggestion.placePrediction?.mainText?.text}</p>
                       <p className=" text-sm  text-muted-foreground/70">

@@ -132,7 +132,7 @@ export default function TestDrawer() {
                     alt="店家圖示"
                     width={24}
                     height={24}
-                    className="object-cover w-6 h-6  "
+                    className="object-contain  "
                   />
                 ) : (
                   <MapPin className="h-6 w-6 text-primary" />
