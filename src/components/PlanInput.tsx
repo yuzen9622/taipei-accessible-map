@@ -6,17 +6,18 @@ import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import type { PlaceDetail } from "@/types";
 import SearchInput from "./shared/PlaceInput";
-import { Button } from "./ui/button";
+
+import { Card } from "./ui/card";
 
 export default function RoutePlanInput() {
   const {
     userLocation,
     setDestination,
     setOrigin,
-    a11yDrawerOpen,
+
     origin,
     destination,
-    searchPlace,
+
     setSearchPlace,
     setInfoShow,
   } = useMapStore();
@@ -55,7 +56,6 @@ export default function RoutePlanInput() {
       if (placeDetail.kind === "place") {
         setDestinationSearchInput(placeDetail.place.displayName || "");
         setInfoShow({
-          isOpen: true,
           kind: "place",
           place: placeDetail.place,
         });
@@ -100,10 +100,9 @@ export default function RoutePlanInput() {
   }, [destination]);
 
   return (
-    <div
+    <Card
       className={cn(
-        "  w-full p-2 flex rounded-2xl transition-all items-center bg-transparent gap-2",
-        (a11yDrawerOpen || !searchPlace) && "  hidden"
+        "  w-full p-2 flex-row rounded-2xl transition-all items-center pointer-events-auto gap-2"
       )}
     >
       <div className="w-full space-y-2">
@@ -127,10 +126,10 @@ export default function RoutePlanInput() {
         </div>
       </div>
       <div>
-        <Button onClick={handleSwitch} className="mx-auto" variant="ghost">
+        <button type="button" onClick={handleSwitch} className="p-1">
           <ArrowDownUpIcon size={16} />
-        </Button>
+        </button>
       </div>
-    </div>
+    </Card>
   );
 }

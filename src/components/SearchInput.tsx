@@ -30,7 +30,7 @@ export default function SearchInput() {
         routeInfoShow && "hidden"
       )}
     >
-      <div className="  w-10/12 mx-auto rounded-3xl shadow-md  ">
+      <div className="  w-11/12 mx-auto rounded-3xl shadow-md  ">
         <PlaceInput
           className="border-none "
           value={input}

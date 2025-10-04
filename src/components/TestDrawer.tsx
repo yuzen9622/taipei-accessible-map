@@ -30,12 +30,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
-import Drawer from "./ui/costume-drawer";
+import DrawerWrapper from "./DrawerWrapper";
+
 export default function TestDrawer() {
   const {
     infoShow,
     setInfoShow,
-
+    setSearchPlace,
     setRouteInfoShow,
     setDestination,
     toggleInfoShow,
@@ -78,7 +79,7 @@ export default function TestDrawer() {
     await computeRouteService({ lat: 25.0475613, lng: 121.5173399 }, latLng);
 
     setDestination({ kind: "place", place, position: latLng });
-
+    setSearchPlace(null);
     setInfoShow({ isOpen: false, kind: null });
     setRouteInfoShow(true);
   }, [
@@ -86,18 +87,13 @@ export default function TestDrawer() {
     setDestination,
     computeRouteService,
     setInfoShow,
-
+    setSearchPlace,
     setRouteInfoShow,
     map,
   ]);
 
   return (
-    <Drawer
-      open={infoShow.isOpen}
-      onClose={() => toggleInfoShow(false)}
-      size="default"
-      side="left"
-    >
+    <DrawerWrapper open={infoShow.isOpen} onOpenChange={toggleInfoShow}>
       {place && (
         <div className="flex flex-col overflow-auto h-full">
           <Swiper
@@ -109,14 +105,14 @@ export default function TestDrawer() {
             modules={[Pagination]}
           >
             {galleryImages.map((src, idx) => (
-              <SwiperSlide key={src}>
-                <div className=" w-full max-w-lg aspect-video h-full  overflow-hidden  shadow-md">
+              <SwiperSlide className="" key={src}>
+                <div className=" w-full flex  justify-center   h-full  overflow-hidden  shadow-md">
                   <Image
                     src={src}
                     alt={`店家圖片 ${idx + 1}`}
                     width={400}
                     height={300}
-                    className="object-cover w-full h-full"
+                    className="object-cover w-full  max-w-lg h-full"
                   />
                 </div>
               </SwiperSlide>
@@ -472,6 +468,6 @@ export default function TestDrawer() {
           </DrawerFooter>
         </div>
       )}
-    </Drawer>
+    </DrawerWrapper>
   );
 }

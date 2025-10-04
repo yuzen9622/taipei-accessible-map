@@ -5,6 +5,7 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import { Geist, Geist_Mono } from "next/font/google";
 import ClientLayout from "@/components/layout/client-layout";
 import GoogleMapProvider from "@/components/provider/GoogleMapProvider";
+import TestDrawer from "@/components/TestDrawer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,7 +37,10 @@ export default function RootLayout({
           <GoogleOAuthProvider
             clientId={process.env.NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID ?? ""}
           >
-            <ClientLayout>{children}</ClientLayout>
+            <ClientLayout>
+              <TestDrawer />
+              {children}
+            </ClientLayout>
           </GoogleOAuthProvider>
         </GoogleMapProvider>
       </body>

@@ -12,7 +12,6 @@ import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { DrawerTitle } from "../ui/drawer";
 
 type RouteCardProps = {
   route: google.maps.DirectionsRoute;
@@ -81,9 +80,7 @@ export default function RouteCard({ route }: RouteCardProps) {
     <Card>
       <CardHeader>
         <CardTitle className="flex justify-between items-center">
-          <DrawerTitle className="text-2xl font-bold">
-            {routeLocalValue?.distance}
-          </DrawerTitle>
+          <h1 className="text-2xl font-bold">{routeLocalValue?.distance}</h1>
 
           {routeLocalValue.duration && (
             <div className="flex items-center gap-2 text-muted-foreground">

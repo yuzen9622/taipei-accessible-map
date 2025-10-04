@@ -7,18 +7,19 @@ import {
 } from "@vis.gl/react-google-maps";
 
 import { useEffect } from "react";
-import AccessibleDrawer from "@/components/AccessibleDrawer";
+
 import MapWrapper from "@/components/MapWrapper";
 import AccessibilityPin from "@/components/MetroA11yWrapper";
-import RouteDrawer from "@/components/RouteDrawer";
+
 import RouteLine from "@/components/RouteWrapper";
 import NowPin from "@/components/shared/NowPin";
-import TestDrawer from "@/components/TestDrawer";
+
 import { getLocation } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
+import SearchPin from "./shared/SearchPin";
 
 export default function ClientMap() {
-  const { setMap, setInfoShow, setUserLocation, setSearchPlace } =
+  const { setMap, setInfoShow, setUserLocation, setSearchPlace, searchPlace } =
     useMapStore();
 
   const mapHook = useMap();
@@ -83,10 +84,10 @@ export default function ClientMap() {
     >
       <MapWrapper />
       <AccessibilityPin />
-      <AccessibleDrawer />
+
       <NowPin />
-      <TestDrawer />
-      <RouteDrawer />
+      {searchPlace && <SearchPin destination={searchPlace} />}
+
       <RouteLine />
     </GoogleMap>
   );

@@ -1,34 +1,31 @@
 import { memo, useEffect, useState } from "react";
 
-import { Drawer } from "./ui/drawer";
+import Drawer from "@/components/ui/costume-drawer";
 
 type DrawerWrapperProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  snapPoints?: (string | number)[];
+  placement?: "left" | "right" | "top" | "bottom";
   children: React.ReactNode;
 };
 
 const DrawerWrapper = memo(function DrawerWrapper({
   children,
   open,
-  snapPoints = ["500px", 1],
+  placement,
   onOpenChange,
 }: DrawerWrapperProps) {
   const [direction, setDirection] = useState<
     "left" | "right" | "top" | "bottom"
   >("bottom");
-  const [snapTo, setSnapTo] = useState<string | number | null>(snapPoints[0]);
 
   useEffect(() => {
     const observer = new ResizeObserver((el) => {
       el.forEach((e) => {
         if (e.contentRect.width > 1024) {
           setDirection("left");
-          setSnapTo(1);
         } else {
           setDirection("bottom");
-          setSnapTo(snapPoints[0]);
         }
       });
     });
@@ -36,19 +33,12 @@ const DrawerWrapper = memo(function DrawerWrapper({
     return () => {
       observer.disconnect();
     };
-  }, [snapPoints]);
+  }, []);
   return (
     <Drawer
       key={direction}
-      modal={false}
-      handleOnly={true}
-      dismissible={direction === "bottom"}
+      placement={placement || direction}
       open={open}
-      direction={direction}
-      snapPoints={direction === "bottom" ? snapPoints : [2]}
-      activeSnapPoint={snapTo}
-      setActiveSnapPoint={setSnapTo}
-      onOpenChange={onOpenChange}
       onClose={() => onOpenChange(false)}
     >
       {children}

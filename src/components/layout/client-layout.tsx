@@ -1,5 +1,7 @@
 "use client";
 import { useCallback, useEffect } from "react";
+import AccessibleDrawer from "@/components/AccessibleDrawer";
+import RouteDrawer from "@/components/RouteDrawer";
 import { refreshToken } from "@/lib/api/auth";
 import { getUserInfo } from "@/lib/api/user";
 import useAuthStore from "@/stores/useAuthStore";
@@ -30,5 +32,10 @@ export default function ClientLayout({
     }
   }, [initSearchHistory, getNewAccessToken]);
 
-  return <div className="w-full h-dvh flex flex-col">{children}</div>;
+  return (
+    <div className="w-full h-dvh flex flex-col">
+      <RouteDrawer /> <AccessibleDrawer />
+      {children}
+    </div>
+  );
 }

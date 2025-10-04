@@ -28,7 +28,7 @@ interface MapAction {
   setUserLocation: (location: google.maps.LatLngLiteral | null) => void;
   setOrigin: (origin: PlaceDetail | null) => void;
   setDestination: (destination: PlaceDetail | null) => void;
-  setInfoShow: (infoShow: InfoShow) => void;
+  setInfoShow: (infoShow: Partial<InfoShow>) => void;
   setSearchPlace: (place: PlaceDetail | null) => void;
   toggleInfoShow: (open: boolean) => void;
   setComputeRoutes: (route: google.maps.DirectionsRoute[] | null) => void;
@@ -60,7 +60,7 @@ const useMapStore = create<MapStore>((set, get) => ({
   setRouteInfoShow: (show) => set({ routeInfoShow: show }),
   infoShow: { isOpen: false, kind: null },
   setInfoShow: (infoShow) =>
-    set({ infoShow: { ...get().infoShow, ...infoShow } }),
+    set({ infoShow: { ...get().infoShow, ...infoShow } as InfoShow }),
   toggleInfoShow: (open) =>
     set({ infoShow: { ...get().infoShow, isOpen: open } }),
   searchPlace: null,
