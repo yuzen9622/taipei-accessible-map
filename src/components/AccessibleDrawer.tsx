@@ -42,7 +42,7 @@ export default function AccessibleDrawer() {
   };
 
   return (
-    <DrawerWrapper open={a11yDrawerOpen} onOpenChange={setA11yDrawerOpen}>
+    <DrawerWrapper open={a11yDrawerOpen}>
       <div className="p-4 space-y-4 flex flex-col overflow-hidden">
         <span className="flex items-center justify-between">
           <h1 className="text-lg font-semibold">無障礙設施資訊</h1>

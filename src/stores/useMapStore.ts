@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { InfoShow, Marker, PlaceDetail } from "@/types";
+import type { InfoShow, Marker, Navigation, PlaceDetail } from "@/types";
 import { A11yEnum } from "@/types/index";
 
 interface MapState {
@@ -21,6 +21,7 @@ interface MapState {
   savedPlaces: PlaceDetail[];
   timeline: { time: string; event: string }[];
   navigationDrawerOpen: boolean;
+  navigation: Navigation;
 }
 
 interface MapAction {
@@ -30,7 +31,7 @@ interface MapAction {
   setDestination: (destination: PlaceDetail | null) => void;
   setInfoShow: (infoShow: Partial<InfoShow>) => void;
   setSearchPlace: (place: PlaceDetail | null) => void;
-  toggleInfoShow: (open: boolean) => void;
+
   setComputeRoutes: (route: google.maps.DirectionsRoute[] | null) => void;
   setRoutePolyline: (polyline: google.maps.Polyline | null) => void;
   setRouteInfoShow: (show: boolean) => void;
@@ -43,6 +44,7 @@ interface MapAction {
   addSearchHistory: (searchTerm: PlaceDetail) => void;
   clearSearchHistory: () => void;
   setNavigationDrawerOpen: (open: boolean) => void;
+  setNavigation: (navigation: Partial<Navigation>) => void;
 }
 
 type MapStore = MapState & MapAction;
@@ -61,8 +63,7 @@ const useMapStore = create<MapStore>((set, get) => ({
   infoShow: { isOpen: false, kind: null },
   setInfoShow: (infoShow) =>
     set({ infoShow: { ...get().infoShow, ...infoShow } as InfoShow }),
-  toggleInfoShow: (open) =>
-    set({ infoShow: { ...get().infoShow, isOpen: open } }),
+
   searchPlace: null,
   setSearchPlace: (place) => set({ searchPlace: place }),
   computeRoutes: null,
@@ -118,6 +119,15 @@ const useMapStore = create<MapStore>((set, get) => ({
   timeline: [],
   navigationDrawerOpen: false,
   setNavigationDrawerOpen: (open) => set({ navigationDrawerOpen: open }),
+  navigation: {
+    isNavigating: false,
+    steps: [],
+    currentStepIndex: 0,
+    detailStepIndex: 0,
+    totalSteps: 0,
+  },
+  setNavigation: (navigation) =>
+    set({ navigation: { ...get().navigation, ...navigation } as Navigation }),
 }));
 
 export default useMapStore;

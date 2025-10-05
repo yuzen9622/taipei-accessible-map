@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 
-import Drawer from "@rc-component/drawer";
+import Drawer, { type DrawerProps } from "@rc-component/drawer";
 import { cn } from "@/lib/utils";
 import "rc-drawer/assets/index.css"; // 重要：導入樣式
 
@@ -9,12 +9,10 @@ const CostumeDrawer = ({
   onClose,
   children,
   placement = "left",
+  size = "50%",
 }: {
-  open: boolean;
-  placement?: "left" | "right" | "top" | "bottom";
-  onClose: () => void;
   children: React.ReactNode;
-}) => {
+} & DrawerProps) => {
   return (
     <Drawer
       open={open}
@@ -24,9 +22,9 @@ const CostumeDrawer = ({
         console.log("transitionEnd: ", c);
       }}
       placement={placement}
-      size={placement === "bottom" || placement === "top" ? "50%" : 460}
+      size={placement === "bottom" || placement === "top" ? size : 460}
       mask={false}
-      className="h-full w-full  flex items-end p-2"
+      className="h-full w-full  flex items-end overflow-hidden p-2"
       classNames={{
         wrapper: cn("w-full ", placement === "bottom" && "bottom-0"),
       }}
@@ -34,7 +32,7 @@ const CostumeDrawer = ({
     >
       <div
         className={cn(
-          " pointer-events-auto lg:h-[calc(100vh-10rem)] h-full rounded-3xl  w-full overflow-y-auto overflow-x-hidden bg-background shadow-xl"
+          " pointer-events-auto lg:max-h-[calc(100dvh-12em)] sm:max-h-1/2 max-h-full h-fit  rounded-3xl  w-full overflow-y-auto overflow-x-hidden bg-background shadow-xl"
         )}
       >
         {children}

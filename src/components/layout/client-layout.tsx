@@ -6,6 +6,7 @@ import { refreshToken } from "@/lib/api/auth";
 import { getUserInfo } from "@/lib/api/user";
 import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
+import NavigationDrawer from "../NavigationDrawer";
 
 export default function ClientLayout({
   children,
@@ -34,7 +35,7 @@ export default function ClientLayout({
 
   return (
     <div className="w-full h-dvh flex flex-col">
-      <RouteDrawer /> <AccessibleDrawer />
+      <RouteDrawer /> <AccessibleDrawer /> <NavigationDrawer />
       {children}
     </div>
   );

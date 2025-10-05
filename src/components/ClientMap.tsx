@@ -19,8 +19,14 @@ import useMapStore from "@/stores/useMapStore";
 import SearchPin from "./shared/SearchPin";
 
 export default function ClientMap() {
-  const { setMap, setInfoShow, setUserLocation, setSearchPlace, searchPlace } =
-    useMapStore();
+  const {
+    setMap,
+    setInfoShow,
+    setUserLocation,
+    setSearchPlace,
+    searchPlace,
+    navigation,
+  } = useMapStore();
 
   const mapHook = useMap();
   const placesLib = useMapsLibrary("places");
@@ -67,16 +73,37 @@ export default function ClientMap() {
       disableDefaultUI={true}
       onClick={async (e) => {
         e.stop();
-        console.log(e.detail);
-        if (!placesLib || !e.detail?.placeId) return;
-        const place = new placesLib.Place({ id: e.detail.placeId });
-        setInfoShow({ isOpen: true, kind: null });
-        await place.fetchFields({ fields: ["*"] });
 
-        const latLng = getLocation(place);
-        if (!latLng) return;
-        setInfoShow({ isOpen: true, place, kind: "place" });
-        setSearchPlace({ kind: "place", place, position: latLng });
+        console.log(e.detail);
+        if (!placesLib || navigation.isNavigating) return;
+        if (e.detail.placeId) {
+          const place = new placesLib.Place({ id: e.detail.placeId });
+          setInfoShow({ isOpen: true, kind: null });
+          await place.fetchFields({ fields: ["*"] });
+          const latLng = getLocation(place);
+          if (!latLng) return;
+          mapHook?.panTo(latLng);
+          mapHook?.setZoom(18);
+          setInfoShow({ isOpen: true, place, kind: "place" });
+          setSearchPlace({ kind: "place", place, position: latLng });
+        } else {
+          const geocoder = new google.maps.Geocoder();
+          const result = await geocoder.geocode({ location: e.detail.latLng });
+          console.log(result);
+
+          mapHook?.panTo(result.results[0].geometry.location);
+          mapHook?.setZoom(18);
+          setInfoShow({
+            isOpen: true,
+            place: result.results[0],
+            kind: "geocoder",
+          });
+          setSearchPlace({
+            kind: "geocoder",
+            place: result.results[0],
+            position: result.results[0].geometry.location.toJSON(),
+          });
+        }
       }}
       mapId={"9b39d2c1e16cb61adfef5521"}
       defaultBounds={taipeiNewTaipeiBounds}

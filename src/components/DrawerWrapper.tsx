@@ -1,19 +1,17 @@
+import type { DrawerProps } from "@rc-component/drawer";
 import { memo, useEffect, useState } from "react";
-
 import Drawer from "@/components/ui/costume-drawer";
 
 type DrawerWrapperProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  placement?: "left" | "right" | "top" | "bottom";
   children: React.ReactNode;
-};
+} & DrawerProps;
 
 const DrawerWrapper = memo(function DrawerWrapper({
   children,
   open,
   placement,
-  onOpenChange,
+
+  ...props
 }: DrawerWrapperProps) {
   const [direction, setDirection] = useState<
     "left" | "right" | "top" | "bottom"
@@ -22,7 +20,7 @@ const DrawerWrapper = memo(function DrawerWrapper({
   useEffect(() => {
     const observer = new ResizeObserver((el) => {
       el.forEach((e) => {
-        if (e.contentRect.width > 1024) {
+        if (e.contentRect.width > 767) {
           setDirection("left");
         } else {
           setDirection("bottom");
@@ -39,7 +37,7 @@ const DrawerWrapper = memo(function DrawerWrapper({
       key={direction}
       placement={placement || direction}
       open={open}
-      onClose={() => onOpenChange(false)}
+      {...props}
     >
       {children}
     </Drawer>

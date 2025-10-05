@@ -30,10 +30,7 @@ export default function RouteDrawer() {
   };
 
   return (
-    <DrawerWrapper
-      open={routeInfoShow}
-      onOpenChange={(b) => setRouteInfoShow(b)}
-    >
+    <DrawerWrapper open={routeInfoShow}>
       <DrawerHeader className="w-full space-y-2 ">
         <div className=" flex gap-4  ml-10   justify-between  items-center">
           <h1 className="text-2xl">路線規劃</h1>

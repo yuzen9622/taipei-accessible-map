@@ -26,7 +26,7 @@ type PlaceType = {
 
 type GeocoderType = {
   kind: "geocoder";
-  place: google.maps.Geocoder;
+  place: google.maps.GeocoderResult;
 };
 
 // --- Detail 需要帶座標 ---
@@ -53,4 +53,12 @@ export type metroA11yAPI = {
     offset: number;
     results: metroA11yData[];
   };
+};
+
+export type Navigation = {
+  isNavigating: boolean;
+  steps: { title: string; steps: google.maps.DirectionsStep[] }[];
+  currentStepIndex: number;
+  detailStepIndex: number;
+  totalSteps: number;
 };

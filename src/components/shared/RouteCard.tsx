@@ -8,8 +8,9 @@ import {
   TramFront,
 } from "lucide-react";
 import { useMemo } from "react";
+import useNavigation from "@/hook/useNavigation";
 import { cn } from "@/lib/utils";
-import useMapStore from "@/stores/useMapStore";
+
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 
@@ -18,7 +19,7 @@ type RouteCardProps = {
 };
 
 export default function RouteCard({ route }: RouteCardProps) {
-  const { setRouteSelect } = useMapStore();
+  const { startNavigation } = useNavigation();
 
   const routeLocalValue = useMemo(() => {
     const result = {
@@ -198,7 +199,7 @@ export default function RouteCard({ route }: RouteCardProps) {
           <Button
             variant="default"
             className="w-full"
-            onClick={() => setRouteSelect(route)}
+            onClick={() => startNavigation(route.legs[0].steps)}
           >
             <FlagIcon className="mr-2 h-4 w-4" />
             開始導航
