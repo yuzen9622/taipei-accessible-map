@@ -37,21 +37,23 @@ export default function RoutePlanInput() {
 
   const handleOriginPlace = useCallback(
     (placeDetail: PlaceDetail) => {
+      const startLocation = destination?.position || userLocation;
       if (placeDetail.kind === "place") {
         setOriginSearchInput(placeDetail.place.displayName || "");
       }
 
       setOrigin(placeDetail);
 
-      if (destination?.position) {
-        computeRouteService(placeDetail.position, destination.position);
+      if (startLocation) {
+        computeRouteService(placeDetail.position, startLocation);
       }
     },
-    [setOrigin, destination, computeRouteService]
+    [setOrigin, destination, computeRouteService, userLocation]
   );
 
   const handleDestinationPlace = useCallback(
     (placeDetail: PlaceDetail) => {
+      const startLocation = origin?.position || userLocation;
       setDestination(placeDetail);
       if (placeDetail.kind === "place") {
         setDestinationSearchInput(placeDetail.place.displayName || "");
@@ -62,11 +64,8 @@ export default function RoutePlanInput() {
       }
       setSearchPlace(null);
 
-      if (origin?.position) {
-        computeRouteService(
-          userLocation || origin.position,
-          placeDetail.position
-        );
+      if (startLocation) {
+        computeRouteService(startLocation, placeDetail.position);
       }
     },
     [
@@ -89,14 +88,20 @@ export default function RoutePlanInput() {
 
   useEffect(() => {
     setOriginSearchInput("");
-    if (origin?.kind === "place")
+    if (origin?.kind === "place") {
       setOriginSearchInput(origin.place.displayName || "");
+    } else if (origin?.kind === "geocoder") {
+      setOriginSearchInput(origin.place.formatted_address || "");
+    }
   }, [origin]);
 
   useEffect(() => {
     setDestinationSearchInput("");
-    if (destination?.kind === "place")
+    if (destination?.kind === "place") {
       setDestinationSearchInput(destination.place.displayName || "");
+    } else if (destination?.kind === "geocoder") {
+      setDestinationSearchInput(destination.place.formatted_address || "");
+    }
   }, [destination]);
 
   return (

@@ -56,29 +56,31 @@ export default function PlaceDrawerContent({
   }, [place]);
 
   return (
-    <div className="flex flex-col overflow-auto h-full ">
-      <Swiper
-        pagination={{
-          type: "bullets",
-        }}
-        navigation={true}
-        className="w-full h-60 "
-        modules={[Pagination]}
-      >
-        {galleryImages.map((src, idx) => (
-          <SwiperSlide className="" key={src}>
-            <div className=" w-full flex  justify-center   h-full  overflow-hidden  shadow-md">
-              <Image
-                src={src}
-                alt={`店家圖片 ${idx + 1}`}
-                width={400}
-                height={300}
-                className="object-cover w-full  max-w-xl h-full"
-              />
-            </div>
-          </SwiperSlide>
-        ))}
-      </Swiper>
+    <>
+      {galleryImages.length > 0 && (
+        <Swiper
+          pagination={{
+            type: "bullets",
+          }}
+          navigation={true}
+          className="w-full h-60 "
+          modules={[Pagination]}
+        >
+          {galleryImages.map((src, idx) => (
+            <SwiperSlide className="" key={src}>
+              <div className=" w-full flex  justify-center   h-full  overflow-hidden  shadow-md">
+                <Image
+                  src={src}
+                  alt={`店家圖片 ${idx + 1}`}
+                  width={400}
+                  height={300}
+                  className="object-cover w-full  max-w-xl h-full"
+                />
+              </div>
+            </SwiperSlide>
+          ))}
+        </Swiper>
+      )}
 
       <DrawerHeader className="w-full flex flex-col gap-2 border-b  border-border/50  py-3">
         <div className="flex justify-between items-center">
@@ -401,7 +403,6 @@ export default function PlaceDrawerContent({
           </TabsContent>
         </Tabs>
       </DrawerHeader>
-      {/* Footer */}
-    </div>
+    </>
   );
 }

@@ -124,7 +124,7 @@ function PlaceInput({
             placeholder={placeholder}
             tabIndex={0}
             className={cn(
-              "  shadow-none max-lg:text-xs  h-fit ring-transparent focus-visible:ring-transparent",
+              "  shadow-none  h-fit ring-transparent focus-visible:ring-transparent",
               className
             )}
             value={value}

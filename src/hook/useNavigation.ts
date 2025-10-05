@@ -9,9 +9,23 @@ export default function useNavigation() {
     setInfoShow,
     setRouteInfoShow,
     map,
-
     selectRoute,
   } = useMapStore();
+
+  const speakDistance = (step: google.maps.DirectionsStep) => {
+    if (step.travel_mode !== google.maps.TravelMode.WALKING) return;
+    const msg = new SpeechSynthesisUtterance(`前方距離 ${step.distance?.text}`);
+    msg.rate = 0.6;
+    window.speechSynthesis.speak(msg);
+  };
+
+  const speakInstruction = (step: google.maps.DirectionsStep) => {
+    const msg = new SpeechSynthesisUtterance(
+      step.instructions?.replaceAll(/<[^>]*>|\/+/g, "")
+    );
+    msg.rate = 0.6;
+    window.speechSynthesis.speak(msg);
+  };
 
   const nextStep = () => {
     const currentRoute = navigation.steps[navigation.currentStepIndex];
@@ -20,14 +34,17 @@ export default function useNavigation() {
     if (navigation.detailStepIndex < currentRoute.steps.length - 1) {
       currentDetailStep = currentRoute.steps[navigation.detailStepIndex + 1];
       setNavigation({ detailStepIndex: navigation.detailStepIndex + 1 });
+      speakInstruction(currentDetailStep);
     } else if (navigation.currentStepIndex < navigation.totalSteps - 1) {
       currentDetailStep =
         navigation.steps[navigation.currentStepIndex + 1].steps[0];
+      speakInstruction(currentDetailStep);
       setNavigation({
         currentStepIndex: navigation.currentStepIndex + 1,
         detailStepIndex: 0,
       });
     }
+
     if (map && currentDetailStep) {
       const { start_location, end_location } = currentDetailStep;
       map.panTo(start_location);
@@ -36,6 +53,7 @@ export default function useNavigation() {
         start_location,
         end_location
       );
+      speakDistance(currentDetailStep);
       map.setTilt(45);
       map.setHeading(heading);
     }
@@ -81,6 +99,7 @@ export default function useNavigation() {
       }
       return { title: step.instructions, steps: [step] };
     });
+    speakDistance(navigationSteps[0].steps[0]);
     setNavigationDrawerOpen(true);
     setInfoShow({ isOpen: false });
     setRouteInfoShow(false);
