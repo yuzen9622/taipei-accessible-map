@@ -125,6 +125,7 @@ const useMapStore = create<MapStore>((set, get) => ({
     currentStepIndex: 0,
     detailStepIndex: 0,
     totalSteps: 0,
+    isCurrentLocation: false,
   },
   setNavigation: (navigation) =>
     set({ navigation: { ...get().navigation, ...navigation } as Navigation }),

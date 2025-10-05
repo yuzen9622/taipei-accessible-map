@@ -75,24 +75,24 @@ export default function ClientMap() {
         e.stop();
 
         console.log(e.detail);
-        if (!placesLib || navigation.isNavigating) return;
+        if (!placesLib || navigation.isNavigating || !mapHook) return;
         if (e.detail.placeId) {
           const place = new placesLib.Place({ id: e.detail.placeId });
           setInfoShow({ isOpen: true, kind: null });
           await place.fetchFields({ fields: ["*"] });
           const latLng = getLocation(place);
           if (!latLng) return;
-          mapHook?.panTo(latLng);
-          mapHook?.setZoom(18);
+          mapHook.panTo(latLng);
+          mapHook.setZoom(18);
           setInfoShow({ isOpen: true, place, kind: "place" });
           setSearchPlace({ kind: "place", place, position: latLng });
         } else {
           const geocoder = new google.maps.Geocoder();
           const result = await geocoder.geocode({ location: e.detail.latLng });
-          console.log(result);
 
-          mapHook?.panTo(result.results[0].geometry.location);
-          mapHook?.setZoom(18);
+          mapHook.panTo(result.results[0].geometry.location);
+          mapHook.setZoom(18);
+          console.log(result.results[0]);
           setInfoShow({
             isOpen: true,
             place: result.results[0],

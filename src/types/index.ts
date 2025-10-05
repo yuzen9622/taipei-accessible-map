@@ -57,6 +57,7 @@ export type metroA11yAPI = {
 
 export type Navigation = {
   isNavigating: boolean;
+  isCurrentLocation: boolean;
   steps: { title: string; steps: google.maps.DirectionsStep[] }[];
   currentStepIndex: number;
   detailStepIndex: number;

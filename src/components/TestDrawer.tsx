@@ -5,7 +5,7 @@ import { Heart, Share2 } from "lucide-react";
 import { useCallback } from "react";
 
 import useComputeRoute from "@/hook/useComputeRoute";
-import { getLocation } from "@/lib/utils";
+
 import useMapStore from "@/stores/useMapStore";
 import { Button } from "./ui/button";
 import { DrawerFooter } from "./ui/drawer";
@@ -15,7 +15,9 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 
 import DrawerWrapper from "./DrawerWrapper";
+import GeocoderDrawerContent from "./GeocoderDrawerContent";
 import PlaceDrawerContent from "./PlaceDrawerContent";
+import LoadingDrawer from "./shared/LoadingDrawer";
 
 export default function TestDrawer() {
   const {
@@ -24,55 +26,77 @@ export default function TestDrawer() {
     setSearchPlace,
     setRouteInfoShow,
     setDestination,
-
-    map,
+    userLocation,
   } = useMapStore();
-  const { isLoading, computeRouteService } = useComputeRoute();
-  const handlePlanRoute = useCallback(async () => {
-    if (infoShow.kind !== "place") return;
-    const place = infoShow.place;
-    const latLng = getLocation(place);
-    if (!latLng || !map) return;
-    console.log(place);
-    await computeRouteService({ lat: 25.0475613, lng: 121.5173399 }, latLng);
 
-    setDestination({ kind: "place", place, position: latLng });
+  const { isLoading, computeRouteService } = useComputeRoute();
+
+  const handlePlanRoute = useCallback(async () => {
+    if (!infoShow.kind) return;
+    let latLng: google.maps.LatLngLiteral | null = null;
+    if (infoShow.kind === "place") {
+      const place = infoShow.place;
+      if (!place.location) return;
+      latLng = place.location.toJSON();
+      setDestination({
+        kind: "place",
+        place,
+        position: latLng,
+      });
+    } else {
+      latLng = infoShow.place.geometry.location.toJSON();
+      setDestination({
+        kind: "geocoder",
+        place: infoShow.place,
+        position: latLng,
+      });
+    }
+    if (userLocation) await computeRouteService(userLocation, latLng);
     setSearchPlace(null);
     setInfoShow({ isOpen: false, kind: null });
     setRouteInfoShow(true);
   }, [
+    userLocation,
+
     infoShow,
     setDestination,
     computeRouteService,
     setInfoShow,
     setSearchPlace,
     setRouteInfoShow,
-    map,
   ]);
+
   return (
     <DrawerWrapper open={infoShow.isOpen}>
-      <div className="flex flex-col overflow-auto h-full">
-        {infoShow.kind === "place" && (
-          <PlaceDrawerContent place={infoShow.place} />
-        )}
-        <DrawerFooter className="bg-background/95 backdrop-blur-md border-t w-full border-border py-3 flex justify-end gap-2">
-          <Button
-            disabled={isLoading}
-            onClick={handlePlanRoute}
-            className="flex-1"
-          >
-            {isLoading ? "規劃中..." : "規劃路線"}
-          </Button>
-          <span className="space-x-4">
-            <Button variant="outline" size="icon">
-              <Heart className="h-4 w-4" />
+      {!infoShow.kind ? (
+        <LoadingDrawer />
+      ) : (
+        <div className="flex flex-col overflow-auto h-full">
+          {infoShow.kind === "place" && (
+            <PlaceDrawerContent place={infoShow.place} />
+          )}
+          {infoShow.kind === "geocoder" && (
+            <GeocoderDrawerContent geocoder={infoShow.place} />
+          )}
+          <DrawerFooter className="bg-background/95 backdrop-blur-md border-t w-full border-border py-3 flex justify-end gap-2">
+            <Button
+              disabled={isLoading}
+              onClick={handlePlanRoute}
+              className="flex-1"
+            >
+              {isLoading ? "規劃中..." : "規劃路線"}
             </Button>
-            <Button variant="outline" size="icon">
-              <Share2 className="h-4 w-4" />
-            </Button>
-          </span>
-        </DrawerFooter>
-      </div>
+            <div className="flex gap-2">
+              <Button variant="outline" size="icon">
+                <Heart className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon">
+                <Share2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </DrawerFooter>
+        </div>
+      )}
     </DrawerWrapper>
   );
 }
