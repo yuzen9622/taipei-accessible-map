@@ -28,7 +28,11 @@ export default function AccessibleToolBar() {
   ];
 
   return (
-    <div className="  pointer-events-auto w-fit h-fit flex flex-col space-y-2">
+    <div
+      className={cn(
+        "  pointer-events-auto w-fit h-fit flex flex-col  transition-all"
+      )}
+    >
       {toolbarItems.map((item) => {
         const isSelected = selectedA11yTypes.includes(item.type);
 

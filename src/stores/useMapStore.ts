@@ -1,8 +1,6 @@
 import { create } from "zustand";
-import type { InfoShow, Marker, PlaceDetail } from "@/types";
+import type { InfoShow, Marker, Navigation, PlaceDetail } from "@/types";
 import { A11yEnum } from "@/types/index";
-
-import type { Route } from "@/types/route.t";
 
 interface MapState {
   map: google.maps.Map | null;
@@ -22,6 +20,8 @@ interface MapState {
   searchHistory: PlaceDetail[];
   savedPlaces: PlaceDetail[];
   timeline: { time: string; event: string }[];
+  navigationDrawerOpen: boolean;
+  navigation: Navigation;
 }
 
 interface MapAction {
@@ -29,8 +29,9 @@ interface MapAction {
   setUserLocation: (location: google.maps.LatLngLiteral | null) => void;
   setOrigin: (origin: PlaceDetail | null) => void;
   setDestination: (destination: PlaceDetail | null) => void;
-  setInfoShow: (infoShow: InfoShow) => void;
+  setInfoShow: (infoShow: Partial<InfoShow>) => void;
   setSearchPlace: (place: PlaceDetail | null) => void;
+
   setComputeRoutes: (route: google.maps.DirectionsRoute[] | null) => void;
   setRoutePolyline: (polyline: google.maps.Polyline | null) => void;
   setRouteInfoShow: (show: boolean) => void;
@@ -42,6 +43,8 @@ interface MapAction {
   initSearchHistory: (history: PlaceDetail[]) => void;
   addSearchHistory: (searchTerm: PlaceDetail) => void;
   clearSearchHistory: () => void;
+  setNavigationDrawerOpen: (open: boolean) => void;
+  setNavigation: (navigation: Partial<Navigation>) => void;
 }
 
 type MapStore = MapState & MapAction;
@@ -59,7 +62,8 @@ const useMapStore = create<MapStore>((set, get) => ({
   setRouteInfoShow: (show) => set({ routeInfoShow: show }),
   infoShow: { isOpen: false, kind: null },
   setInfoShow: (infoShow) =>
-    set({ infoShow: { ...get().infoShow, ...infoShow } }),
+    set({ infoShow: { ...get().infoShow, ...infoShow } as InfoShow }),
+
   searchPlace: null,
   setSearchPlace: (place) => set({ searchPlace: place }),
   computeRoutes: null,
@@ -113,6 +117,17 @@ const useMapStore = create<MapStore>((set, get) => ({
   clearSearchHistory: () => set({ searchHistory: [] }),
   savedPlaces: [],
   timeline: [],
+  navigationDrawerOpen: false,
+  setNavigationDrawerOpen: (open) => set({ navigationDrawerOpen: open }),
+  navigation: {
+    isNavigating: false,
+    steps: [],
+    currentStepIndex: 0,
+    detailStepIndex: 0,
+    totalSteps: 0,
+  },
+  setNavigation: (navigation) =>
+    set({ navigation: { ...get().navigation, ...navigation } as Navigation }),
 }));
 
 export default useMapStore;

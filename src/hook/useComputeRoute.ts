@@ -6,7 +6,8 @@ import useMapStore from "@/stores/useMapStore";
 export default function useComputeRoute() {
   const [isLoading, setIsLoading] = useState(false);
 
-  const { setComputeRoutes, map, setRouteSelect } = useMapStore();
+  const { setComputeRoutes, map, setRouteSelect, setRouteInfoShow } =
+    useMapStore();
   const Route = useMapsLibrary("routes");
 
   const computeRouteService = useCallback(
@@ -30,8 +31,9 @@ export default function useComputeRoute() {
       setComputeRoutes(data);
       setRouteSelect(data[0]);
       setIsLoading(false);
+      setRouteInfoShow(true);
     },
-    [Route, map, setComputeRoutes, setRouteSelect]
+    [Route, map, setComputeRoutes, setRouteSelect, setRouteInfoShow]
   );
 
   // const computeRoute = async (
