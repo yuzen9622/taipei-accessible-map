@@ -1,3 +1,5 @@
+import { BusIcon, Train, TramFront } from "lucide-react";
+
 export const END_POINT =
   process.env.NEXT_PUBLIC_END_POINT || "http://localhost:5000";
 
@@ -10,6 +12,24 @@ export enum ColorEnum {
   Orange = "orange",
   Yellow = "yellow",
 }
+export const ROUTE_COLORS = {
+  walking: "rgb(59, 130, 246)",
+  default: "rgb(249, 115, 22)",
+  HIGH_SPEED_TRAIN: "rgb(249, 115, 22)",
+  BUS: "rgb(34, 197, 94)",
+  RAIL: "#003366",
+  SUBWAY: "#FF6B35",
+  TRAM: "#9B59B6",
+} as const;
+
+// 圖標映射
+export const VEHICLE_ICONS = {
+  BUS: BusIcon,
+  SUBWAY: TramFront,
+  RAIL: Train,
+  TRAM: TramFront,
+  HIGH_SPEED_TRAIN: Train,
+} as const;
 
 export enum FontSizeEnum {
   Small = "small",

@@ -21,29 +21,10 @@ export default function useComputeRoute() {
   const computeA11yWalkingRoute = useCallback(
     async (point: google.maps.LatLng) => {
       const a11yPlaces = await getNearbyRouteA11yPlaces(point.toJSON());
-      // const waypoints = a11yPlaces.data
-      //   ? [
-      //       {
-      //         location: point,
-      //         stopover: true,
-      //       },
-      //     ]
-      //   : undefined;
 
       if (a11yPlaces.data) {
         addRouteA11y(formatA11y(a11yPlaces.data));
       }
-
-      // const walkingRoute = await computeRouteService.route({
-      //   origin: start,
-      //   destination: end,
-      //   travelMode: google.maps.TravelMode.WALKING,
-      //   waypoints,
-      //   optimizeWaypoints: true,
-      // });
-      // const a11yLegs = walkingRoute.routes[0];
-      // console.log("a11yLegs", a11yLegs, waypoints);
-      // return a11yLegs;
     },
     [addRouteA11y]
   );
@@ -80,24 +61,12 @@ export default function useComputeRoute() {
             // 判斷應該使用起點還是終點
             const useStartLocation =
               prevStep?.travel_mode === google.maps.TravelMode.TRANSIT;
-            // const isSubway =
-            //   nextStep?.transit?.line.vehicle.type ===
-            //     google.maps.VehicleType.SUBWAY ||
-            //   prevStep?.transit?.line.vehicle.type ===
-            //     google.maps.VehicleType.SUBWAY;
 
             const point = useStartLocation
               ? step.start_location
               : step.end_location;
 
-            await computeA11yWalkingRoute(point);
-            // step.steps = walkingRoute.legs.flatMap((leg) => leg.steps);
-            // step.encoded_lat_lngs = walkingRoute.overview_polyline;
-            // step.path = walkingRoute.overview_path;
-            // step.instructions = walkingRoute.summary;
-            // if (walkingRoute) {
-            //   totalSteps.push(...walkingRoute.legs.flatMap((leg) => leg.steps));
-            // }
+            computeA11yWalkingRoute(point);
           }
           totalSteps.push(step);
         }

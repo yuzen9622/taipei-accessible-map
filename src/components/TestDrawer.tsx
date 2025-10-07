@@ -31,6 +31,8 @@ export default function TestDrawer() {
 
   const { isLoading, computeRouteService } = useComputeRoute();
 
+  console.log("infoShow", infoShow.kind ? infoShow.place : "null");
+
   const handlePlanRoute = useCallback(async () => {
     if (!infoShow.kind) return;
     let latLng: google.maps.LatLngLiteral | null = null;
@@ -79,7 +81,7 @@ export default function TestDrawer() {
         }}
         size="icon"
         variant="ghost"
-        className="     absolute  bg-secondary  z-20 rounded-3xl  right-8 top-4"
+        className="absolute  bg-secondary  z-20 rounded-3xl  right-8 top-4"
       >
         <X className="h-5 w-5" />
       </Button>
