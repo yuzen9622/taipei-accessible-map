@@ -15,6 +15,7 @@ export default function SearchPin({
       if (!e.latLng) return;
 
       map.panTo({ lat: e.latLng.lat(), lng: e.latLng.lng() });
+      map.setZoom(18);
       console.log("destination", destination);
       if (destination)
         if (destination.kind === "place") {

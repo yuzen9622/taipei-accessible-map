@@ -1,13 +1,9 @@
 import { Loader2Icon } from "lucide-react";
 
-import { DrawerContent, DrawerTitle } from "../ui/drawer";
-
 export default function LoadingDrawer() {
   return (
-    <DrawerContent>
-      <DrawerTitle className="w-full h-full flex items-center justify-center">
-        <Loader2Icon className="animate-spin" />
-      </DrawerTitle>
-    </DrawerContent>
+    <div className="w-full lg:h-[calc(100dvh-12em)] h-[150px] flex items-center justify-center">
+      <Loader2Icon className="animate-spin" />
+    </div>
   );
 }

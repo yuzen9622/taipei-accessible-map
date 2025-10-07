@@ -1,8 +1,6 @@
 import { create } from "zustand";
-import type { InfoShow, Marker, PlaceDetail } from "@/types";
+import type { InfoShow, Marker, Navigation, PlaceDetail } from "@/types";
 import { A11yEnum } from "@/types/index";
-
-import type { Route } from "@/types/route.t";
 
 interface MapState {
   map: google.maps.Map | null;
@@ -15,6 +13,7 @@ interface MapState {
   computeRoutes: google.maps.DirectionsRoute[] | null;
   routePolyline: google.maps.Polyline | null;
   selectRoute: google.maps.DirectionsRoute | null;
+  routeA11y: Marker[];
   // 新增無障礙設施相關狀態
   selectedA11yTypes: A11yEnum[];
   a11yDrawerOpen: boolean;
@@ -22,6 +21,8 @@ interface MapState {
   searchHistory: PlaceDetail[];
   savedPlaces: PlaceDetail[];
   timeline: { time: string; event: string }[];
+  navigationDrawerOpen: boolean;
+  navigation: Navigation;
 }
 
 interface MapAction {
@@ -29,8 +30,9 @@ interface MapAction {
   setUserLocation: (location: google.maps.LatLngLiteral | null) => void;
   setOrigin: (origin: PlaceDetail | null) => void;
   setDestination: (destination: PlaceDetail | null) => void;
-  setInfoShow: (infoShow: InfoShow) => void;
+  setInfoShow: (infoShow: Partial<InfoShow>) => void;
   setSearchPlace: (place: PlaceDetail | null) => void;
+
   setComputeRoutes: (route: google.maps.DirectionsRoute[] | null) => void;
   setRoutePolyline: (polyline: google.maps.Polyline | null) => void;
   setRouteInfoShow: (show: boolean) => void;
@@ -42,6 +44,10 @@ interface MapAction {
   initSearchHistory: (history: PlaceDetail[]) => void;
   addSearchHistory: (searchTerm: PlaceDetail) => void;
   clearSearchHistory: () => void;
+  setNavigationDrawerOpen: (open: boolean) => void;
+  setNavigation: (navigation: Partial<Navigation>) => void;
+  setRouteA11y: (a11y: Marker[]) => void;
+  addRouteA11y: (a11y: Marker[]) => void;
 }
 
 type MapStore = MapState & MapAction;
@@ -59,7 +65,8 @@ const useMapStore = create<MapStore>((set, get) => ({
   setRouteInfoShow: (show) => set({ routeInfoShow: show }),
   infoShow: { isOpen: false, kind: null },
   setInfoShow: (infoShow) =>
-    set({ infoShow: { ...get().infoShow, ...infoShow } }),
+    set({ infoShow: { ...get().infoShow, ...infoShow } as InfoShow }),
+
   searchPlace: null,
   setSearchPlace: (place) => set({ searchPlace: place }),
   computeRoutes: null,
@@ -97,22 +104,35 @@ const useMapStore = create<MapStore>((set, get) => ({
   addSearchHistory: (searchTerm: PlaceDetail) => {
     const { searchHistory } = get();
 
-    if (
-      searchTerm.kind === "place" &&
-      searchHistory.find(
-        (item) => item.kind === "place" && item.place.id === searchTerm.place.id
-      )
-    ) {
-      return;
-    }
+    const newTerm = searchHistory.filter((item) => {
+      if (item.kind === "place" && searchTerm.kind === "place") {
+        return item.place.id !== searchTerm.place.id;
+      }
+      return true;
+    });
 
-    const newHistory = [searchTerm, ...searchHistory.slice(0, 9)];
+    const newHistory = [searchTerm, ...newTerm.slice(0, 9)];
     localStorage.setItem("searchHistory", JSON.stringify(newHistory));
     set({ searchHistory: newHistory });
   },
   clearSearchHistory: () => set({ searchHistory: [] }),
   savedPlaces: [],
   timeline: [],
+  navigationDrawerOpen: false,
+  setNavigationDrawerOpen: (open) => set({ navigationDrawerOpen: open }),
+  navigation: {
+    isNavigating: false,
+    steps: [],
+    currentStepIndex: 0,
+    detailStepIndex: 0,
+    totalSteps: 0,
+    isCurrentLocation: false,
+  },
+  setNavigation: (navigation) =>
+    set({ navigation: { ...get().navigation, ...navigation } as Navigation }),
+  routeA11y: [],
+  setRouteA11y: (a11y) => set({ routeA11y: a11y }),
+  addRouteA11y: (a11y) => set({ routeA11y: [...get().routeA11y, ...a11y] }),
 }));
 
 export default useMapStore;

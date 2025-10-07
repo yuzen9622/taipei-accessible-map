@@ -7,17 +7,27 @@ import {
 } from "@vis.gl/react-google-maps";
 
 import { useEffect } from "react";
+
+import MapWrapper from "@/components/MapWrapper";
+import AccessibilityPin from "@/components/MetroA11yWrapper";
+
+import RouteLine from "@/components/RouteWrapper";
+import NowPin from "@/components/shared/NowPin";
+
 import { getLocation } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
-
-import MapWrapper from "./MapWrapper";
-import AccessibilityPin from "./MetroA11yWrapper";
-
-import RouteLine from "./RouteWrapper";
+import GotoNowButton from "./shared/GotoNowButton";
+import SearchPin from "./shared/SearchPin";
 
 export default function ClientMap() {
-  const { setMap, setInfoShow, setUserLocation, setSearchPlace } =
-    useMapStore();
+  const {
+    setMap,
+    setInfoShow,
+    setUserLocation,
+    setSearchPlace,
+    searchPlace,
+    navigation,
+  } = useMapStore();
 
   const mapHook = useMap();
   const placesLib = useMapsLibrary("places");
@@ -37,9 +47,17 @@ export default function ClientMap() {
 
   //取得當前位置
   useEffect(() => {
-    navigator.geolocation.getCurrentPosition((pos) => {
-      setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-    });
+    navigator.geolocation.watchPosition(
+      (pos) => {
+        console.log(pos.coords);
+        setUserLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+        });
+      },
+      () => console.log("無法取得位置"),
+      { enableHighAccuracy: true, maximumAge: Infinity }
+    );
   }, [setUserLocation]);
 
   return (
@@ -49,23 +67,44 @@ export default function ClientMap() {
       colorScheme="LIGHT"
       defaultCenter={{ lat: 25.03, lng: 121.55 }}
       gestureHandling={"auto"}
-      restriction={{
-        latLngBounds: taipeiNewTaipeiBounds,
-        strictBounds: true,
-      }}
+      // restriction={{
+      //   latLngBounds: taipeiNewTaipeiBounds,
+      //   strictBounds: true,
+      // }}
       disableDefaultUI={true}
       onClick={async (e) => {
         e.stop();
-        console.log(e.detail);
-        if (!placesLib || !e.detail?.placeId) return;
-        const place = new placesLib.Place({ id: e.detail.placeId });
-        setInfoShow({ isOpen: true, kind: null });
-        await place.fetchFields({ fields: ["*"] });
 
-        const latLng = getLocation(place);
-        if (!latLng) return;
-        setInfoShow({ isOpen: true, place, kind: "place" });
-        setSearchPlace({ kind: "place", place, position: latLng });
+        console.log(e.detail);
+        if (!placesLib || navigation.isNavigating || !mapHook) return;
+        if (e.detail.placeId) {
+          const place = new placesLib.Place({ id: e.detail.placeId });
+          setInfoShow({ isOpen: true, kind: null });
+          await place.fetchFields({ fields: ["*"] });
+          const latLng = getLocation(place);
+          if (!latLng) return;
+          mapHook.panTo(latLng);
+          mapHook.setZoom(18);
+          setInfoShow({ isOpen: true, place, kind: "place" });
+          setSearchPlace({ kind: "place", place, position: latLng });
+        } else {
+          const geocoder = new google.maps.Geocoder();
+          const result = await geocoder.geocode({ location: e.detail.latLng });
+
+          mapHook.panTo(result.results[0].geometry.location);
+          mapHook.setZoom(18);
+          console.log(result.results[0]);
+          setInfoShow({
+            isOpen: true,
+            place: result.results[0],
+            kind: "geocoder",
+          });
+          setSearchPlace({
+            kind: "geocoder",
+            place: result.results[0],
+            position: result.results[0].geometry.location.toJSON(),
+          });
+        }
       }}
       mapId={"9b39d2c1e16cb61adfef5521"}
       defaultBounds={taipeiNewTaipeiBounds}
@@ -73,6 +112,9 @@ export default function ClientMap() {
     >
       <MapWrapper />
       <AccessibilityPin />
+      <GotoNowButton />
+      <NowPin />
+      {searchPlace && <SearchPin destination={searchPlace} />}
 
       <RouteLine />
     </GoogleMap>
