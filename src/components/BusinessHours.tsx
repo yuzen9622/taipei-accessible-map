@@ -62,7 +62,7 @@ export function BusinessHours({
         perDay[openDay].push("24 小時營業");
       } else {
         perDay[openDay].push(
-          `${formatTime(`${openTime}`)} - ${formatTime(`${closeTime}`)}`
+          `${formatTime(`${openTime}`)} - ${formatTime(`${closeTime}`)}`,
         );
       }
     }

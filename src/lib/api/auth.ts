@@ -7,7 +7,7 @@ export async function login(
   email: string,
   name: string,
   avatar: string,
-  client_id: string
+  client_id: string,
 ) {
   return fetchRequest(`${END_POINT}/api/user/login`, {
     method: "POST",
@@ -16,7 +16,7 @@ export async function login(
 }
 
 export async function checkToken(
-  token: string
+  token: string,
 ): Promise<ApiResponse<{ user: UserDTO }>> {
   return fetchRequest(`${END_POINT}/api/user/token`, {
     method: "POST",

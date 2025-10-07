@@ -56,7 +56,7 @@ export default function ClientMap() {
         });
       },
       () => console.log("無法取得位置"),
-      { enableHighAccuracy: true, maximumAge: Infinity }
+      { enableHighAccuracy: true, maximumAge: Infinity },
     );
   }, [setUserLocation]);
 

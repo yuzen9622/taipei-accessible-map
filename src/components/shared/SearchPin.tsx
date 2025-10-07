@@ -32,7 +32,7 @@ export default function SearchPin({
           });
         }
     },
-    [map, setInfoShow, destination]
+    [map, setInfoShow, destination],
   );
 
   if (!destination) return null;

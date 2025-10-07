@@ -123,7 +123,7 @@ export default function RouteCard({ route }: RouteCardProps) {
                   <div
                     className={cn(
                       "absolute left-3.5 top-11 bottom-0 w-0.5",
-                      isWalking ? "bg-blue-300" : "bg-orange-300"
+                      isWalking ? "bg-blue-300" : "bg-orange-300",
                     )}
                   />
                 )}
@@ -133,7 +133,7 @@ export default function RouteCard({ route }: RouteCardProps) {
                   <div
                     className={cn(
                       "flex items-center justify-center w-8 h-8 rounded-full border-2",
-                      stepColor(step)
+                      stepColor(step),
                     )}
                   >
                     {getIcon(step)}

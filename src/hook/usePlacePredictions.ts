@@ -30,7 +30,7 @@ export default function usePlaceSuggestions(input: string) {
         (res) => {
           setSuggestions(res.suggestions);
           setLoading(false);
-        }
+        },
       );
     }, 500);
 
