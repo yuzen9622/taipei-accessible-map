@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, Share2, X } from "lucide-react";
+import { Heart, Loader2, Share2, X } from "lucide-react";
 
 import { useCallback } from "react";
 
@@ -99,7 +99,8 @@ export default function TestDrawer() {
               onClick={handlePlanRoute}
               className="flex-1"
             >
-              {isLoading ? "規劃中..." : "規劃路線"}
+              {isLoading ? "規劃中" : "規劃路線"}
+              {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
             </Button>
             <div className="flex gap-2">
               <Button variant="outline" size="icon">
