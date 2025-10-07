@@ -2,6 +2,7 @@ import { END_POINT } from "@/lib/config";
 import { fetchRequest } from "@/lib/fetch";
 import type { ApiResponse } from "@/types/response";
 import type { UserDTO } from "@/types/user";
+
 export async function login(
   email: string,
   name: string,

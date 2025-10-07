@@ -30,7 +30,7 @@ export default function AccessibleToolBar() {
   return (
     <div
       className={cn(
-        "  pointer-events-auto w-fit h-fit flex flex-col  transition-all"
+        "  pointer-events-auto w-fit h-fit flex flex-row  transition-all"
       )}
     >
       {toolbarItems.map((item) => {
@@ -52,12 +52,9 @@ export default function AccessibleToolBar() {
               className={cn(
                 "rounded-md aspect-square object-cover transition-opacity"
               )}
-              width={50}
-              height={50}
+              width={40}
+              height={40}
             />
-            <p className={cn("text-xs group-hover:text-primary ")}>
-              {item.label}
-            </p>
           </button>
         );
       })}

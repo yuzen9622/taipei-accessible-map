@@ -6,7 +6,7 @@ export enum A11yEnum {
 }
 
 export type Marker = {
-  id: number;
+  id: number | string;
   position: google.maps.LatLngLiteral;
   content?: { title: string; desc: string };
   type: "pin";
@@ -29,8 +29,14 @@ type GeocoderType = {
   place: google.maps.GeocoderResult;
 };
 
+type A11yGeocoderType = {
+  kind: "a11yGeocoder";
+  place: google.maps.GeocoderResult;
+  a11y: Marker;
+};
+
 // --- Detail 需要帶座標 ---
-export type PlaceDetail = (PlaceType | GeocoderType) & Base;
+export type PlaceDetail = (PlaceType | GeocoderType | A11yGeocoderType) & Base;
 
 // --- InfoShow 只需要控制開關，不要 Base ---
 export type InfoShow =
@@ -39,7 +45,8 @@ export type InfoShow =
   | { isOpen: boolean; kind: null };
 
 export type metroA11yData = {
-  _id: number;
+  _id: string;
+  項次: number;
   _importdata: { date: string; timezone: string; timezone_type: number };
   出入口編號: string;
   "出入口電梯/無障礙坡道名稱": string;

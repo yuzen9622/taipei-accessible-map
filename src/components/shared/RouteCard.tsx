@@ -140,7 +140,7 @@ export default function RouteCard({ route }: RouteCardProps) {
                       </p>
                       {step.instructions && (
                         <p className="text-xs text-muted-foreground">
-                          {step.instructions}
+                          {step.instructions.replaceAll(/<[^>]+>/g, "")}
                         </p>
                       )}
                     </div>

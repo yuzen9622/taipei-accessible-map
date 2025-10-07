@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, Share2 } from "lucide-react";
+import { Heart, Loader2, Share2, X } from "lucide-react";
 
 import { useCallback } from "react";
 
@@ -51,7 +51,11 @@ export default function TestDrawer() {
         position: latLng,
       });
     }
-    if (userLocation) await computeRouteService(userLocation, latLng);
+
+    await computeRouteService(
+      userLocation ?? { lat: 25.0478, lng: 121.5319 },
+      latLng
+    );
     setSearchPlace(null);
     setInfoShow({ isOpen: false, kind: null });
     setRouteInfoShow(true);
@@ -68,10 +72,21 @@ export default function TestDrawer() {
 
   return (
     <DrawerWrapper open={infoShow.isOpen}>
+      <Button
+        onClick={() => {
+          setInfoShow({ isOpen: false });
+          setSearchPlace(null);
+        }}
+        size="icon"
+        variant="ghost"
+        className="     absolute  bg-secondary  z-20 rounded-3xl  right-8 top-4"
+      >
+        <X className="h-5 w-5" />
+      </Button>
       {!infoShow.kind ? (
         <LoadingDrawer />
       ) : (
-        <div className="flex flex-col overflow-auto h-full">
+        <div className=" relative flex flex-col overflow-auto flex-1">
           {infoShow.kind === "place" && (
             <PlaceDrawerContent place={infoShow.place} />
           )}
@@ -84,7 +99,8 @@ export default function TestDrawer() {
               onClick={handlePlanRoute}
               className="flex-1"
             >
-              {isLoading ? "規劃中..." : "規劃路線"}
+              {isLoading ? "規劃中" : "規劃路線"}
+              {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
             </Button>
             <div className="flex gap-2">
               <Button variant="outline" size="icon">

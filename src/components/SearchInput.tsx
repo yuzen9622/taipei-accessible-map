@@ -6,7 +6,7 @@ import type { PlaceDetail } from "@/types";
 import PlaceInput from "./shared/PlaceInput";
 
 export default function SearchInput() {
-  const { setSearchPlace, setInfoShow, routeInfoShow } = useMapStore();
+  const { setSearchPlace, setInfoShow, routeInfoShow, map } = useMapStore();
   const [input, setInput] = useState("");
   const handlePlaceChange = useCallback(
     (placeDetail: PlaceDetail) => {
@@ -18,9 +18,10 @@ export default function SearchInput() {
           kind: "place",
           place: placeDetail.place,
         });
+        if (map) map.panTo(placeDetail.position);
       }
     },
-    [setSearchPlace, setInfoShow]
+    [setSearchPlace, setInfoShow, map]
   );
 
   return (
@@ -30,7 +31,7 @@ export default function SearchInput() {
         routeInfoShow && "hidden"
       )}
     >
-      <div className="  w-11/12 mx-auto rounded-3xl shadow-md  ">
+      <div className="  w-full mx-auto rounded-3xl shadow-md  ">
         <PlaceInput
           className="border-none "
           value={input}
