@@ -100,6 +100,9 @@ export default function PlaceDrawerContent({
         <p className="text-sm text-muted-foreground">
           {place.formattedAddress}
         </p>
+        <p className="text-sm text-muted-foreground">
+          {place.primaryTypeDisplayName}
+        </p>
         <span
           className={`inline-block w-fit px-2 py-1 mt-1 rounded text-white text-xs font-medium ${
             isOpen ? "bg-green-500" : "bg-gray-400"
@@ -116,14 +119,7 @@ export default function PlaceDrawerContent({
             >
               總覽
             </TabsTrigger>
-            {place.types?.includes("restaurant") && (
-              <TabsTrigger
-                className="  border-0 border-b-2 shadow-none! data-[state=active]:border-b-2! rounded-none data-[state=active]:border-blue-400"
-                value="menu"
-              >
-                菜單
-              </TabsTrigger>
-            )}
+
             <TabsTrigger
               value="reviews"
               className="  border-0 border-b-2 shadow-none! data-[state=active]:border-b-2! rounded-none data-[state=active]:border-blue-400"
@@ -259,12 +255,14 @@ export default function PlaceDrawerContent({
               </div>
             )}
             {/* 價格等級 */}
-            {place.priceLevel && (
+            {place.priceRange && (
               <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                 <DollarSign className="h-4 w-4 text-primary" />
                 <span className="text-sm">價格等級</span>
                 <span className="ml-auto text-sm font-medium">
-                  {place.priceLevel}
+                  {place.priceRange.startPrice.currencyCode}{" "}
+                  {place.priceRange.startPrice.units}~
+                  {place.priceRange.endPrice.units}
                 </span>
               </div>
             )}

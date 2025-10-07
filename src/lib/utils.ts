@@ -2,6 +2,7 @@ import type { ClassValue } from "clsx";
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { A11yEnum, type Marker, type metroA11yData } from "@/types";
+import { ROUTE_COLORS } from "./config";
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -66,7 +67,6 @@ export function convertDirectionsAPIToResult(
         new google.maps.LatLng(sw.lat, sw.lng),
         new google.maps.LatLng(ne.lat, ne.lng)
       );
-
       // 轉換 legs
       const legs = route.legs.map((leg) => {
         // 轉換 steps
@@ -141,4 +141,27 @@ export function formatA11y(places: metroA11yData[]) {
       a11yType,
     };
   }) as Marker[];
+}
+
+type SupportedVehicleType = keyof typeof ROUTE_COLORS;
+
+export function getStepColor(step: google.maps.DirectionsStep): string {
+  const isWalking = step.travel_mode === google.maps.TravelMode.WALKING;
+
+  if (isWalking) {
+    return ROUTE_COLORS.walking;
+  }
+
+  // 使用交通工具的自訂顏色或預設顏色
+  const vehicleType = step.transit?.line?.vehicle?.type;
+  const customColor = step.transit?.line?.color;
+
+  if (customColor) {
+    return customColor;
+  }
+
+  if (vehicleType && vehicleType in ROUTE_COLORS)
+    return ROUTE_COLORS[vehicleType as SupportedVehicleType];
+
+  return ROUTE_COLORS.default;
 }

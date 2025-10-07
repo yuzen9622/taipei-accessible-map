@@ -1,15 +1,14 @@
 import {
-  Bus,
+  BusIcon,
   Clock,
   FlagIcon,
-  FootprintsIcon,
-  MapPin,
+  Footprints,
   Train,
   TramFront,
 } from "lucide-react";
 import { useMemo } from "react";
 import useNavigation from "@/hook/useNavigation";
-import { cn } from "@/lib/utils";
+import { cn, getStepColor } from "@/lib/utils";
 
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
@@ -38,43 +37,56 @@ export default function RouteCard({ route }: RouteCardProps) {
     return result;
   }, [route]);
 
-  // 獲取步驟的圖標
-  const getStepIcon = (step: google.maps.DirectionsStep) => {
-    if (step.travel_mode === google.maps.TravelMode.WALKING) {
-      return <FootprintsIcon className="h-4 w-4 text-blue-500" />;
-    }
-
-    if (step.travel_mode === google.maps.TravelMode.TRANSIT) {
-      const vehicleType = step.transit?.line.vehicle.type;
-
-      switch (vehicleType) {
-        case google.maps.VehicleType.BUS:
-          return <Bus className="h-4 w-4 text-green-500" />;
-        case google.maps.VehicleType.SUBWAY:
-          return <Train className="h-4 w-4 text-orange-500" />;
-        case google.maps.VehicleType.RAIL:
-          return <Train className="h-4 w-4 text-red-500" />;
-        case google.maps.VehicleType.TRAM:
-          return <TramFront className="h-4 w-4 text-purple-500" />;
-        default:
-          return <Bus className="h-4 w-4 text-gray-500" />;
-      }
-    }
-
-    return <MapPin className="h-4 w-4 text-gray-500" />;
-  };
-
   // 獲取步驟顏色
-  const getStepColor = (step: google.maps.DirectionsStep) => {
+  const stepColor = (step: google.maps.DirectionsStep) => {
     if (step.travel_mode === google.maps.TravelMode.WALKING) {
       return "border-blue-500 bg-blue-50 dark:bg-blue-950/20";
     }
+    const color = getStepColor(step);
 
-    if (step.transit?.line.color) {
-      return `border-[${step.transit.line.color}]`;
+    if (color) {
+      return `border-[${color}]`;
     }
 
     return "border-gray-300 bg-gray-50 dark:bg-gray-950/20";
+  };
+  const getIcon = (step: google.maps.DirectionsStep) => {
+    const color = getStepColor(step);
+    switch (step.transit?.line.vehicle.type) {
+      case google.maps.VehicleType.BUS:
+        return (
+          <BusIcon
+            className="h-4 w-4 "
+            style={{
+              color,
+            }}
+          />
+        );
+      case google.maps.VehicleType.SUBWAY:
+        return <TramFront className="h-4 w-4 " style={{ color: color }} />;
+      case google.maps.VehicleType.RAIL:
+        return (
+          <Train
+            className="h-4 w-4 "
+            style={{
+              color,
+            }}
+          />
+        );
+      case google.maps.VehicleType.TRAM:
+        return <TramFront className="h-4 w-4 " style={{ color: color }} />;
+      case google.maps.VehicleType.HIGH_SPEED_TRAIN:
+        return (
+          <Train
+            className="h-4 w-4 "
+            style={{
+              color,
+            }}
+          />
+        );
+      default:
+        return <Footprints className="h-4 w-4 " style={{ color: color }} />;
+    }
   };
 
   return (
@@ -121,10 +133,10 @@ export default function RouteCard({ route }: RouteCardProps) {
                   <div
                     className={cn(
                       "flex items-center justify-center w-8 h-8 rounded-full border-2",
-                      getStepColor(step)
+                      stepColor(step)
                     )}
                   >
-                    {getStepIcon(step)}
+                    {getIcon(step)}
                   </div>
                 </div>
 
@@ -153,7 +165,7 @@ export default function RouteCard({ route }: RouteCardProps) {
                         <div
                           className="px-2 py-1 rounded text-xs font-bold text-white"
                           style={{
-                            backgroundColor: step.transit.line.color || "#666",
+                            backgroundColor: getStepColor(step) || "#666",
                           }}
                         >
                           {step.transit.line.short_name ||

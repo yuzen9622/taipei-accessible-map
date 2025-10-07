@@ -2,14 +2,10 @@ import { AdvancedMarker, useMapsLibrary } from "@vis.gl/react-google-maps";
 import { BusIcon, Footprints, Train, TramFront } from "lucide-react";
 
 import { Fragment, type JSX, useMemo } from "react";
+
+import { getStepColor } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import Polyline from "./Polyline";
-
-const defaultAppearance = {
-  walkingPolylineColor: "rgb(59, 130, 246)",
-  defaultPolylineColor: "rgb(249, 115, 22)",
-};
-
 export default function RouteLine() {
   const { selectRoute } = useMapStore();
   const geometry = useMapsLibrary("geometry");
@@ -42,11 +38,9 @@ export default function RouteLine() {
         if (!step.encoded_lat_lngs) return null;
 
         const isWalking = step.travel_mode === google.maps.TravelMode.WALKING;
-        isWalking ? console.log(step.encoded_lat_lngs) : null;
+
         const path = step.path;
-        const color = isWalking
-          ? defaultAppearance.walkingPolylineColor
-          : step.transit?.line?.color ?? defaultAppearance.defaultPolylineColor;
+        const color = getStepColor(step);
         // 在切換點添加標記（更明顯的版本）
         if (lastTravelMode !== null && lastTravelMode !== step.travel_mode) {
           // 在切換點添加標記
@@ -56,17 +50,38 @@ export default function RouteLine() {
             switch (step.transit?.line.vehicle.type) {
               case google.maps.VehicleType.BUS:
                 return (
-                  <BusIcon className="h-4 w-4 " style={{ color: color }} />
+                  <BusIcon
+                    className="h-4 w-4 "
+                    style={{
+                      color,
+                    }}
+                  />
                 );
               case google.maps.VehicleType.SUBWAY:
                 return (
                   <TramFront className="h-4 w-4 " style={{ color: color }} />
                 );
               case google.maps.VehicleType.RAIL:
-                return <Train className="h-4 w-4 " style={{ color: color }} />;
+                return (
+                  <Train
+                    className="h-4 w-4 "
+                    style={{
+                      color,
+                    }}
+                  />
+                );
               case google.maps.VehicleType.TRAM:
                 return (
                   <TramFront className="h-4 w-4 " style={{ color: color }} />
+                );
+              case google.maps.VehicleType.HIGH_SPEED_TRAIN:
+                return (
+                  <Train
+                    className="h-4 w-4 "
+                    style={{
+                      color,
+                    }}
+                  />
                 );
               default:
                 return (
