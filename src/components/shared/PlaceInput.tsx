@@ -86,11 +86,16 @@ function PlaceInput({
           place: newPlace,
           position: latLng,
         });
+        addSearchHistory({
+          kind: "place",
+          place: newPlace,
+          position: latLng,
+        });
       }
 
       setOpen(false);
     },
-    [onPlaceSelect, placesLib]
+    [onPlaceSelect, placesLib, addSearchHistory]
   );
 
   return (

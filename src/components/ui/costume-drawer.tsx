@@ -32,7 +32,7 @@ const CostumeDrawer = ({
     >
       <div
         className={cn(
-          " pointer-events-auto lg:max-h-[calc(100dvh-12em)] sm:max-h-1/2 max-h-full h-fit  rounded-3xl  w-full overflow-y-auto overflow-x-hidden bg-background shadow-xl"
+          " relative flex flex-col pointer-events-auto lg:max-h-[calc(100dvh-12em)] sm:max-h-1/2 max-h-full h-fit  rounded-3xl  w-full overflow-y-hidden overflow-x-hidden bg-background shadow-xl"
         )}
       >
         {children}

@@ -11,15 +11,12 @@ import {
   ParkingCircle,
   Phone,
   Star,
-  X,
 } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { Pagination } from "swiper/modules";
 import { Swiper, SwiperSlide } from "swiper/react";
 
-import useMapStore from "@/stores/useMapStore";
-import { Button } from "./ui/button";
 import { DrawerHeader } from "./ui/drawer";
 import { TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 export default function PlaceDrawerContent({
@@ -27,8 +24,6 @@ export default function PlaceDrawerContent({
 }: {
   place: google.maps.places.Place;
 }) {
-  const { infoShow, setInfoShow } = useMapStore();
-
   const [isOpen, setIsOpen] = useState(false);
 
   const galleryImages = useMemo(() => {
@@ -63,7 +58,7 @@ export default function PlaceDrawerContent({
             type: "bullets",
           }}
           navigation={true}
-          className="w-full h-60 "
+          className="w-full min-h-60 "
           modules={[Pagination]}
         >
           {galleryImages.map((src, idx) => (
@@ -82,7 +77,7 @@ export default function PlaceDrawerContent({
         </Swiper>
       )}
 
-      <DrawerHeader className="w-full flex flex-col gap-2 border-b  border-border/50  py-3">
+      <DrawerHeader className=" w-full flex flex-col gap-2 border-b  border-border/50  py-3">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
             {place.svgIconMaskURI ? (
@@ -101,13 +96,6 @@ export default function PlaceDrawerContent({
               {place.displayName}
             </h1>
           </div>
-          <Button
-            onClick={() => setInfoShow({ ...infoShow, isOpen: false })}
-            size="icon"
-            variant="ghost"
-          >
-            <X className="h-5 w-5" />
-          </Button>
         </div>
         <p className="text-sm text-muted-foreground">
           {place.formattedAddress}

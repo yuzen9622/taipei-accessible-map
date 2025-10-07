@@ -1,35 +1,20 @@
 import { useCallback, useEffect } from "react";
 import MetroA11yPin from "@/components/MetroA11yPin";
+import { getAllA11yPlaces } from "@/lib/api/a11y";
+import { formatA11y } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
-import type { Marker, metroA11yAPI } from "@/types";
-import { A11yEnum } from "@/types/index";
+import type { Marker, metroA11yData } from "@/types";
 
 export default function AccessibilityPin() {
-  const { selectedA11yTypes, a11yPlaces, setA11yPlaces } = useMapStore();
+  const { selectedA11yTypes, a11yPlaces, setA11yPlaces, routeA11y } =
+    useMapStore();
 
   const fetchMarketA11yPlace = useCallback(async () => {
     try {
-      const res = await fetch("/api/a11y/metro");
-      const data: metroA11yAPI = await res.json();
-      const places = data.result.results;
-      const formatData: Marker[] = places.map((place) => {
-        const { _id, 經度, 緯度 } = place;
-        const a11yType = place["出入口電梯/無障礙坡道名稱"].includes("電梯")
-          ? A11yEnum.ELEVATOR
-          : A11yEnum.RAMP;
+      const res = await getAllA11yPlaces();
 
-        return {
-          id: _id,
-          position: { lat: parseFloat(緯度), lng: parseFloat(經度) },
-          type: "pin",
-          content: {
-            title: place["出入口電梯/無障礙坡道名稱"],
-            desc: place["出入口編號"],
-          },
-          zIndex: 1,
-          a11yType,
-        };
-      });
+      const places = res.data as metroA11yData[];
+      const formatData: Marker[] = formatA11y(places);
 
       setA11yPlaces(formatData);
     } catch (error) {
@@ -49,6 +34,9 @@ export default function AccessibilityPin() {
   return (
     <>
       {filteredPlaces.map((place) => (
+        <MetroA11yPin key={place.id} place={place} />
+      ))}
+      {routeA11y.map((place) => (
         <MetroA11yPin key={place.id} place={place} />
       ))}
     </>

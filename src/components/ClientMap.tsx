@@ -16,6 +16,7 @@ import NowPin from "@/components/shared/NowPin";
 
 import { getLocation } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
+import GotoNowButton from "./shared/GotoNowButton";
 import SearchPin from "./shared/SearchPin";
 
 export default function ClientMap() {
@@ -111,7 +112,7 @@ export default function ClientMap() {
     >
       <MapWrapper />
       <AccessibilityPin />
-
+      <GotoNowButton />
       <NowPin />
       {searchPlace && <SearchPin destination={searchPlace} />}
 

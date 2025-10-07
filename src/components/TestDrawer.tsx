@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, Share2 } from "lucide-react";
+import { Heart, Share2, X } from "lucide-react";
 
 import { useCallback } from "react";
 
@@ -51,7 +51,11 @@ export default function TestDrawer() {
         position: latLng,
       });
     }
-    if (userLocation) await computeRouteService(userLocation, latLng);
+
+    await computeRouteService(
+      userLocation ?? { lat: 25.0478, lng: 121.5319 },
+      latLng
+    );
     setSearchPlace(null);
     setInfoShow({ isOpen: false, kind: null });
     setRouteInfoShow(true);
@@ -68,10 +72,21 @@ export default function TestDrawer() {
 
   return (
     <DrawerWrapper open={infoShow.isOpen}>
+      <Button
+        onClick={() => {
+          setInfoShow({ isOpen: false });
+          setSearchPlace(null);
+        }}
+        size="icon"
+        variant="ghost"
+        className="     absolute  bg-secondary  z-20 rounded-3xl  right-8 top-4"
+      >
+        <X className="h-5 w-5" />
+      </Button>
       {!infoShow.kind ? (
         <LoadingDrawer />
       ) : (
-        <div className="flex flex-col overflow-auto h-full">
+        <div className=" relative flex flex-col overflow-auto flex-1">
           {infoShow.kind === "place" && (
             <PlaceDrawerContent place={infoShow.place} />
           )}

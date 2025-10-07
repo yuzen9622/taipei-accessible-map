@@ -99,7 +99,9 @@ export default function useNavigation() {
       }
       return { title: step.instructions, steps: [step] };
     });
+    speakInstruction(navigationSteps[0].steps[0]);
     speakDistance(navigationSteps[0].steps[0]);
+
     setNavigationDrawerOpen(true);
     setInfoShow({ isOpen: false });
     setRouteInfoShow(false);

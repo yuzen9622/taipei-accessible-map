@@ -16,6 +16,9 @@ export default function RouteDrawer() {
     setRouteInfoShow,
     setInfoShow,
     destination,
+    setOrigin,
+    setRouteA11y,
+    setDestination,
     setRouteSelect,
   } = useMapStore();
 
@@ -23,7 +26,10 @@ export default function RouteDrawer() {
 
   const handleBack = () => {
     setRouteInfoShow(false);
+    setOrigin(null);
+    setDestination(null);
     setRouteSelect(null);
+    setRouteA11y([]);
     if (destination && destination.kind === "place") {
       setInfoShow({ isOpen: true, place: destination.place, kind: "place" });
     }
@@ -31,10 +37,14 @@ export default function RouteDrawer() {
 
   return (
     <DrawerWrapper open={routeInfoShow}>
-      <DrawerHeader className="w-full space-y-2 ">
-        <div className=" flex gap-4  ml-10   justify-between  items-center">
+      <DrawerHeader className="w-full space-y-2 flex-1  overflow-auto ">
+        <div className=" flex gap-4  ml-10    justify-between  items-center">
           <h1 className="text-2xl">路線規劃</h1>
-          <Button variant={"ghost"} onClick={handleBack}>
+          <Button
+            variant={"ghost"}
+            className="     absolute  bg-muted  z-20 rounded-3xl  right-8 top-4"
+            onClick={handleBack}
+          >
             <XIcon />
           </Button>
         </div>
