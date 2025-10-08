@@ -49,14 +49,13 @@ export default function ClientMap() {
   useEffect(() => {
     navigator.geolocation.watchPosition(
       (pos) => {
-        console.log(pos.coords);
         setUserLocation({
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
         });
       },
       () => console.log("無法取得位置"),
-      { enableHighAccuracy: true, maximumAge: Infinity },
+      { enableHighAccuracy: true, maximumAge: Infinity }
     );
   }, [setUserLocation]);
 

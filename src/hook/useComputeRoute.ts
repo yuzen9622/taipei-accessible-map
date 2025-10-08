@@ -35,51 +35,55 @@ export default function useComputeRoute() {
       destination: google.maps.LatLngLiteral
     ) => {
       if (!Route || !map) return;
-      setIsLoading(true);
-      setRouteA11y([]);
-      const { DirectionsService } = Route;
-      const computeRouteService = new DirectionsService();
-      const transitRoute = await computeRouteService.route({
-        origin,
-        destination,
-        travelMode: google.maps.TravelMode.TRANSIT,
-      });
+      try {
+        setIsLoading(true);
+        setRouteA11y([]);
+        const { DirectionsService } = Route;
+        const computeRouteService = new DirectionsService();
+        const transitRoute = await computeRouteService.route({
+          origin,
+          destination,
+          travelMode: google.maps.TravelMode.TRANSIT,
+        });
 
-      // 2️⃣ 從 Transit 路線提取步行段
+        const totalSteps: google.maps.DirectionsStep[] = [];
 
-      const totalSteps: google.maps.DirectionsStep[] = [];
+        for (const leg of transitRoute.routes[0].legs) {
+          const steps = leg.steps;
 
-      for (const leg of transitRoute.routes[0].legs) {
-        const steps = leg.steps;
+          // 使用傳統 for 循環來獲取索引
+          for (let i = 0; i < steps.length; i++) {
+            const step = steps[i];
+            const prevStep = i > 0 ? steps[i - 1] : null;
 
-        // 使用傳統 for 循環來獲取索引
-        for (let i = 0; i < steps.length; i++) {
-          const step = steps[i];
-          const prevStep = i > 0 ? steps[i - 1] : null;
+            if (step.travel_mode === google.maps.TravelMode.WALKING) {
+              // 判斷應該使用起點還是終點
+              const useStartLocation =
+                prevStep?.travel_mode === google.maps.TravelMode.TRANSIT;
 
-          if (step.travel_mode === google.maps.TravelMode.WALKING) {
-            // 判斷應該使用起點還是終點
-            const useStartLocation =
-              prevStep?.travel_mode === google.maps.TravelMode.TRANSIT;
+              const point = useStartLocation
+                ? step.start_location
+                : step.end_location;
 
-            const point = useStartLocation
-              ? step.start_location
-              : step.end_location;
-
-            computeA11yWalkingRoute(point);
+              computeA11yWalkingRoute(point);
+            }
+            totalSteps.push(step);
           }
-          totalSteps.push(step);
         }
-      }
 
-      transitRoute.routes[0].legs[0].steps = totalSteps;
-      const data = transitRoute.routes;
-      console.log("route", data);
-      map.fitBounds(data[0].bounds);
-      setComputeRoutes(data);
-      setRouteSelect(data[0]);
-      setIsLoading(false);
-      setRouteInfoShow(true);
+        transitRoute.routes[0].legs[0].steps = totalSteps;
+        const data = transitRoute.routes;
+        console.log("route", data);
+        map.fitBounds(data[0].bounds);
+        setComputeRoutes(data);
+        setRouteSelect(data[0]);
+
+        setRouteInfoShow(true);
+      } catch (error) {
+        console.log(error);
+      } finally {
+        setIsLoading(false);
+      }
     },
     [
       Route,

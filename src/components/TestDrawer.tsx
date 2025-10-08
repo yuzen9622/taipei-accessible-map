@@ -31,8 +31,6 @@ export default function TestDrawer() {
 
   const { isLoading, computeRouteService } = useComputeRoute();
 
-  console.log("infoShow", infoShow.kind ? infoShow.place : "null");
-
   const handlePlanRoute = useCallback(async () => {
     if (!infoShow.kind) return;
     let latLng: google.maps.LatLngLiteral | null = null;
