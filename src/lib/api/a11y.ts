@@ -5,7 +5,7 @@ import type { ApiResponse } from "@/types/response";
 
 export async function getAllA11yPlaces() {
   const response = await fetchRequest<ApiResponse<null>>(
-    `${END_POINT}/api/a11y/all-places`
+    `${END_POINT}/api/a11y/all-places`,
   );
   return response;
 }

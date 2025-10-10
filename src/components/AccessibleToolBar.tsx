@@ -30,7 +30,7 @@ export default function AccessibleToolBar() {
   return (
     <div
       className={cn(
-        "  pointer-events-auto w-fit h-fit flex flex-row  transition-all"
+        "  pointer-events-auto w-fit h-fit flex flex-row  transition-all",
       )}
     >
       {toolbarItems.map((item) => {
@@ -43,14 +43,14 @@ export default function AccessibleToolBar() {
             onClick={() => toggleA11yType(item.type)}
             className={cn(
               "flex flex-col group items-center gap-2 p-2 rounded-lg transition-colors",
-              isSelected ? "bg-secondary " : "hover:bg-secondary"
+              isSelected ? "bg-secondary " : "hover:bg-secondary",
             )}
           >
             <Image
               src={item.src}
               alt={item.alt}
               className={cn(
-                "rounded-md aspect-square object-cover transition-opacity"
+                "rounded-md aspect-square object-cover transition-opacity",
               )}
               width={40}
               height={40}

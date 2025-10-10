@@ -49,7 +49,6 @@ export default function ClientMap() {
   useEffect(() => {
     navigator.geolocation.watchPosition(
       (pos) => {
-        console.log(pos.coords);
         setUserLocation({
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
