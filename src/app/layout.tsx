@@ -6,6 +6,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import ClientLayout from "@/components/layout/client-layout";
 import GoogleMapProvider from "@/components/provider/GoogleMapProvider";
 import TestDrawer from "@/components/TestDrawer";
+import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -49,6 +50,7 @@ export default function RootLayout({
             </ClientLayout>
           </GoogleOAuthProvider>
         </GoogleMapProvider>
+        <Toaster />
       </body>
     </html>
   );

@@ -1,10 +1,13 @@
+"use client";
 import { create } from "zustand";
 import type { InfoShow, Marker, Navigation, PlaceDetail } from "@/types";
 import { A11yEnum } from "@/types/index";
+import type { RouteTransitDetail } from "@/types/transit";
 
 interface MapState {
   map: google.maps.Map | null;
   userLocation: google.maps.LatLngLiteral | null;
+  travelMode: google.maps.TravelMode;
   origin: PlaceDetail | null;
   destination: PlaceDetail | null;
   infoShow: InfoShow;
@@ -12,7 +15,7 @@ interface MapState {
   searchPlace: PlaceDetail | null;
   computeRoutes: google.maps.DirectionsRoute[] | null;
   routePolyline: google.maps.Polyline | null;
-  selectRoute: google.maps.DirectionsRoute | null;
+  selectRoute: { index: number; route: google.maps.DirectionsRoute } | null;
   routeA11y: Marker[];
   // 新增無障礙設施相關狀態
   selectedA11yTypes: A11yEnum[];
@@ -23,6 +26,7 @@ interface MapState {
   timeline: { time: string; event: string }[];
   navigationDrawerOpen: boolean;
   navigation: Navigation;
+  stepTransitDetails: RouteTransitDetail[];
 }
 
 interface MapAction {
@@ -32,11 +36,13 @@ interface MapAction {
   setDestination: (destination: PlaceDetail | null) => void;
   setInfoShow: (infoShow: Partial<InfoShow>) => void;
   setSearchPlace: (place: PlaceDetail | null) => void;
-
+  setTravelMode: (mode: google.maps.TravelMode) => void;
   setComputeRoutes: (route: google.maps.DirectionsRoute[] | null) => void;
   setRoutePolyline: (polyline: google.maps.Polyline | null) => void;
   setRouteInfoShow: (show: boolean) => void;
-  setRouteSelect: (route: google.maps.DirectionsRoute | null) => void;
+  setRouteSelect: (
+    route: { index: number; route: google.maps.DirectionsRoute } | null
+  ) => void;
   // 新增無障礙設施相關動作
   toggleA11yType: (type: A11yEnum) => void;
   setA11yDrawerOpen: (open: boolean) => void;
@@ -48,6 +54,9 @@ interface MapAction {
   setNavigation: (navigation: Partial<Navigation>) => void;
   setRouteA11y: (a11y: Marker[]) => void;
   addRouteA11y: (a11y: Marker[]) => void;
+  setStepTransitDetails: (details: RouteTransitDetail) => void;
+  removeStepTransitDetail: (stepIndex: string) => void;
+  closeRouteDrawer: () => void;
 }
 
 type MapStore = MapState & MapAction;
@@ -133,6 +142,36 @@ const useMapStore = create<MapStore>((set, get) => ({
   routeA11y: [],
   setRouteA11y: (a11y) => set({ routeA11y: a11y }),
   addRouteA11y: (a11y) => set({ routeA11y: [...get().routeA11y, ...a11y] }),
+  stepTransitDetails: [],
+  setStepTransitDetails: (details) =>
+    set({ stepTransitDetails: [...get().stepTransitDetails, details] }),
+  removeStepTransitDetail: (stepIndex) => {
+    const { stepTransitDetails } = get();
+    const newDetails = stepTransitDetails.filter(
+      (_) => _.stepIndex !== stepIndex
+    );
+
+    set({ stepTransitDetails: newDetails });
+  },
+  closeRouteDrawer: () => {
+    const { destination } = get();
+    set({
+      routeInfoShow: false,
+      selectRoute: null,
+      computeRoutes: null,
+      stepTransitDetails: [],
+      routeA11y: [],
+      destination: null,
+      origin: null,
+      infoShow:
+        destination && destination.kind === "place"
+          ? { isOpen: true, place: destination.place, kind: "place" }
+          : { isOpen: false, kind: null },
+      travelMode: "TRANSIT" as google.maps.TravelMode,
+    });
+  },
+  travelMode: "TRANSIT" as google.maps.TravelMode,
+  setTravelMode: (mode) => set({ travelMode: mode }),
 }));
 
 export default useMapStore;

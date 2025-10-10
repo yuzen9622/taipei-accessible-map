@@ -2,8 +2,10 @@ import { useMapsLibrary } from "@vis.gl/react-google-maps";
 
 import { useCallback, useState } from "react";
 import { getNearbyRouteA11yPlaces } from "@/lib/api/a11y";
+
 import { formatA11y } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
+import type { RouteTransitDetail } from "@/types/transit";
 
 export default function useComputeRoute() {
   const [isLoading, setIsLoading] = useState(false);
@@ -15,6 +17,7 @@ export default function useComputeRoute() {
     setRouteInfoShow,
     setRouteA11y,
     addRouteA11y,
+    setStepTransitDetails,
   } = useMapStore();
   const Route = useMapsLibrary("routes");
 
@@ -32,7 +35,8 @@ export default function useComputeRoute() {
   const computeRouteService = useCallback(
     async (
       origin: google.maps.LatLngLiteral,
-      destination: google.maps.LatLngLiteral
+      destination: google.maps.LatLngLiteral,
+      travelMode: google.maps.TravelMode = google.maps.TravelMode.TRANSIT
     ) => {
       if (!Route || !map) return;
       try {
@@ -43,13 +47,12 @@ export default function useComputeRoute() {
         const transitRoute = await computeRouteService.route({
           origin,
           destination,
-          travelMode: google.maps.TravelMode.TRANSIT,
+          travelMode,
+          provideRouteAlternatives: true,
         });
 
-        const totalSteps: google.maps.DirectionsStep[] = [];
-
-        for (const leg of transitRoute.routes[0].legs) {
-          const steps = leg.steps;
+        for (let j = 0; j < transitRoute.routes[0].legs.length; j++) {
+          const steps = transitRoute.routes[0].legs[j].steps;
 
           // 使用傳統 for 循環來獲取索引
           for (let i = 0; i < steps.length; i++) {
@@ -66,18 +69,32 @@ export default function useComputeRoute() {
                 : step.end_location;
 
               computeA11yWalkingRoute(point);
+            } else if (
+              step.travel_mode === google.maps.TravelMode.TRANSIT &&
+              step.transit?.line?.vehicle?.type
+            ) {
+              const { line, arrival_stop, departure_stop } = step.transit;
+              const transitDetail = {
+                stepIndex: `${j} ${i}`,
+                type: step.transit?.line?.vehicle?.type,
+                lineName: line.name || "",
+                headsign: step.transit?.headsign || "",
+                shortName: line.short_name || "",
+                departureStopName: departure_stop.name || "",
+                arrivalStopName: arrival_stop.name || "",
+                arrivalLat: arrival_stop.location.lat(),
+                arrivalLng: arrival_stop.location.lng(),
+              } as RouteTransitDetail;
+              setStepTransitDetails(transitDetail);
             }
-            totalSteps.push(step);
           }
         }
 
-        transitRoute.routes[0].legs[0].steps = totalSteps;
         const data = transitRoute.routes;
         console.log("route", data);
         map.fitBounds(data[0].bounds);
         setComputeRoutes(data);
-        setRouteSelect(data[0]);
-
+        setRouteSelect({ index: 0, route: data[0] });
         setRouteInfoShow(true);
       } catch (error) {
         console.log(error);
@@ -88,6 +105,7 @@ export default function useComputeRoute() {
     [
       Route,
       map,
+      setStepTransitDetails,
       setComputeRoutes,
       setRouteSelect,
       setRouteInfoShow,
