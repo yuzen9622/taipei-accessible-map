@@ -6,13 +6,20 @@ import {
   Train,
   TramFront,
 } from "lucide-react";
+import moment from "moment";
 import { useMemo } from "react";
 import useNavigation from "@/hook/useNavigation";
 import { cn, getStepColor } from "@/lib/utils";
-
 import { Button } from "../ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../ui/card";
+import "moment/locale/zh-tw";
+moment.locale("zh-tw");
 type RouteCardProps = {
   route: google.maps.DirectionsRoute;
 };
@@ -102,6 +109,10 @@ export default function RouteCard({ route }: RouteCardProps) {
             </div>
           )}
         </CardTitle>
+        <CardDescription>
+          預計時間 {moment(route.legs[0].departure_time?.value).format("HH:mm")}{" "}
+          ~ {moment(route.legs[0].arrival_time?.value).format("HH:mm")}
+        </CardDescription>
       </CardHeader>
 
       <CardContent className="space-y-3">
@@ -123,7 +134,7 @@ export default function RouteCard({ route }: RouteCardProps) {
                   <div
                     className={cn(
                       "absolute left-3.5 top-11 bottom-0 w-0.5",
-                      isWalking ? "bg-blue-300" : "bg-orange-300",
+                      isWalking ? "bg-blue-300" : "bg-orange-300"
                     )}
                   />
                 )}
@@ -133,7 +144,7 @@ export default function RouteCard({ route }: RouteCardProps) {
                   <div
                     className={cn(
                       "flex items-center justify-center w-8 h-8 rounded-full border-2",
-                      stepColor(step),
+                      stepColor(step)
                     )}
                   >
                     {getIcon(step)}

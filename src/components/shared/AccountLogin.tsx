@@ -86,7 +86,7 @@ export default function AccountLogin() {
           "https://www.googleapis.com/oauth2/v3/userinfo",
           {
             headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-          },
+          }
         );
         const infoData = await userInfo.json();
 
@@ -100,7 +100,7 @@ export default function AccountLogin() {
           infoData.email,
           infoData.name,
           infoData.picture,
-          infoData.sub,
+          infoData.sub
         );
 
         const { ok, data, message, accessToken } = userRes;
@@ -289,7 +289,7 @@ export default function AccountLogin() {
                       `h-8 w-8 rounded-md `,
 
                       userConfig.themeColor === color.type &&
-                        " ring-2  ring-offset-1 ring-ring ",
+                        " ring-2  ring-offset-1 ring-ring "
                     )}
                   />
                 ))}

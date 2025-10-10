@@ -12,7 +12,7 @@ export async function login(
   return fetchRequest(`${END_POINT}/api/user/login`, {
     method: "POST",
     body: { email, name, avatar, client_id },
-  });
+  }) as Promise<ApiResponse<{ user: UserDTO }>>;
 }
 
 export async function checkToken(
