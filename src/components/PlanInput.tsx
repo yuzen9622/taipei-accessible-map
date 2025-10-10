@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import type { PlaceDetail } from "@/types";
 import SearchInput from "./shared/PlaceInput";
-
+import { Badge } from "./ui/badge";
 import { Card } from "./ui/card";
 
 export default function RoutePlanInput() {
@@ -14,12 +14,12 @@ export default function RoutePlanInput() {
     userLocation,
     setDestination,
     setOrigin,
-
     origin,
     destination,
-
     setSearchPlace,
     setInfoShow,
+    travelMode,
+    setTravelMode,
   } = useMapStore();
 
   const { computeRouteService } = useComputeRoute();
@@ -34,26 +34,38 @@ export default function RoutePlanInput() {
       ? destination.place.displayName
       : ""
   );
+  const handleComputeRoute = useCallback(
+    async (mode?: google.maps.TravelMode) => {
+      if (!origin?.position && !destination?.position) return;
+      const startLocation = origin?.position || userLocation;
+      const endLocation = destination?.position || userLocation;
+      if (startLocation && endLocation) {
+        computeRouteService(startLocation, endLocation, mode || travelMode);
+      }
+    },
+    [userLocation, origin, destination, computeRouteService, travelMode]
+  );
+
+  const handleTravelModeChange = (mode: google.maps.TravelMode) => {
+    setTravelMode(mode);
+    handleComputeRoute(mode);
+  };
 
   const handleOriginPlace = useCallback(
     (placeDetail: PlaceDetail) => {
-      const startLocation = destination?.position || userLocation;
       if (placeDetail.kind === "place") {
         setOriginSearchInput(placeDetail.place.displayName || "");
       }
 
       setOrigin(placeDetail);
 
-      if (startLocation) {
-        computeRouteService(placeDetail.position, startLocation);
-      }
+      handleComputeRoute();
     },
-    [setOrigin, destination, computeRouteService, userLocation]
+    [setOrigin, handleComputeRoute]
   );
 
   const handleDestinationPlace = useCallback(
     (placeDetail: PlaceDetail) => {
-      const startLocation = origin?.position || userLocation;
       setDestination(placeDetail);
       if (placeDetail.kind === "place") {
         setDestinationSearchInput(placeDetail.place.displayName || "");
@@ -64,18 +76,9 @@ export default function RoutePlanInput() {
       }
       setSearchPlace(null);
 
-      if (startLocation) {
-        computeRouteService(startLocation, placeDetail.position);
-      }
+      handleComputeRoute();
     },
-    [
-      setDestination,
-      setInfoShow,
-      setSearchPlace,
-      computeRouteService,
-      origin,
-      userLocation,
-    ]
+    [setDestination, setInfoShow, setSearchPlace, handleComputeRoute]
   );
 
   const handleSwitch = () => {
@@ -128,6 +131,36 @@ export default function RoutePlanInput() {
             onChange={(e) => setDestinationSearchInput(e.target.value)}
             onPlaceSelect={handleDestinationPlace}
           />
+        </div>
+        <div className="flex gap-4 ">
+          <Badge
+            variant={
+              travelMode === google.maps.TravelMode.TRANSIT
+                ? "default"
+                : "outline"
+            }
+            onClick={() =>
+              handleTravelModeChange(google.maps.TravelMode.TRANSIT)
+            }
+            className="rounded-3xl px-3 py-1"
+            asChild
+          >
+            <button type="button">大眾運輸</button>
+          </Badge>
+          <Badge
+            variant={
+              travelMode === google.maps.TravelMode.WALKING
+                ? "default"
+                : "outline"
+            }
+            onClick={() =>
+              handleTravelModeChange(google.maps.TravelMode.WALKING)
+            }
+            asChild
+            className="rounded-3xl px-3 py-1"
+          >
+            <button type="button">走路</button>
+          </Badge>
         </div>
       </div>
       <div>

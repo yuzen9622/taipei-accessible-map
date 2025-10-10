@@ -11,20 +11,24 @@ export default function RouteLine() {
   const geometry = useMapsLibrary("geometry");
 
   const polylinesElement = useMemo(() => {
-    if (!selectRoute || !geometry) return null;
+    if (!selectRoute?.route || !geometry) return null;
     const markers: JSX.Element[] = [];
     let lastTravelMode: google.maps.TravelMode | null = null;
     const startEndMarker = (
       <>
-        <AdvancedMarker position={selectRoute.legs[0].start_location}>
+        <AdvancedMarker position={selectRoute?.route.legs[0].start_location}>
           <div className=" p-1 rounded-full bg-blue-700  outline-3 outline-offset-2 outline-background"></div>
         </AdvancedMarker>
         <AdvancedMarker
-          position={selectRoute.legs[selectRoute.legs.length - 1].end_location}
+          position={
+            selectRoute?.route.legs[selectRoute?.route.legs.length - 1]
+              .end_location
+          }
         >
           <AdvancedMarker
             position={
-              selectRoute.legs[selectRoute.legs.length - 1].end_location
+              selectRoute?.route.legs[selectRoute?.route.legs.length - 1]
+                .end_location
             }
           ></AdvancedMarker>
           <div className=" p-1 rounded-full bg-primary outline-3 outline-offset-2 outline-background"></div>
@@ -33,7 +37,7 @@ export default function RouteLine() {
     );
 
     // 再針對 walking step 做點點 overlay
-    const stepLines = selectRoute.legs.map((leg) => {
+    const stepLines = selectRoute?.route.legs.map((leg) => {
       return leg.steps.map((step) => {
         if (!step.encoded_lat_lngs) return null;
 
@@ -164,7 +168,7 @@ export default function RouteLine() {
         {startEndMarker}
       </div>
     );
-  }, [selectRoute, geometry]);
+  }, [selectRoute?.route, geometry]);
 
   return <>{polylinesElement}</>;
 }

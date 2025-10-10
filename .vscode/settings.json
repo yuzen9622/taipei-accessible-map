@@ -3,5 +3,10 @@
     "source.organizeImports.biome": "explicit",
     "source.fixAll.biome": "explicit"
   },
-  "cSpell.words": ["cmdk", "turbopack", "vaul"]
+  "cSpell.words": [
+    "cmdk",
+    "headsign",
+    "turbopack",
+    "vaul"
+  ]
 }

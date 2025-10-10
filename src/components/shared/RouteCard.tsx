@@ -7,26 +7,28 @@ import {
   TramFront,
 } from "lucide-react";
 import moment from "moment";
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import useNavigation from "@/hook/useNavigation";
 import { cn, getStepColor } from "@/lib/utils";
 import { Button } from "../ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "../ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import "moment/locale/zh-tw";
+import useMapStore from "@/stores/useMapStore";
+import { Badge } from "../ui/badge";
+import { TransitDetail } from "./TransitDetail";
+
 moment.locale("zh-tw");
 type RouteCardProps = {
   route: google.maps.DirectionsRoute;
+  idx: number;
 };
 
-export default function RouteCard({ route }: RouteCardProps) {
+export const RouteCard = memo(function RouteCard({
+  route,
+  idx,
+}: RouteCardProps) {
   const { startNavigation } = useNavigation();
-
+  const { setRouteSelect, selectRoute } = useMapStore();
   const routeLocalValue = useMemo(() => {
     const result = {
       distance: "",
@@ -109,10 +111,7 @@ export default function RouteCard({ route }: RouteCardProps) {
             </div>
           )}
         </CardTitle>
-        <CardDescription>
-          預計時間 {moment(route.legs[0].departure_time?.value).format("HH:mm")}{" "}
-          ~ {moment(route.legs[0].arrival_time?.value).format("HH:mm")}
-        </CardDescription>
+        {selectRoute?.index === idx && <Badge>已選擇</Badge>}
       </CardHeader>
 
       <CardContent className="space-y-3">
@@ -170,46 +169,7 @@ export default function RouteCard({ route }: RouteCardProps) {
                   )}
 
                   {isTransit && step.transit && (
-                    <div className="space-y-2">
-                      {/* 路線資訊 */}
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="px-2 py-1 rounded text-xs font-bold text-white"
-                          style={{
-                            backgroundColor: getStepColor(step) || "#666",
-                          }}
-                        >
-                          {step.transit.line.short_name ||
-                            step.transit.line.name}
-                        </div>
-                        <span className="text-sm font-medium">
-                          {step.transit.line.name}
-                        </span>
-                      </div>
-
-                      {/* 上下車資訊 */}
-                      <div className="space-y-1 text-xs">
-                        <div className="flex items-start gap-2">
-                          <span className="text-muted-foreground shrink-0">
-                            上車：
-                          </span>
-                          <span className="font-medium">
-                            {step.transit.departure_stop.name}
-                          </span>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <span className="text-muted-foreground shrink-0">
-                            下車：
-                          </span>
-                          <span className="font-medium">
-                            {step.transit.arrival_stop.name}
-                          </span>
-                        </div>
-                        <div className="text-muted-foreground">
-                          {step.transit.num_stops} 站 • 約 {step.duration?.text}
-                        </div>
-                      </div>
-                    </div>
+                    <TransitDetail i={idx} j={index} />
                   )}
                 </div>
               </div>
@@ -220,8 +180,13 @@ export default function RouteCard({ route }: RouteCardProps) {
         {/* 開始導航按鈕 */}
         <div className="flex justify-between items-center pt-4 border-t">
           <Button
+            onClick={() => setRouteSelect({ index: idx, route: route })}
+            variant={"outline"}
+          >
+            選擇路徑
+          </Button>
+          <Button
             variant="default"
-            className="w-full"
             onClick={() => startNavigation(route.legs[0].steps)}
           >
             <FlagIcon className="mr-2 h-4 w-4" />
@@ -231,4 +196,5 @@ export default function RouteCard({ route }: RouteCardProps) {
       </CardContent>
     </Card>
   );
-}
+});
+RouteCard.displayName = "RouteCard";

@@ -20,6 +20,7 @@ export default function useNavigation() {
   };
 
   const speakInstruction = (step: google.maps.DirectionsStep) => {
+    window.speechSynthesis.cancel();
     const msg = new SpeechSynthesisUtterance(
       step.instructions?.replaceAll(/<[^>]*>|\/+/g, "")
     );
@@ -114,11 +115,12 @@ export default function useNavigation() {
   };
 
   const stopNavigation = () => {
+    window.speechSynthesis.cancel();
     if (!map || !selectRoute) return;
     map.setTilt(0);
     map.setHeading(0);
     map.setZoom(14);
-    map.panToBounds(selectRoute.bounds);
+    map.panToBounds(selectRoute.route.bounds);
 
     setNavigationDrawerOpen(false);
     setInfoShow({ isOpen: false });

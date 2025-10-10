@@ -5,7 +5,7 @@ import useMapStore from "@/stores/useMapStore";
 
 import DrawerWrapper from "./DrawerWrapper";
 
-import RouteCard from "./shared/RouteCard";
+import { RouteCard } from "./shared/RouteCard";
 import { Button } from "./ui/button";
 import { DrawerHeader } from "./ui/drawer";
 
@@ -13,27 +13,11 @@ export default function RouteDrawer() {
   const {
     computeRoutes,
     routeInfoShow,
-    setRouteInfoShow,
-    setInfoShow,
-    destination,
-    setOrigin,
-    setRouteA11y,
-    setDestination,
-    setRouteSelect,
+
+    closeRouteDrawer,
   } = useMapStore();
 
   if (!computeRoutes) return null;
-
-  const handleBack = () => {
-    setRouteInfoShow(false);
-    setOrigin(null);
-    setDestination(null);
-    setRouteSelect(null);
-    setRouteA11y([]);
-    if (destination && destination.kind === "place") {
-      setInfoShow({ isOpen: true, place: destination.place, kind: "place" });
-    }
-  };
 
   return (
     <DrawerWrapper open={routeInfoShow}>
@@ -43,15 +27,15 @@ export default function RouteDrawer() {
           <Button
             variant={"ghost"}
             className="     absolute  bg-muted  z-20 rounded-3xl  right-8 top-4"
-            onClick={handleBack}
+            onClick={closeRouteDrawer}
           >
             <XIcon />
           </Button>
         </div>
 
         <section className=" space-y-2 ">
-          {computeRoutes?.map((route) => (
-            <RouteCard key={Math.random()} route={route} />
+          {computeRoutes?.map((route, index) => (
+            <RouteCard key={Math.random()} idx={index} route={route} />
           ))}
         </section>
       </DrawerHeader>

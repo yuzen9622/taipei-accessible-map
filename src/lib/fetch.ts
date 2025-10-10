@@ -6,6 +6,7 @@ interface RequestOptions<T> {
   body?: T;
   headers?: Record<string, string>;
   requireAuth?: boolean;
+  signal?: AbortSignal;
 }
 
 export async function getAccessToken() {
@@ -19,6 +20,8 @@ export async function fetchRequest<T>(
     body,
     headers = {},
     requireAuth = false,
+    signal,
+    ...rest
   }: RequestOptions<T> = {}
 ): Promise<ApiResponse<unknown>> {
   if (requireAuth) {
@@ -32,22 +35,18 @@ export async function fetchRequest<T>(
       "Content-Type": "application/json",
       ...headers,
     },
+    ...rest,
   };
 
   if (body) {
     options.body = JSON.stringify(body);
   }
   const response = await fetch(url, options);
-  if (!response.ok) {
-    console.log(
-      `HTTP error! status: ${response.status}: ${response.statusText}`
-    );
-    if (response.status === 500)
-      throw new Error(
-        `HTTP error! status: ${response.status}: ${response.statusText}`
-      );
+  const data = (await response.json()) as ApiResponse<unknown>;
+  if (!data.ok && data.code !== 401) {
+    throw new Error(data.message || "Fetch error");
   }
-  return response.json();
+  return data;
 }
 export async function authenticatedRequest<T>(
   url: string,
