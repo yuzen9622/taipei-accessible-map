@@ -1,7 +1,10 @@
 "use client";
+import moment from "moment";
 import { memo } from "react";
 import { getStepColor } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
+import { BUS_STATUS, isBusTransitDetail } from "@/types/transit";
+import { Badge } from "../ui/badge";
 
 export const TransitDetail = memo(function TransitDetail({
   i,
@@ -10,8 +13,12 @@ export const TransitDetail = memo(function TransitDetail({
   i: number;
   j: number;
 }) {
-  const { computeRoutes } = useMapStore();
+  const { computeRoutes, stepTransitDetails } = useMapStore();
+  const transitDetail = stepTransitDetails.find(
+    (detail) => detail.stepIndex === `${i} ${j}`
+  );
 
+  if (!computeRoutes) return null;
   const step = computeRoutes?.[i].legs[0].steps[j];
 
   if (!step || !step?.transit) return null;
@@ -29,21 +36,25 @@ export const TransitDetail = memo(function TransitDetail({
         </div>
         <span className="text-sm font-medium">{step.transit?.line.name}</span>
       </div>
-      {/* {busDetail.nearbyStop &&
-        (busDetail.nearbyStop.StopStatus < 2 ? (
+      {transitDetail &&
+        isBusTransitDetail(transitDetail) &&
+        transitDetail.nearbyStop &&
+        (transitDetail.nearbyStop.StopStatus < 2 ? (
           <Badge className="text-xs">
-            {busDetail.nearbyStop.EstimateTime
-              ? ` 剩餘${Math.floor(busDetail.nearbyStop.EstimateTime / 60)}分鐘`
-              : `${moment(busDetail.nearbyStop.NextBusTime).format(
+            {transitDetail.nearbyStop.EstimateTime
+              ? ` 剩餘${Math.floor(
+                  transitDetail.nearbyStop.EstimateTime / 60
+                )}分鐘`
+              : `${moment(transitDetail.nearbyStop.NextBusTime).format(
                   "HH:mm"
                 )}上車`}
           </Badge>
         ) : (
           <Badge>
-            {busDetail.nearbyStop &&
-              BUS_STATUS[busDetail.nearbyStop.StopStatus]}
+            {transitDetail.nearbyStop &&
+              BUS_STATUS[transitDetail.nearbyStop.StopStatus]}
           </Badge>
-        ))} */}
+        ))}
       {/* 上下車資訊 */}
       <div className="space-y-1 text-xs">
         <div className="flex items-start gap-2">
