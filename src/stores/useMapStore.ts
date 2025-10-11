@@ -143,8 +143,19 @@ const useMapStore = create<MapStore>((set, get) => ({
   setRouteA11y: (a11y) => set({ routeA11y: a11y }),
   addRouteA11y: (a11y) => set({ routeA11y: [...get().routeA11y, ...a11y] }),
   stepTransitDetails: [],
-  setStepTransitDetails: (details) =>
-    set({ stepTransitDetails: [...get().stepTransitDetails, details] }),
+
+  setStepTransitDetails: (details) => {
+    const { stepTransitDetails } = get();
+    if (stepTransitDetails.find((_) => _.stepIndex === details.stepIndex)) {
+      const newDetails = stepTransitDetails.filter(
+        (_) => _.stepIndex !== details.stepIndex
+      );
+      set({ stepTransitDetails: [...newDetails, details] });
+      return;
+    }
+
+    set({ stepTransitDetails: [...stepTransitDetails, details] });
+  },
   removeStepTransitDetail: (stepIndex) => {
     const { stepTransitDetails } = get();
     const newDetails = stepTransitDetails.filter(

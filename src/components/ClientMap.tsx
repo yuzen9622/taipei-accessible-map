@@ -18,6 +18,7 @@ import { getLocation } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import GotoNowButton from "./shared/GotoNowButton";
 import SearchPin from "./shared/SearchPin";
+import TransitWrapper from "./TransitWrapper";
 
 export default function ClientMap() {
   const {
@@ -114,7 +115,7 @@ export default function ClientMap() {
       <GotoNowButton />
       <NowPin />
       {searchPlace && <SearchPin destination={searchPlace} />}
-
+      <TransitWrapper />
       <RouteLine />
     </GoogleMap>
   );

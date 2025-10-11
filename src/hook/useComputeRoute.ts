@@ -5,7 +5,6 @@ import { getNearbyRouteA11yPlaces } from "@/lib/api/a11y";
 
 import { formatA11y } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
-import type { RouteTransitDetail } from "@/types/transit";
 
 export default function useComputeRoute() {
   const [isLoading, setIsLoading] = useState(false);
@@ -17,7 +16,6 @@ export default function useComputeRoute() {
     setRouteInfoShow,
     setRouteA11y,
     addRouteA11y,
-    setStepTransitDetails,
   } = useMapStore();
   const Route = useMapsLibrary("routes");
 
@@ -69,23 +67,6 @@ export default function useComputeRoute() {
                 : step.end_location;
 
               computeA11yWalkingRoute(point);
-            } else if (
-              step.travel_mode === google.maps.TravelMode.TRANSIT &&
-              step.transit?.line?.vehicle?.type
-            ) {
-              const { line, arrival_stop, departure_stop } = step.transit;
-              const transitDetail = {
-                stepIndex: `${j} ${i}`,
-                type: step.transit?.line?.vehicle?.type,
-                lineName: line.name || "",
-                headsign: step.transit?.headsign || "",
-                shortName: line.short_name || "",
-                departureStopName: departure_stop.name || "",
-                arrivalStopName: arrival_stop.name || "",
-                arrivalLat: arrival_stop.location.lat(),
-                arrivalLng: arrival_stop.location.lng(),
-              } as RouteTransitDetail;
-              setStepTransitDetails(transitDetail);
             }
           }
         }
@@ -105,7 +86,7 @@ export default function useComputeRoute() {
     [
       Route,
       map,
-      setStepTransitDetails,
+
       setComputeRoutes,
       setRouteSelect,
       setRouteInfoShow,
