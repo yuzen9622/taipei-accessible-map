@@ -5,7 +5,8 @@ import useMapStore from "@/stores/useMapStore";
 import { isBusTransitDetail, type RouteTransitDetail } from "@/types/transit";
 
 export default function useTransitDetail() {
-  const { selectRoute, setStepTransitDetails } = useMapStore();
+  const { selectRoute, setStepTransitDetails, clearStepTransitDetails } =
+    useMapStore();
 
   const getTransitData = useCallback(
     async (detail: RouteTransitDetail) => {
@@ -31,7 +32,7 @@ export default function useTransitDetail() {
     if (!selectRoute) return;
     const steps = selectRoute.route.legs[0]?.steps ?? [];
     const details: RouteTransitDetail[] = [];
-
+    clearStepTransitDetails();
     steps.forEach((step, stepIndex) => {
       if (step.travel_mode !== google.maps.TravelMode.TRANSIT || !step.transit)
         return;
@@ -69,5 +70,5 @@ export default function useTransitDetail() {
       cancelled = true;
       timers.forEach(clearTimeout);
     };
-  }, [selectRoute, getTransitData]);
+  }, [selectRoute, getTransitData, clearStepTransitDetails]);
 }

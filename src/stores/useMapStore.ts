@@ -56,6 +56,7 @@ interface MapAction {
   addRouteA11y: (a11y: Marker[]) => void;
   setStepTransitDetails: (details: RouteTransitDetail) => void;
   removeStepTransitDetail: (stepIndex: string) => void;
+  clearStepTransitDetails: () => void;
   closeRouteDrawer: () => void;
 }
 
@@ -178,9 +179,19 @@ const useMapStore = create<MapStore>((set, get) => ({
         destination && destination.kind === "place"
           ? { isOpen: true, place: destination.place, kind: "place" }
           : { isOpen: false, kind: null },
+      searchPlace:
+        destination && destination.kind === "place"
+          ? {
+              place: destination.place,
+              kind: "place",
+              position: destination.position,
+            }
+          : undefined,
+
       travelMode: "TRANSIT" as google.maps.TravelMode,
     });
   },
+  clearStepTransitDetails: () => set({ stepTransitDetails: [] }),
   travelMode: "TRANSIT" as google.maps.TravelMode,
   setTravelMode: (mode) => set({ travelMode: mode }),
 }));

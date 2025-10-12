@@ -1,5 +1,6 @@
 "use client";
-import { X } from "lucide-react";
+import { Loader2, X } from "lucide-react";
+import useComputeRoute from "@/hook/useComputeRoute";
 import useMapStore from "@/stores/useMapStore";
 import { A11yEnum } from "@/types/index";
 import DrawerWrapper from "./DrawerWrapper";
@@ -11,10 +12,11 @@ export default function AccessibleDrawer() {
     a11yDrawerOpen,
     setA11yDrawerOpen,
     toggleA11yType,
+
     a11yPlaces,
     map,
   } = useMapStore();
-
+  const { handleComputeRoute, isLoading } = useComputeRoute();
   const filteredPlaces =
     a11yPlaces?.filter((place) => selectedA11yTypes.includes(place.a11yType)) ||
     [];
@@ -101,20 +103,36 @@ export default function AccessibleDrawer() {
                         {place.position.lng.toFixed(6)}
                       </p>
                     </div>
+                    <div className="flex  gap-2 ">
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="mt-2 flex-1"
+                        onClick={async () => {
+                          // 可以在這裡加上點擊後的動作，例如在地圖上聚焦到該位置
+                          await handleComputeRoute({
+                            destination: place.position,
+                          });
+                          setA11yDrawerOpen(false);
+                        }}
+                      >
+                        規劃路線
+                      </Button>
 
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-2 w-full"
-                      onClick={() => {
-                        // 可以在這裡加上點擊後的動作，例如在地圖上聚焦到該位置
-                        console.log("Navigate to:", place.position);
-                        map?.setCenter(place.position);
-                        map?.setZoom(18);
-                      }}
-                    >
-                      查看位置
-                    </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-2 flex-1"
+                        onClick={() => {
+                          // 可以在這裡加上點擊後的動作，例如在地圖上聚焦到該位置
+                          console.log("Navigate to:", place.position);
+                          map?.setCenter(place.position);
+                          map?.setZoom(18);
+                        }}
+                      >
+                        查看位置
+                      </Button>
+                    </div>
                   </div>
                 ))}
             </div>

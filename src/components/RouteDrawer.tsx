@@ -10,12 +10,7 @@ import { Button } from "./ui/button";
 import { DrawerHeader } from "./ui/drawer";
 
 export default function RouteDrawer() {
-  const {
-    computeRoutes,
-    routeInfoShow,
-
-    closeRouteDrawer,
-  } = useMapStore();
+  const { computeRoutes, routeInfoShow, closeRouteDrawer } = useMapStore();
 
   if (!computeRoutes) return null;
 

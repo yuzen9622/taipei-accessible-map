@@ -3,7 +3,9 @@ import {
   Clock,
   FlagIcon,
   Footprints,
-  Train,
+  TrainFrontIcon,
+  TrainFrontTunnelIcon,
+  TrainIcon,
   TramFront,
 } from "lucide-react";
 import moment from "moment";
@@ -75,7 +77,16 @@ export const RouteCard = memo(function RouteCard({
         return <TramFront className="h-4 w-4 " style={{ color: color }} />;
       case google.maps.VehicleType.RAIL:
         return (
-          <Train
+          <TrainFrontIcon
+            className="h-4 w-4 "
+            style={{
+              color,
+            }}
+          />
+        );
+      case "LONG_DISTANCE_TRAIN" as google.maps.VehicleType:
+        return (
+          <TrainIcon
             className="h-4 w-4 "
             style={{
               color,
@@ -86,7 +97,7 @@ export const RouteCard = memo(function RouteCard({
         return <TramFront className="h-4 w-4 " style={{ color: color }} />;
       case google.maps.VehicleType.HIGH_SPEED_TRAIN:
         return (
-          <Train
+          <TrainFrontTunnelIcon
             className="h-4 w-4 "
             style={{
               color,

@@ -11,7 +11,6 @@ import { Card } from "./ui/card";
 
 export default function RoutePlanInput() {
   const {
-    userLocation,
     setDestination,
     setOrigin,
     origin,
@@ -22,7 +21,7 @@ export default function RoutePlanInput() {
     setTravelMode,
   } = useMapStore();
 
-  const { computeRouteService } = useComputeRoute();
+  const { computeRouteService, handleComputeRoute } = useComputeRoute();
 
   const [originSearchInput, setOriginSearchInput] = useState<string>(
     origin?.kind === "place" && origin.place.displayName
@@ -34,21 +33,21 @@ export default function RoutePlanInput() {
       ? destination.place.displayName
       : ""
   );
-  const handleComputeRoute = useCallback(
-    async (mode?: google.maps.TravelMode) => {
-      if (!origin?.position && !destination?.position) return;
-      const startLocation = origin?.position || userLocation;
-      const endLocation = destination?.position || userLocation;
-      if (startLocation && endLocation) {
-        computeRouteService(startLocation, endLocation, mode || travelMode);
-      }
-    },
-    [userLocation, origin, destination, computeRouteService, travelMode]
-  );
+  // const handleComputeRoute = useCallback(
+  //   async (mode?: google.maps.TravelMode) => {
+  //     if (!origin?.position && !destination?.position) return;
+  //     const startLocation = origin?.position || userLocation;
+  //     const endLocation = destination?.position || userLocation;
+  //     if (startLocation && endLocation) {
+  //       computeRouteService(startLocation, endLocation, mode || travelMode);
+  //     }
+  //   },
+  //   [userLocation, origin, destination, computeRouteService, travelMode]
+  // );
 
   const handleTravelModeChange = (mode: google.maps.TravelMode) => {
     setTravelMode(mode);
-    handleComputeRoute(mode);
+    handleComputeRoute({ mode });
   };
 
   const handleOriginPlace = useCallback(
@@ -59,9 +58,12 @@ export default function RoutePlanInput() {
 
       setOrigin(placeDetail);
 
-      handleComputeRoute();
+      handleComputeRoute({
+        origin: placeDetail.position,
+        destination: destination?.position,
+      });
     },
-    [setOrigin, handleComputeRoute]
+    [setOrigin, handleComputeRoute, destination]
   );
 
   const handleDestinationPlace = useCallback(
@@ -76,9 +78,12 @@ export default function RoutePlanInput() {
       }
       setSearchPlace(null);
 
-      handleComputeRoute();
+      handleComputeRoute({
+        origin: origin?.position,
+        destination: placeDetail.position,
+      });
     },
-    [setDestination, setInfoShow, setSearchPlace, handleComputeRoute]
+    [setDestination, setInfoShow, setSearchPlace, handleComputeRoute, origin]
   );
 
   const handleSwitch = () => {

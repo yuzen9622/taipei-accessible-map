@@ -33,11 +33,16 @@ export async function getBusRealtimeNearbyStop({
   return data;
 }
 
-export async function getRealtimeBusPosition(plate_number: string) {
+export async function getRealtimeBusPosition(
+  plate_number: string,
+  arrival_lat: number,
+  arrival_lng: number,
+  route_name: string
+) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10_000);
   const data = (await fetchRequest(
-    `${END_POINT}/api/transit/bus/realtime?plate_number=${plate_number}`,
+    `${END_POINT}/api/transit/bus/realtime?plate_number=${plate_number}&arrival_lat=${arrival_lat}&arrival_lng=${arrival_lng}&route_name=${route_name}`,
     {
       method: "GET",
       signal: controller.signal,

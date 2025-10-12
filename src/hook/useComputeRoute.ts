@@ -16,6 +16,8 @@ export default function useComputeRoute() {
     setRouteInfoShow,
     setRouteA11y,
     addRouteA11y,
+    userLocation,
+    travelMode,
   } = useMapStore();
   const Route = useMapsLibrary("routes");
 
@@ -95,5 +97,22 @@ export default function useComputeRoute() {
     ]
   );
 
-  return { isLoading, computeRouteService };
+  const handleComputeRoute = useCallback(
+    async (params: {
+      origin?: google.maps.LatLngLiteral;
+      destination?: google.maps.LatLngLiteral;
+      mode?: google.maps.TravelMode;
+    }) => {
+      const { origin, destination, mode } = params;
+      if (!origin && !destination) return;
+      const startLocation = origin || userLocation;
+      const endLocation = destination || userLocation;
+      if (startLocation && endLocation) {
+        computeRouteService(startLocation, endLocation, mode || travelMode);
+      }
+    },
+    [userLocation, computeRouteService, travelMode]
+  );
+
+  return { isLoading, computeRouteService, handleComputeRoute };
 }
