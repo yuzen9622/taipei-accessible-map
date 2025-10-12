@@ -1,5 +1,5 @@
 "use client";
-import { Loader2, X } from "lucide-react";
+import { X } from "lucide-react";
 import useComputeRoute from "@/hook/useComputeRoute";
 import useMapStore from "@/stores/useMapStore";
 import { A11yEnum } from "@/types/index";
@@ -16,7 +16,7 @@ export default function AccessibleDrawer() {
     a11yPlaces,
     map,
   } = useMapStore();
-  const { handleComputeRoute, isLoading } = useComputeRoute();
+  const { handleComputeRoute } = useComputeRoute();
   const filteredPlaces =
     a11yPlaces?.filter((place) => selectedA11yTypes.includes(place.a11yType)) ||
     [];

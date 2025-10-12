@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 臺北無障礙導航系統 - Taipei Accessible Navigation System
 
-## Getting Started
+### [臺北無障礙導航系統](https://taipai-accessible-map.vercel.app/)
 
-First, run the development server:
+## 提出問題
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+### 在現有的導航系統對於無障礙族群來說稍顯不足，那針對此部分，本系統將加入無障礙設施(捷運無障礙設施)，並即時顯示公車動態時間，讓行動不便族群可享有一體式 APP
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 使用技術
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 前端採用 Next.js 框架與 Google Map Library 實作路徑規劃與導航系統
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 後端採用 Node.js + Express.js server 串接 TDX 交通開放 API
 
-## Learn More
+## 協作者
 
-To learn more about Next.js, take a look at the following resources:
+[@tai33888](https://github.com/tai33888)
+[@Juannnx](https://github.com/Juannnx)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## License
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### [MIT License](./LICENSE.md)
 
-## Deploy on Vercel
+# Taipei Accessible Navigation System
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### [Taipei Accessible Navigation System](https://taipai-accessible-map.vercel.app/)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Problem Statement
+
+### Existing navigation systems are often insufficient for people with disabilities. To address this, our system integrates accessibility facility data (such as MRT accessibility information) and real-time bus arrival updates, enabling users with mobility challenges to enjoy an all-in-one accessible navigation experience.
+
+## Technologies Used
+
+### Frontend: Built with Next.js and Google Maps Library for route planning and navigation.
+
+### Backend: Developed using Node.js + Express.js, integrated with TDX Transportation Data API for real-time data retrieval.
+
+## Collaborators
+
+[@tai33888](https://github.com/tai33888)
+[@Juannnx](https://github.com/Juannnx)
+
+## License
+
+### [MIT License](./LICENSE.md)
