@@ -4,7 +4,19 @@
 
 ## 提出問題
 
-### 在現有的導航系統對於無障礙族群來說稍顯不足，那針對此部分，本系統將加入無障礙設施(捷運無障礙設施)，並即時顯示公車動態時間，讓行動不便族群可享有一體式 APP
+### 現有的導航系統雖提供完善的路線規劃與交通資訊，但對於行動不便者、長者或使用輪椅等無障礙族群而言，仍存在許多不便之處，例如無法得知無障礙設施的位置、路線是否具備電梯或坡道，或公車班次延誤等問題。
+
+### 本系統旨在改善這項缺口，整合 無障礙設施資訊（如捷運站電梯、無障礙出入口） 與 即時大眾運輸動態（公車到站時間等），提供行動不便族群更友善、即時且一體化的導航體驗。
+
+### 透過本系統，使用者可：
+
+- 查詢並導航至具備無障礙設施的交通據點
+
+- 即時掌握公車動態，減少等待與不確定性
+
+- 依據需求選擇最合適、最安全的移動路線
+
+### 最終目標是打造一個能真正落實「平等出行權」的智慧導航平台，讓每位使用者都能安心地規劃旅程。
 
 ## 使用技術
 
@@ -27,7 +39,19 @@
 
 ## Problem Statement
 
-### Existing navigation systems are often insufficient for people with disabilities. To address this, our system integrates accessibility facility data (such as MRT accessibility information) and real-time bus arrival updates, enabling users with mobility challenges to enjoy an all-in-one accessible navigation experience.
+### Although existing navigation systems offer detailed route planning and transport information, they frequently fail to meet the needs of individuals with mobility issues, such as wheelchair users, elderly people, and those who require accessible facilities. Issues such as a lack of information about lifts, ramps or accessible entrances, as well as uncertainty about bus arrival times, can significantly hinder their daily travel experience.
+
+### This system aims to address these issues by integrating accessibility facility data, such as elevator locations and accessible exit points in metro stations, with real-time public transport updates, including live bus arrival times. The goal is to deliver a more inclusive, real-time and unified navigation experience for users with mobility needs.
+
+### With this system, users can:
+
+- Locate and navigate to transport hubs equipped with accessibility facilities
+
+- view live bus arrival information to minimise waiting and uncertainty.
+
+- Plan the safest and most suitable routes based on their personal accessibility needs.
+
+### The project ultimately seeks to create a smart navigation platform that supports equal mobility for all, enabling every user to plan their journeys with confidence and ease.
 
 ## Technologies Used
 
