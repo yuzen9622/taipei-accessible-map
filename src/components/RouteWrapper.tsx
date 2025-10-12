@@ -1,5 +1,12 @@
 import { AdvancedMarker, useMapsLibrary } from "@vis.gl/react-google-maps";
-import { BusIcon, Footprints, Train, TramFront } from "lucide-react";
+import {
+  BusIcon,
+  Footprints,
+  TrainFrontIcon,
+  TrainFrontTunnelIcon,
+  TrainIcon,
+  TramFront,
+} from "lucide-react";
 
 import { Fragment, type JSX, useMemo } from "react";
 
@@ -67,7 +74,16 @@ export default function RouteLine() {
                 );
               case google.maps.VehicleType.RAIL:
                 return (
-                  <Train
+                  <TrainFrontIcon
+                    className="h-4 w-4 "
+                    style={{
+                      color,
+                    }}
+                  />
+                );
+              case "LONG_DISTANCE_TRAIN" as google.maps.VehicleType:
+                return (
+                  <TrainIcon
                     className="h-4 w-4 "
                     style={{
                       color,
@@ -80,7 +96,7 @@ export default function RouteLine() {
                 );
               case google.maps.VehicleType.HIGH_SPEED_TRAIN:
                 return (
-                  <Train
+                  <TrainFrontTunnelIcon
                     className="h-4 w-4 "
                     style={{
                       color,

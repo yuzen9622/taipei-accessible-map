@@ -7,5 +7,6 @@ export default function TransitWrapper() {
   useTransitDetail();
   const { stepTransitDetails } = useMapStore();
   console.log("stepTransitDetails", stepTransitDetails);
+
   return <div></div>;
 }
