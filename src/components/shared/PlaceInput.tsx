@@ -1,7 +1,7 @@
 "use client";
-
 import { useMapsLibrary } from "@vis.gl/react-google-maps";
-import { LoaderCircle, SearchIcon, XIcon } from "lucide-react";
+import { LoaderCircle, XIcon } from "lucide-react";
+import Image from "next/image";
 import type { InputHTMLAttributes } from "react";
 import { useCallback, useState } from "react";
 import usePlacePredictions from "@/hook/usePlacePredictions";
@@ -48,7 +48,7 @@ function PlaceInput({
       });
       return places.places[0];
     },
-    [placesLib, addSearchHistory],
+    [placesLib, addSearchHistory]
   );
 
   const handlePlaceClick = useCallback(
@@ -69,7 +69,7 @@ function PlaceInput({
 
       setOpen(false);
     },
-    [onPlaceSelect, placesLib, addSearchHistory],
+    [onPlaceSelect, placesLib, addSearchHistory]
   );
 
   const handleHistoryClick = useCallback(
@@ -95,18 +95,18 @@ function PlaceInput({
 
       setOpen(false);
     },
-    [onPlaceSelect, placesLib, addSearchHistory],
+    [onPlaceSelect, placesLib, addSearchHistory]
   );
 
   return (
     <div
       className={cn(
         " relative w-full bg-background px-3 py-1  pointer-events-auto rounded-t-3xl",
-        !open && "rounded-3xl",
+        !open && "rounded-3xl"
       )}
     >
       <div className={cn("w-full flex items-center gap-2 px-2")}>
-        <SearchIcon size={20} className=" text-muted-foreground/70" />
+        <Image src={"/logo.webp"} width={20} height={20} alt="search" />
         <form
           onSubmit={async (e) => {
             e.preventDefault();
@@ -130,7 +130,7 @@ function PlaceInput({
             tabIndex={0}
             className={cn(
               "  shadow-none  h-fit ring-transparent focus-visible:ring-transparent",
-              className,
+              className
             )}
             value={value}
             onChange={(e) => {
