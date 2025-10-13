@@ -52,3 +52,14 @@ export async function getRealtimeBusPosition(
   clearTimeout(timeout);
   return data;
 }
+
+export async function getTrainData() {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
+  const data = await fetchRequest(`${END_POINT}/api/transit/train`, {
+    method: "GET",
+    signal: controller.signal,
+  });
+  clearTimeout(timeout);
+  return data;
+}
