@@ -47,7 +47,11 @@ export default function RoutePlanInput() {
 
   const handleTravelModeChange = (mode: google.maps.TravelMode) => {
     setTravelMode(mode);
-    handleComputeRoute({ mode });
+    handleComputeRoute({
+      origin: origin?.position,
+      destination: destination?.position,
+      mode,
+    });
   };
 
   const handleOriginPlace = useCallback(
