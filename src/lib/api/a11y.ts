@@ -1,13 +1,20 @@
 import { END_POINT } from "@/lib/config";
 import { fetchRequest } from "@/lib/fetch";
-import type { metroA11yData } from "@/types";
+import type { IBathroom, metroA11yData } from "@/types";
 import type { ApiResponse } from "@/types/response";
 
 export async function getAllA11yPlaces() {
   const response = await fetchRequest<ApiResponse<null>>(
-    `${END_POINT}/api/a11y/all-places`,
+    `${END_POINT}/api/a11y/all-places`
   );
   return response;
+}
+
+export async function getAllA11yBathrooms() {
+  const response = await fetchRequest<ApiResponse<null>>(
+    `${END_POINT}/api/a11y/all-bathrooms`
+  );
+  return response as ApiResponse<IBathroom[]>;
 }
 
 export async function getNearbyRouteA11yPlaces(point: {

@@ -12,6 +12,7 @@ export default function AccessibleDrawer() {
     a11yDrawerOpen,
     setA11yDrawerOpen,
     toggleA11yType,
+    routeA11y,
 
     a11yPlaces,
     map,
@@ -19,6 +20,7 @@ export default function AccessibleDrawer() {
   const { handleComputeRoute } = useComputeRoute();
   const filteredPlaces =
     a11yPlaces?.filter((place) => selectedA11yTypes.includes(place.a11yType)) ||
+    routeA11y ||
     [];
 
   const getA11yTypeDescription = (type: A11yEnum) => {
@@ -34,6 +36,11 @@ export default function AccessibleDrawer() {
           title: "無障礙斜坡",
           description:
             "提供輪椅使用者及推車通行的無障礙坡道，坡度符合無障礙設計規範。",
+        };
+      case A11yEnum.RESTROOM:
+        return {
+          title: "無障礙廁所",
+          description: "設有無障礙設施的公共廁所，方便身心障礙者使用。",
         };
       default:
         return {
@@ -87,7 +94,7 @@ export default function AccessibleDrawer() {
                         {place.content?.title}
                       </h4>
                       <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-full">
-                        {place.a11yType === A11yEnum.ELEVATOR ? "電梯" : "斜坡"}
+                        {place.a11yType}
                       </span>
                     </div>
 

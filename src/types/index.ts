@@ -53,6 +53,7 @@ export type metroA11yData = {
   經度: string;
   緯度: string;
 };
+
 export type metroA11yAPI = {
   result: {
     count: number;
@@ -70,3 +71,21 @@ export type Navigation = {
   detailStepIndex: number;
   totalSteps: number;
 };
+
+export interface IBathroom {
+  _id: string;
+  contury: string;
+  areacode: string;
+  village: string;
+  number: string;
+  name: string;
+  address: string;
+  administration: string;
+  latitude: number;
+  longitude: number;
+  grade: string;
+  type2: string;
+  type: string;
+  exec: string;
+  diaper: string;
+}

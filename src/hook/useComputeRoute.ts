@@ -3,7 +3,7 @@ import { useMapsLibrary } from "@vis.gl/react-google-maps";
 import { useCallback, useState } from "react";
 import { getNearbyRouteA11yPlaces } from "@/lib/api/a11y";
 
-import { formatA11y } from "@/lib/utils";
+import { formatMetroA11y } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 
 export default function useComputeRoute() {
@@ -26,7 +26,7 @@ export default function useComputeRoute() {
       const a11yPlaces = await getNearbyRouteA11yPlaces(point.toJSON());
 
       if (a11yPlaces.data) {
-        addRouteA11y(formatA11y(a11yPlaces.data));
+        addRouteA11y(formatMetroA11y(a11yPlaces.data));
       }
     },
     [addRouteA11y]

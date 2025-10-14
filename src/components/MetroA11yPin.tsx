@@ -1,17 +1,30 @@
-import { AccessibilityIcon, Icon } from "lucide-react";
-import { useState } from "react";
-
-import usePin from "@/hook/usePin";
-import { A11yEnum } from "@/types/index";
 import { arrowsUpDownSquare } from "@lucide/lab";
 import { AdvancedMarker } from "@vis.gl/react-google-maps";
-
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
-
+import { AccessibilityIcon, Icon, ToiletIcon } from "lucide-react";
+import { useState } from "react";
+import usePin from "@/hook/usePin";
 import type { Marker } from "@/types";
+import { A11yEnum } from "@/types/index";
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
 export default function MetroA11yPin({ place }: { place: Marker }) {
   const [open, setOpen] = useState(false);
   const { handlePinClick } = usePin();
+
+  const A11yIcon = () => {
+    if (place.a11yType === A11yEnum.ELEVATOR) {
+      return (
+        <Icon
+          iconNode={arrowsUpDownSquare}
+          size={18}
+          className=" text-muted-foreground"
+        />
+      );
+    } else if (place.a11yType === A11yEnum.RAMP) {
+      return <AccessibilityIcon size={18} className=" text-muted-foreground" />;
+    } else {
+      return <ToiletIcon size={18} className=" text-muted-foreground" />;
+    }
+  };
 
   return (
     <HoverCard open={open} onOpenChange={setOpen} key={place.id}>
@@ -26,15 +39,7 @@ export default function MetroA11yPin({ place }: { place: Marker }) {
           onMouseLeave={() => setOpen(false)}
           className=" bg-background  p-1  ring-2 ring-ring rounded-full"
         >
-          {place.a11yType === A11yEnum.ELEVATOR ? (
-            <Icon
-              iconNode={arrowsUpDownSquare}
-              size={18}
-              className=" text-muted-foreground"
-            />
-          ) : (
-            <AccessibilityIcon size={18} className=" text-muted-foreground" />
-          )}
+          {A11yIcon()}
         </AdvancedMarker>
       </HoverCardTrigger>
       <HoverCardContent>

@@ -41,16 +41,45 @@ export default function useTransitDetail() {
       const { lat: arrivalLat, lng: arrivalLng } =
         arrival_stop.location.toJSON();
 
-      details.push({
-        stepIndex: `${selectRoute.index} ${stepIndex}`,
-        type: line?.vehicle?.type ?? google.maps.VehicleType.BUS,
-        lineName: line?.short_name || line?.name || "",
-        headsign: headsign || "",
-        departureStopName: departure_stop.name,
-        arrivalStopName: arrival_stop.name,
-        arrivalLat,
-        arrivalLng,
-      } as RouteTransitDetail);
+      if (line.vehicle?.type === google.maps.VehicleType.HIGH_SPEED_TRAIN) {
+        details.push({
+          stepIndex: `${selectRoute.index} ${stepIndex}`,
+          type: line?.vehicle?.type ?? google.maps.VehicleType.BUS,
+          lineName: line?.short_name || line?.name || "",
+          headsign: headsign || "",
+          departureStopName: departure_stop.name,
+          arrivalStopName: arrival_stop.name,
+          arrivalLat,
+          arrivalLng,
+          carNumber: step.transit?.trip_short_name,
+        } as RouteTransitDetail);
+      } else if (line.vehicle?.type === google.maps.VehicleType.BUS) {
+        details.push({
+          stepIndex: `${selectRoute.index} ${stepIndex}`,
+          type: line?.vehicle?.type ?? google.maps.VehicleType.BUS,
+          lineName: line?.short_name || line?.name || "",
+          headsign: headsign || "",
+          departureStopName: departure_stop.name,
+          arrivalStopName: arrival_stop.name,
+          arrivalLat,
+          arrivalLng,
+        } as RouteTransitDetail);
+      } else if (
+        line.vehicle?.type ===
+        ("LONG_DISTANCE_TRAIN" as google.maps.VehicleType)
+      ) {
+        details.push({
+          stepIndex: `${selectRoute.index} ${stepIndex}`,
+          type: line?.vehicle?.type ?? google.maps.VehicleType.BUS,
+          lineName: line?.short_name || line?.name || "",
+          headsign: headsign || "",
+          departureStopName: departure_stop.name,
+          arrivalStopName: arrival_stop.name,
+          arrivalLat,
+          arrivalLng,
+          carNumber: step.transit?.trip_short_name,
+        } as RouteTransitDetail);
+      }
     });
 
     // 逐步排程：每個 step 相隔 3 秒
@@ -58,11 +87,12 @@ export default function useTransitDetail() {
     let cancelled = false;
 
     details.forEach((detail, idx) => {
-      const id = window.setTimeout(() => {
+      getTransitData(detail);
+      const id = window.setInterval(() => {
         if (!cancelled) {
           getTransitData(detail);
         }
-      }, idx * 3000); // 第 0 個立刻送，之後每個多延遲 3 秒
+      }, idx * 3 + 60000);
       timers.push(id);
     });
 
