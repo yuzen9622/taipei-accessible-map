@@ -1,3 +1,5 @@
+MIT License
+
 Copyright (c) 2025 Taipei Accessible Navigation System
 
 Developed collaboratively by [yuzen9622](https://github.com/yuzen9622), [tai33888](https://github.com/tai33888), and [Juannnx](https://github.com/Juannnx).
