@@ -1,6 +1,6 @@
 {
-  "name": "taipei-accessible-frontend",
-  "version": "0.1.1",
+  "name": "google-map-test",
+  "version": "0.1.0",
   "private": true,
   "license": "MIT",
   "scripts": {
@@ -41,7 +41,7 @@
     "lucide-react": "^0.542.0",
     "moment": "^2.30.1",
     "motion": "^12.23.24",
-    "next": "15.5.2",
+    "next": "^15.5.2",
     "next-themes": "^0.4.6",
     "rc-drawer": "^7.3.0",
     "react": "19.1.0",
