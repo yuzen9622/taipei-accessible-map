@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { getNearbyRouteA11yPlaces } from "@/lib/api/a11y";
 
 import { formatMetroA11y } from "@/lib/utils";
+import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
 
 export default function useComputeRoute() {
@@ -19,6 +20,7 @@ export default function useComputeRoute() {
     userLocation,
     travelMode,
   } = useMapStore();
+  const { userConfig } = useAuthStore();
   const Route = useMapsLibrary("routes");
 
   const computeA11yWalkingRoute = useCallback(
@@ -49,6 +51,7 @@ export default function useComputeRoute() {
           destination,
           travelMode,
           provideRouteAlternatives: true,
+          language: userConfig.language,
         });
 
         for (let j = 0; j < transitRoute.routes[0].legs.length; j++) {
@@ -94,6 +97,7 @@ export default function useComputeRoute() {
       setRouteInfoShow,
       computeA11yWalkingRoute,
       setRouteA11y,
+      userConfig.language,
     ]
   );
 

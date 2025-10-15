@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-
+import { useAppTranslation } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import type { PlaceDetail } from "@/types";
@@ -8,6 +8,7 @@ import PlaceInput from "./shared/PlaceInput";
 export default function SearchInput() {
   const { setSearchPlace, setInfoShow, routeInfoShow, map } = useMapStore();
   const [input, setInput] = useState("");
+  const { t } = useAppTranslation("translation");
   const handlePlaceChange = useCallback(
     (placeDetail: PlaceDetail) => {
       setSearchPlace(placeDetail);
@@ -36,7 +37,7 @@ export default function SearchInput() {
           className="border-none "
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="搜尋想去的地點~"
+          placeholder={t("searchPlaceHolder")}
           onPlaceSelect={handlePlaceChange}
         />
       </div>

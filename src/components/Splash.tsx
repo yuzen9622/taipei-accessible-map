@@ -1,17 +1,14 @@
+"use client";
 import { motion } from "motion/react";
 import Image from "next/image";
 
 type SplashProps = {
   show?: boolean;
-  text?: string;
 };
 
-export default function Splash({
-  show = true,
-  text = "無障礙臺北",
-}: SplashProps) {
+export default function Splash({ show = true }: SplashProps) {
   if (!show) return null;
-  const MotionImage = motion(Image);
+  const MotionImage = motion.create(Image);
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center  bg-background">
       <div className="flex  items-center gap-6">
@@ -22,7 +19,7 @@ export default function Splash({
           animate={{ x: 0 }}
           transition={{ ease: [], delay: 0.5, duration: 0.5 }}
           src="/logo.webp"
-          alt={text}
+          alt={"無障礙台北"}
           width={100}
           className=" absolute inset-1/2 -translate-x-1/2 -translate-y-1/2 z-50 "
           height={100}
@@ -36,7 +33,7 @@ export default function Splash({
           transition={{ delay: 0.5, duration: 0.5, ease: [] }}
           className="text-4xl   font-bold z-0"
         >
-          <span>{text}</span>
+          <span>無障礙台北</span>
         </motion.h1>
       </div>
     </div>

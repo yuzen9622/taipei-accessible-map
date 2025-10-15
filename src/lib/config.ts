@@ -39,7 +39,7 @@ export enum FontSizeEnum {
 
 export enum LanguageEnum {
   English = "en",
-  Chinese = "zh",
+  Chinese = "zh-TW",
 }
 
 // 顏色主題配置
