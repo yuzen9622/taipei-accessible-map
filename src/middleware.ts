@@ -7,7 +7,14 @@ export const config = {
 
 export function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
-
+  if (
+    path.includes(".") ||
+    path.startsWith("/_next") ||
+    path.startsWith("/api") ||
+    path.startsWith("/assets")
+  ) {
+    return NextResponse.next();
+  }
   // 路徑已經帶語系前綴就 pass
   if (languages.some((l: string) => path.startsWith(`/${l}`))) {
     return NextResponse.next();
