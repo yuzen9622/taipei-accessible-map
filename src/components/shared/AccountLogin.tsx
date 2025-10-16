@@ -82,7 +82,9 @@ export default function AccountLogin() {
     updateUserConfig,
     logout,
   } = useAuthStore();
-
+  const features = t("helpDescription.features.general.features", {
+    returnObjects: true,
+  }) as string[];
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
@@ -123,6 +125,18 @@ export default function AccountLogin() {
     },
     onError: (errorResponse) => console.log(errorResponse),
   });
+
+  const handleNotifyChange = (checked: boolean) => {
+    window.Notification.requestPermission((notificationStatus) => {
+      if (notificationStatus === "granted" && checked) {
+        updateUserConfig({ notifications: true });
+      } else if (notificationStatus === "denied") {
+        updateUserConfig({ notifications: false });
+      } else {
+        updateUserConfig({ notifications: checked });
+      }
+    });
+  };
 
   return (
     <>
@@ -211,14 +225,77 @@ export default function AccountLogin() {
         open={openDialog === "help"}
         onOpenChange={() => setOpenDialog(null)}
       >
-        <DialogContent className="max-w-lg rounded-lg p-6 max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-lg w-11/12 rounded-lg p-6 max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold">
               {t("help")}
             </DialogTitle>
           </DialogHeader>
-          <div className="prose dark:prose-invert max-w-none break-normal whitespace-pre-line">
-            <p>{t("helpDescription")}</p>
+          <div className=" space-y-4 mt-4">
+            <h1 className="  whitespace-pre-line">
+              {t("helpDescription.overview")}
+            </h1>
+            <h2>{t("helpDescription.features.general.title")}</h2>
+            <ul itemType="circle">
+              {features.map((feature: string) => (
+                <li key={feature} className="whitespace-pre-line">
+                  {feature}
+                </li>
+              ))}
+            </ul>
+            <h2>{t("helpDescription.features.taipei.title")}</h2>
+            <p>{t("helpDescription.features.taipei.features.filter")}</p>
+            <p>{t("helpDescription.features.taipei.note")}</p>
+            <ul>
+              {(
+                t("helpDescription.features.taipei.icons", {
+                  returnObjects: true,
+                }) as string[]
+              ).map((icon: string) => (
+                <li key={icon} className="whitespace-pre-line">
+                  {icon}
+                </li>
+              ))}
+            </ul>
+            <h2>{t("helpDescription.feedback.title")}</h2>
+            <ul>
+              {(
+                t("helpDescription.feedback.steps", {
+                  returnObjects: true,
+                }) as string[]
+              ).map((step) => (
+                <li key={step} className="whitespace-pre-line">
+                  {step}
+                </li>
+              ))}
+            </ul>
+            <ul>
+              {(
+                t("helpDescription.feedback.examples", {
+                  returnObjects: true,
+                }) as string[]
+              ).map((step) => (
+                <li key={step} className="whitespace-pre-line">
+                  {step}
+                </li>
+              ))}
+            </ul>
+            <h2>{t("helpDescription.faq.title")}</h2>
+            <ul className="space-y-4">
+              {(
+                t("helpDescription.faq.items", {
+                  returnObjects: true,
+                }) as { question: string; answer: string }[]
+              ).map((item) => (
+                <li
+                  key={item.question}
+                  className="whitespace-pre-line space-y-2"
+                >
+                  <p className="font-bold ">{item.question}</p>
+                  <p>{item.answer}</p>
+                </li>
+              ))}
+            </ul>
           </div>
         </DialogContent>
       </Dialog>
@@ -257,59 +334,65 @@ export default function AccountLogin() {
               <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
                 {t("notification")}
               </span>
-              <Switch />
+              <Switch
+                id="notification"
+                className=" bg-accent"
+                defaultChecked={userConfig.notifications}
+                onCheckedChange={handleNotifyChange}
+                checked={userConfig.notifications}
+              />
             </div>
 
             {/* 語言 */}
-            <div className="flex flex-col">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-200 flex items-center gap-1">
+            <div className="flex  justify-between">
+              <span className="text-sm font-medium  text-gray-700 dark:text-gray-200 flex items-center gap-1">
                 <Globe className="h-4 w-4" /> {t("language")}
-                <Select
-                  onValueChange={(key) =>
-                    updateUserConfig({
-                      language: key as LanguageEnum,
-                    })
-                  }
-                >
-                  <SelectTrigger>
-                    {LanguageConfig[userConfig.language].label}
-                  </SelectTrigger>
-
-                  <SelectContent>
-                    {Object.entries(LanguageConfig).map(([key, config]) => (
-                      <SelectItem key={key} value={key}>
-                        {config.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </span>
+              <Select
+                onValueChange={(key) =>
+                  updateUserConfig({
+                    language: key as LanguageEnum,
+                  })
+                }
+              >
+                <SelectTrigger>
+                  {LanguageConfig[userConfig.language].label}
+                </SelectTrigger>
+
+                <SelectContent>
+                  {Object.entries(LanguageConfig).map(([key, config]) => (
+                    <SelectItem key={key} value={key}>
+                      {config.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* 字體大小 */}
-            <div className="flex flex-col">
+            <div className="flex  justify-between">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-200 flex items-center gap-1">
                 <Type className="h-4 w-4" /> {t("fontSize")}
-                <Select
-                  onValueChange={(v) =>
-                    updateUserConfig({
-                      fontSize: v as FontSizeEnum,
-                    })
-                  }
-                  defaultValue={userConfig.fontSize}
-                >
-                  <SelectTrigger className="mt-1 border rounded-md p-1 text-sm">
-                    {fontSizeConfig[userConfig.fontSize].label}
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(fontSizeConfig).map(([key, config]) => (
-                      <SelectItem key={key} value={key}>
-                        {config.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
               </span>
+              <Select
+                onValueChange={(v) =>
+                  updateUserConfig({
+                    fontSize: v as FontSizeEnum,
+                  })
+                }
+                defaultValue={userConfig.fontSize}
+              >
+                <SelectTrigger className="mt-1 border rounded-md p-1 text-sm">
+                  {fontSizeConfig[userConfig.fontSize].label}
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(fontSizeConfig).map(([key, config]) => (
+                    <SelectItem key={key} value={key}>
+                      {config.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* 主題顏色：改成色塊選擇 */}

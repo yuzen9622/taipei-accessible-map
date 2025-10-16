@@ -9,7 +9,7 @@
     "helpDescription": "User Guide\n\nThis application is a test version for the Smart City Node Competition, designed to demonstrate accessible navigation and data handling features.\nCurrently, the system is for testing and demonstration purposes only; some data, functions, and interfaces are still under development.\n\n1. Purpose\nThis application simulates accessible guidance in a smart city, using test data to verify system feasibility and operation processes.\n\n2. Data Information\n All test data are for demonstration only and do not represent final results or real data.\n\n3. How to Use\nOpen the application to access the main screen.\nClick the function buttons to browse or interact with the test content.\nSome screens will display \"This is a test\" to indicate the current test phase.\n\n4. Notes\nThis version is for competition demonstration and functionality verification only and is not a commercial release.\nActual functions and data will be continuously improved in future development stages.\nFor more information on system principles or technical architecture, please refer to the project technical documentation.",
     "logout": "Logout",
     "settingDesc": "Adjust preferences such as dark mode, language, and font size.",
-    "darkMode": "Dark mode",
+    "darkMode": "Dark Light mode",
     "notification": "Notifications",
     "fontSize": "Font size",
     "language": "Language",
