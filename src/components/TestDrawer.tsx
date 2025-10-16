@@ -14,6 +14,7 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 
+import { useAppTranslation } from "@/i18n/client";
 import DrawerWrapper from "./DrawerWrapper";
 import GeocoderDrawerContent from "./GeocoderDrawerContent";
 import PlaceDrawerContent from "./PlaceDrawerContent";
@@ -28,7 +29,7 @@ export default function TestDrawer() {
     setDestination,
     userLocation,
   } = useMapStore();
-
+  const { t } = useAppTranslation("translation");
   const { isLoading, computeRouteService } = useComputeRoute();
 
   const handlePlanRoute = useCallback(async () => {
@@ -99,7 +100,7 @@ export default function TestDrawer() {
               onClick={handlePlanRoute}
               className="flex-1"
             >
-              {isLoading ? "規劃中" : "規劃路線"}
+              {isLoading ? "規劃中" : t("planRoute")}
               {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
             </Button>
             <div className="flex gap-2">

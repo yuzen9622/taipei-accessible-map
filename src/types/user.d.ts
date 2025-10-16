@@ -12,10 +12,11 @@ export interface UserDTO {
 
 export interface UserConfig {
   language: LanguageEnum;
-  darkMode: boolean;
+  darkMode: "light" | "dark" | "system";
   themeColor: ColorEnum;
   fontSize: FontSizeEnum;
   notifications: boolean;
+  user_id?: string;
 }
 
 export interface RefreshToken {

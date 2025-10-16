@@ -1,4 +1,5 @@
 "use client";
+
 import { useCallback, useEffect } from "react";
 import AccessibleDrawer from "@/components/AccessibleDrawer";
 import RouteDrawer from "@/components/RouteDrawer";
@@ -14,7 +15,7 @@ export default function ClientLayout({
   children: React.ReactNode;
 }) {
   const { initSearchHistory } = useMapStore();
-  const { setSession, setUser } = useAuthStore();
+  const { setSession, setUser, setUserConfig } = useAuthStore();
 
   const getNewAccessToken = useCallback(async () => {
     const token = await refreshToken();
@@ -22,8 +23,11 @@ export default function ClientLayout({
       setSession({ accessToken: token });
       const { data } = await getUserInfo();
       if (data?.user) setUser(data.user);
+      if (data?.config) {
+        setUserConfig(data.config);
+      }
     }
-  }, [setSession, setUser]);
+  }, [setSession, setUser, setUserConfig]);
 
   useEffect(() => {
     const storedHistory = localStorage.getItem("searchHistory");

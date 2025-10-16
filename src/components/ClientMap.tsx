@@ -1,25 +1,23 @@
 "use client";
 
 import {
+  type ColorScheme,
   Map as GoogleMap,
   useMap,
   useMapsLibrary,
 } from "@vis.gl/react-google-maps";
-
+import { useTheme } from "next-themes";
 import { useEffect } from "react";
-
 import MapWrapper from "@/components/MapWrapper";
 import AccessibilityPin from "@/components/MetroA11yWrapper";
-
 import RouteLine from "@/components/RouteWrapper";
 import NowPin from "@/components/shared/NowPin";
-
+import { useAppTranslation } from "@/i18n/client";
 import { getLocation } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import GotoNowButton from "./shared/GotoNowButton";
 import SearchPin from "./shared/SearchPin";
 import TransitWrapper from "./TransitWrapper";
-
 export default function ClientMap() {
   const {
     setMap,
@@ -29,6 +27,13 @@ export default function ClientMap() {
     searchPlace,
     navigation,
   } = useMapStore();
+  const { theme } = useTheme();
+  const { i18n } = useAppTranslation();
+  const MAP_DARK_MODE: Record<string, ColorScheme> = {
+    dark: "DARK",
+    light: "LIGHT",
+    system: "FOLLOW_SYSTEM",
+  };
 
   const mapHook = useMap();
   const placesLib = useMapsLibrary("places");
@@ -62,9 +67,10 @@ export default function ClientMap() {
 
   return (
     <GoogleMap
+      key={i18n.language}
       defaultZoom={15}
       reuseMaps
-      colorScheme="LIGHT"
+      colorScheme={MAP_DARK_MODE[theme ?? "system"]}
       defaultCenter={{ lat: 25.03, lng: 121.55 }}
       gestureHandling={"auto"}
       // restriction={{

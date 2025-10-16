@@ -5,7 +5,10 @@ import Image from "next/image";
 import type { InputHTMLAttributes } from "react";
 import { useCallback, useState } from "react";
 import usePlacePredictions from "@/hook/usePlacePredictions";
+import { useAppTranslation } from "@/i18n/client";
+
 import { cn, getLocation } from "@/lib/utils";
+import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
 import type { PlaceDetail } from "@/types";
 import { Button } from "../ui/button";
@@ -26,11 +29,11 @@ function PlaceInput({
   ...props
 }: InputProps) {
   const placesLib = useMapsLibrary("places");
-
+  const { t } = useAppTranslation("translation");
   const [open, setOpen] = useState(false);
   const { searchHistory, addSearchHistory } = useMapStore();
   const { suggestions, loading } = usePlacePredictions((value as string) || "");
-
+  const { userConfig } = useAuthStore();
   const handlePlaceSubmit = useCallback(
     async (text: string) => {
       if (!placesLib) return;
@@ -38,6 +41,7 @@ function PlaceInput({
       const places = await Place.searchByText({
         fields: ["*"],
         textQuery: text,
+        language: userConfig.language,
       });
       const latLng = getLocation(places.places[0]);
       if (!latLng) return;
@@ -48,28 +52,32 @@ function PlaceInput({
       });
       return places.places[0];
     },
-    [placesLib, addSearchHistory]
+    [placesLib, addSearchHistory, userConfig]
   );
 
   const handlePlaceClick = useCallback(
     async (place: google.maps.places.AutocompleteSuggestion) => {
       if (!placesLib || !place.placePrediction) return;
+      const { Place } = placesLib;
+      const langPlace = new Place({
+        id: place.placePrediction.placeId,
+        requestedLanguage: userConfig.language,
+      });
 
-      const placeDetails = place.placePrediction.toPlace();
-      await placeDetails.fetchFields({ fields: ["*"] });
-      console.log(placeDetails.toJSON());
-      const latLng = getLocation(placeDetails);
+      await langPlace.fetchFields({ fields: ["*"] });
+
+      const latLng = getLocation(langPlace);
       if (!latLng) return;
       addSearchHistory({
         kind: "place",
-        place: placeDetails,
+        place: langPlace,
         position: latLng,
       });
-      onPlaceSelect({ kind: "place", place: placeDetails, position: latLng });
+      onPlaceSelect({ kind: "place", place: langPlace, position: latLng });
 
       setOpen(false);
     },
-    [onPlaceSelect, placesLib, addSearchHistory]
+    [onPlaceSelect, placesLib, addSearchHistory, userConfig.language]
   );
 
   const handleHistoryClick = useCallback(
@@ -101,7 +109,7 @@ function PlaceInput({
   return (
     <div
       className={cn(
-        " relative w-full bg-background px-3 py-1  pointer-events-auto rounded-t-3xl",
+        " relative w-full bg-card px-3 py-1  pointer-events-auto rounded-t-3xl",
         !open && "rounded-3xl"
       )}
     >
@@ -129,7 +137,7 @@ function PlaceInput({
             placeholder={placeholder}
             tabIndex={0}
             className={cn(
-              "  shadow-none  h-fit ring-transparent focus-visible:ring-transparent",
+              "  shadow-none  bg-transparent! h-fit ring-transparent focus-visible:ring-transparent",
               className
             )}
             value={value}
@@ -156,7 +164,7 @@ function PlaceInput({
         <Command className="w-full  text-start   shadow relative h-fit overflow-auto rounded-b-3xl">
           <CommandList>
             {value === "" && open && (
-              <CommandGroup heading="搜尋歷史紀錄">
+              <CommandGroup heading={t("searchHistory")}>
                 {searchHistory.map((history) => {
                   if (history.kind === "place") {
                     const { place } = history;
@@ -191,7 +199,7 @@ function PlaceInput({
               </CommandGroup>
             )}
             {value !== "" && open && (
-              <CommandGroup heading="搜尋結果：">
+              <CommandGroup heading={t("searchResults")}>
                 {suggestions.map((suggestion) => {
                   return (
                     <CommandItem

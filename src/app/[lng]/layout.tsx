@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
-import "./globals.css";
-
+import "../globals.css";
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import { dir } from "i18next";
 import { Geist, Geist_Mono } from "next/font/google";
 import ClientLayout from "@/components/layout/client-layout";
 import GoogleMapProvider from "@/components/provider/GoogleMapProvider";
+import { ThemeProvider } from "@/components/provider/ThemeProvider";
 import TestDrawer from "@/components/TestDrawer";
 import { Toaster } from "@/components/ui/sonner";
+import type { languages } from "@/i18n/setting";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,13 +29,17 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
+  params,
 }: Readonly<{
   children: React.ReactNode;
+  params: Promise<{ lng: (typeof languages)[number] }>;
 }>) {
+  const { lng } = await params;
+
   return (
-    <html lang="en">
+    <html suppressHydrationWarning={true} lang={lng} dir={dir(lng)}>
       <head>
         <link
           href="https://fonts.googleapis.com/icon?family=Material+Symbols+Outlined"
@@ -47,10 +53,12 @@ export default function RootLayout({
           <GoogleOAuthProvider
             clientId={process.env.NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID ?? ""}
           >
-            <ClientLayout>
-              <TestDrawer />
-              {children}
-            </ClientLayout>
+            <ThemeProvider defaultTheme="system" attribute="class" enableSystem>
+              <ClientLayout>
+                <TestDrawer />
+                {children}
+              </ClientLayout>
+            </ThemeProvider>
           </GoogleOAuthProvider>
         </GoogleMapProvider>
         <Toaster />

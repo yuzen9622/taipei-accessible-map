@@ -7,12 +7,11 @@ import {
   HelpCircle,
   Info,
   LogOut,
-  Moon,
-  Palette,
   Settings,
   Type,
   User,
 } from "lucide-react";
+import Image from "next/image";
 import { useState } from "react";
 import {
   Dialog,
@@ -30,20 +29,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
+import { useAppTranslation } from "@/i18n/client";
 import { login } from "@/lib/api/auth";
 import {
-  ColorEnum,
-  colorThemeConfig,
   type FontSizeEnum,
   fontSizeConfig,
   LanguageConfig,
   type LanguageEnum,
 } from "@/lib/config";
-import { cn } from "@/lib/utils";
 import useAuthStore from "@/stores/useAuthStore";
-
 import { Button } from "../ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "../ui/select";
+import { ThemeSwitcher } from "../ui/shadcn-io/theme-switcher";
 
 export default function AccountLogin() {
   const [openDialog, setOpenDialog] = useState<
@@ -51,33 +48,40 @@ export default function AccountLogin() {
   >(null);
 
   const [feedbackText, setFeedbackText] = useState("");
-
+  const { t } = useAppTranslation("translation");
   // 預設提供的色塊
-  const themeColors = [
-    {
-      type: ColorEnum.Default,
-    },
-    {
-      type: ColorEnum.Red,
-    },
-    {
-      type: ColorEnum.Blue,
-    },
-    {
-      type: ColorEnum.Green,
-    },
-    {
-      type: ColorEnum.Purple,
-    },
-    {
-      type: ColorEnum.Orange,
-    },
-    {
-      type: ColorEnum.Yellow,
-    },
-  ];
-  const { user, setUser, setSession, userConfig, setUserConfig } =
-    useAuthStore();
+  // const themeColors = [
+  //   {
+  //     type: ColorEnum.Default,
+  //   },
+  //   {
+  //     type: ColorEnum.Red,
+  //   },
+  //   {
+  //     type: ColorEnum.Blue,
+  //   },
+  //   {
+  //     type: ColorEnum.Green,
+  //   },
+  //   {
+  //     type: ColorEnum.Purple,
+  //   },
+  //   {
+  //     type: ColorEnum.Orange,
+  //   },
+  //   {
+  //     type: ColorEnum.Yellow,
+  //   },
+  // ];
+  const {
+    user,
+    setUser,
+    setSession,
+    userConfig,
+    setUserConfig,
+    updateUserConfig,
+    logout,
+  } = useAuthStore();
 
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -107,6 +111,7 @@ export default function AccountLogin() {
         if (!ok) throw new Error(message);
 
         if (data?.user) setUser(data.user);
+        if (data?.config) setUserConfig(data.config);
         if (accessToken) {
           setSession({
             accessToken,
@@ -124,17 +129,26 @@ export default function AccountLogin() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
-            variant="ghost"
             size="icon"
-            className="text-white  focus:ring-2  bg-blue-500  relative pointer-events-auto  focus:ring-white rounded-full transition-colors duration-200"
+            className="text-white hover:text-primary  focus:ring-2  bg-blue-500  hover:bg-background relative pointer-events-auto  focus:ring-white rounded-full transition-colors duration-200"
           >
-            <User className="h-6 w-6" />
+            {user?.avatar ? (
+              <Image
+                src={user.avatar}
+                width={30}
+                height={30}
+                alt={user.name}
+                className="w-full h-full rounded-full "
+              />
+            ) : (
+              <User className="h-6 w-6 " />
+            )}
           </Button>
         </DropdownMenuTrigger>
 
         <DropdownMenuContent className="w-56 bg-white dark:bg-gray-800 shadow-lg rounded-lg p-2">
           <DropdownMenuLabel className="text-sm font-semibold text-gray-700 dark:text-gray-200">
-            {user ? `歡迎，${user.name}` : "請先登入"}
+            {user ? t("welcome", { name: user.name }) : "請先登入"}
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
 
@@ -151,20 +165,22 @@ export default function AccountLogin() {
 
           {
             <>
-              <DropdownMenuItem
-                onClick={() => setOpenDialog("settings")}
-                className="text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
-              >
-                <Settings className="mr-2 h-4 w-4" />
-                設定
-              </DropdownMenuItem>
+              {user && (
+                <DropdownMenuItem
+                  onClick={() => setOpenDialog("settings")}
+                  className="text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                >
+                  <Settings className="mr-2 h-4 w-4" />
+                  {t("settingTitle")}
+                </DropdownMenuItem>
+              )}
 
               <DropdownMenuItem
                 onClick={() => setOpenDialog("feedback")}
                 className="text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
               >
                 <HelpCircle className="mr-2 h-4 w-4" />
-                問題回饋
+                {t("feedback")}
               </DropdownMenuItem>
 
               <DropdownMenuItem
@@ -172,15 +188,19 @@ export default function AccountLogin() {
                 className="text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
               >
                 <Info className="mr-2 h-4 w-4" />
-                使用說明
+                {t("help")}
               </DropdownMenuItem>
 
               <DropdownMenuSeparator />
-
-              <DropdownMenuItem className="text-sm text-red-500 hover:text-red-600 rounded-md">
-                <LogOut className="mr-2 h-4 w-4" />
-                登出
-              </DropdownMenuItem>
+              {user && (
+                <DropdownMenuItem
+                  onClick={logout}
+                  className="text-sm text-red-500 hover:text-red-600 rounded-md"
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  {t("logout")}
+                </DropdownMenuItem>
+              )}
             </>
           }
         </DropdownMenuContent>
@@ -188,30 +208,54 @@ export default function AccountLogin() {
 
       {/* 設定 Dialog */}
       <Dialog
+        open={openDialog === "help"}
+        onOpenChange={() => setOpenDialog(null)}
+      >
+        <DialogContent className="max-w-lg rounded-lg p-6 max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold">
+              {t("help")}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="prose dark:prose-invert max-w-none break-normal whitespace-pre-line">
+            <p>{t("helpDescription")}</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
         open={openDialog === "settings"}
         onOpenChange={() => setOpenDialog(null)}
       >
         <DialogContent className="max-w-md rounded-lg p-6">
           <DialogHeader>
-            <DialogTitle className="text-lg font-semibold">設定</DialogTitle>
+            <DialogTitle className="text-lg font-semibold">
+              {t("settingTitle")}
+            </DialogTitle>
             <DialogDescription className="text-sm text-gray-500">
-              調整偏好設定，例如深色模式、語言、字體大小與主題顏色。
+              {t("settingDesc")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 mt-4">
             {/* 深色模式 */}
             <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-200 flex items-center gap-1">
-                <Moon className="h-4 w-4" /> 深色模式
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                {t("darkMode")}
               </span>
-              <Switch />
+              <ThemeSwitcher
+                value={userConfig.darkMode}
+                onChange={(changeTheme) => {
+                  console.log("Change theme to", changeTheme);
+                  updateUserConfig({ darkMode: changeTheme });
+                }}
+              />
             </div>
 
             {/* 通知 */}
             <div className="flex justify-between items-center">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                通知設定
+                {t("notification")}
               </span>
               <Switch />
             </div>
@@ -219,23 +263,21 @@ export default function AccountLogin() {
             {/* 語言 */}
             <div className="flex flex-col">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-200 flex items-center gap-1">
-                <Globe className="h-4 w-4" /> 語言
-                <Select>
+                <Globe className="h-4 w-4" /> {t("language")}
+                <Select
+                  onValueChange={(key) =>
+                    updateUserConfig({
+                      language: key as LanguageEnum,
+                    })
+                  }
+                >
                   <SelectTrigger>
                     {LanguageConfig[userConfig.language].label}
                   </SelectTrigger>
 
                   <SelectContent>
                     {Object.entries(LanguageConfig).map(([key, config]) => (
-                      <SelectItem
-                        key={key}
-                        value={key}
-                        onClick={() =>
-                          setUserConfig({
-                            language: key as LanguageEnum,
-                          })
-                        }
-                      >
+                      <SelectItem key={key} value={key}>
                         {config.label}
                       </SelectItem>
                     ))}
@@ -247,10 +289,10 @@ export default function AccountLogin() {
             {/* 字體大小 */}
             <div className="flex flex-col">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-200 flex items-center gap-1">
-                <Type className="h-4 w-4" /> 字體大小
+                <Type className="h-4 w-4" /> {t("fontSize")}
                 <Select
                   onValueChange={(v) =>
-                    setUserConfig({
+                    updateUserConfig({
                       fontSize: v as FontSizeEnum,
                     })
                   }
@@ -271,7 +313,7 @@ export default function AccountLogin() {
             </div>
 
             {/* 主題顏色：改成色塊選擇 */}
-            <div className="flex flex-col">
+            {/* <div className="flex flex-col">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-200 flex items-center gap-1">
                 <Palette className="h-4 w-4" /> 主題顏色
               </span>
@@ -294,7 +336,7 @@ export default function AccountLogin() {
                   />
                 ))}
               </div>
-            </div>
+            </div> */}
           </div>
         </DialogContent>
       </Dialog>

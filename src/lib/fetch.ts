@@ -1,5 +1,7 @@
+import { toast } from "sonner";
 import useAuthStore from "@/stores/useAuthStore";
 import type { ApiResponse } from "@/types/response";
+import { refreshToken } from "./api/auth";
 
 interface RequestOptions<T> {
   method?: string;
@@ -45,6 +47,17 @@ export async function fetchRequest<T>(
   const data = (await response.json()) as ApiResponse<unknown>;
   if (!data.ok && data.code !== 401) {
     throw new Error(data.message || "Fetch error");
+  }
+  if (data.code === 401 && requireAuth) {
+    const newAccessToken = await refreshToken();
+    if (newAccessToken) {
+      useAuthStore.getState().setSession({ accessToken: newAccessToken });
+      return fetchRequest(url, { method, body, headers, requireAuth, signal });
+    } else {
+      useAuthStore.getState().setSession({ accessToken: "" });
+      useAuthStore.getState().setUser(null);
+      toast.error("登入已過期，請重新登入");
+    }
   }
   return data;
 }

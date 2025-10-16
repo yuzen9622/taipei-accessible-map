@@ -1,13 +1,13 @@
-import { useEffect, useState } from "react";
-
 import { useMapsLibrary } from "@vis.gl/react-google-maps";
+import { useEffect, useState } from "react";
+import useAuthStore from "@/stores/useAuthStore";
 
 export default function usePlaceSuggestions(input: string) {
   const [suggestions, setSuggestions] = useState<
     google.maps.places.AutocompleteSuggestion[]
   >([]);
   const [loading, setLoading] = useState(false);
-
+  const { userConfig } = useAuthStore();
   const placeLib = useMapsLibrary("places");
 
   useEffect(() => {
@@ -22,6 +22,7 @@ export default function usePlaceSuggestions(input: string) {
     const request = {
       input,
       region: "tw",
+      language: userConfig.language,
     };
 
     setLoading(true);
@@ -30,12 +31,12 @@ export default function usePlaceSuggestions(input: string) {
         (res) => {
           setSuggestions(res.suggestions);
           setLoading(false);
-        },
+        }
       );
     }, 500);
 
     return () => clearTimeout(handler);
-  }, [input, placeLib]);
+  }, [input, placeLib, userConfig.language]);
 
   return { suggestions, loading };
 }
