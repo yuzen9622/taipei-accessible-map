@@ -433,21 +433,21 @@ export default function AccountLogin() {
         <DialogContent className="max-w-md rounded-lg p-6">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold">
-              問題回饋
+              {t("feedback")}
             </DialogTitle>
             <DialogDescription className="text-sm text-gray-500">
-              請描述您遇到的問題或建議，我們將盡快改善！
+              {t("feedbackDesc")}
             </DialogDescription>
           </DialogHeader>
 
           <textarea
             className="w-full border rounded-md p-2 text-sm mt-4"
             rows={4}
-            placeholder="請輸入您的意見..."
+            placeholder={t("feedbackPlaceholder")}
             value={feedbackText}
             onChange={(e) => setFeedbackText(e.target.value)}
           />
-          <Button className="w-full mt-2 text-sm">送出</Button>
+          <Button className="w-full mt-2 text-sm">{t("submit")}</Button>
         </DialogContent>
       </Dialog>
     </>

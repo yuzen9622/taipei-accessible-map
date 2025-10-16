@@ -1,11 +1,12 @@
 import { useMapsLibrary } from "@vis.gl/react-google-maps";
 
 import { useCallback, useState } from "react";
+import { toast } from "sonner";
 import { getNearbyRouteA11yPlaces } from "@/lib/api/a11y";
-
-import { formatMetroA11y } from "@/lib/utils";
+import { formatBathroom, formatMetroA11y } from "@/lib/utils";
 import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
+import { useRouteRank } from "./useRouteRank";
 
 export default function useComputeRoute() {
   const [isLoading, setIsLoading] = useState(false);
@@ -16,10 +17,10 @@ export default function useComputeRoute() {
     setRouteSelect,
     setRouteInfoShow,
     setRouteA11y,
-    addRouteA11y,
     userLocation,
     travelMode,
   } = useMapStore();
+  const { getRouteRank } = useRouteRank();
   const { userConfig } = useAuthStore();
   const Route = useMapsLibrary("routes");
 
@@ -28,10 +29,12 @@ export default function useComputeRoute() {
       const a11yPlaces = await getNearbyRouteA11yPlaces(point.toJSON());
 
       if (a11yPlaces.data) {
-        addRouteA11y(formatMetroA11y(a11yPlaces.data));
+        const metroA11y = formatMetroA11y(a11yPlaces.data.nearbyMetroA11y);
+        const bathroomA11y = formatBathroom(a11yPlaces.data.nearbyBathroom);
+        return [...metroA11y, ...bathroomA11y];
       }
     },
-    [addRouteA11y]
+    []
   );
 
   const computeRouteService = useCallback(
@@ -53,7 +56,7 @@ export default function useComputeRoute() {
           provideRouteAlternatives: true,
           language: userConfig.language,
         });
-
+        const allRouteA11y = [];
         for (let j = 0; j < transitRoute.routes[0].legs.length; j++) {
           const steps = transitRoute.routes[0].legs[j].steps;
 
@@ -71,19 +74,25 @@ export default function useComputeRoute() {
                 ? step.start_location
                 : step.end_location;
 
-              computeA11yWalkingRoute(point);
+              const a11y = await computeA11yWalkingRoute(point);
+              if (a11y) {
+                allRouteA11y.push(...a11y);
+              }
             }
           }
         }
 
         const data = transitRoute.routes;
+        getRouteRank(data[0], allRouteA11y);
         console.log("route", data);
         map.fitBounds(data[0].bounds);
         setComputeRoutes(data);
         setRouteSelect({ index: 0, route: data[0] });
         setRouteInfoShow(true);
+        setRouteA11y(allRouteA11y);
       } catch (error) {
         console.log(error);
+        toast.error("路徑規劃失敗，請稍後再試");
       } finally {
         setIsLoading(false);
       }
@@ -91,7 +100,7 @@ export default function useComputeRoute() {
     [
       Route,
       map,
-
+      getRouteRank,
       setComputeRoutes,
       setRouteSelect,
       setRouteInfoShow,
@@ -111,8 +120,13 @@ export default function useComputeRoute() {
       if (!origin && !destination) return;
       const startLocation = origin || userLocation;
       const endLocation = destination || userLocation;
+      console.log(startLocation, endLocation);
       if (startLocation && endLocation) {
-        computeRouteService(startLocation, endLocation, mode || travelMode);
+        await computeRouteService(
+          startLocation,
+          endLocation,
+          mode || travelMode
+        );
       }
     },
     [userLocation, computeRouteService, travelMode]

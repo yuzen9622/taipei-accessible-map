@@ -2,7 +2,7 @@
 import { create } from "zustand";
 import type { InfoShow, Marker, Navigation, PlaceDetail } from "@/types";
 import { A11yEnum } from "@/types/index";
-import type { RouteTransitDetail } from "@/types/transit";
+import type { AIRankResponse, RouteTransitDetail } from "@/types/transit";
 
 interface MapState {
   map: google.maps.Map | null;
@@ -15,7 +15,11 @@ interface MapState {
   searchPlace: PlaceDetail | null;
   computeRoutes: google.maps.DirectionsRoute[] | null;
   routePolyline: google.maps.Polyline | null;
-  selectRoute: { index: number; route: google.maps.DirectionsRoute } | null;
+  selectRoute: {
+    index: number;
+    route: google.maps.DirectionsRoute;
+    routeRank?: AIRankResponse;
+  } | null;
   routeA11y: Marker[];
   // 新增無障礙設施相關狀態
   selectedA11yTypes: A11yEnum[];
@@ -41,7 +45,11 @@ interface MapAction {
   setRoutePolyline: (polyline: google.maps.Polyline | null) => void;
   setRouteInfoShow: (show: boolean) => void;
   setRouteSelect: (
-    route: { index: number; route: google.maps.DirectionsRoute } | null
+    route: Partial<{
+      index: number;
+      route: google.maps.DirectionsRoute;
+      routeRank?: AIRankResponse;
+    }> | null
   ) => void;
   // 新增無障礙設施相關動作
   toggleA11yType: (type: A11yEnum) => void;
@@ -84,7 +92,18 @@ const useMapStore = create<MapStore>((set, get) => ({
   routePolyline: null,
   setRoutePolyline: (polyline) => set({ routePolyline: polyline }),
   selectRoute: null,
-  setRouteSelect: (route) => set({ selectRoute: route }),
+  setRouteSelect: (route) => {
+    if (!route) {
+      set({ selectRoute: null });
+      return;
+    }
+    set({
+      selectRoute: {
+        ...get().selectRoute,
+        ...route,
+      } as MapStore["selectRoute"],
+    });
+  },
   // 新增無障礙設施相關實作
   selectedA11yTypes: [],
   toggleA11yType: (type: A11yEnum) => {

@@ -12,7 +12,10 @@ export default function GotoNowButton() {
   if (!userLocation) return null;
   return (
     <div className=" absolute bottom-5 right-5">
-      <Button variant={"outline"} onClick={() => handlePinClick(userLocation)}>
+      <Button
+        variant={"secondary"}
+        onClick={() => handlePinClick(userLocation)}
+      >
         <Crosshair className=" text-muted-foreground/70" />
       </Button>
     </div>

@@ -1,14 +1,17 @@
 "use client";
 import { motion } from "motion/react";
 import Image from "next/image";
+import { useAppTranslation } from "@/i18n/client";
 
 type SplashProps = {
   show?: boolean;
 };
 
 export default function Splash({ show = true }: SplashProps) {
+  const { t } = useAppTranslation("translation");
   if (!show) return null;
   const MotionImage = motion.create(Image);
+
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center  bg-background">
       <div className="flex  items-center gap-6">
@@ -33,7 +36,7 @@ export default function Splash({ show = true }: SplashProps) {
           transition={{ delay: 0.5, duration: 0.5, ease: [] }}
           className="text-4xl   font-bold z-0"
         >
-          <span>無障礙台北</span>
+          <span>{t("title")}</span>
         </motion.h1>
       </div>
     </div>

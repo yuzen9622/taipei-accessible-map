@@ -9,6 +9,7 @@ import en from "@/i18n/locale/en/translation.json";
 import zhTW from "@/i18n/locale/zh-TW/translation.json";
 import type { LanguageEnum } from "@/lib/config";
 import useAuthStore from "@/stores/useAuthStore";
+import { fallbackLng, languages } from "./setting";
 
 const resources = {
   en: { translation: en },
@@ -19,9 +20,9 @@ const resources = {
 if (!i18n.isInitialized) {
   i18n.use(initReactI18next).init({
     resources,
-    lng: "zh-TW",
-    fallbackLng: "zh-TW",
-    supportedLngs: ["en", "zh-TW"],
+    lng: fallbackLng,
+    fallbackLng: fallbackLng,
+    supportedLngs: languages,
     interpolation: { escapeValue: false },
     react: { useSuspense: false },
   });
@@ -49,8 +50,14 @@ export function useAppTranslation(ns?: string | string[]) {
   }, [userConfig.language, ret.i18n, updateUserConfig]);
   useEffect(() => {
     // 只有在語言不同時才切換，避免重複呼叫
-    if (userConfig.language !== lang) {
+    if (
+      userConfig.language !== lang &&
+      languages.includes(lang) &&
+      languages.includes(userConfig.language)
+    ) {
       redirect(`/${userConfig.language}`);
+    } else if (!languages.includes(lang)) {
+      redirect(`/${fallbackLng}`);
     }
   }, [lang, userConfig.language]);
   return ret;

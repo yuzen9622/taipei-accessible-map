@@ -3,6 +3,7 @@ import {
   Clock,
   FlagIcon,
   Footprints,
+  Loader2,
   TrainFrontIcon,
   TrainFrontTunnelIcon,
   TrainIcon,
@@ -15,7 +16,9 @@ import { cn, getStepColor } from "@/lib/utils";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import "moment/locale/zh-tw";
+import { useRouteRank } from "@/hook/useRouteRank";
 import useMapStore from "@/stores/useMapStore";
+
 import { Badge } from "../ui/badge";
 import { TransitDetail } from "./TransitDetail";
 
@@ -31,6 +34,8 @@ export const RouteCard = memo(function RouteCard({
 }: RouteCardProps) {
   const { startNavigation } = useNavigation();
   const { setRouteSelect, selectRoute } = useMapStore();
+  const { getRouteRank, isLoading } = useRouteRank();
+
   const routeLocalValue = useMemo(() => {
     const result = {
       distance: "",
@@ -122,6 +127,29 @@ export const RouteCard = memo(function RouteCard({
             </div>
           )}
         </CardTitle>
+        {selectRoute?.index === idx &&
+          (isLoading ? (
+            <Badge variant="secondary" className="gap-2">
+              評分路線中 <Loader2 className=" animate-spin" />
+            </Badge>
+          ) : (
+            selectRoute.routeRank && (
+              <>
+                <Badge>
+                  無障礙便利度：{selectRoute.routeRank?.route_total_score}
+                </Badge>
+                <p className=" flex flex-col gap-2  text-sm bg-secondary rounded-3xl px-3 py-2 text-muted-foreground">
+                  {selectRoute.routeRank?.route_description}
+                  <Badge
+                    variant={"outline"}
+                    className="text-xs self-end  text-destructive"
+                  >
+                    Gemini 可能出錯。請查核重要資訊。
+                  </Badge>
+                </p>
+              </>
+            )
+          ))}
         {selectRoute?.index === idx && <Badge>已選擇</Badge>}
       </CardHeader>
 
@@ -191,7 +219,10 @@ export const RouteCard = memo(function RouteCard({
         {/* 開始導航按鈕 */}
         <div className="flex justify-between items-center pt-4 border-t">
           <Button
-            onClick={() => setRouteSelect({ index: idx, route: route })}
+            onClick={() => {
+              getRouteRank(route);
+              setRouteSelect({ index: idx, route: route });
+            }}
             variant={"outline"}
           >
             選擇路徑

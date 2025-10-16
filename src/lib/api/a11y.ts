@@ -25,5 +25,8 @@ export async function getNearbyRouteA11yPlaces(point: {
     ApiResponse<google.maps.DirectionsResult>
   >(`${END_POINT}/api/a11y/nearby-a11y?lat=${point.lat}&lng=${point.lng}`);
 
-  return response as ApiResponse<metroA11yData[]>;
+  return response as ApiResponse<{
+    nearbyBathroom: IBathroom[];
+    nearbyMetroA11y: metroA11yData[];
+  }>;
 }
