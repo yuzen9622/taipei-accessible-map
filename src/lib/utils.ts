@@ -91,9 +91,9 @@ export const formatRouteForAI = (
       end: step.end_location.toJSON(),
       instructions: step.instructions.replaceAll(/<[^>]+>/g, ""),
       duration: step.duration?.value || 0,
-      a11y: a11ys,
+
       line: step.transit?.line,
     });
   });
-  return request;
+  return { request, a11ys };
 };

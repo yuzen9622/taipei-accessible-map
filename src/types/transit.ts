@@ -1,5 +1,3 @@
-import type { Marker } from "@/types/index";
-
 type BusEstimate = {
   PlateNumb: string;
   EstimateTime: number;
@@ -141,7 +139,6 @@ export type RankRequest = {
   instructions: string;
   duration: number;
   line?: google.maps.TransitLine;
-  a11y: Marker[];
 };
 export interface AIRankResponse {
   route_description: string;
