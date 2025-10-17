@@ -1,6 +1,6 @@
 # 臺北無障礙導航系統 - Taipei Accessible Navigation System
 
-### [臺北無障礙導航系統](https://taipai-accessible-map.vercel.app/)
+### [臺北無障礙導航系統](https://taipei-accessible-map.vercel.app/)
 
 ## 提出問題
 
@@ -29,13 +29,15 @@
 [@tai33888](https://github.com/tai33888)
 [@Juannnx](https://github.com/Juannnx)
 
-## License
+## License & Authors
 
 ### [MIT License](./LICENSE.md)
 
+### [AUTHORS](./AUTHORS.md)
+
 # Taipei Accessible Navigation System
 
-### [Taipei Accessible Navigation System](https://taipai-accessible-map.vercel.app/)
+### [Taipei Accessible Navigation System](https://taipei-accessible-map.vercel.app/)
 
 ## Problem Statement
 
@@ -64,6 +66,8 @@
 [@tai33888](https://github.com/tai33888)
 [@Juannnx](https://github.com/Juannnx)
 
-## License
+## License & Authors
 
 ### [MIT License](./LICENSE.md)
+
+### [AUTHORS](./AUTHORS.md)
