@@ -22,5 +22,5 @@ export function middleware(req: NextRequest) {
 
   // 否則導向 fallback 或從 userConfig/header 取語言
   const lng = fallbackLng;
-  return NextResponse.redirect(new URL(`/${lng}${path}`, req.url));
+  return NextResponse.redirect(new URL(`/${lng}`, req.url));
 }

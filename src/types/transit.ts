@@ -1,3 +1,5 @@
+import type { Marker } from "@/types/index";
+
 type BusEstimate = {
   PlateNumb: string;
   EstimateTime: number;
@@ -132,6 +134,19 @@ export type RouteTransitDetail =
   | BusTransitDetail
   | RailTransitDetail
   | SubwayTransitDetail;
+
+export type RankRequest = {
+  start: google.maps.LatLngLiteral;
+  end: google.maps.LatLngLiteral;
+  instructions: string;
+  duration: number;
+  line?: google.maps.TransitLine;
+  a11y: Marker[];
+};
+export interface AIRankResponse {
+  route_description: string;
+  route_total_score: number;
+}
 
 export function isBusTransitDetail(
   detail: RouteTransitDetail

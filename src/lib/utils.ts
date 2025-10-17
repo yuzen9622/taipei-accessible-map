@@ -7,6 +7,7 @@ import {
   type Marker,
   type metroA11yData,
 } from "@/types";
+import type { RankRequest } from "@/types/transit";
 import { ROUTE_COLORS } from "./config";
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -79,3 +80,20 @@ export function getStepColor(step: google.maps.DirectionsStep): string {
 
   return ROUTE_COLORS.default;
 }
+export const formatRouteForAI = (
+  route: google.maps.DirectionsRoute,
+  a11ys: Marker[]
+) => {
+  const request: RankRequest[] = [];
+  route.legs[0].steps.forEach((step) => {
+    request.push({
+      start: step.start_location.toJSON(),
+      end: step.end_location.toJSON(),
+      instructions: step.instructions.replaceAll(/<[^>]+>/g, ""),
+      duration: step.duration?.value || 0,
+      a11y: a11ys,
+      line: step.transit?.line,
+    });
+  });
+  return request;
+};

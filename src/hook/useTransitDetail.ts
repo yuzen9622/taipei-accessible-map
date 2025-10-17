@@ -29,7 +29,7 @@ export default function useTransitDetail() {
   );
 
   useEffect(() => {
-    if (!selectRoute) return;
+    if (!selectRoute?.route) return;
     const steps = selectRoute.route.legs[0]?.steps ?? [];
     const details: RouteTransitDetail[] = [];
     clearStepTransitDetails();

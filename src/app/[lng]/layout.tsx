@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import "../globals.css";
+import "@/app/globals.css";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { dir } from "i18next";
 import { Geist, Geist_Mono } from "next/font/google";
