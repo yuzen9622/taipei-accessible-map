@@ -62,15 +62,24 @@ export default function NavigationDrawer() {
 
             <CardAction className=" flex  p-1  justify-between bg-muted w-full lg:w-fit rounded-3xl  shrink-0">
               <span className="flex gap-1 items-center">
-                <Button onClick={prevStep} variant={"ghost"}>
+                <Button
+                  aria-label="Previous step"
+                  onClick={prevStep}
+                  variant={"ghost"}
+                >
                   <ChevronLeft />
                 </Button>
-                <Button onClick={nextStep} variant={"ghost"}>
+                <Button
+                  aria-label="Next step"
+                  onClick={nextStep}
+                  variant={"ghost"}
+                >
                   <ChevronRight />
                 </Button>
               </span>
 
               <Button
+                aria-label="Stop navigation"
                 variant={"destructive"}
                 onClick={stopNavigation}
                 className="rounded-3xl"

@@ -61,6 +61,7 @@ export default function AccessibleDrawer() {
         <span className="flex items-center justify-between">
           <h1 className="text-lg font-semibold">{t("accessibleTitle")}</h1>
           <Button
+            aria-label="Close accessibility options"
             variant="outline"
             onClick={() => {
               setA11yDrawerOpen(false);
@@ -115,6 +116,7 @@ export default function AccessibleDrawer() {
                     </div>
                     <div className="flex  gap-2 ">
                       <Button
+                        aria-label="Plan route"
                         variant="default"
                         size="sm"
                         className="mt-2 flex-1"
@@ -131,6 +133,7 @@ export default function AccessibleDrawer() {
                       </Button>
 
                       <Button
+                        aria-label="View on map"
                         variant="outline"
                         size="sm"
                         className="mt-2 flex-1"

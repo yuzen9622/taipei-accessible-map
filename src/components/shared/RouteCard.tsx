@@ -17,8 +17,8 @@ import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import "moment/locale/zh-tw";
 import { useRouteRank } from "@/hook/useRouteRank";
+import { useAppTranslation } from "@/i18n/client";
 import useMapStore from "@/stores/useMapStore";
-
 import { Badge } from "../ui/badge";
 import { TransitDetail } from "./TransitDetail";
 
@@ -35,7 +35,7 @@ export const RouteCard = memo(function RouteCard({
   const { startNavigation } = useNavigation();
   const { setRouteSelect, selectRoute } = useMapStore();
   const { getRouteRank, isLoading } = useRouteRank();
-
+  const { t } = useAppTranslation();
   const routeLocalValue = useMemo(() => {
     const result = {
       distance: "",
@@ -219,20 +219,22 @@ export const RouteCard = memo(function RouteCard({
         {/* 開始導航按鈕 */}
         <div className="flex justify-between items-center pt-4 border-t">
           <Button
+            aria-label="Select route"
             onClick={() => {
               getRouteRank(route);
               setRouteSelect({ index: idx, route: route });
             }}
             variant={"outline"}
           >
-            選擇路徑
+            {t("selectRoute")}
           </Button>
           <Button
+            aria-label="Start navigation"
             variant="default"
             onClick={() => startNavigation(route.legs[0].steps)}
           >
             <FlagIcon className="mr-2 h-4 w-4" />
-            開始導航
+            {t("startNavigation")}
           </Button>
         </div>
       </CardContent>

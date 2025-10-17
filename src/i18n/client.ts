@@ -1,6 +1,6 @@
 import i18n from "i18next";
 import { redirect, usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import {
   initReactI18next,
   useTranslation as useReactTranslation,
@@ -38,8 +38,9 @@ export function useAppTranslation(ns?: string | string[]) {
   const ret = useReactTranslation(ns as string, { useSuspense: false });
   const path = usePathname();
 
-  const lang = path.split("/")[1];
+  const lang = useMemo(() => path.split("/")[1], [path]);
   const { updateUserConfig, userConfig } = useAuthStore();
+
   useEffect(() => {
     if (!userConfig.language) return;
     // 只有在語言不同時才切換，避免重複呼叫

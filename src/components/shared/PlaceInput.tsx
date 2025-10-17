@@ -184,6 +184,7 @@ function PlaceInput({
                           </p>
                         </span>
                         <Button
+                          aria-label="Delete search history"
                           onClick={() => {
                             console.log("Delete", place.id);
                           }}

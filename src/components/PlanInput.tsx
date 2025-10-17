@@ -154,7 +154,9 @@ export default function RoutePlanInput() {
             className="rounded-3xl px-3 py-1"
             asChild
           >
-            <button type="button">大眾運輸</button>
+            <button aria-label="Public transport" type="button">
+              大眾運輸
+            </button>
           </Badge>
           <Badge
             variant={
@@ -168,12 +170,19 @@ export default function RoutePlanInput() {
             asChild
             className="rounded-3xl px-3 py-1"
           >
-            <button type="button">走路</button>
+            <button aria-label="Walking" type="button">
+              走路
+            </button>
           </Badge>
         </div>
       </div>
       <div>
-        <button type="button" onClick={handleSwitch} className="p-1">
+        <button
+          aria-label="Switch origin and destination"
+          type="button"
+          onClick={handleSwitch}
+          className="p-1"
+        >
           <ArrowDownUpIcon size={16} />
         </button>
       </div>
