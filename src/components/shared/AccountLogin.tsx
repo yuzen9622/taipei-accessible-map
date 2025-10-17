@@ -12,6 +12,7 @@ import {
   User,
 } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import {
   Dialog,
@@ -231,7 +232,7 @@ export default function AccountLogin() {
               {t("help")}
             </DialogTitle>
           </DialogHeader>
-          <div className=" space-y-4 mt-4">
+          <div className=" text-muted-foreground space-y-4 mt-4 [&>h2]:text-lg [&>h2]:font-semibold [&>h2]:mt-4 [&>h2]:mb-2 [&>h2]:text-primary [&>ul]:list-disc [&>ul]:pl-6 ">
             <h1 className="  whitespace-pre-line">
               {t("helpDescription.overview")}
             </h1>
@@ -291,11 +292,53 @@ export default function AccountLogin() {
                   key={item.question}
                   className="whitespace-pre-line space-y-2"
                 >
-                  <p className="font-bold ">{item.question}</p>
+                  <h2 className="font-bold  text-primary">{item.question}</h2>
                   <p>{item.answer}</p>
                 </li>
               ))}
             </ul>
+            <h2>{t("data")}</h2>
+            <div className="grid gap-4">
+              <Link
+                href="https://tdx.transportdata.tw "
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Image
+                  src={"https://tdx.transportdata.tw/images/tdxlogo.png"}
+                  alt={t("tdx")}
+                  className=" dark:bg-primary bg-primary-foreground p-1 rounded-md"
+                  width={200}
+                  height={100}
+                />
+              </Link>
+              <Link
+                href="https://data.moenv.gov.tw/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Image
+                  src={"/epa-logo.svg"}
+                  alt={t("moe")}
+                  width={200}
+                  height={100}
+                  className=" bg-primary dark:bg-primary-foreground p-1 rounded-md"
+                />
+              </Link>
+              <Link
+                href="https://data.gov.tw/"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Image
+                  src={"/gov-open-data.svg"}
+                  alt={t("gov")}
+                  className=" dark:bg-primary bg-primary-foreground p-1 rounded-md"
+                  width={200}
+                  height={100}
+                />
+              </Link>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

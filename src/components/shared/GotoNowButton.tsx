@@ -9,7 +9,7 @@ import { Button } from "../ui/button";
 export default function GotoNowButton() {
   const { handlePinClick } = usePin();
   const { userLocation } = useMapStore();
-  if (!userLocation) return null;
+
   return (
     <div className=" absolute bottom-5 right-5">
       <Button

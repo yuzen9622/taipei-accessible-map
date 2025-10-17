@@ -84,7 +84,7 @@ export default function useComputeRoute() {
 
         const data = transitRoute.routes;
         getRouteRank(data[0], allRouteA11y);
-        console.log("route", data);
+
         map.fitBounds(data[0].bounds);
         setComputeRoutes(data);
         setRouteSelect({ index: 0, route: data[0] });

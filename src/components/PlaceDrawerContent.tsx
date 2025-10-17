@@ -86,7 +86,7 @@ export default function PlaceDrawerContent({
                 alt="店家圖示"
                 width={24}
                 height={24}
-                className="object-contain  "
+                className="object-contain dark:brightness-0 dark:invert"
               />
             ) : (
               <MapPin className="h-6 w-6 text-primary" />

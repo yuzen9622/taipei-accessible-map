@@ -22,7 +22,7 @@ export default function useTransitDetail() {
           detail.nearbyStop = data.data[0];
         }
       }
-      console.log("detail", detail);
+
       setStepTransitDetails(detail);
     },
     [setStepTransitDetails]
