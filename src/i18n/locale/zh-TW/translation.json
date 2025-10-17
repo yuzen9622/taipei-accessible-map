@@ -72,6 +72,8 @@
     "darkMode": " 深淺模式",
     "notification": "通知",
     "fontSize": "字體大小",
+    "accessibleRank": "無障礙便利度：",
+    "AIwarning": "Gemini AI 可能出錯，請查核重要資訊。",
     "language": "語言",
     "searchHistory": "搜尋歷史：",
     "searchResults": "搜尋結果：",

@@ -1,5 +1,6 @@
 "use client";
 
+import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
 export default function useNavigation() {
   const {
@@ -11,11 +12,12 @@ export default function useNavigation() {
     map,
     selectRoute,
   } = useMapStore();
-
+  const { userConfig } = useAuthStore();
   const speakDistance = (step: google.maps.DirectionsStep) => {
     if (step.travel_mode !== google.maps.TravelMode.WALKING) return;
     const msg = new SpeechSynthesisUtterance(`前方距離 ${step.distance?.text}`);
     msg.rate = 0.6;
+    msg.lang = userConfig.language;
     window.speechSynthesis.speak(msg);
   };
 
@@ -25,6 +27,7 @@ export default function useNavigation() {
       step.instructions?.replaceAll(/<[^>]*>|\/+/g, "")
     );
     msg.rate = 0.6;
+    msg.lang = userConfig.language;
     window.speechSynthesis.speak(msg);
   };
 

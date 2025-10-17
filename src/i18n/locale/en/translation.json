@@ -67,6 +67,8 @@
         }
     },
     "logout": "Logout",
+    "accessibleRank": "Accessibility Rank:",
+    "AIwarning": "Gemini AI may be incorrect, please verify important information.",
     "startNavigation": "Start navigation",
     "settingDesc": "Adjust preferences such as dark mode, language, and font size.",
     "darkMode": "Dark Light mode",

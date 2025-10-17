@@ -136,7 +136,8 @@ export const RouteCard = memo(function RouteCard({
             selectRoute.routeRank && (
               <>
                 <Badge>
-                  無障礙便利度：{selectRoute.routeRank?.route_total_score}
+                  {t("accessibleRank")}
+                  {selectRoute.routeRank?.route_total_score}
                 </Badge>
                 <p className=" flex flex-col gap-2  text-sm bg-secondary rounded-3xl px-3 py-2 text-muted-foreground">
                   {selectRoute.routeRank?.route_description}
@@ -144,13 +145,13 @@ export const RouteCard = memo(function RouteCard({
                     variant={"outline"}
                     className="text-xs self-end  text-destructive"
                   >
-                    Gemini 可能出錯。請查核重要資訊。
+                    {t("AIwarning")}
                   </Badge>
                 </p>
               </>
             )
           ))}
-        {selectRoute?.index === idx && <Badge>已選擇</Badge>}
+        {selectRoute?.index === idx && <Badge>{t("selectRoute")}</Badge>}
       </CardHeader>
 
       <CardContent className="space-y-3">

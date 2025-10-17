@@ -35,6 +35,7 @@ export enum FontSizeEnum {
   Small = "small",
   Medium = "medium",
   Large = "large",
+  Mega = "mega",
 }
 
 export enum LanguageEnum {
@@ -235,9 +236,22 @@ export const fontSizeConfig = {
     body: "text-lg",
     caption: "text-base",
     cssVars: {
-      "--font-size-base": "18px",
+      "--font-size-base": "20px",
       "--font-size-lg": "24px",
       "--font-size-xl": "28px",
+    },
+  },
+  [FontSizeEnum.Mega]: {
+    label: "巨大",
+    base: "text-xl",
+    heading: "text-3xl",
+    subheading: "text-2xl",
+    body: "text-lg",
+    caption: "text-base",
+    cssVars: {
+      "--font-size-base": "22px",
+      "--font-size-lg": "26px",
+      "--font-size-xl": "30px",
     },
   },
 };
