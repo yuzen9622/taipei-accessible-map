@@ -9,8 +9,67 @@
     "login": "Please log in first",
     "welcome": "Welcome, {{name}}",
     "help": "Help",
-    "helpDescription": "User Guide\n\nThis application is a test version for the Smart City Node Competition, designed to demonstrate accessible navigation and data handling features.\nCurrently, the system is for testing and demonstration purposes only; some data, functions, and interfaces are still under development.\n\n1. Purpose\nThis application simulates accessible guidance in a smart city, using test data to verify system feasibility and operation processes.\n\n2. Data Information\n All test data are for demonstration only and do not represent final results or real data.\n\n3. How to Use\nOpen the application to access the main screen.\nClick the function buttons to browse or interact with the test content.\nSome screens will display \"This is a test\" to indicate the current test phase.\n\n4. Notes\nThis version is for competition demonstration and functionality verification only and is not a commercial release.\nActual functions and data will be continuously improved in future development stages.\nFor more information on system principles or technical architecture, please refer to the project technical documentation.",
+    "data": "Data source:",
+    "tdx": "Ministry of Transportation and Communications (TDX) Platform",
+    "gov": "Government Open Data Platform",
+    "moe": "Ministry of the Environment — Environmental Data Open Platform",
+    "helpDescription": {
+        "overview": "Welcome to our map app! We aim to provide comprehensive place information services. Across Taiwan you can use this app for general navigation. We are piloting an \"Accessible Friendly Map\" program in Taipei City first and will gradually expand to more cities in the future.",
+        "features": {
+            "general": {
+                "title": "1. General features across Taiwan: basic search and navigation\nIn all cities you can use the following basic features:",
+                "features": [
+                    "Search places: enter a business name, attraction, or address in the search box above to find the desired location.",
+                    "Route planning: after finding a place, click the navigation feature and the app will plan a route for you, working similarly to standard navigation apps."
+                ]
+            },
+            "taipei": {
+                "title": "2. Taipei pilot features: Accessible Map (note: the following features are currently limited to Taipei City)",
+                "features": {
+                    "filter": "Within Taipei City, click the \"Filter\" icon at the top-right of the map to quickly find friendly locations based on facilities such as \"Accessible Restroom\", \"Accessible Ramp\", or \"Elevator\"."
+                },
+                "note": "Map accessibility icon explanations:",
+                "icons": [
+                    "Accessible restroom: indicates the location has a spacious restroom equipped with grab bars.",
+                    "Accessible ramp: indicates the main entrance of the location is level or has a ramp.",
+                    "Elevator / Lift: indicates the location has an elevator or vertical lift equipment."
+                ]
+            }
+        },
+        "feedback": {
+            "title": "3. How to report issues or provide suggestions\nYour feedback helps us improve:",
+            "steps": [
+                "Click the \"Menu\" icon in the top-left and select \"Feedback\".",
+                "Fill in the details of your issue or suggestion and submit."
+            ],
+            "examples": [
+                "Accessibility info (Taipei): \"The accessible ramp at A Cafe has been removed.\"",
+                "Navigation (all regions): \"Route planning was incorrect when navigating in Taichung.\"",
+                "Suggest a new place (Taipei): \"Recommend Taipei's B Restaurant — they have an accessible restroom.\""
+            ]
+        },
+        "faq": {
+            "title": "Frequently Asked Questions (FAQ)",
+            "items": [
+                {
+                    "question": "Q: Why can't I find any accessibility icons or filter options in my city (not Taipei)?",
+                    "answer": "A: The accessible map feature is currently in a pilot phase and prioritizes data collection and optimization for Taipei City. We are working to expand the database and will gradually enable accessibility information for more cities. In the meantime, you can still use the app's general place search and navigation functions in other cities. Thank you for your support and patience!"
+                },
+                {
+                    "question": "Q: Why don't I see updates immediately after submitting accessibility information for Taipei?",
+                    "answer": "A: Thank you for your report! To ensure accuracy, all submissions undergo manual review by our team, which takes some time. Please wait patiently for the update to appear."
+                },
+                {
+                    "question": "Q: I didn't receive the email confirmation sent by the system?",
+                    "answer": "A: Please check your spam folder first. If you still haven't received it, go to the \"Profile\" page in \"Settings\" and verify that the email address you registered is correct."
+                }
+            ]
+        }
+    },
     "logout": "Logout",
+    "accessibleRank": "Accessibility Rank:",
+    "AIwarning": "Gemini AI may be incorrect, please verify important information.",
+    "startNavigation": "Start navigation",
     "settingDesc": "Adjust preferences such as dark mode, language, and font size.",
     "darkMode": "Dark Light mode",
     "notification": "Notifications",

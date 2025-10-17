@@ -8,6 +8,7 @@ import {
 } from "@vis.gl/react-google-maps";
 import { useTheme } from "next-themes";
 import { useEffect } from "react";
+import { toast } from "sonner";
 import MapWrapper from "@/components/MapWrapper";
 import AccessibilityPin from "@/components/MetroA11yWrapper";
 import RouteLine from "@/components/RouteWrapper";
@@ -60,7 +61,10 @@ export default function ClientMap() {
           lng: pos.coords.longitude,
         });
       },
-      () => console.log("無法取得位置"),
+      () => {
+        console.log("無法取得位置");
+        toast.error("無法取得目前位置");
+      },
       { enableHighAccuracy: true, maximumAge: Infinity }
     );
   }, [setUserLocation]);

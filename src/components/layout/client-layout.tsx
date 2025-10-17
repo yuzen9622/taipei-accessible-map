@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect } from "react";
+import { toast } from "sonner";
 import AccessibleDrawer from "@/components/AccessibleDrawer";
 import RouteDrawer from "@/components/RouteDrawer";
 import { refreshToken } from "@/lib/api/auth";
@@ -21,11 +22,23 @@ export default function ClientLayout({
     const token = await refreshToken();
     if (token) {
       setSession({ accessToken: token });
-      const { data } = await getUserInfo();
-      if (data?.user) setUser(data.user);
-      if (data?.config) {
-        setUserConfig(data.config);
-      }
+      toast.promise(
+        async () => {
+          const { data } = await getUserInfo();
+          return data;
+        },
+        {
+          loading: "登入中...",
+          success: (data) => {
+            if (data?.user) setUser(data.user);
+            if (data?.config) {
+              setUserConfig(data.config);
+            }
+            return `Welcome，${data?.user?.name}`;
+          },
+          error: "登入失敗，請稍後再試。",
+        }
+      );
     }
   }, [setSession, setUser, setUserConfig]);
 

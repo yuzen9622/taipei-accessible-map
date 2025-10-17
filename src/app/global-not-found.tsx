@@ -38,7 +38,7 @@ export default async function NotFound({
             </CardContent>
 
             <CardFooter className="flex gap-2 justify-center">
-              <Button asChild>
+              <Button aria-label="Back to home" asChild>
                 <Link href="/">
                   <Home className="mr-2 h-4 w-4" />
                   回首頁

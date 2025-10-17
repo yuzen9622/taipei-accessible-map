@@ -17,8 +17,8 @@ import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import "moment/locale/zh-tw";
 import { useRouteRank } from "@/hook/useRouteRank";
+import { useAppTranslation } from "@/i18n/client";
 import useMapStore from "@/stores/useMapStore";
-
 import { Badge } from "../ui/badge";
 import { TransitDetail } from "./TransitDetail";
 
@@ -35,7 +35,7 @@ export const RouteCard = memo(function RouteCard({
   const { startNavigation } = useNavigation();
   const { setRouteSelect, selectRoute } = useMapStore();
   const { getRouteRank, isLoading } = useRouteRank();
-
+  const { t } = useAppTranslation();
   const routeLocalValue = useMemo(() => {
     const result = {
       distance: "",
@@ -136,7 +136,8 @@ export const RouteCard = memo(function RouteCard({
             selectRoute.routeRank && (
               <>
                 <Badge>
-                  無障礙便利度：{selectRoute.routeRank?.route_total_score}
+                  {t("accessibleRank")}
+                  {selectRoute.routeRank?.route_total_score}
                 </Badge>
                 <p className=" flex flex-col gap-2  text-sm bg-secondary rounded-3xl px-3 py-2 text-muted-foreground">
                   {selectRoute.routeRank?.route_description}
@@ -144,13 +145,13 @@ export const RouteCard = memo(function RouteCard({
                     variant={"outline"}
                     className="text-xs self-end  text-destructive"
                   >
-                    Gemini 可能出錯。請查核重要資訊。
+                    {t("AIwarning")}
                   </Badge>
                 </p>
               </>
             )
           ))}
-        {selectRoute?.index === idx && <Badge>已選擇</Badge>}
+        {selectRoute?.index === idx && <Badge>{t("selectRoute")}</Badge>}
       </CardHeader>
 
       <CardContent className="space-y-3">
@@ -219,20 +220,22 @@ export const RouteCard = memo(function RouteCard({
         {/* 開始導航按鈕 */}
         <div className="flex justify-between items-center pt-4 border-t">
           <Button
+            aria-label="Select route"
             onClick={() => {
               getRouteRank(route);
               setRouteSelect({ index: idx, route: route });
             }}
             variant={"outline"}
           >
-            選擇路徑
+            {t("selectRoute")}
           </Button>
           <Button
+            aria-label="Start navigation"
             variant="default"
             onClick={() => startNavigation(route.legs[0].steps)}
           >
             <FlagIcon className="mr-2 h-4 w-4" />
-            開始導航
+            {t("startNavigation")}
           </Button>
         </div>
       </CardContent>

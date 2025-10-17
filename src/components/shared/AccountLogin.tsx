@@ -144,6 +144,7 @@ export default function AccountLogin() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
+            aria-label="Account setting"
             size="icon"
             className="text-white hover:text-primary  focus:ring-2  bg-blue-500  hover:bg-background relative pointer-events-auto  focus:ring-white rounded-full transition-colors duration-200"
           >
@@ -490,7 +491,9 @@ export default function AccountLogin() {
             value={feedbackText}
             onChange={(e) => setFeedbackText(e.target.value)}
           />
-          <Button className="w-full mt-2 text-sm">{t("submit")}</Button>
+          <Button aria-label="Submit feedback" className="w-full mt-2 text-sm">
+            {t("submit")}
+          </Button>
         </DialogContent>
       </Dialog>
     </>

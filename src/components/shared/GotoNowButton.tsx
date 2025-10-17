@@ -11,8 +11,9 @@ export default function GotoNowButton() {
   const { userLocation } = useMapStore();
 
   return (
-    <div className=" absolute bottom-5 right-5">
+    <div className=" absolute bottom-5 right-5 z-20">
       <Button
+        aria-label="Goto now button"
         variant={"secondary"}
         onClick={() => handlePinClick(userLocation)}
       >

@@ -20,6 +20,7 @@ export default function RouteDrawer() {
         <div className=" flex gap-4  ml-10    justify-between  items-center">
           <h1 className="text-2xl">{t("route")}</h1>
           <Button
+            aria-label="Close route drawer"
             variant={"ghost"}
             className="     absolute  bg-muted  z-20 rounded-3xl  right-8 top-4"
             onClick={closeRouteDrawer}

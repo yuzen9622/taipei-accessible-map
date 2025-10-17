@@ -23,6 +23,7 @@ export default function CategoryIndex() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
+          aria-label="Open category menu"
           variant="ghost"
           size="icon"
           className="text-white relative pointer-events-auto  focus:ring-2 bg-blue-500 focus:ring-white rounded-full transition-colors duration-200"
@@ -51,7 +52,12 @@ export default function CategoryIndex() {
         {/* 分享目前位置 */}
         <div className="mb-4">
           <h3 className="font-semibold mb-2">📍 分享目前位置</h3>
-          <Button onClick={shareLocation} variant="outline" size="sm">
+          <Button
+            aria-label="Share my location"
+            onClick={shareLocation}
+            variant="outline"
+            size="sm"
+          >
             分享我的位置
           </Button>
         </div>

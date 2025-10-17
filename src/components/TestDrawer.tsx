@@ -74,6 +74,7 @@ export default function TestDrawer() {
   return (
     <DrawerWrapper open={infoShow.isOpen}>
       <Button
+        aria-label="Close drawer"
         onClick={() => {
           setInfoShow({ isOpen: false });
           setSearchPlace(null);
@@ -96,18 +97,23 @@ export default function TestDrawer() {
           )}
           <DrawerFooter className="bg-background/95 backdrop-blur-md border-t w-full border-border py-3 flex justify-end gap-2">
             <Button
+              aria-label="Plan route"
               disabled={isLoading}
               onClick={handlePlanRoute}
               className="flex-1"
             >
-              {isLoading ? "規劃中" : t("planRoute")}
+              {isLoading ? t("loadingRoute") : t("planRoute")}
               {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
             </Button>
             <div className="flex gap-2">
-              <Button variant="outline" size="icon">
+              <Button
+                aria-label="Add to favorites"
+                variant="outline"
+                size="icon"
+              >
                 <Heart className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="icon">
+              <Button aria-label="Share route" variant="outline" size="icon">
                 <Share2 className="h-4 w-4" />
               </Button>
             </div>
