@@ -50,30 +50,7 @@ export default function AccountLogin() {
 
   const [feedbackText, setFeedbackText] = useState("");
   const { t } = useAppTranslation("translation");
-  // 預設提供的色塊
-  // const themeColors = [
-  //   {
-  //     type: ColorEnum.Default,
-  //   },
-  //   {
-  //     type: ColorEnum.Red,
-  //   },
-  //   {
-  //     type: ColorEnum.Blue,
-  //   },
-  //   {
-  //     type: ColorEnum.Green,
-  //   },
-  //   {
-  //     type: ColorEnum.Purple,
-  //   },
-  //   {
-  //     type: ColorEnum.Orange,
-  //   },
-  //   {
-  //     type: ColorEnum.Yellow,
-  //   },
-  // ];
+
   const {
     user,
     setUser,

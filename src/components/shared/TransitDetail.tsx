@@ -24,7 +24,7 @@ export const TransitDetail = memo(function TransitDetail({
   if (!step || !step?.transit) return null;
   return (
     <div className="space-y-2">
-      {/* 路線資訊 */}
+   
       <div className="flex items-center gap-2">
         <div
           className="px-2 py-1 rounded text-xs font-bold text-white"
@@ -55,7 +55,7 @@ export const TransitDetail = memo(function TransitDetail({
               BUS_STATUS[transitDetail.nearbyStop.StopStatus]}
           </Badge>
         ))}
-      {/* 上下車資訊 */}
+
       <div className="space-y-1 text-xs">
         <div className="flex items-start gap-2">
           <span className="text-muted-foreground shrink-0">上車：</span>

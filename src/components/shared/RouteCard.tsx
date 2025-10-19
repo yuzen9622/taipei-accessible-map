@@ -168,7 +168,7 @@ export const RouteCard = memo(function RouteCard({
                 key={step.encoded_lat_lngs || index}
                 className="relative pl-8"
               >
-                {/* 連接線 */}
+               
                 {index !== route.legs[0].steps.length - 1 && (
                   <div
                     className={cn(
@@ -178,7 +178,7 @@ export const RouteCard = memo(function RouteCard({
                   />
                 )}
 
-                {/* 步驟圖標 */}
+              
                 <div className="absolute left-0 top-1">
                   <div
                     className={cn(
@@ -190,7 +190,6 @@ export const RouteCard = memo(function RouteCard({
                   </div>
                 </div>
 
-                {/* 步驟內容 */}
                 <div className="pb-4 ml-4">
                   {isWalking && (
                     <div className="space-y-1">
@@ -217,7 +216,7 @@ export const RouteCard = memo(function RouteCard({
           })}
         </div>
 
-        {/* 開始導航按鈕 */}
+ 
         <div className="flex justify-between items-center pt-4 border-t">
           <Button
             aria-label="Select route"
