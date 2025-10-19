@@ -2,10 +2,11 @@ import { useMapsLibrary } from "@vis.gl/react-google-maps";
 
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
-import { getNearbyRouteA11yPlaces } from "@/lib/api/a11y";
-import { formatBathroom, formatMetroA11y } from "@/lib/utils";
+import { getBestRouteForA11y, getNearbyRouteA11yPlaces } from "@/lib/api/a11y";
+import { formatBathroom, formatMetroA11y, formatRouteForAI } from "@/lib/utils";
 import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
+import type { Marker } from "@/types";
 import { useRouteRank } from "./useRouteRank";
 
 export default function useComputeRoute() {
@@ -56,7 +57,7 @@ export default function useComputeRoute() {
           provideRouteAlternatives: true,
           language: userConfig.language,
         });
-        const allRouteA11y = [];
+        const allRouteA11y: Marker[] = [];
         for (let j = 0; j < transitRoute.routes[0].legs.length; j++) {
           const steps = transitRoute.routes[0].legs[j].steps;
 
@@ -87,7 +88,15 @@ export default function useComputeRoute() {
 
         map.fitBounds(data[0].bounds);
         setComputeRoutes(data);
-        setRouteSelect({ index: 0, route: data[0] });
+        const request = data.map((route) =>
+          formatRouteForAI(route, allRouteA11y)
+        );
+        console.log("Route request for AI:", request);
+        const aiResponse = await getBestRouteForA11y(request);
+        setRouteSelect({
+          index: 0,
+          route: aiResponse.data ? data[aiResponse.data.route_index] : data[0],
+        });
         setRouteInfoShow(true);
         setRouteA11y(allRouteA11y);
       } catch (error) {

@@ -227,7 +227,7 @@ export const RouteCard = memo(function RouteCard({
             }}
             variant={"outline"}
           >
-            {t("selectRoute")}
+            {selectRoute?.index === idx ? t("selectRoute") : t("route")}
           </Button>
           <Button
             aria-label="Start navigation"
