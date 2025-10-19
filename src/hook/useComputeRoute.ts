@@ -84,18 +84,20 @@ export default function useComputeRoute() {
         }
 
         const data = transitRoute.routes;
-        getRouteRank(data[0], allRouteA11y);
-
-        map.fitBounds(data[0].bounds);
-        setComputeRoutes(data);
+   
         const request = data.map((route) =>
           formatRouteForAI(route, allRouteA11y)
         );
-        console.log("Route request for AI:", request);
         const aiResponse = await getBestRouteForA11y(request);
+        const newRouteData = [data[aiResponse.data?.route_index??0], ...data.filter((_,index)=>index!==aiResponse.data?.route_index||0)];
+
+     getRouteRank(newRouteData[0], allRouteA11y);
+        map.fitBounds(newRouteData[0].bounds);
+        setComputeRoutes(newRouteData);
+    
         setRouteSelect({
           index: 0,
-          route: aiResponse.data ? data[aiResponse.data.route_index] : data[0],
+          route: newRouteData[0],
         });
         setRouteInfoShow(true);
         setRouteA11y(allRouteA11y);

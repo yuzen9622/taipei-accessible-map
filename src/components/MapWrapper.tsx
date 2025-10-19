@@ -9,7 +9,7 @@ export default function MapWrapper() {
   if (navigationDrawerOpen) return null;
   return (
     <div className="  fixed inset-2 z-50  top-5 space-y-2  flex flex-col    pointer-events-none  mx-auto h-full">
-      <div className=" flex   flex-col  max-lg:items-start items-center lg:w-full lg:flex-row   ">
+      <div className=" flex gap-2  flex-col  max-lg:items-start items-center lg:w-full lg:flex-row   ">
         <span className="flex h-fit items-center gap-2 w-full max-w-[450px] ">
           {selectRoute ? (
             <RoutePlanInput />

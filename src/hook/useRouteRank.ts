@@ -6,11 +6,12 @@ import useMapStore from "@/stores/useMapStore";
 import type { Marker } from "@/types";
 import type { ApiResponse } from "@/types/response";
 import type { AIRankResponse } from "@/types/transit";
+import useAuthStore from "@/stores/useAuthStore";
 
 export function useRouteRank() {
   const [isLoading, setIsLoading] = useState(false);
   const { setRouteSelect } = useMapStore();
-
+  const {userConfig}=useAuthStore()
   const getRouteRank = useCallback(
     async (route: google.maps.DirectionsRoute, a11ys: Marker[] = []) => {
       if (!route) return null;
@@ -18,7 +19,7 @@ export function useRouteRank() {
       try {
         setIsLoading(true);
         const data = (await fetchRequest(`${END_POINT}/api/a11y/route-rank`, {
-          body: request,
+          body: {...request,language:userConfig.language},
           method: "POST",
         })) as ApiResponse<AIRankResponse>;
         if (data.data) setRouteSelect({ routeRank: data.data });
@@ -29,7 +30,7 @@ export function useRouteRank() {
         setIsLoading(false);
       }
     },
-    [setRouteSelect]
+    [setRouteSelect,userConfig.language]
   );
 
   return { isLoading, getRouteRank };
