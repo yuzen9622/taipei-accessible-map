@@ -145,6 +145,10 @@ export interface AIRankResponse {
   route_total_score: number;
 }
 
+export interface AIRouteResponse {
+  route_index: number;
+}
+
 export function isBusTransitDetail(
   detail: RouteTransitDetail
 ): detail is BusTransitDetail {
