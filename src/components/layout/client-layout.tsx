@@ -22,23 +22,12 @@ export default function ClientLayout({
     const token = await refreshToken();
     if (token) {
       setSession({ accessToken: token });
-      toast.promise(
-        async () => {
-          const { data } = await getUserInfo();
-          return data;
-        },
-        {
-          loading: "登入中...",
-          success: (data) => {
-            if (data?.user) setUser(data.user);
+       const { data } = await getUserInfo();
+         if (data?.user) setUser(data.user);
             if (data?.config) {
               setUserConfig(data.config);
-            }
-            return `Welcome，${data?.user?.name}`;
-          },
-          error: "登入失敗，請稍後再試。",
-        }
-      );
+            } 
+     
     }
   }, [setSession, setUser, setUserConfig]);
 

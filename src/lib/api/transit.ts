@@ -2,6 +2,7 @@ import type { ApiResponse } from "@/types/response";
 import type { BusRealtimeNearbyStop } from "@/types/transit";
 import { END_POINT } from "../config";
 import { fetchRequest } from "../fetch";
+import { lang } from "moment";
 
 export async function getBusRealtimeNearbyStop({
   arrival_stop,
@@ -9,11 +10,13 @@ export async function getBusRealtimeNearbyStop({
   arrival_lat,
   arrival_lng,
   route_name,
+  language,
 }: {
   arrival_stop: string;
   departure_stop: string;
   arrival_lat: number;
   arrival_lng: number;
+  language: string;
   route_name: string;
 }) {
   const controller = new AbortController();
@@ -26,6 +29,7 @@ export async function getBusRealtimeNearbyStop({
       arrival_lat,
       arrival_lng,
       route_name,
+      language: language==='en'?'En':'Zh_tw',
     },
     signal: controller.signal,
   })) as ApiResponse<BusRealtimeNearbyStop[]>;

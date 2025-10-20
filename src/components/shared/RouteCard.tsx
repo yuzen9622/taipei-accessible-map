@@ -139,11 +139,11 @@ export const RouteCard = memo(function RouteCard({
                   {t("accessibleRank")}
                   {selectRoute.routeRank?.route_total_score}
                 </Badge>
-                <p className=" flex flex-col gap-2  text-sm bg-secondary rounded-3xl px-3 py-2 text-muted-foreground">
+                <p className=" flex flex-col gap-2 text-wrap overflow-hidden  text-sm bg-secondary rounded-3xl px-3 py-2 text-muted-foreground">
                   {selectRoute.routeRank?.route_description}
                   <Badge
                     variant={"outline"}
-                    className="text-xs self-end  text-destructive"
+                    className="text-xs self-end  text-destructive whitespace-pre-wrap "
                   >
                     {t("AIwarning")}
                   </Badge>
@@ -227,7 +227,7 @@ export const RouteCard = memo(function RouteCard({
             }}
             variant={"outline"}
           >
-            {selectRoute?.index === idx ? t("selectRoute") : t("route")}
+            {selectRoute?.index === idx ? t("selectRoute") : t("selectedRoute")}
           </Button>
           <Button
             aria-label="Start navigation"
