@@ -8,7 +8,7 @@ function SafeInstruction({
   html: string;
   className?: string;
 }) {
-  // sanitize HTML 字串
+ 
   const clean = DOMPurify.sanitize(html);
 
   return (

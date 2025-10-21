@@ -16,6 +16,7 @@ import NowPin from "@/components/shared/NowPin";
 import { useAppTranslation } from "@/i18n/client";
 import { getLocation } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
+import AIChatBot from "./AIChatBot";
 import GotoNowButton from "./shared/GotoNowButton";
 import SearchPin from "./shared/SearchPin";
 import TransitWrapper from "./TransitWrapper";
@@ -38,21 +39,19 @@ export default function ClientMap() {
 
   const mapHook = useMap();
   const placesLib = useMapsLibrary("places");
-  //定義台北新北市邊界
+
   const taipeiNewTaipeiBounds = {
-    north: 25.3167, // 北到淡水、金山一帶
-    south: 24.8338, // 南到鶯歌、新店深山
-    east: 122.0348, // 東到瑞芳、貢寮
-    west: 120.3179, // 西到林口、八里
+    north: 25.3167,
+    south: 24.8338,
+    east: 122.0348,
+    west: 120.3179,
   };
 
-  //初始化map
   useEffect(() => {
     if (!mapHook) return;
     setMap(mapHook);
   }, [mapHook, setMap]);
 
-  //取得當前位置
   useEffect(() => {
     navigator.geolocation.watchPosition(
       (pos) => {
@@ -126,6 +125,7 @@ export default function ClientMap() {
       <NowPin />
       {searchPlace && <SearchPin destination={searchPlace} />}
       <TransitWrapper />
+      <AIChatBot />
       <RouteLine />
     </GoogleMap>
   );

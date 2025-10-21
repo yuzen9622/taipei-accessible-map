@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect } from "react";
-import { toast } from "sonner";
+
 import AccessibleDrawer from "@/components/AccessibleDrawer";
 import RouteDrawer from "@/components/RouteDrawer";
 import { refreshToken } from "@/lib/api/auth";
@@ -22,12 +22,11 @@ export default function ClientLayout({
     const token = await refreshToken();
     if (token) {
       setSession({ accessToken: token });
-       const { data } = await getUserInfo();
-         if (data?.user) setUser(data.user);
-            if (data?.config) {
-              setUserConfig(data.config);
-            } 
-     
+      const { data } = await getUserInfo();
+      if (data?.user) setUser(data.user);
+      if (data?.config) {
+        setUserConfig(data.config);
+      }
     }
   }, [setSession, setUser, setUserConfig]);
 

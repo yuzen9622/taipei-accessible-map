@@ -2,7 +2,11 @@ import { END_POINT } from "@/lib/config";
 import { fetchRequest } from "@/lib/fetch";
 import type { IBathroom, Marker, metroA11yData } from "@/types";
 import type { ApiResponse } from "@/types/response";
-import type { AIRouteResponse, RankRequest } from "@/types/transit";
+import type {
+  AIChatResponse,
+  AIRouteResponse,
+  RankRequest,
+} from "@/types/transit";
 
 export async function getAllA11yPlaces() {
   const response = await fetchRequest<ApiResponse<null>>(
@@ -43,4 +47,16 @@ export async function getBestRouteForA11y(
     body: request,
   });
   return response as ApiResponse<AIRouteResponse>;
+}
+
+export async function chatWithA11yAI(
+  message: string,
+  lat?: number,
+  lng?: number
+) {
+  const response = await fetchRequest(`${END_POINT}/api/a11y/chatbot`, {
+    method: "POST",
+    body: { message, lat, lng },
+  });
+  return response as ApiResponse<AIChatResponse>;
 }
