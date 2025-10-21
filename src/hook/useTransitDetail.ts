@@ -1,9 +1,8 @@
 import { useCallback, useEffect } from "react";
 import { getBusRealtimeNearbyStop } from "@/lib/api/transit";
-
+import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
 import { isBusTransitDetail, type RouteTransitDetail } from "@/types/transit";
-import useAuthStore from "@/stores/useAuthStore";
 
 export default function useTransitDetail() {
   const { selectRoute, setStepTransitDetails, clearStepTransitDetails } =
@@ -19,7 +18,7 @@ export default function useTransitDetail() {
           route_name: detail.lineName,
           arrival_lat: detail.arrivalLat,
           arrival_lng: detail.arrivalLng,
-          language:userConfig.language,
+          language: userConfig.language,
         });
         if (data.data) {
           detail.nearbyStop = data.data[0];
@@ -28,7 +27,7 @@ export default function useTransitDetail() {
 
       setStepTransitDetails(detail);
     },
-    [setStepTransitDetails,userConfig]
+    [setStepTransitDetails, userConfig]
   );
 
   useEffect(() => {
@@ -95,7 +94,7 @@ export default function useTransitDetail() {
         if (!cancelled) {
           getTransitData(detail);
         }
-      }, idx * 3 + 60000);
+      }, idx * 300 + 60000);
       timers.push(id);
     });
 

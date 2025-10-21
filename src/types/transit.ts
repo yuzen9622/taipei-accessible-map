@@ -1,3 +1,5 @@
+import type { IBathroom, metroA11yData } from ".";
+
 type BusEstimate = {
   PlateNumb: string;
   EstimateTime: number;
@@ -147,6 +149,11 @@ export interface AIRankResponse {
 
 export interface AIRouteResponse {
   route_index: number;
+}
+export interface AIChatResponse {
+  message: string;
+  nearbyBathroom: IBathroom[];
+  nearbyMetroA11y: metroA11yData[];
 }
 
 export function isBusTransitDetail(

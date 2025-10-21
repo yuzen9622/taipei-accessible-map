@@ -113,40 +113,57 @@ export default function TestDrawer() {
               >
                 <Heart className="h-4 w-4" />
               </Button>
-              <Button onClick={async ()=>{
-                if(!infoShow.kind) return;
-                try{
-                  let url = "https://www.google.com/maps";
-                  if(infoShow.kind === "place"){
-                    const place = infoShow.place;
-                    url = place.googleMapsURI
-                      || (place.id
-                        ? `https://www.google.com/maps/search/?api=1&query_place_id=${encodeURIComponent(place.id)}`
-                        : (place.id ? `https://maps.app.goo.gl/${encodeURIComponent(place.id)}` : url));
-                  } else { // geocoder
-                    const g = infoShow.place.geometry?.location;
-                    if (g && typeof g.toJSON === "function") {
-                      const { lat, lng } = g.toJSON();
-                      url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(lat + "," + lng)}`;
-                    } else if (infoShow.place.place_id) {
-                      url = `https://www.google.com/maps/search/?api=1&query_place_id=${encodeURIComponent(infoShow.place.place_id)}`;
+              <Button
+                onClick={async () => {
+                  if (!infoShow.kind) return;
+                  try {
+                    let url = "https://www.google.com/maps";
+                    if (infoShow.kind === "place") {
+                      const place = infoShow.place;
+                      url =
+                        place.googleMapsURI ||
+                        (place.id
+                          ? `https://www.google.com/maps/search/?api=1&query_place_id=${encodeURIComponent(
+                              place.id
+                            )}`
+                          : place.id
+                          ? `https://maps.app.goo.gl/${encodeURIComponent(
+                              place.id
+                            )}`
+                          : url);
+                    } else {
+                      // geocoder
+                      const g = infoShow.place.geometry?.location;
+                      if (g && typeof g.toJSON === "function") {
+                        const { lat, lng } = g.toJSON();
+                        url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                          lat + "," + lng
+                        )}`;
+                      } else if (infoShow.place.place_id) {
+                        url = `https://www.google.com/maps/search/?api=1&query_place_id=${encodeURIComponent(
+                          infoShow.place.place_id
+                        )}`;
+                      }
                     }
-                  }
 
-                  if (navigator.share) {
-                    await navigator.share({ url });
-                  } else if (navigator.clipboard && navigator.clipboard.writeText) {
-                    await navigator.clipboard.writeText(url);
-                    // minimal feedback — replace with your app's toast if available
-                    alert("Link copied to clipboard");
-                  } else {
-                    // fallback
-                    window.open(url, "_blank");
+                    if (navigator.share) {
+                      await navigator.share({ url });
+                    } else if (navigator.clipboard.writeText) {
+                      await navigator.clipboard.writeText(url);
+                      // minimal feedback — replace with your app's toast if available
+                      alert("Link copied to clipboard");
+                    } else {
+                      // fallback
+                      window.open(url, "_blank");
+                    }
+                  } catch (err) {
+                    console.error("Share failed", err);
                   }
-                }catch(err){
-                  console.error("Share failed", err);
-                }
-              }} aria-label="Share route" variant="outline" size="icon">
+                }}
+                aria-label="Share route"
+                variant="outline"
+                size="icon"
+              >
                 <Share2 className="h-4 w-4" />
               </Button>
             </div>

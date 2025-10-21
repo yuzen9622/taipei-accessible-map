@@ -1,11 +1,12 @@
 "use client";
 
 import { X } from "lucide-react";
-import useComputeRoute from "@/hook/useComputeRoute";
+
 import { useAppTranslation } from "@/i18n/client";
 import useMapStore from "@/stores/useMapStore";
 import { A11yEnum } from "@/types/index";
 import DrawerWrapper from "./DrawerWrapper";
+import A11yCard from "./shared/A11yCard";
 import { Button } from "./ui/button";
 export default function AccessibleDrawer() {
   const {
@@ -16,20 +17,14 @@ export default function AccessibleDrawer() {
     routeA11y,
 
     a11yPlaces,
-    map,
   } = useMapStore();
   const { t } = useAppTranslation("translation");
-  const { handleComputeRoute } = useComputeRoute();
+
   const filteredPlaces =
     a11yPlaces?.filter((place) => selectedA11yTypes.includes(place.a11yType)) ||
     routeA11y ||
     [];
 
-  const type = {
-    [A11yEnum.ELEVATOR]: t("elevator"),
-    [A11yEnum.RAMP]: t("ramp"),
-    [A11yEnum.RESTROOM]: t("toilet"),
-  } as Record<A11yEnum, string>;
   const getA11yTypeDescription = (type: A11yEnum) => {
     switch (type) {
       case A11yEnum.ELEVATOR:
@@ -89,65 +84,7 @@ export default function AccessibleDrawer() {
               })}
               {filteredPlaces.length > 0 &&
                 filteredPlaces.map((place) => (
-                  <div
-                    key={place.id}
-                    className="border rounded-lg p-3 hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <h4 className="font-medium text-sm">
-                        {place.content?.title}
-                      </h4>
-                      <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-full">
-                        {type[place.a11yType as A11yEnum]}
-                      </span>
-                    </div>
-
-                    {place.content?.desc && (
-                      <p className="text-xs text-muted-foreground mb-2">
-                        {place.content.desc}
-                      </p>
-                    )}
-
-                    <div className="text-xs text-muted-foreground">
-                      <p>
-                        位置: {place.position.lat.toFixed(6)},{" "}
-                        {place.position.lng.toFixed(6)}
-                      </p>
-                    </div>
-                    <div className="flex  gap-2 ">
-                      <Button
-                        aria-label="Plan route"
-                        variant="default"
-                        size="sm"
-                        className="mt-2 flex-1"
-                        onClick={async () => {
-                          // 可以在這裡加上點擊後的動作，例如在地圖上聚焦到該位置
-
-                          await handleComputeRoute({
-                            destination: place.position,
-                          });
-                          setA11yDrawerOpen(false);
-                        }}
-                      >
-                        {t("planRoute")}
-                      </Button>
-
-                      <Button
-                        aria-label="View on map"
-                        variant="outline"
-                        size="sm"
-                        className="mt-2 flex-1"
-                        onClick={() => {
-                          // 可以在這裡加上點擊後的動作，例如在地圖上聚焦到該位置
-                          console.log("Navigate to:", place.position);
-                          map?.setCenter(place.position);
-                          map?.setZoom(18);
-                        }}
-                      >
-                        {t("viewOnMap")}
-                      </Button>
-                    </div>
-                  </div>
+                  <A11yCard key={place.id} place={place} />
                 ))}
             </div>
           )}
