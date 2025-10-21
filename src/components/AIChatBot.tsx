@@ -78,7 +78,7 @@ export default function AIChatBot() {
   };
 
   return (
-    <div className="fixed  flex items-end  justify-end lg:bottom-4 top-16 right-4 z-50  ">
+    <div className="fixed  flex items-end  justify-end lg:bottom-16 top-16 right-4 z-50  ">
       {!open ? (
         <Button
           onClick={() => setOpen(true)}
