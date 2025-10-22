@@ -47,10 +47,17 @@ export default function AIChatBot() {
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setIsLoading(true);
+    const history = messages.map((message) => {
+      if (message.sender === "ai") {
+        return { role: "model", parts: [{ text: message.text }] };
+      }
+      return { role: "user", parts: [{ text: message.text }] };
+    });
     const AIResponse = await chatWithA11yAI(
       input,
       userLocation?.lat,
-      userLocation?.lng
+      userLocation?.lng,
+      history
     );
     console.log(AIResponse);
     if (AIResponse.data) {
