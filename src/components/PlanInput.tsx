@@ -21,7 +21,7 @@ export default function RoutePlanInput() {
     setTravelMode,
   } = useMapStore();
 
-  const { computeRouteService, handleComputeRoute } = useComputeRoute();
+  const { handleComputeRoute } = useComputeRoute();
 
   const [originSearchInput, setOriginSearchInput] = useState<string>(
     origin?.kind === "place" && origin.place.displayName
@@ -94,7 +94,10 @@ export default function RoutePlanInput() {
     setOrigin(destination);
     setDestination(origin);
     if (destination?.position && origin?.position) {
-      computeRouteService(destination?.position, origin?.position);
+      handleComputeRoute({
+        origin: destination?.position,
+        destination: origin?.position,
+      });
     }
   };
 

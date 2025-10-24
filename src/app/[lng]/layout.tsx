@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import "@/app/globals.css";
 import { GoogleOAuthProvider } from "@react-oauth/google";
+import { Analytics } from "@vercel/analytics/next";
 import { dir } from "i18next";
+import type { Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import ClientLayout from "@/components/layout/client-layout";
 import GoogleMapProvider from "@/components/provider/GoogleMapProvider";
@@ -28,7 +30,12 @@ export const metadata: Metadata = {
     icon: "/logo.ico",
   },
 };
-
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+};
 export default async function RootLayout({
   children,
   params,
@@ -57,6 +64,7 @@ export default async function RootLayout({
               <ClientLayout>
                 <TestDrawer />
                 {children}
+                <Analytics />
               </ClientLayout>
             </ThemeProvider>
           </GoogleOAuthProvider>

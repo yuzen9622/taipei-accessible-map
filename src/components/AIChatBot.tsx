@@ -47,10 +47,17 @@ export default function AIChatBot() {
     setMessages((prev) => [...prev, userMsg]);
     setInput("");
     setIsLoading(true);
+    const history = messages.map((message) => {
+      if (message.sender === "ai") {
+        return { role: "model", parts: [{ text: message.text }] };
+      }
+      return { role: "user", parts: [{ text: message.text }] };
+    });
     const AIResponse = await chatWithA11yAI(
       input,
       userLocation?.lat,
-      userLocation?.lng
+      userLocation?.lng,
+      history
     );
     console.log(AIResponse);
     if (AIResponse.data) {
@@ -78,7 +85,7 @@ export default function AIChatBot() {
   };
 
   return (
-    <div className="fixed  flex items-end  justify-end lg:bottom-16 top-16 right-4 z-50  ">
+    <div className="fixed  flex items-end  justify-end bottom-16  right-5 z-50  ">
       {!open ? (
         <Button
           onClick={() => setOpen(true)}

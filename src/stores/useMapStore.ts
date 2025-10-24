@@ -160,7 +160,12 @@ const useMapStore = create<MapStore>((set, get) => ({
   setNavigation: (navigation) =>
     set({ navigation: { ...get().navigation, ...navigation } as Navigation }),
   routeA11y: [],
-  setRouteA11y: (a11y) => set({ routeA11y: a11y }),
+  setRouteA11y: (a11y) => {
+    const deduped = Array.from(
+      new Map(a11y.map((m) => [m.id, m])).values()
+    ) as Marker[];
+    set({ routeA11y: deduped });
+  },
   addRouteA11y: (a11y) => set({ routeA11y: [...get().routeA11y, ...a11y] }),
   stepTransitDetails: [],
 
