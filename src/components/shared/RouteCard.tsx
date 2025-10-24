@@ -151,7 +151,7 @@ export const RouteCard = memo(function RouteCard({
               </>
             )
           ))}
-        {selectRoute?.index === idx && <Badge>{t("selectRoute")}</Badge>}
+        {selectRoute?.index === idx && <Badge>{t("selectedRoute")}</Badge>}
       </CardHeader>
 
       <CardContent className="space-y-3">
@@ -221,6 +221,7 @@ export const RouteCard = memo(function RouteCard({
               getRouteRank(route);
               setRouteSelect({ index: idx, route: route });
             }}
+            disabled={selectRoute?.index === idx}
             variant={"outline"}
           >
             {selectRoute?.index === idx ? t("selectedRoute") : t("selectRoute")}

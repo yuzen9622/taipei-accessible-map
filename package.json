@@ -28,6 +28,7 @@
     "@radix-ui/react-use-controllable-state": "^1.2.2",
     "@rc-component/drawer": "^1.2.0",
     "@react-oauth/google": "^0.12.2",
+    "@vercel/analytics": "^1.5.0",
     "@vis.gl/react-google-maps": "^1.5.5",
     "accept-language": "^3.0.20",
     "class-variance-authority": "^0.7.1",

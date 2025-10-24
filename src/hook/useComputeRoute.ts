@@ -48,6 +48,7 @@ export default function useComputeRoute() {
       try {
         setIsLoading(true);
         setRouteA11y([]);
+        setComputeRoutes(null);
         const { DirectionsService } = Route;
         const computeRouteService = new DirectionsService();
         const transitRoute = await computeRouteService.route({
@@ -84,17 +85,22 @@ export default function useComputeRoute() {
         }
 
         const data = transitRoute.routes;
-   
+
         const request = data.map((route) =>
           formatRouteForAI(route, allRouteA11y)
         );
         const aiResponse = await getBestRouteForA11y(request);
-        const newRouteData = [data[aiResponse.data?.route_index??0], ...data.filter((_,index)=>index!==aiResponse.data?.route_index||0)];
+        const newRouteData = [
+          data[aiResponse.data?.route_index ?? 0],
+          ...data.filter(
+            (_, index) => index !== aiResponse.data?.route_index || 0
+          ),
+        ];
 
-     getRouteRank(newRouteData[0], allRouteA11y);
+        getRouteRank(newRouteData[0], allRouteA11y);
         map.fitBounds(newRouteData[0].bounds);
         setComputeRoutes(newRouteData);
-    
+
         setRouteSelect({
           index: 0,
           route: newRouteData[0],

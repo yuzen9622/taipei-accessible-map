@@ -1,17 +1,17 @@
 "use client";
 import { useMapsLibrary } from "@vis.gl/react-google-maps";
-import { LoaderCircle, XIcon } from "lucide-react";
+import { CrosshairIcon, LoaderCircle } from "lucide-react";
 import Image from "next/image";
 import type { InputHTMLAttributes } from "react";
 import { useCallback, useState } from "react";
+import { toast } from "sonner";
 import usePlacePredictions from "@/hook/usePlacePredictions";
 import { useAppTranslation } from "@/i18n/client";
-
 import { cn, getLocation } from "@/lib/utils";
 import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
 import type { PlaceDetail } from "@/types";
-import { Button } from "../ui/button";
+
 import { Command, CommandGroup, CommandItem, CommandList } from "../ui/command";
 import { Input } from "../ui/input";
 
@@ -31,9 +31,10 @@ function PlaceInput({
   const placesLib = useMapsLibrary("places");
   const { t } = useAppTranslation("translation");
   const [open, setOpen] = useState(false);
-  const { searchHistory, addSearchHistory } = useMapStore();
+  const { searchHistory, addSearchHistory, userLocation } = useMapStore();
   const { suggestions, loading } = usePlacePredictions((value as string) || "");
   const { userConfig } = useAuthStore();
+
   const handlePlaceSubmit = useCallback(
     async (text: string) => {
       if (!placesLib) return;
@@ -106,6 +107,26 @@ function PlaceInput({
     [onPlaceSelect, placesLib, addSearchHistory]
   );
 
+  const handleNowClick = (userLocation?: google.maps.LatLngLiteral) => {
+    const geocoder = new google.maps.Geocoder();
+    if (!userLocation) {
+      toast.error("無法取得目前位置");
+      return;
+    }
+    geocoder.geocode({ location: userLocation }, (results, status) => {
+      if (status === "OK" && results && results[0]) {
+        const placeDetail: PlaceDetail = {
+          kind: "geocoder",
+          place: results[0],
+          position: results[0].geometry.location.toJSON(),
+        };
+        onPlaceSelect(placeDetail);
+        addSearchHistory(placeDetail);
+        setOpen(false);
+      }
+    });
+  };
+
   return (
     <div
       className={cn(
@@ -165,6 +186,19 @@ function PlaceInput({
           <CommandList>
             {value === "" && open && (
               <CommandGroup heading={t("searchHistory")}>
+                <CommandItem
+                  itemType="button"
+                  onSelect={() => {
+                    handleNowClick(userLocation ?? void 0);
+                  }}
+                  key={"now_location"}
+                  className=" flex justify-between rounded-3xl items-center"
+                >
+                  <span className=" p-1 text-start flex items-center gap-2">
+                    <CrosshairIcon className=" text-muted-foreground/70" />
+                    <h1 className="text-lg font-semibold">目前位置</h1>
+                  </span>
+                </CommandItem>
                 {searchHistory.map((history) => {
                   if (history.kind === "place") {
                     const { place } = history;
@@ -183,15 +217,6 @@ function PlaceInput({
                             {place.formattedAddress}
                           </p>
                         </span>
-                        <Button
-                          aria-label="Delete search history"
-                          onClick={() => {
-                            console.log("Delete", place.id);
-                          }}
-                          variant={"ghost"}
-                        >
-                          <XIcon />
-                        </Button>
                       </CommandItem>
                     );
                   }
