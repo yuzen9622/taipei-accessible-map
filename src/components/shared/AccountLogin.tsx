@@ -273,6 +273,14 @@ export default function AccountLogin() {
                 </li>
               ))}
             </ul>
+            <h2>Repository：</h2>
+            <Link
+              href="https://github.com/yuzen9622/taipei-accessible-map"
+              className="underline"
+              target="_BLANK"
+            >
+              https://github.com/yuzen9622/taipei-accessible-map
+            </Link>
             <h2>{t("data")}</h2>
             <div className="grid gap-4">
               <Link
