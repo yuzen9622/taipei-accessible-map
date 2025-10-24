@@ -20,6 +20,14 @@ export default function SearchInput() {
           place: placeDetail.place,
         });
         if (map) map.panTo(placeDetail.position);
+      } else if (placeDetail.kind === "geocoder") {
+        setInput(placeDetail.place.formatted_address || "");
+        setInfoShow({
+          isOpen: true,
+          kind: "geocoder",
+          place: placeDetail.place,
+        });
+        if (map) map.panTo(placeDetail.position);
       }
     },
     [setSearchPlace, setInfoShow, map]
