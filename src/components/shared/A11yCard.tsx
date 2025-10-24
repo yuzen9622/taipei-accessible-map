@@ -6,11 +6,7 @@ import { A11yEnum, type Marker } from "@/types";
 import { Button } from "../ui/button";
 
 export default function A11yCard({ place }: { place: Marker }) {
-  const {
-    setA11yDrawerOpen,
-
-    map,
-  } = useMapStore();
+  const { setA11yDrawerOpen, setDestination, map } = useMapStore();
   const { t } = useAppTranslation("translation");
   const { handleComputeRoute, isLoading } = useComputeRoute();
   const type = {
@@ -47,11 +43,20 @@ export default function A11yCard({ place }: { place: Marker }) {
           variant="default"
           size="sm"
           className="mt-2 flex-1"
+          disabled={isLoading}
           onClick={async () => {
-            // 可以在這裡加上點擊後的動作，例如在地圖上聚焦到該位置
-
+            const geocoder = new google.maps.Geocoder();
+            const geocodeResult = await geocoder.geocode({
+              location: place.position,
+            });
+            const geocode = geocodeResult.results[0];
+            setDestination({
+              kind: "geocoder",
+              place: geocode,
+              position: geocode.geometry.location.toJSON(),
+            });
             await handleComputeRoute({
-              destination: place.position,
+              destination: geocode.geometry.location.toJSON(),
             });
             setA11yDrawerOpen(false);
           }}
