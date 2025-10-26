@@ -5,9 +5,9 @@ import useComputeRoute from "@/hook/useComputeRoute";
 import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import type { PlaceDetail } from "@/types";
-import SearchInput from "./shared/PlaceInput";
-import { Badge } from "./ui/badge";
-import { Card } from "./ui/card";
+import SearchInput from "../shared/PlaceInput";
+import { Badge } from "../ui/badge";
+import { Card } from "../ui/card";
 
 export default function RoutePlanInput() {
   const {

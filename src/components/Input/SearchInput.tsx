@@ -3,7 +3,7 @@ import { useAppTranslation } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import type { PlaceDetail } from "@/types";
-import PlaceInput from "./shared/PlaceInput";
+import PlaceInput from "../shared/PlaceInput";
 
 export default function SearchInput() {
   const { setSearchPlace, setInfoShow, routeInfoShow, map } = useMapStore();

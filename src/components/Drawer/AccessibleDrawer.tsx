@@ -5,9 +5,9 @@ import { X } from "lucide-react";
 import { useAppTranslation } from "@/i18n/client";
 import useMapStore from "@/stores/useMapStore";
 import { A11yEnum } from "@/types/index";
-import DrawerWrapper from "./DrawerWrapper";
-import A11yCard from "./shared/A11yCard";
-import { Button } from "./ui/button";
+import A11yCard from "../shared/A11yCard";
+import { Button } from "../ui/button";
+import DrawerWrapper from "../Wrapper/DrawerWrapper";
 export default function AccessibleDrawer() {
   const {
     selectedA11yTypes,

@@ -54,10 +54,6 @@
                 {
                     "question": "Q:為什麼我送出台北的無障礙資訊回饋後，沒有馬上看到更新？",
                     "answer": "A:感謝您的回饋！為確保資訊準確，所有回報都需經過團隊人工審核，作業需要一些時間，請您耐心等候。"
-                },
-                {
-                    "question": "Q:我沒有收到系統寄送的 Email 確認信？",
-                    "answer": "A:請先檢查信箱中的「垃圾郵件」。如果還是沒有，請至「設定」中的「個人資料」頁面，確認您註冊的 Email 地址是否正確。"
                 }
             ]
         }
@@ -78,7 +74,7 @@
     "searchHistory": "搜尋歷史：",
     "searchResults": "搜尋結果：",
     "planRoute": "規劃路線",
-    "selectRoute":"選擇路線",
+    "selectRoute": "選擇路線",
     "route": "路線規劃",
     "loadingRoute": " 規劃中",
     "selectedRoute": "已選擇",

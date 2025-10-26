@@ -58,10 +58,6 @@
                 {
                     "question": "Q: Why don't I see updates immediately after submitting accessibility information for Taipei?",
                     "answer": "A: Thank you for your report! To ensure accuracy, all submissions undergo manual review by our team, which takes some time. Please wait patiently for the update to appear."
-                },
-                {
-                    "question": "Q: I didn't receive the email confirmation sent by the system?",
-                    "answer": "A: Please check your spam folder first. If you still haven't received it, go to the \"Profile\" page in \"Settings\" and verify that the email address you registered is correct."
                 }
             ]
         }
@@ -79,7 +75,7 @@
     "searchResults": "Search results:",
     "planRoute": "Plan route",
     "route": "Route planning",
-    "selectRoute":"Select",
+    "selectRoute": "Select",
     "loadingRoute": "Planning",
     "selectedRoute": "Selected",
     "viewOnMap": "View on map",

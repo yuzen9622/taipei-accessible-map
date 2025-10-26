@@ -12,7 +12,7 @@ import { Fragment, type JSX, useMemo } from "react";
 
 import { getStepColor } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
-import Polyline from "./Polyline";
+import Polyline from "../Polyline";
 export default function RouteLine() {
   const { selectRoute } = useMapStore();
   const geometry = useMapsLibrary("geometry");
