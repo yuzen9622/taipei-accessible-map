@@ -214,7 +214,7 @@ export const RouteCard = memo(function RouteCard({
           })}
         </div>
 
-        <div className="flex justify-between items-center pt-4 border-t">
+        <div className="flex justify-between max-[375px]:flex-col   max-[375px]:items-stretch gap-4  items-center pt-4 border-t">
           <Button
             aria-label="Select route"
             onClick={() => {
@@ -229,7 +229,14 @@ export const RouteCard = memo(function RouteCard({
           <Button
             aria-label="Start navigation"
             variant="default"
-            onClick={() => startNavigation(route.legs[0].steps)}
+            onClick={() => {
+              if (selectRoute?.index !== idx) {
+                getRouteRank(route);
+                setRouteSelect({ index: idx, route: route });
+              }
+
+              startNavigation(route.legs[0].steps);
+            }}
           >
             <FlagIcon className="mr-2 h-4 w-4" />
             {t("startNavigation")}

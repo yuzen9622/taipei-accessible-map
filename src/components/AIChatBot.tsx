@@ -30,7 +30,7 @@ export default function AIChatBot() {
       sender: "ai",
       text: t(
         "chatbot.greeting",
-        "你好！我是無障礙台北的 AI 助理，有什麼我能幫你的嗎？"
+        "你好！我是無障礙台北的 AI 助理，有什麼我能幫你的嗎？附近無障礙設施或者是問題回饋？請隨時提出！"
       ),
     },
   ]);
@@ -102,7 +102,7 @@ export default function AIChatBot() {
               <BotMessageSquare className="h-4 w-4 text-primary" />
             </Avatar>
             <div className="font-medium">
-              AI {t("chatbot.assistant", "智能助理")}
+              {t("title", "無障礙台北 AI 助理")}AI助理
             </div>
             <Button
               onClick={() => setOpen(false)}

@@ -3,10 +3,10 @@ import Image from "next/image";
 import useNavigation from "@/hook/useNavigation";
 import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
-import DrawerWrapper from "./DrawerWrapper";
-import SafeInstruction from "./shared/StepInstruction";
-import { Button } from "./ui/button";
-import { Card, CardAction, CardContent, CardHeader } from "./ui/card";
+import SafeInstruction from "../shared/StepInstruction";
+import { Button } from "../ui/button";
+import { Card, CardAction, CardContent, CardHeader } from "../ui/card";
+import DrawerWrapper from "../Wrapper/DrawerWrapper";
 export default function NavigationDrawer() {
   const { navigationDrawerOpen } = useMapStore();
   const { currentStep, prevStep, nextStep, stopNavigation } = useNavigation();
@@ -25,7 +25,7 @@ export default function NavigationDrawer() {
             <div className="adp-substep   scale-150">
               <div className="adp-stepicon">
                 <span
-                  className={`adp-${currentStep.step.maneuver} adp-maneuver `}
+                  className={`adp-${currentStep.step.maneuver}   dark:brightness-[300]  adp-maneuver `}
                 ></span>
               </div>
             </div>

@@ -1,24 +1,24 @@
 "use client";
 
-import { Heart, Loader2, Share2, X } from "lucide-react";
+import { Loader2, Share2, X } from "lucide-react";
 
 import { useCallback } from "react";
 
 import useComputeRoute from "@/hook/useComputeRoute";
 
 import useMapStore from "@/stores/useMapStore";
-import { Button } from "./ui/button";
-import { DrawerFooter } from "./ui/drawer";
+import { Button } from "../ui/button";
+import { DrawerFooter } from "../ui/drawer";
 
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 
 import { useAppTranslation } from "@/i18n/client";
-import DrawerWrapper from "./DrawerWrapper";
-import GeocoderDrawerContent from "./GeocoderDrawerContent";
-import PlaceDrawerContent from "./PlaceDrawerContent";
-import LoadingDrawer from "./shared/LoadingDrawer";
+import GeocoderDrawerContent from "../GeocoderDrawerContent";
+import PlaceDrawerContent from "../PlaceDrawerContent";
+import LoadingDrawer from "../shared/LoadingDrawer";
+import DrawerWrapper from "../Wrapper/DrawerWrapper";
 
 export default function TestDrawer() {
   const {
@@ -106,13 +106,6 @@ export default function TestDrawer() {
               {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
             </Button>
             <div className="flex gap-2">
-              <Button
-                aria-label="Add to favorites"
-                variant="outline"
-                size="icon"
-              >
-                <Heart className="h-4 w-4" />
-              </Button>
               <Button
                 onClick={async () => {
                   if (!infoShow.kind) return;

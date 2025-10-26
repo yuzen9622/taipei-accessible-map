@@ -9,17 +9,17 @@ import {
 import { useTheme } from "next-themes";
 import { useEffect } from "react";
 import { toast } from "sonner";
-import MapWrapper from "@/components/MapWrapper";
-import AccessibilityPin from "@/components/MetroA11yWrapper";
-import RouteLine from "@/components/RouteWrapper";
 import NowPin from "@/components/shared/NowPin";
+import MapWrapper from "@/components/Wrapper/MapWrapper";
+import AccessibilityPin from "@/components/Wrapper/MetroA11yWrapper";
+import RouteLine from "@/components/Wrapper/RouteWrapper";
 import { useAppTranslation } from "@/i18n/client";
 import { getLocation } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import AIChatBot from "./AIChatBot";
 import GotoNowButton from "./shared/GotoNowButton";
 import SearchPin from "./shared/SearchPin";
-import TransitWrapper from "./TransitWrapper";
+import TransitWrapper from "./Wrapper/TransitWrapper";
 export default function ClientMap() {
   const {
     setMap,

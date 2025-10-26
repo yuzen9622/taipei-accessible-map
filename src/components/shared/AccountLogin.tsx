@@ -2,15 +2,7 @@
 
 import { useGoogleLogin } from "@react-oauth/google";
 
-import {
-  Globe,
-  HelpCircle,
-  Info,
-  LogOut,
-  Settings,
-  Type,
-  User,
-} from "lucide-react";
+import { Globe, Info, LogOut, Settings, Type, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
@@ -164,14 +156,6 @@ export default function AccountLogin() {
               >
                 <Settings className="mr-2 h-4 w-4" />
                 {t("settingTitle")}
-              </DropdownMenuItem>
-
-              <DropdownMenuItem
-                onClick={() => setOpenDialog("feedback")}
-                className="text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
-              >
-                <HelpCircle className="mr-2 h-4 w-4" />
-                {t("feedback")}
               </DropdownMenuItem>
 
               <DropdownMenuItem

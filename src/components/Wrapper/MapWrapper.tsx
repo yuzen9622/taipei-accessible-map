@@ -1,8 +1,8 @@
 import useMapStore from "@/stores/useMapStore";
-import AccessibleToolBar from "./AccessibleToolBar";
-import RoutePlanInput from "./PlanInput";
-import SearchInput from "./SearchInput";
-import AccountLogin from "./shared/AccountLogin";
+import AccessibleToolBar from "../AccessibleToolBar";
+import RoutePlanInput from "../Input/PlanInput";
+import SearchInput from "../Input/SearchInput";
+import AccountLogin from "../shared/AccountLogin";
 
 export default function MapWrapper() {
   const { selectRoute, navigationDrawerOpen } = useMapStore();
