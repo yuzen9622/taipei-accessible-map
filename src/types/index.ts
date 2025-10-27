@@ -1,6 +1,6 @@
 export enum A11yEnum {
   ELEVATOR = "電梯",
-  RAMP = "波道",
+  RAMP = "斜坡",
   RESTROOM = "廁所",
   NONE = "無",
 }

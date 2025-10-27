@@ -1,12 +1,13 @@
 "use client";
 
 import { X } from "lucide-react";
-
+import { useState } from "react";
 import { useAppTranslation } from "@/i18n/client";
 import useMapStore from "@/stores/useMapStore";
 import { A11yEnum } from "@/types/index";
 import A11yCard from "../shared/A11yCard";
 import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 import DrawerWrapper from "../Wrapper/DrawerWrapper";
 export default function AccessibleDrawer() {
   const {
@@ -15,13 +16,16 @@ export default function AccessibleDrawer() {
     setA11yDrawerOpen,
     toggleA11yType,
     routeA11y,
-
     a11yPlaces,
   } = useMapStore();
   const { t } = useAppTranslation("translation");
-
+  const [searchTerm, setSearchTerm] = useState("");
   const filteredPlaces =
-    a11yPlaces?.filter((place) => selectedA11yTypes.includes(place.a11yType)) ||
+    a11yPlaces?.filter(
+      (place) =>
+        selectedA11yTypes.includes(place.a11yType) &&
+        (searchTerm === "" || place.content?.title.includes(searchTerm))
+    ) ||
     routeA11y ||
     [];
 
@@ -66,6 +70,13 @@ export default function AccessibleDrawer() {
             <X />
           </Button>
         </span>
+        <div>
+          <Input
+            placeholder={`尋找無障礙${selectedA11yTypes.join(",")} 地點...`}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            value={searchTerm}
+          />
+        </div>
         <div className=" flex-1 overflow-y-auto ">
           {selectedA11yTypes.length === 0 ? (
             <p className="text-muted-foreground">{t("selectAccessible")}</p>
