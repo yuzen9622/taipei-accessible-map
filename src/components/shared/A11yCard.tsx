@@ -1,23 +1,42 @@
 import { Loader2 } from "lucide-react";
+import { useEffect, useRef } from "react";
 import useComputeRoute from "@/hook/useComputeRoute";
 import { useAppTranslation } from "@/i18n/client";
+import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import { A11yEnum, type Marker } from "@/types";
 import { Button } from "../ui/button";
 
 export default function A11yCard({ place }: { place: Marker }) {
-  const { setA11yDrawerOpen, setDestination, map } = useMapStore();
+  const {
+    setA11yDrawerOpen,
+    setDestination,
+    map,
+    selectA11yPlace,
+    setSelectA11yPlace,
+  } = useMapStore();
   const { t } = useAppTranslation("translation");
   const { handleComputeRoute, isLoading } = useComputeRoute();
+  const cardRef = useRef<HTMLButtonElement>(null);
   const type = {
     [A11yEnum.ELEVATOR]: t("elevator"),
     [A11yEnum.RAMP]: t("ramp"),
     [A11yEnum.RESTROOM]: t("toilet"),
   } as Record<A11yEnum, string>;
+  useEffect(() => {
+    if (selectA11yPlace?.id !== place.id) return;
+    cardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [selectA11yPlace, place.id]);
   return (
-    <div
+    <button
+      ref={cardRef}
       key={place.id}
-      className="border rounded-lg p-3 hover:bg-muted/50 transition-colors"
+      type="button"
+      tabIndex={0}
+      className={cn(
+        "border rounded-lg p-3 hover:bg-muted/50 text-start transition-colors w-full",
+        selectA11yPlace?.id === place.id && "border-accent-foreground"
+      )}
     >
       <div className="flex items-start justify-between mb-2">
         <h4 className="font-medium text-sm">{place.content?.title}</h4>
@@ -72,6 +91,7 @@ export default function A11yCard({ place }: { place: Marker }) {
           className="mt-2 flex-1"
           onClick={() => {
             // 可以在這裡加上點擊後的動作，例如在地圖上聚焦到該位置
+            setSelectA11yPlace(place);
             console.log("Navigate to:", place.position);
             map?.setCenter(place.position);
             map?.setZoom(18);
@@ -80,6 +100,6 @@ export default function A11yCard({ place }: { place: Marker }) {
           {t("viewOnMap")}
         </Button>
       </div>
-    </div>
+    </button>
   );
 }

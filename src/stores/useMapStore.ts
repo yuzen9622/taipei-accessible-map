@@ -24,6 +24,7 @@ interface MapState {
   // 新增無障礙設施相關狀態
   selectedA11yTypes: A11yEnum[];
   a11yDrawerOpen: boolean;
+  selectA11yPlace: Marker | null;
   a11yPlaces: Marker[] | null;
   searchHistory: PlaceDetail[];
   savedPlaces: PlaceDetail[];
@@ -44,6 +45,7 @@ interface MapAction {
   setComputeRoutes: (route: google.maps.DirectionsRoute[] | null) => void;
   setRoutePolyline: (polyline: google.maps.Polyline | null) => void;
   setRouteInfoShow: (show: boolean) => void;
+  setSelectA11yPlace: (place: Marker | null) => void;
   setRouteSelect: (
     route: Partial<{
       index: number;
@@ -84,7 +86,14 @@ const useMapStore = create<MapStore>((set, get) => ({
   infoShow: { isOpen: false, kind: null },
   setInfoShow: (infoShow) =>
     set({ infoShow: { ...get().infoShow, ...infoShow } as InfoShow }),
-
+  selectA11yPlace: null,
+  setSelectA11yPlace: (place) => {
+    if (place?.id === get().selectA11yPlace?.id) {
+      set({ selectA11yPlace: null });
+      return;
+    }
+    set({ selectA11yPlace: place });
+  },
   searchPlace: null,
   setSearchPlace: (place) => set({ searchPlace: place }),
   computeRoutes: null,
