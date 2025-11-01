@@ -11,7 +11,7 @@ const DrawerWrapper = memo(function DrawerWrapper({
   children,
   open,
   placement,
-
+  zIndex,
   ...props
 }: DrawerWrapperProps) {
   const [direction, setDirection] = useState<
@@ -38,6 +38,7 @@ const DrawerWrapper = memo(function DrawerWrapper({
       key={direction}
       placement={placement || direction}
       open={open}
+      zIndex={zIndex || 10}
       {...props}
     >
       {children}
