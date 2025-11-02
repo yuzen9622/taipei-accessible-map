@@ -211,6 +211,8 @@ const useMapStore = create<MapStore>((set, get) => ({
       infoShow:
         destination && destination.kind === "place"
           ? { isOpen: true, place: destination.place, kind: "place" }
+          : destination && destination.kind === "geocoder"
+          ? { isOpen: true, place: destination.place, kind: "geocoder" }
           : { isOpen: false, kind: null },
       searchPlace:
         destination && destination.kind === "place"

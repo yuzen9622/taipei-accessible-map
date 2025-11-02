@@ -9,6 +9,7 @@ import { getUserInfo } from "@/lib/api/user";
 import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
 import NavigationDrawer from "../Drawer/NavigationDrawer";
+import TestDrawer from "../Drawer/TestDrawer";
 
 export default function ClientLayout({
   children,
@@ -40,6 +41,7 @@ export default function ClientLayout({
 
   return (
     <div className="w-full h-dvh flex flex-col">
+      <TestDrawer />
       <RouteDrawer /> <AccessibleDrawer /> <NavigationDrawer />
       {children}
     </div>

@@ -20,6 +20,7 @@ export default function useComputeRoute() {
     setRouteA11y,
     userLocation,
     travelMode,
+    closeRouteDrawer,
   } = useMapStore();
   const { getRouteRank } = useRouteRank();
   const { userConfig } = useAuthStore();
@@ -58,6 +59,7 @@ export default function useComputeRoute() {
           provideRouteAlternatives: true,
           language: userConfig.language,
         });
+        console.log("Transit Route:", transitRoute);
         const allRouteA11y: Marker[] = [];
         for (let j = 0; j < transitRoute.routes[0].legs.length; j++) {
           const steps = transitRoute.routes[0].legs[j].steps;
@@ -85,7 +87,7 @@ export default function useComputeRoute() {
         }
 
         const data = transitRoute.routes;
-
+        console.log("Computed Routes:", data);
         const request = data.map((route) =>
           formatRouteForAI(route, allRouteA11y)
         );
@@ -108,6 +110,7 @@ export default function useComputeRoute() {
         setRouteInfoShow(true);
         setRouteA11y(allRouteA11y);
       } catch (error) {
+        closeRouteDrawer();
         console.log(error);
         toast.error("路徑規劃失敗，請稍後再試");
       } finally {
@@ -117,6 +120,7 @@ export default function useComputeRoute() {
     [
       Route,
       map,
+      closeRouteDrawer,
       getRouteRank,
       setComputeRoutes,
       setRouteSelect,

@@ -10,17 +10,18 @@ const CostumeDrawer = ({
   children,
   placement = "left",
   size = "50%",
+  zIndex,
 }: {
   children: React.ReactNode;
 } & DrawerProps) => {
   return (
     <Drawer
       open={open}
-      rootClassName={cn("z-10!")}
       onClose={onClose}
       afterOpenChange={(c: boolean) => {
         console.log("transitionEnd: ", c);
       }}
+      zIndex={zIndex}
       placement={placement}
       size={placement === "bottom" || placement === "top" ? size : 460}
       mask={false}

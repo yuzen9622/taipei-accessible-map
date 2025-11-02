@@ -9,6 +9,7 @@ type DrawerWrapperProps = {
 
 const DrawerWrapper = memo(function DrawerWrapper({
   children,
+  id,
   open,
   placement,
   zIndex,
@@ -36,6 +37,7 @@ const DrawerWrapper = memo(function DrawerWrapper({
   return (
     <Drawer
       key={direction}
+      id={id}
       placement={placement || direction}
       open={open}
       zIndex={zIndex || 10}

@@ -20,6 +20,7 @@ import AIChatBot from "./AIChatBot";
 import GotoNowButton from "./shared/GotoNowButton";
 import SearchPin from "./shared/SearchPin";
 import TransitWrapper from "./Wrapper/TransitWrapper";
+
 export default function ClientMap() {
   const {
     setMap,
@@ -28,6 +29,8 @@ export default function ClientMap() {
     setSearchPlace,
     searchPlace,
     navigation,
+
+    destination,
   } = useMapStore();
   const { theme } = useTheme();
   const { i18n } = useAppTranslation();
@@ -123,7 +126,11 @@ export default function ClientMap() {
       <AccessibilityPin />
       <GotoNowButton />
       <NowPin />
-      {searchPlace && <SearchPin destination={searchPlace} />}
+      {searchPlace ? (
+        <SearchPin destination={searchPlace} />
+      ) : destination ? (
+        <SearchPin destination={destination} />
+      ) : null}
       <TransitWrapper />
       <AIChatBot />
       <RouteLine />
