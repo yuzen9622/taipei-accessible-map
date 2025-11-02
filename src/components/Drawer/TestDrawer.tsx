@@ -25,12 +25,11 @@ export default function TestDrawer() {
     infoShow,
     setInfoShow,
     setSearchPlace,
-    setRouteInfoShow,
     setDestination,
     userLocation,
   } = useMapStore();
   const { t } = useAppTranslation("translation");
-  const { isLoading, computeRouteService } = useComputeRoute();
+  const { isLoading, handleComputeRoute } = useComputeRoute();
 
   const handlePlanRoute = useCallback(async () => {
     if (!infoShow.kind) return;
@@ -53,26 +52,23 @@ export default function TestDrawer() {
       });
     }
 
-    await computeRouteService(
-      userLocation ?? { lat: 25.0478, lng: 121.5319 },
-      latLng
-    );
+    await handleComputeRoute({
+      origin: userLocation ?? { lat: 25.0478, lng: 121.5319 },
+      destination: latLng,
+    });
     setSearchPlace(null);
-    setInfoShow({ isOpen: false, kind: null });
-    setRouteInfoShow(true);
+    setInfoShow({ isOpen: false });
   }, [
     userLocation,
-
     infoShow,
-    setDestination,
-    computeRouteService,
-    setInfoShow,
     setSearchPlace,
-    setRouteInfoShow,
+    setDestination,
+    handleComputeRoute,
+    setInfoShow,
   ]);
 
   return (
-    <DrawerWrapper open={infoShow.isOpen}>
+    <DrawerWrapper zIndex={20} id="info-drawer" open={infoShow.isOpen}>
       <Button
         aria-label="Close drawer"
         onClick={() => {

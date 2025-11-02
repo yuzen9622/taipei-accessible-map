@@ -56,7 +56,7 @@ export default function AccessibleDrawer() {
   };
 
   return (
-    <DrawerWrapper zIndex={20} open={a11yDrawerOpen}>
+    <DrawerWrapper zIndex={30} open={a11yDrawerOpen}>
       <div className="p-4 space-y-4 flex flex-col overflow-hidden">
         <span className="flex items-center justify-between">
           <h1 className="text-lg font-semibold">{t("accessibleTitle")}</h1>

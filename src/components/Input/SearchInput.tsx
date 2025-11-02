@@ -9,6 +9,7 @@ export default function SearchInput() {
   const { setSearchPlace, setInfoShow, routeInfoShow, map } = useMapStore();
   const [input, setInput] = useState("");
   const { t } = useAppTranslation("translation");
+
   const handlePlaceChange = useCallback(
     (placeDetail: PlaceDetail) => {
       setSearchPlace(placeDetail);

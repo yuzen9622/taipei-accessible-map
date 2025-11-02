@@ -14,21 +14,21 @@ export default function RouteDrawer() {
   const { t } = useAppTranslation("translation");
 
   return (
-    <DrawerWrapper open={routeInfoShow}>
+    <DrawerWrapper zIndex={10} id="route-drawer" open={routeInfoShow}>
+      <Button
+        aria-label="Close route drawer"
+        variant={"ghost"}
+        className="  absolute  bg-muted  z-20 rounded-3xl  right-8 top-4"
+        onClick={closeRouteDrawer}
+      >
+        <XIcon />
+      </Button>
       {!computeRoutes ? (
         <LoadingDrawer />
       ) : (
         <DrawerHeader className="w-full space-y-2 flex-1  overflow-auto ">
           <div className=" flex gap-4  ml-10    justify-between  items-center">
             <h1 className="text-2xl">{t("route")}</h1>
-            <Button
-              aria-label="Close route drawer"
-              variant={"ghost"}
-              className="     absolute  bg-muted  z-20 rounded-3xl  right-8 top-4"
-              onClick={closeRouteDrawer}
-            >
-              <XIcon />
-            </Button>
           </div>
 
           <section className=" space-y-2 ">

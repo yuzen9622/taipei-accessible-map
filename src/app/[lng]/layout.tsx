@@ -5,7 +5,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { dir } from "i18next";
 import type { Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import TestDrawer from "@/components/Drawer/TestDrawer";
+
 import ClientLayout from "@/components/layout/client-layout";
 import GoogleMapProvider from "@/components/provider/GoogleMapProvider";
 import { ThemeProvider } from "@/components/provider/ThemeProvider";
@@ -62,7 +62,6 @@ export default async function RootLayout({
           >
             <ThemeProvider defaultTheme="system" attribute="class" enableSystem>
               <ClientLayout>
-                <TestDrawer />
                 {children}
                 <Analytics />
               </ClientLayout>
