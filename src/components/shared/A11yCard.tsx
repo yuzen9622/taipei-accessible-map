@@ -17,7 +17,7 @@ export default function A11yCard({ place }: { place: Marker }) {
   } = useMapStore();
   const { t } = useAppTranslation("translation");
   const { handleComputeRoute, isLoading } = useComputeRoute();
-  const cardRef = useRef<HTMLButtonElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const type = {
     [A11yEnum.ELEVATOR]: t("elevator"),
     [A11yEnum.RAMP]: t("ramp"),
@@ -28,11 +28,9 @@ export default function A11yCard({ place }: { place: Marker }) {
     cardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [selectA11yPlace, place.id]);
   return (
-    <button
+    <div
       ref={cardRef}
       key={place.id}
-      type="button"
-      tabIndex={0}
       className={cn(
         "border rounded-lg p-3 hover:bg-muted/50 text-start transition-colors w-full",
         selectA11yPlace?.id === place.id && "border-accent-foreground"
@@ -100,6 +98,6 @@ export default function A11yCard({ place }: { place: Marker }) {
           {t("viewOnMap")}
         </Button>
       </div>
-    </button>
+    </div>
   );
 }

@@ -6,11 +6,12 @@ import {
   SendHorizonal,
   XIcon,
 } from "lucide-react";
-import { Fragment, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 
 import { useAppTranslation } from "@/i18n/client";
 import { chatWithA11yAI } from "@/lib/api/a11y";
 import { cn, formatBathroom, formatMetroA11y } from "@/lib/utils";
+import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
 import type { Marker } from "@/types";
 import A11yCard from "./shared/A11yCard";
@@ -23,13 +24,14 @@ import { ScrollArea } from "./ui/scroll-area";
 
 export default function AIChatBot() {
   const { t } = useAppTranslation();
+  const { userConfig } = useAuthStore();
   const [messages, setMessages] = useState<
     { sender: string; text: string; a11y?: Marker[] }[]
   >([
     {
       sender: "ai",
       text: t(
-        "chatbot.greeting",
+        "assistFirstMessage",
         "你好！我是無障礙台北的 AI 助理，有什麼我能幫你的嗎？附近無障礙設施或者是問題回饋？請隨時提出！"
       ),
     },
@@ -41,10 +43,11 @@ export default function AIChatBot() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const { userLocation } = useMapStore();
   const handleSend = async () => {
-    if (!input.trim()) return;
+    if (input.trim() === "") return;
 
     const userMsg = { sender: "user", text: input };
     setMessages((prev) => [...prev, userMsg]);
+
     setInput("");
     setIsLoading(true);
     const history = messages.map((message) => {
@@ -55,11 +58,12 @@ export default function AIChatBot() {
     });
     const AIResponse = await chatWithA11yAI(
       input,
+      userConfig.language,
       userLocation?.lat,
       userLocation?.lng,
       history
     );
-    console.log(AIResponse);
+
     if (AIResponse.data) {
       const formattedA11yInfo: Marker[] = [
         ...formatBathroom(AIResponse.data?.nearbyBathroom || []),
@@ -76,6 +80,15 @@ export default function AIChatBot() {
     }
     setIsLoading(false);
   };
+
+  useEffect(() => {
+    if (messages && open) {
+      scrollRef.current?.scrollTo({
+        top: scrollRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  }, [messages, open]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -102,7 +115,8 @@ export default function AIChatBot() {
               <BotMessageSquare className="h-4 w-4 text-primary" />
             </Avatar>
             <div className="font-medium">
-              {t("title", "無障礙台北 AI 助理")}AI助理
+              <h1>{t("assist")}</h1>
+              <p className="text-muted-foreground text-xs">{t("assistDesc")}</p>
             </div>
             <Button
               onClick={() => setOpen(false)}
@@ -147,7 +161,7 @@ export default function AIChatBot() {
               ))}
               {isLoading && (
                 <div className="flex gap-2 px-3 py-2 rounded-2xl text-sm w-fit bg-muted ">
-                  智能助理思考中{" "}
+                  {t("assistThinking", "AI 助理思考中")}{" "}
                   <EllipsisIcon size={20} className="  animate-ping " />
                 </div>
               )}

@@ -13,6 +13,10 @@
     "tdx": "Ministry of Transportation and Communications (TDX) Platform",
     "gov": "Government Open Data Platform",
     "moe": "Ministry of the Environment — Environmental Data Open Platform",
+    "assist": "Accessible Taipei AI Assistant",
+    "assistDesc": "Powered by Gemini AI, providing real-time Q&A services for accessibility-related topics.",
+    "assistFirstMessage": "Hello! I'm the Accessible Taipei AI Assistant. How can I help you? Looking for nearby accessible facilities or have some feedback? Feel free to ask!",
+    "assistThinking": "AI Assistant is thinking",
     "helpDescription": {
         "overview": "Welcome to our map app! We aim to provide comprehensive place information services. Across Taiwan you can use this app for general navigation. We are piloting an \"Accessible Friendly Map\" program in Taipei City first and will gradually expand to more cities in the future.",
         "features": {
