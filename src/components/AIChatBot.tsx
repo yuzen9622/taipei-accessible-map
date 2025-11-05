@@ -83,10 +83,7 @@ export default function AIChatBot() {
 
   useEffect(() => {
     if (messages && open) {
-      scrollRef.current?.scrollTo({
-        top: scrollRef.current.scrollHeight,
-        behavior: "smooth",
-      });
+      scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
     }
   }, [messages, open]);
 
@@ -98,7 +95,12 @@ export default function AIChatBot() {
   };
 
   return (
-    <div className="fixed  flex items-end  justify-end bottom-16  right-5 z-50  ">
+    <div
+      className={cn(
+        "fixed  flex items-end  justify-end bottom-16  right-5 z-50  ",
+        open && "bottom-2"
+      )}
+    >
       {!open ? (
         <Button
           onClick={() => setOpen(true)}
@@ -109,7 +111,7 @@ export default function AIChatBot() {
           <BotMessageSquare className="h-10 w-10" />
         </Button>
       ) : (
-        <Card className="w-11/12   max-w-lg shadow-lg border border-border/50 overflow-hidden">
+        <Card className="w-11/12  h-[calc(100dvh-5rem)] max-w-lg flex flex-col shadow-lg border border-border/50 overflow-hidden">
           <CardHeader className="px-4 py-3 border-b flex flex-row items-center space-y-0 gap-2">
             <Avatar className="h-8 w-8 flex items-center justify-center bg-primary/10">
               <BotMessageSquare className="h-4 w-4 text-primary" />
@@ -128,11 +130,8 @@ export default function AIChatBot() {
             </Button>
           </CardHeader>
 
-          <ScrollArea
-            className="h-fit max-h-[200px] overflow-auto"
-            ref={scrollRef}
-          >
-            <CardContent className="p-4 space-y-4">
+          <ScrollArea className="flex-1 overflow-auto">
+            <CardContent className="p-4 flex-1 space-y-4" ref={scrollRef}>
               {messages.map((m) => (
                 <Fragment key={m.text + Math.random()}>
                   <div
