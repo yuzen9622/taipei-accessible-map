@@ -4,7 +4,7 @@ import { X } from "lucide-react";
 import { useState } from "react";
 import { useAppTranslation } from "@/i18n/client";
 import useMapStore from "@/stores/useMapStore";
-import { A11yEnum } from "@/types/index";
+import { A11yEnum, type Marker } from "@/types/index";
 import A11yCard from "../shared/A11yCard";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
@@ -21,12 +21,18 @@ export default function AccessibleDrawer() {
   } = useMapStore();
   const { t } = useAppTranslation("translation");
   const [searchTerm, setSearchTerm] = useState("");
+
+  const searchToA11yPlaces = (term: string, place: Marker) => {
+    if (term.trim() === "") return true;
+    return place.content?.title.includes(term);
+  };
+
   const filteredPlaces =
     (routeA11y.length > 0 && routeA11y) ||
     a11yPlaces?.filter(
       (place) =>
         selectedA11yTypes.includes(place.a11yType) &&
-        (searchTerm === "" || place.content?.title.includes(searchTerm))
+        searchToA11yPlaces(searchTerm, place)
     ) ||
     [];
 

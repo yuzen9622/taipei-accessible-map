@@ -58,6 +58,10 @@
             ]
         }
     },
+    "assist": "無障礙台北 AI 助理",
+    "assistDesc": "透過 Gemini AI 技術，提供無障礙相關的即時問答服務。",
+    "assistFirstMessage": "你好！我是無障礙台北的 AI 助理，有什麼我能幫你的嗎？附近無障礙設施或者是問題回饋？請隨時提出！",
+    "assistThinking": " AI 助理思考中",
     "data": "資料來源：",
     "tdx": "交通部TDX平臺",
     "gov": "政府開放資料平台",

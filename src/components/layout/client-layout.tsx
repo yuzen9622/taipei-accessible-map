@@ -1,7 +1,7 @@
 "use client";
 
+import { useMapsLibrary } from "@vis.gl/react-google-maps";
 import { useCallback, useEffect } from "react";
-
 import AccessibleDrawer from "@/components/Drawer/AccessibleDrawer";
 import RouteDrawer from "@/components/Drawer/RouteDrawer";
 import { refreshToken } from "@/lib/api/auth";
@@ -16,9 +16,9 @@ export default function ClientLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { initSearchHistory } = useMapStore();
+  const { initSearchHistory, setSearchPlace, setInfoShow } = useMapStore();
   const { setSession, setUser, setUserConfig } = useAuthStore();
-
+  const PlaceLib = useMapsLibrary("places");
   const getNewAccessToken = useCallback(async () => {
     const token = await refreshToken();
     if (token) {
@@ -31,13 +31,33 @@ export default function ClientLayout({
     }
   }, [setSession, setUser, setUserConfig]);
 
+  const initPlace = useCallback(async () => {
+    if (!PlaceLib) return;
+    const { Place } = PlaceLib;
+    const place = new Place({
+      id: "ChIJUZ-WfXKpQjQR0j4ggToD89A",
+    });
+    await place.fetchFields({ fields: ["*"] });
+    setSearchPlace({
+      kind: "place",
+      place: place,
+      position: place.location?.toJSON() || { lat: 0, lng: 0 },
+    });
+    setInfoShow({
+      isOpen: true,
+      kind: "place",
+      place: place,
+    });
+  }, [setSearchPlace, setInfoShow, PlaceLib]);
+
   useEffect(() => {
     const storedHistory = localStorage.getItem("searchHistory");
     getNewAccessToken();
     if (storedHistory) {
       initSearchHistory(JSON.parse(storedHistory));
     }
-  }, [initSearchHistory, getNewAccessToken]);
+    initPlace();
+  }, [initSearchHistory, getNewAccessToken, initPlace]);
 
   return (
     <div className="w-full h-dvh flex flex-col">

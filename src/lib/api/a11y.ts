@@ -51,13 +51,14 @@ export async function getBestRouteForA11y(
 
 export async function chatWithA11yAI(
   message: string,
+  lang: string,
   lat?: number,
   lng?: number,
   history?: { role: string; parts: { text: string }[] }[]
 ) {
   const response = await fetchRequest(`${END_POINT}/api/a11y/chatbot`, {
     method: "POST",
-    body: { message, lat, lng, history },
+    body: { message, lat, lng, history, lang },
   });
   return response as ApiResponse<AIChatResponse>;
 }
