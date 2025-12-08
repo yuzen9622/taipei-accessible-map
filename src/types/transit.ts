@@ -150,10 +150,21 @@ export interface AIRankResponse {
 export interface AIRouteResponse {
   route_index: number;
 }
+export interface GooglePlaceResult {
+  name: string;
+  place_id: string;
+  formatted_address: string;
+  rating: number;
+  location: { latitude: number; longitude: number };
+}
+
 export interface AIChatResponse {
   message: string;
-  nearbyBathroom: IBathroom[];
-  nearbyMetroA11y: metroA11yData[];
+  a11yPlacesResults?: {
+    nearbyBathroom: IBathroom[];
+    nearbyMetroA11y: metroA11yData[];
+  };
+  googlePlacesResults?: GooglePlaceResult[];
 }
 
 export function isBusTransitDetail(

@@ -14,8 +14,10 @@ import { cn, formatBathroom, formatMetroA11y } from "@/lib/utils";
 import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
 import type { Marker } from "@/types";
+import type { GooglePlaceResult } from "@/types/transit";
 import A11yCard from "./shared/A11yCard";
 import MarkdownText from "./shared/MarkdownText";
+import PlaceCard from "./shared/PlaceCard";
 import { Avatar } from "./ui/avatar";
 import { Button } from "./ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "./ui/card";
@@ -26,7 +28,12 @@ export default function AIChatBot() {
   const { t } = useAppTranslation();
   const { userConfig } = useAuthStore();
   const [messages, setMessages] = useState<
-    { sender: string; text: string; a11y?: Marker[] }[]
+    {
+      sender: string;
+      text: string;
+      a11y?: Marker[];
+      places?: GooglePlaceResult[];
+    }[]
   >([
     {
       sender: "ai",
@@ -65,18 +72,40 @@ export default function AIChatBot() {
     );
 
     if (AIResponse.data) {
-      const formattedA11yInfo: Marker[] = [
-        ...formatBathroom(AIResponse.data?.nearbyBathroom || []),
-        ...formatMetroA11y(AIResponse.data?.nearbyMetroA11y || []),
-      ];
-      setMessages((prev) => [
-        ...prev,
-        {
-          sender: "ai",
-          text: AIResponse.data?.message || "",
-          a11y: formattedA11yInfo,
-        },
-      ]);
+      if (AIResponse.data.a11yPlacesResults) {
+        const { nearbyBathroom, nearbyMetroA11y } =
+          AIResponse.data.a11yPlacesResults;
+        const formattedA11yInfo: Marker[] = [
+          ...formatBathroom(nearbyBathroom || []),
+          ...formatMetroA11y(nearbyMetroA11y || []),
+        ];
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: "ai",
+            text: AIResponse.data?.message || "",
+            a11y: formattedA11yInfo,
+          },
+        ]);
+      } else if (AIResponse.data.googlePlacesResults) {
+        const places = AIResponse.data.googlePlacesResults;
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: "ai",
+            text: AIResponse.data?.message || "",
+            places: places,
+          },
+        ]);
+      } else {
+        setMessages((prev) => [
+          ...prev,
+          {
+            sender: "ai",
+            text: AIResponse.data?.message || "",
+          },
+        ]);
+      }
     }
     setIsLoading(false);
   };
@@ -155,6 +184,11 @@ export default function AIChatBot() {
                     m.a11y.length > 0 &&
                     m.a11y.map((place) => (
                       <A11yCard key={place.id} place={place} />
+                    ))}
+                  {m.places &&
+                    m.places.length > 0 &&
+                    m.places.map((place) => (
+                      <PlaceCard key={place.place_id} {...place} />
                     ))}
                 </Fragment>
               ))}

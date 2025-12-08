@@ -93,7 +93,11 @@ export default function useComputeRoute() {
         );
         const aiResponse = await getBestRouteForA11y(request);
         const newRouteData = [
-          data[aiResponse.data?.route_index ?? 0],
+          data[
+            aiResponse?.data && aiResponse.data.route_index >= 0
+              ? aiResponse.data.route_index
+              : 0
+          ],
           ...data.filter(
             (_, index) => index !== aiResponse.data?.route_index || 0
           ),
