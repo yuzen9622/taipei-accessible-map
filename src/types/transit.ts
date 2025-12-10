@@ -157,7 +157,17 @@ export interface GooglePlaceResult {
   rating: number;
   location: { latitude: number; longitude: number };
 }
-
+export interface AIRouteResponse {
+  origin: {
+    latitude: number;
+    longitude: number;
+  };
+  destination: {
+    latitude: number;
+    longitude: number;
+  };
+  travelMode: string;
+}
 export interface AIChatResponse {
   message: string;
   a11yPlacesResults?: {
@@ -165,6 +175,7 @@ export interface AIChatResponse {
     nearbyMetroA11y: metroA11yData[];
   };
   googlePlacesResults?: GooglePlaceResult[];
+  planRouteResult?: AIRouteResponse;
 }
 
 export function isBusTransitDetail(
