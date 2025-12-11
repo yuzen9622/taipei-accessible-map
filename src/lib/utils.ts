@@ -97,3 +97,11 @@ export const formatRouteForAI = (
   });
   return { request, a11ys };
 };
+
+export async function getGeocoder(location: google.maps.LatLngLiteral) {
+  const geocoder = new google.maps.Geocoder();
+  const geocodeResult = await geocoder.geocode({
+    location,
+  });
+  return geocodeResult.results[0];
+}

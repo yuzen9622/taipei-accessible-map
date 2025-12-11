@@ -23,10 +23,12 @@ export default function A11yCard({ place }: { place: Marker }) {
     [A11yEnum.RAMP]: t("ramp"),
     [A11yEnum.RESTROOM]: t("toilet"),
   } as Record<A11yEnum, string>;
+
   useEffect(() => {
     if (selectA11yPlace?.id !== place.id) return;
     cardRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }, [selectA11yPlace, place.id]);
+
   return (
     <div
       ref={cardRef}

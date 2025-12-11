@@ -15,6 +15,30 @@ import type { PlaceDetail } from "@/types";
 import { Command, CommandGroup, CommandItem, CommandList } from "../ui/command";
 import { Input } from "../ui/input";
 
+const PLACE_FIELDS: Array<keyof google.maps.places.Place> = [
+  "id",
+  "displayName",
+  "formattedAddress",
+  "primaryTypeDisplayName",
+  "types",
+  "location",
+  "regularOpeningHours",
+  "photos",
+  "userRatingCount",
+  "rating",
+  "userRatingCount",
+  "editorialSummary",
+  "nationalPhoneNumber",
+  "svgIconMaskURI",
+  "websiteURI",
+  "accessibilityOptions",
+  "parkingOptions",
+  "paymentOptions",
+  "googleMapsURI",
+  "reviews",
+  "priceLevel",
+  "types",
+];
 type InputProps = InputHTMLAttributes<HTMLInputElement> & {
   onPlaceSelect: (places: PlaceDetail) => void;
 };
@@ -65,7 +89,7 @@ function PlaceInput({
         requestedLanguage: userConfig.language,
       });
 
-      await langPlace.fetchFields({ fields: ["*"] });
+      await langPlace.fetchFields({ fields: PLACE_FIELDS });
 
       const latLng = getLocation(langPlace);
       if (!latLng) return;
@@ -87,7 +111,7 @@ function PlaceInput({
       const { Place } = placesLib;
       if (place.kind === "place") {
         const newPlace = new Place({ id: place.place.id });
-        await newPlace.fetchFields({ fields: ["*"] });
+        await newPlace.fetchFields({ fields: PLACE_FIELDS });
         const latLng = getLocation(newPlace);
         if (!latLng) return;
         onPlaceSelect({
