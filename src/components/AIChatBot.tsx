@@ -163,17 +163,19 @@ export default function AIChatBot() {
               )}{" "}
             </CardContent>
           </ScrollArea>
-          <div className="  sticky bg-linear-to-t from-accent to-transparent flex gap-4 bottom-0 left-5 py-2 items-center justify-center">
-            {recommendations.map((rec) => (
-              <Badge
-                onClick={() => handleSend(rec)}
-                key={rec}
-                className="px-3 py-2 rounded-3xl"
-                asChild
-              >
-                <button type="button">{rec}</button>
-              </Badge>
-            ))}
+          <div className="  sticky bg-linear-to-t from-accent to-transparent overflow-hidden bottom-0 py-2 left-5 ">
+            <div className="flex gap-4  px-4 overflow-x-auto  justify-center">
+              {recommendations.map((rec) => (
+                <Badge
+                  onClick={() => handleSend(rec)}
+                  key={rec}
+                  className="px-3 w-fit py-2  rounded-3xl"
+                  asChild
+                >
+                  <button type="button">{rec}</button>
+                </Badge>
+              ))}
+            </div>
           </div>
           <CardFooter className="p-3 border-t bg-background flex flex-col gap-2">
             <div className="flex w-full items-center space-x-2">
