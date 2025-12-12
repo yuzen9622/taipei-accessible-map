@@ -22,7 +22,13 @@ export default function PlaceCard({
   location,
 }: GooglePlaceResult) {
   const placesLib = useMapsLibrary("places");
-  const { setInfoShow, setDestination, setA11yDrawerOpen } = useMapStore();
+  const {
+    setInfoShow,
+    setDestination,
+    setA11yDrawerOpen,
+    setSearchPlace,
+    map,
+  } = useMapStore();
   const { userConfig } = useAuthStore();
   const { handleComputeRoute } = useComputeRoute();
   return (
@@ -40,7 +46,7 @@ export default function PlaceCard({
         <CardAction className="flex w-full  justify-between">
           <Button
             onClick={async () => {
-              if (!placesLib) return;
+              if (!placesLib || !map) return;
               const { Place } = placesLib;
               const langPlace = new Place({
                 id: place_id,
@@ -48,7 +54,16 @@ export default function PlaceCard({
               });
 
               await langPlace.fetchFields({ fields: ["*"] });
+              map.setCenter({
+                lat: location.latitude,
+                lng: location.longitude,
+              });
               setInfoShow({ isOpen: true, kind: "place", place: langPlace });
+              setSearchPlace({
+                kind: "place",
+                place: langPlace,
+                position: { lat: location.latitude, lng: location.longitude },
+              });
             }}
           >
             查看詳情
