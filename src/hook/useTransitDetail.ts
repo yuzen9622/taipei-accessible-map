@@ -29,7 +29,7 @@ export default function useTransitDetail() {
 
         setStepTransitDetails(detail);
       } catch (error) {
-        toast.error(`${detail.lineName} 此路段不支援即時資訊`);
+        //toast.error(`${detail.lineName} 此路段不支援即時資訊`);
         console.log("Error fetching transit detail:", error);
       }
     },
