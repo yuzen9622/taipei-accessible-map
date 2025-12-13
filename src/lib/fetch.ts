@@ -46,7 +46,6 @@ export async function fetchRequest<T>(
   const response = await fetch(url, options);
   const data = (await response.json()) as ApiResponse<unknown>;
   if (!data.ok && data.code !== 401) {
-    toast.error(data.message || "發生錯誤，請稍後再試");
     throw new Error(data.message || "Fetch error");
   }
   if (data.code === 401 && requireAuth) {

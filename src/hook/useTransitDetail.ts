@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from "react";
+import { toast } from "sonner";
 import { getBusRealtimeNearbyStop } from "@/lib/api/transit";
 import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
@@ -11,21 +12,26 @@ export default function useTransitDetail() {
 
   const getTransitData = useCallback(
     async (detail: RouteTransitDetail) => {
-      if (isBusTransitDetail(detail)) {
-        const data = await getBusRealtimeNearbyStop({
-          arrival_stop: detail.arrivalStopName,
-          departure_stop: detail.departureStopName,
-          route_name: detail.lineName,
-          arrival_lat: detail.arrivalLat,
-          arrival_lng: detail.arrivalLng,
-          language: userConfig.language,
-        });
-        if (data.data) {
-          detail.nearbyStop = data.data[0];
+      try {
+        if (isBusTransitDetail(detail)) {
+          const data = await getBusRealtimeNearbyStop({
+            arrival_stop: detail.arrivalStopName,
+            departure_stop: detail.departureStopName,
+            route_name: detail.lineName,
+            arrival_lat: detail.arrivalLat,
+            arrival_lng: detail.arrivalLng,
+            language: userConfig.language,
+          });
+          if (data.data) {
+            detail.nearbyStop = data.data[0];
+          }
         }
-      }
 
-      setStepTransitDetails(detail);
+        setStepTransitDetails(detail);
+      } catch (error) {
+        //toast.error(`${detail.lineName} 此路段不支援即時資訊`);
+        console.log("Error fetching transit detail:", error);
+      }
     },
     [setStepTransitDetails, userConfig]
   );
