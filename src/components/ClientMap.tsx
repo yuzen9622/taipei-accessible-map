@@ -118,7 +118,7 @@ export default function ClientMap() {
           });
         }
       }}
-      mapId={"9b39d2c1e16cb61adfef5521"}
+      mapId={process.env.NEXT_PUBLIC_MAP_ID}
       defaultBounds={taipeiNewTaipeiBounds}
       className=" relative flex-1 bg-background overflow-hidden"
     >
