@@ -28,8 +28,6 @@ export default function ClientMap() {
     setUserLocation,
     setSearchPlace,
     searchPlace,
-    navigation,
-
     destination,
   } = useMapStore();
   const { theme } = useTheme();
@@ -88,7 +86,7 @@ export default function ClientMap() {
         e.stop();
 
         console.log(e.detail);
-        if (!placesLib || navigation.isNavigating || !mapHook) return;
+        if (!placesLib || !mapHook) return;
         if (e.detail.placeId) {
           const place = new placesLib.Place({ id: e.detail.placeId });
           setInfoShow({ isOpen: true, kind: null });

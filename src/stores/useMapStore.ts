@@ -1,37 +1,31 @@
 "use client";
 import { create } from "zustand";
-import type { InfoShow, Marker, Navigation, PlaceDetail } from "@/types";
+import type { InfoShow, Marker, PlaceDetail } from "@/types";
 import { A11yEnum } from "@/types/index";
-import type { AIRankResponse, RouteTransitDetail } from "@/types/transit";
+import type { AccessibleRoute } from "@/types/route";
 
 interface MapState {
   map: google.maps.Map | null;
   userLocation: google.maps.LatLngLiteral | null;
-  travelMode: google.maps.TravelMode;
   origin: PlaceDetail | null;
   destination: PlaceDetail | null;
   infoShow: InfoShow;
   routeInfoShow: boolean;
   searchPlace: PlaceDetail | null;
-  computeRoutes: google.maps.DirectionsRoute[] | null;
-  routePolyline: google.maps.Polyline | null;
+  computeRoutes: AccessibleRoute[] | null;
   selectRoute: {
     index: number;
-    route: google.maps.DirectionsRoute;
-    routeRank?: AIRankResponse;
+    route: AccessibleRoute;
   } | null;
   routeA11y: Marker[];
-  // 新增無障礙設施相關狀態
   selectedA11yTypes: A11yEnum[];
   a11yDrawerOpen: boolean;
   selectA11yPlace: Marker | null;
   a11yPlaces: Marker[] | null;
   searchHistory: PlaceDetail[];
   savedPlaces: PlaceDetail[];
-  timeline: { time: string; event: string }[];
-  navigationDrawerOpen: boolean;
-  navigation: Navigation;
-  stepTransitDetails: RouteTransitDetail[];
+  originName: string;
+  destinationName: string;
 }
 
 interface MapAction {
@@ -41,32 +35,25 @@ interface MapAction {
   setDestination: (destination: PlaceDetail | null) => void;
   setInfoShow: (infoShow: Partial<InfoShow>) => void;
   setSearchPlace: (place: PlaceDetail | null) => void;
-  setTravelMode: (mode: google.maps.TravelMode) => void;
-  setComputeRoutes: (route: google.maps.DirectionsRoute[] | null) => void;
-  setRoutePolyline: (polyline: google.maps.Polyline | null) => void;
+  setComputeRoutes: (routes: AccessibleRoute[] | null) => void;
   setRouteInfoShow: (show: boolean) => void;
   setSelectA11yPlace: (place: Marker | null) => void;
   setRouteSelect: (
     route: Partial<{
       index: number;
-      route: google.maps.DirectionsRoute;
-      routeRank?: AIRankResponse;
+      route: AccessibleRoute;
     }> | null
   ) => void;
-  // 新增無障礙設施相關動作
   toggleA11yType: (type: A11yEnum) => void;
   setA11yDrawerOpen: (open: boolean) => void;
   setA11yPlaces: (places: Marker[] | null) => void;
   initSearchHistory: (history: PlaceDetail[]) => void;
   addSearchHistory: (searchTerm: PlaceDetail) => void;
   clearSearchHistory: () => void;
-  setNavigationDrawerOpen: (open: boolean) => void;
-  setNavigation: (navigation: Partial<Navigation>) => void;
   setRouteA11y: (a11y: Marker[]) => void;
   addRouteA11y: (a11y: Marker[]) => void;
-  setStepTransitDetails: (details: RouteTransitDetail) => void;
-  removeStepTransitDetail: (stepIndex: string) => void;
-  clearStepTransitDetails: () => void;
+  setOriginName: (name: string) => void;
+  setDestinationName: (name: string) => void;
   closeRouteDrawer: () => void;
 }
 
@@ -97,9 +84,7 @@ const useMapStore = create<MapStore>((set, get) => ({
   searchPlace: null,
   setSearchPlace: (place) => set({ searchPlace: place }),
   computeRoutes: null,
-  setComputeRoutes: (route) => set({ computeRoutes: route }),
-  routePolyline: null,
-  setRoutePolyline: (polyline) => set({ routePolyline: polyline }),
+  setComputeRoutes: (routes) => set({ computeRoutes: routes }),
   selectRoute: null,
   setRouteSelect: (route) => {
     if (!route) {
@@ -113,7 +98,6 @@ const useMapStore = create<MapStore>((set, get) => ({
       } as MapStore["selectRoute"],
     });
   },
-  // 新增無障礙設施相關實作
   selectedA11yTypes: [],
   toggleA11yType: (type: A11yEnum) => {
     const { selectedA11yTypes } = get();
@@ -155,19 +139,6 @@ const useMapStore = create<MapStore>((set, get) => ({
   },
   clearSearchHistory: () => set({ searchHistory: [] }),
   savedPlaces: [],
-  timeline: [],
-  navigationDrawerOpen: false,
-  setNavigationDrawerOpen: (open) => set({ navigationDrawerOpen: open }),
-  navigation: {
-    isNavigating: false,
-    steps: [],
-    currentStepIndex: 0,
-    detailStepIndex: 0,
-    totalSteps: 0,
-    isCurrentLocation: false,
-  },
-  setNavigation: (navigation) =>
-    set({ navigation: { ...get().navigation, ...navigation } as Navigation }),
   routeA11y: [],
   setRouteA11y: (a11y) => {
     const deduped = Array.from(
@@ -176,44 +147,27 @@ const useMapStore = create<MapStore>((set, get) => ({
     set({ routeA11y: deduped });
   },
   addRouteA11y: (a11y) => set({ routeA11y: [...get().routeA11y, ...a11y] }),
-  stepTransitDetails: [],
-
-  setStepTransitDetails: (details) => {
-    const { stepTransitDetails } = get();
-    if (stepTransitDetails.find((_) => _.stepIndex === details.stepIndex)) {
-      const newDetails = stepTransitDetails.filter(
-        (_) => _.stepIndex !== details.stepIndex
-      );
-      set({ stepTransitDetails: [...newDetails, details] });
-      return;
-    }
-
-    set({ stepTransitDetails: [...stepTransitDetails, details] });
-  },
-  removeStepTransitDetail: (stepIndex) => {
-    const { stepTransitDetails } = get();
-    const newDetails = stepTransitDetails.filter(
-      (_) => _.stepIndex !== stepIndex
-    );
-
-    set({ stepTransitDetails: newDetails });
-  },
+  originName: "",
+  setOriginName: (name) => set({ originName: name }),
+  destinationName: "",
+  setDestinationName: (name) => set({ destinationName: name }),
   closeRouteDrawer: () => {
     const { destination } = get();
     set({
       routeInfoShow: false,
       selectRoute: null,
       computeRoutes: null,
-      stepTransitDetails: [],
       routeA11y: [],
       destination: null,
       origin: null,
+      originName: "",
+      destinationName: "",
       infoShow:
         destination && destination.kind === "place"
           ? { isOpen: true, place: destination.place, kind: "place" }
           : destination && destination.kind === "geocoder"
-          ? { isOpen: true, place: destination.place, kind: "geocoder" }
-          : { isOpen: false, kind: null },
+            ? { isOpen: true, place: destination.place, kind: "geocoder" }
+            : { isOpen: false, kind: null },
       searchPlace:
         destination && destination.kind === "place"
           ? {
@@ -222,13 +176,8 @@ const useMapStore = create<MapStore>((set, get) => ({
               position: destination.position,
             }
           : undefined,
-
-      travelMode: "TRANSIT" as google.maps.TravelMode,
     });
   },
-  clearStepTransitDetails: () => set({ stepTransitDetails: [] }),
-  travelMode: "TRANSIT" as google.maps.TravelMode,
-  setTravelMode: (mode) => set({ travelMode: mode }),
 }));
 
 export default useMapStore;

@@ -7,8 +7,7 @@ import {
   type Marker,
   type metroA11yData,
 } from "@/types";
-import type { RankRequest } from "@/types/transit";
-import { ROUTE_COLORS } from "./config";
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -57,46 +56,6 @@ export function formatBathroom(bathrooms: IBathroom[]) {
     };
   }) as Marker[];
 }
-
-type SupportedVehicleType = keyof typeof ROUTE_COLORS;
-
-export function getStepColor(step: google.maps.DirectionsStep): string {
-  const isWalking = step.travel_mode === google.maps.TravelMode.WALKING;
-
-  if (isWalking) {
-    return ROUTE_COLORS.walking;
-  }
-
-  // 使用交通工具的自訂顏色或預設顏色
-  const vehicleType = step.transit?.line?.vehicle?.type;
-  const customColor = step.transit?.line?.color;
-
-  if (customColor) {
-    return customColor;
-  }
-
-  if (vehicleType && vehicleType in ROUTE_COLORS)
-    return ROUTE_COLORS[vehicleType as SupportedVehicleType];
-
-  return ROUTE_COLORS.default;
-}
-export const formatRouteForAI = (
-  route: google.maps.DirectionsRoute,
-  a11ys: Marker[]
-) => {
-  const request: RankRequest[] = [];
-  route.legs[0].steps.forEach((step) => {
-    request.push({
-      start: step.start_location.toJSON(),
-      end: step.end_location.toJSON(),
-      instructions: step.instructions.replaceAll(/<[^>]+>/g, ""),
-      duration: step.duration?.value || 0,
-
-      line: step.transit?.line,
-    });
-  });
-  return { request, a11ys };
-};
 
 export async function getGeocoder(location: google.maps.LatLngLiteral) {
   const geocoder = new google.maps.Geocoder();

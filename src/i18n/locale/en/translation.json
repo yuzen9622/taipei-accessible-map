@@ -92,5 +92,16 @@
     "selectAccessible": "Please select an accessibility facility type to view",
     "rampDesc": "Provides accessible ramps for wheelchair users and strollers, with slopes that meet accessibility design standards.",
     "elevatorDesc": "Provides accessible elevators for wheelchair users and people with mobility impairments, equipped with voice prompts and tactile buttons.",
-    "toiletDesc": "Public restrooms equipped with accessibility features for people with disabilities."
+    "toiletDesc": "Public restrooms equipped with accessibility features for people with disabilities.",
+    "naturalLanguage": "Natural Language",
+    "manualInput": "Manual Input",
+    "routeQueryPlaceholder": "e.g. How to get from Taipei Main Station to Taipei 101?",
+    "routeQuery": "Route query",
+    "search": "Search",
+    "originPlaceholder": "Origin",
+    "destinationPlaceholder": "Destination",
+    "origin": "Origin",
+    "destination": "Destination",
+    "switchOriginDestination": "Swap origin and destination",
+    "noRouteFound": "No suitable accessible route found"
 }

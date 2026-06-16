@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useAppTranslation } from "@/i18n/client";
 import { chatWithA11yAI } from "@/lib/api/a11y";
-import { formatBathroom, formatMetroA11y, getGeocoder } from "@/lib/utils";
+import { formatBathroom, formatMetroA11y } from "@/lib/utils";
 import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
 import type { IBathroom, Marker, metroA11yData } from "@/types";
 import type { AIRouteResponse, GooglePlaceResult } from "@/types/transit";
 import useComputeRoute from "./useComputeRoute";
+
 export default function useAIChatTool() {
   const { t } = useAppTranslation();
   const { userConfig } = useAuthStore();
@@ -36,9 +37,10 @@ export default function useAIChatTool() {
   const [isLoading, setIsLoading] = useState(false);
 
   const [open, setOpen] = useState(false);
-  const { userLocation, setDestination, setOrigin } = useMapStore();
+  const { userLocation } = useMapStore();
 
   const { handleComputeRoute } = useComputeRoute();
+
   function nearbyA11y(params: {
     nearbyBathroom: IBathroom[];
     nearbyMetroA11y: metroA11yData[];
@@ -54,26 +56,6 @@ export default function useAIChatTool() {
   async function planRoute(AIRouteResponse: AIRouteResponse) {
     const origin = AIRouteResponse.origin;
     const destination = AIRouteResponse.destination;
-    const mode = AIRouteResponse.travelMode as google.maps.TravelMode;
-    const origin_geocode = await getGeocoder({
-      lat: origin.latitude,
-      lng: origin.longitude,
-    });
-    const destination_geocode = await getGeocoder({
-      lat: destination.latitude,
-      lng: destination.longitude,
-    });
-
-    setOrigin({
-      kind: "geocoder",
-      place: origin_geocode,
-      position: origin_geocode.geometry.location.toJSON(),
-    });
-    setDestination({
-      kind: "geocoder",
-      place: destination_geocode,
-      position: destination_geocode.geometry.location.toJSON(),
-    });
 
     handleComputeRoute({
       origin: { lat: origin.latitude, lng: origin.longitude },
@@ -81,9 +63,12 @@ export default function useAIChatTool() {
         lat: destination.latitude,
         lng: destination.longitude,
       },
-      mode: mode,
     });
-    return { origin_geocode, destination_geocode, mode };
+
+    return {
+      originName: `${origin.latitude}, ${origin.longitude}`,
+      destinationName: `${destination.latitude}, ${destination.longitude}`,
+    };
   }
 
   const handleSend = async (input: string) => {
@@ -130,7 +115,7 @@ export default function useAIChatTool() {
           },
         ]);
       } else if (AIResponse.data.planRouteResult) {
-        const { origin_geocode, destination_geocode, mode } = await planRoute(
+        const { originName, destinationName } = await planRoute(
           AIResponse.data.planRouteResult
         );
         setMessages((prev) => [
@@ -139,9 +124,9 @@ export default function useAIChatTool() {
             sender: "ai",
             text: AIResponse.data?.message || "",
             planningRoute: {
-              origin: origin_geocode.formatted_address,
-              destination: destination_geocode.formatted_address,
-              mode,
+              origin: originName,
+              destination: destinationName,
+              mode: "transit",
             },
           },
         ]);

@@ -1,194 +1,189 @@
 "use client";
-import { ArrowDownUpIcon } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { ArrowDownUpIcon, Loader2, Search } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import useComputeRoute from "@/hook/useComputeRoute";
+import { useAppTranslation } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
-import type { PlaceDetail } from "@/types";
-import SearchInput from "../shared/PlaceInput";
-import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
 import { Card } from "../ui/card";
 
 export default function RoutePlanInput() {
   const {
-    setDestination,
-    setOrigin,
     origin,
     destination,
-    setSearchPlace,
-    setInfoShow,
-    travelMode,
-    setTravelMode,
+    originName,
+    destinationName,
+    setOriginName,
+    setDestinationName,
   } = useMapStore();
 
-  const { handleComputeRoute } = useComputeRoute();
+  const { handleComputeRoute, isLoading } = useComputeRoute();
+  const { t } = useAppTranslation();
 
-  const [originSearchInput, setOriginSearchInput] = useState<string>(
-    origin?.kind === "place" && origin.place.displayName
-      ? origin.place.displayName
-      : ""
-  );
-  const [destinationSearchInput, setDestinationSearchInput] = useState<string>(
-    destination?.kind === "place" && destination.place.displayName
-      ? destination.place.displayName
-      : ""
-  );
-  // const handleComputeRoute = useCallback(
-  //   async (mode?: google.maps.TravelMode) => {
-  //     if (!origin?.position && !destination?.position) return;
-  //     const startLocation = origin?.position || userLocation;
-  //     const endLocation = destination?.position || userLocation;
-  //     if (startLocation && endLocation) {
-  //       computeRouteService(startLocation, endLocation, mode || travelMode);
-  //     }
-  //   },
-  //   [userLocation, origin, destination, computeRouteService, travelMode]
-  // );
+  const [queryInput, setQueryInput] = useState("");
+  const [mode, setMode] = useState<"structured" | "natural">("natural");
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleTravelModeChange = (mode: google.maps.TravelMode) => {
-    setTravelMode(mode);
-    handleComputeRoute({
+  useEffect(() => {
+    if (origin?.kind === "place") {
+      setOriginName(origin.place.displayName || "");
+    } else if (origin?.kind === "geocoder") {
+      setOriginName(origin.place.formatted_address || "");
+    }
+  }, [origin, setOriginName]);
+
+  useEffect(() => {
+    if (destination?.kind === "place") {
+      setDestinationName(destination.place.displayName || "");
+    } else if (destination?.kind === "geocoder") {
+      setDestinationName(destination.place.formatted_address || "");
+    }
+  }, [destination, setDestinationName]);
+
+  const handleNaturalQuery = useCallback(async () => {
+    const q = queryInput.trim();
+    if (!q) return;
+    await handleComputeRoute({ query: q });
+  }, [queryInput, handleComputeRoute]);
+
+  const handleStructuredRoute = useCallback(async () => {
+    if (!origin?.position && !destination?.position) return;
+    await handleComputeRoute({
       origin: origin?.position,
       destination: destination?.position,
-      mode,
     });
-  };
-
-  const handleOriginPlace = useCallback(
-    (placeDetail: PlaceDetail) => {
-      if (placeDetail.kind === "place") {
-        setOriginSearchInput(placeDetail.place.displayName || "");
-      }
-
-      setOrigin(placeDetail);
-
-      handleComputeRoute({
-        origin: placeDetail.position,
-        destination: destination?.position,
-      });
-    },
-    [setOrigin, handleComputeRoute, destination]
-  );
-
-  const handleDestinationPlace = useCallback(
-    (placeDetail: PlaceDetail) => {
-      setDestination(placeDetail);
-      if (placeDetail.kind === "place") {
-        setDestinationSearchInput(placeDetail.place.displayName || "");
-        setInfoShow({
-          kind: "place",
-          place: placeDetail.place,
-        });
-      }
-      setSearchPlace(null);
-
-      handleComputeRoute({
-        origin: origin?.position,
-        destination: placeDetail.position,
-      });
-    },
-    [setDestination, setInfoShow, setSearchPlace, handleComputeRoute, origin]
-  );
+  }, [origin, destination, handleComputeRoute]);
 
   const handleSwitch = () => {
-    setOrigin(destination);
-    setDestination(origin);
-    if (destination?.position && origin?.position) {
+    const prevOriginName = originName;
+    const prevDestName = destinationName;
+    setOriginName(prevDestName);
+    setDestinationName(prevOriginName);
+
+    if (origin?.position && destination?.position) {
       handleComputeRoute({
-        origin: destination?.position,
-        destination: origin?.position,
+        origin: destination.position,
+        destination: origin.position,
       });
     }
   };
 
-  useEffect(() => {
-    setOriginSearchInput("");
-    if (origin?.kind === "place") {
-      setOriginSearchInput(origin.place.displayName || "");
-    } else if (origin?.kind === "geocoder") {
-      setOriginSearchInput(origin.place.formatted_address || "");
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+      e.preventDefault();
+      if (mode === "natural") {
+        handleNaturalQuery();
+      } else {
+        handleStructuredRoute();
+      }
     }
-  }, [origin]);
-
-  useEffect(() => {
-    setDestinationSearchInput("");
-    if (destination?.kind === "place") {
-      setDestinationSearchInput(destination.place.displayName || "");
-    } else if (destination?.kind === "geocoder") {
-      setDestinationSearchInput(destination.place.formatted_address || "");
-    }
-  }, [destination]);
+  };
 
   return (
     <Card
       className={cn(
-        "  w-full p-2 flex-row rounded-2xl transition-all items-center pointer-events-auto gap-2"
+        "w-full p-2 rounded-2xl transition-all pointer-events-auto gap-2"
       )}
     >
-      <div className="w-full space-y-2">
-        <div className="border rounded-3xl">
-          <SearchInput
-            className="border-none rounded-3xl"
-            placeholder="起始點"
-            value={originSearchInput}
-            onChange={(e) => setOriginSearchInput(e.target.value)}
-            onPlaceSelect={handleOriginPlace}
-          />
-        </div>
-        <div className="border rounded-3xl">
-          <SearchInput
-            value={destinationSearchInput}
-            placeholder="終點"
-            className="border-none rounded-3xl"
-            onChange={(e) => setDestinationSearchInput(e.target.value)}
-            onPlaceSelect={handleDestinationPlace}
-          />
-        </div>
-        <div className="flex gap-4 ">
-          <Badge
-            variant={
-              travelMode === google.maps.TravelMode.TRANSIT
-                ? "default"
-                : "outline"
-            }
-            onClick={() =>
-              handleTravelModeChange(google.maps.TravelMode.TRANSIT)
-            }
-            className="rounded-3xl px-3 py-1"
-            asChild
-          >
-            <button aria-label="Public transport" type="button">
-              大眾運輸
-            </button>
-          </Badge>
-          <Badge
-            variant={
-              travelMode === google.maps.TravelMode.WALKING
-                ? "default"
-                : "outline"
-            }
-            onClick={() =>
-              handleTravelModeChange(google.maps.TravelMode.WALKING)
-            }
-            asChild
-            className="rounded-3xl px-3 py-1"
-          >
-            <button aria-label="Walking" type="button">
-              走路
-            </button>
-          </Badge>
-        </div>
-      </div>
-      <div>
-        <button
-          aria-label="Switch origin and destination"
-          type="button"
-          onClick={handleSwitch}
-          className="p-1"
+      <div className="flex gap-1 mb-2">
+        <Button
+          variant={mode === "natural" ? "default" : "outline"}
+          size="sm"
+          className="rounded-3xl text-xs h-7"
+          onClick={() => setMode("natural")}
         >
-          <ArrowDownUpIcon size={16} />
-        </button>
+          {t("naturalLanguage", "自然語言")}
+        </Button>
+        <Button
+          variant={mode === "structured" ? "default" : "outline"}
+          size="sm"
+          className="rounded-3xl text-xs h-7"
+          onClick={() => setMode("structured")}
+        >
+          {t("manualInput", "手動輸入")}
+        </Button>
       </div>
+
+      {mode === "natural" ? (
+        <div className="flex gap-2 items-center">
+          <div className="flex-1 relative">
+            <input
+              ref={inputRef}
+              type="text"
+              value={queryInput}
+              onChange={(e) => setQueryInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={t(
+                "routeQueryPlaceholder",
+                "例：從台北車站到101怎麼走？"
+              )}
+              className="w-full px-3 py-2 text-sm rounded-3xl border bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              aria-label={t("routeQuery", "路線查詢")}
+            />
+          </div>
+          <Button
+            size="icon"
+            className="rounded-full shrink-0"
+            onClick={handleNaturalQuery}
+            disabled={isLoading || !queryInput.trim()}
+            aria-label={t("search", "搜尋")}
+          >
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Search className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+      ) : (
+        <div className="flex items-center gap-2">
+          <div className="flex-1 space-y-2">
+            <input
+              type="text"
+              value={originName}
+              onChange={(e) => setOriginName(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={t("originPlaceholder", "起點")}
+              className="w-full px-3 py-2 text-sm rounded-3xl border bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              aria-label={t("origin", "起點")}
+            />
+            <input
+              type="text"
+              value={destinationName}
+              onChange={(e) => setDestinationName(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={t("destinationPlaceholder", "終點")}
+              className="w-full px-3 py-2 text-sm rounded-3xl border bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+              aria-label={t("destination", "終點")}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7"
+              onClick={handleSwitch}
+              aria-label={t("switchOriginDestination", "交換起終點")}
+            >
+              <ArrowDownUpIcon size={14} />
+            </Button>
+            <Button
+              size="icon"
+              className="rounded-full h-7 w-7"
+              onClick={handleStructuredRoute}
+              disabled={isLoading}
+              aria-label={t("search", "搜尋")}
+            >
+              {isLoading ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Search className="h-3 w-3" />
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
     </Card>
   );
 }

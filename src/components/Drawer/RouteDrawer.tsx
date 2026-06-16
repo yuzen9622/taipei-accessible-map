@@ -18,7 +18,7 @@ export default function RouteDrawer() {
       <Button
         aria-label="Close route drawer"
         variant={"ghost"}
-        className="  absolute  bg-muted  z-20 rounded-3xl  right-8 top-4"
+        className="absolute bg-muted z-20 rounded-3xl right-8 top-4"
         onClick={closeRouteDrawer}
       >
         <XIcon />
@@ -26,14 +26,14 @@ export default function RouteDrawer() {
       {!computeRoutes ? (
         <LoadingDrawer />
       ) : (
-        <DrawerHeader className="w-full space-y-2 flex-1  overflow-auto ">
-          <div className=" flex gap-4  ml-10    justify-between  items-center">
+        <DrawerHeader className="w-full space-y-2 flex-1 overflow-auto">
+          <div className="flex gap-4 ml-10 justify-between items-center">
             <h1 className="text-2xl">{t("route")}</h1>
           </div>
 
-          <section className=" space-y-2 ">
-            {computeRoutes?.map((route, index) => (
-              <RouteCard key={Math.random()} idx={index} route={route} />
+          <section className="space-y-2">
+            {computeRoutes.map((route, index) => (
+              <RouteCard key={route.routeId} idx={index} route={route} />
             ))}
           </section>
         </DrawerHeader>

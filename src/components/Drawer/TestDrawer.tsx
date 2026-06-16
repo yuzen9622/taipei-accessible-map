@@ -54,7 +54,7 @@ export default function TestDrawer() {
 
     await handleComputeRoute({
       origin: userLocation ?? { lat: 25.0478, lng: 121.5319 },
-      destination: latLng,
+      destination: latLng ?? undefined,
     });
     setSearchPlace(null);
     setInfoShow({ isOpen: false });

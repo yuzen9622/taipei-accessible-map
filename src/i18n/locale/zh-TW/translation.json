@@ -93,5 +93,16 @@
     "selectAccessible": "請選擇要查看的無障礙設施類型",
     "rampDesc": "提供輪椅使用者及推車通行的無障礙坡道，坡度符合無障礙設計規範。",
     "elevatorDesc": "提供輪椅使用者及行動不便者使用的無障礙電梯，設有語音提示及觸覺按鈕。",
-    "toiletDesc": "設有無障礙設施的公共廁所，方便身心障礙者使用"
+    "toiletDesc": "設有無障礙設施的公共廁所，方便身心障礙者使用",
+    "naturalLanguage": "自然語言",
+    "manualInput": "手動輸入",
+    "routeQueryPlaceholder": "例：從台北車站到101怎麼走？",
+    "routeQuery": "路線查詢",
+    "search": "搜尋",
+    "originPlaceholder": "起點",
+    "destinationPlaceholder": "終點",
+    "origin": "起點",
+    "destination": "終點",
+    "switchOriginDestination": "交換起終點",
+    "noRouteFound": "找不到合適的無障礙路線"
 }

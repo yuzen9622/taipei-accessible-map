@@ -1,245 +1,390 @@
 import {
   BusIcon,
   Clock,
-  FlagIcon,
   Footprints,
-  Loader2,
+  ShieldCheck,
   TrainFrontIcon,
   TrainFrontTunnelIcon,
-  TrainIcon,
   TramFront,
 } from "lucide-react";
-import moment from "moment";
 import { memo, useMemo } from "react";
-import useNavigation from "@/hook/useNavigation";
-import { cn, getStepColor } from "@/lib/utils";
+import { useAppTranslation } from "@/i18n/client";
+import { cn } from "@/lib/utils";
+import useAuthStore from "@/stores/useAuthStore";
+import useMapStore from "@/stores/useMapStore";
+import type {
+  AccessibleRoute,
+  RouteLeg,
+} from "@/types/route";
+import {
+  formatDistance,
+  formatDuration,
+  formatWaitInfo,
+  getA11yLabelColor,
+  getA11yLabelText,
+  getLegColor,
+  scoreToLabel,
+} from "@/types/route";
+import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import "moment/locale/zh-tw";
-import { useRouteRank } from "@/hook/useRouteRank";
-import { useAppTranslation } from "@/i18n/client";
-import useMapStore from "@/stores/useMapStore";
-import { Badge } from "../ui/badge";
-import { TransitDetail } from "./TransitDetail";
 
-moment.locale("zh-tw");
 type RouteCardProps = {
-  route: google.maps.DirectionsRoute;
+  route: AccessibleRoute;
   idx: number;
 };
+
+function LegIcon({ leg }: { leg: RouteLeg }) {
+  const color = getLegColor(leg);
+  switch (leg.type) {
+    case "WALK":
+      return <Footprints className="h-4 w-4" style={{ color }} />;
+    case "BUS":
+      return <BusIcon className="h-4 w-4" style={{ color }} />;
+    case "METRO":
+      return <TramFront className="h-4 w-4" style={{ color }} />;
+    case "THSR":
+      return <TrainFrontTunnelIcon className="h-4 w-4" style={{ color }} />;
+    case "TRA":
+      return <TrainFrontIcon className="h-4 w-4" style={{ color }} />;
+  }
+}
+
+function WaitBadge({ leg }: { leg: Exclude<RouteLeg, { type: "WALK" }> }) {
+  const text = formatWaitInfo(leg.waitInfo);
+  if (!text) return null;
+  return (
+    <span className="text-xs text-muted-foreground">
+      等候 {text}
+    </span>
+  );
+}
+
+function LegDetail({ leg }: { leg: RouteLeg }) {
+  switch (leg.type) {
+    case "WALK":
+      return (
+        <div className="space-y-1">
+          <p className="text-sm font-medium">
+            步行 {formatDistance(leg.distanceM)}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            約 {formatDuration(leg.minutesEst)}
+          </p>
+          {leg.exitInfo && (
+            <p className="text-xs text-blue-600 dark:text-blue-400">
+              🛗 {leg.exitInfo.exitName} ({leg.exitInfo.type === "elevator" ? "電梯" : "斜坡"})
+            </p>
+          )}
+          {leg.a11yFacilities.length > 0 && (
+            <p className="text-xs text-blue-600 dark:text-blue-400">
+              ♿ 沿途 {leg.a11yFacilities.length} 個無障礙設施
+            </p>
+          )}
+        </div>
+      );
+    case "BUS":
+      return (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <div
+              className="px-2 py-0.5 rounded text-xs font-bold text-white"
+              style={{ backgroundColor: getLegColor(leg) }}
+            >
+              {leg.routeName}
+            </div>
+            <WaitBadge leg={leg} />
+          </div>
+          <div className="space-y-1 text-xs">
+            <div className="flex items-start gap-2">
+              <span className="text-muted-foreground shrink-0">上車：</span>
+              <span className="font-medium">{leg.departureStop}</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-muted-foreground shrink-0">下車：</span>
+              <span className="font-medium">{leg.arrivalStop}</span>
+            </div>
+          </div>
+          {leg.nearestBus && (
+            <p className="text-xs text-green-600 dark:text-green-400">
+              🚌 最近公車 {leg.nearestBus.stopsAway != null ? `${leg.nearestBus.stopsAway} 站` : "接近中"}
+            </p>
+          )}
+        </div>
+      );
+    case "METRO":
+      return (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <div
+              className="px-2 py-0.5 rounded text-xs font-bold text-white"
+              style={{ backgroundColor: getLegColor(leg) }}
+            >
+              {leg.lineName}
+            </div>
+            <WaitBadge leg={leg} />
+          </div>
+          <div className="space-y-1 text-xs">
+            <div className="flex items-start gap-2">
+              <span className="text-muted-foreground shrink-0">上車：</span>
+              <span className="font-medium">{leg.departureStation}</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-muted-foreground shrink-0">下車：</span>
+              <span className="font-medium">{leg.arrivalStation}</span>
+            </div>
+            <div className="text-muted-foreground">
+              {leg.stopsCount} 站 · 約 {formatDuration(leg.rideMinutes)}
+            </div>
+          </div>
+          {leg.facilityHighlights.length > 0 && (
+            <div className="space-y-0.5">
+              {leg.facilityHighlights.map((h, i) => (
+                <p key={i} className="text-xs text-blue-600 dark:text-blue-400">
+                  🛗 {h}
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    case "THSR":
+      return (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <div
+              className="px-2 py-0.5 rounded text-xs font-bold text-white"
+              style={{ backgroundColor: getLegColor(leg) }}
+            >
+              高鐵 {leg.trainNo}
+            </div>
+            <WaitBadge leg={leg} />
+          </div>
+          <div className="space-y-1 text-xs">
+            <div className="flex items-start gap-2">
+              <span className="text-muted-foreground shrink-0">上車：</span>
+              <span className="font-medium">{leg.departureStation}</span>
+              {leg.departureTime && (
+                <span className="text-muted-foreground">
+                  {leg.departureTime}
+                </span>
+              )}
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-muted-foreground shrink-0">下車：</span>
+              <span className="font-medium">{leg.arrivalStation}</span>
+              {leg.arrivalTime && (
+                <span className="text-muted-foreground">{leg.arrivalTime}</span>
+              )}
+            </div>
+            <div className="text-muted-foreground">
+              約 {formatDuration(leg.rideMinutes)}
+            </div>
+          </div>
+          {leg.facilityHighlights.length > 0 && (
+            <div className="space-y-0.5">
+              {leg.facilityHighlights.map((h, i) => (
+                <p key={i} className="text-xs text-blue-600 dark:text-blue-400">
+                  ♿ {h}
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    case "TRA":
+      return (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <div
+              className="px-2 py-0.5 rounded text-xs font-bold text-white"
+              style={{ backgroundColor: getLegColor(leg) }}
+            >
+              {leg.trainTypeName} {leg.trainNo}
+            </div>
+            <WaitBadge leg={leg} />
+          </div>
+          <div className="space-y-1 text-xs">
+            <div className="flex items-start gap-2">
+              <span className="text-muted-foreground shrink-0">上車：</span>
+              <span className="font-medium">{leg.departureStation}</span>
+              {leg.departureTime && (
+                <span className="text-muted-foreground">
+                  {leg.departureTime}
+                </span>
+              )}
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="text-muted-foreground shrink-0">下車：</span>
+              <span className="font-medium">{leg.arrivalStation}</span>
+              {leg.arrivalTime && (
+                <span className="text-muted-foreground">{leg.arrivalTime}</span>
+              )}
+            </div>
+            <div className="text-muted-foreground">
+              約 {formatDuration(leg.rideMinutes)}
+            </div>
+          </div>
+          {leg.facilityHighlights.length > 0 && (
+            <div className="space-y-0.5">
+              {leg.facilityHighlights.map((h, i) => (
+                <p key={i} className="text-xs text-blue-600 dark:text-blue-400">
+                  ♿ {h}
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+  }
+}
 
 export const RouteCard = memo(function RouteCard({
   route,
   idx,
 }: RouteCardProps) {
-  const { startNavigation } = useNavigation();
-  const { setRouteSelect, selectRoute } = useMapStore();
-  const { getRouteRank, isLoading } = useRouteRank();
+  const { setRouteSelect, selectRoute, map } = useMapStore();
   const { t } = useAppTranslation();
-  const routeLocalValue = useMemo(() => {
-    const result = {
-      distance: "",
-      duration: "",
-    };
-    if (!route) return result;
-    if (route.legs[0].distance?.text) {
-      result.distance = route.legs[0].distance.text;
-    }
+  const { userConfig } = useAuthStore();
+  const isSelected = selectRoute?.index === idx;
 
-    if (route.legs[0].duration?.text) {
-      result.duration = route.legs[0].duration.text;
-    }
+  const label = route.accessibilityLabel ?? (route.accessibilityScore != null ? scoreToLabel(route.accessibilityScore) : null);
 
-    return result;
-  }, [route]);
-
-  // 獲取步驟顏色
-  const stepColor = (step: google.maps.DirectionsStep) => {
-    if (step.travel_mode === google.maps.TravelMode.WALKING) {
+  const legStepColor = (leg: RouteLeg) => {
+    if (leg.type === "WALK") {
       return "border-blue-500 bg-blue-50 dark:bg-blue-950/20";
     }
-    const color = getStepColor(step);
-
-    if (color) {
-      return `border-[${color}]`;
-    }
-
     return "border-gray-300 bg-gray-50 dark:bg-gray-950/20";
   };
-  const getIcon = (step: google.maps.DirectionsStep) => {
-    const color = getStepColor(step);
-    switch (step.transit?.line.vehicle.type) {
-      case google.maps.VehicleType.BUS:
-        return (
-          <BusIcon
-            className="h-4 w-4 "
-            style={{
-              color,
-            }}
-          />
-        );
-      case google.maps.VehicleType.SUBWAY:
-        return <TramFront className="h-4 w-4 " style={{ color: color }} />;
-      case google.maps.VehicleType.RAIL:
-        return (
-          <TrainFrontIcon
-            className="h-4 w-4 "
-            style={{
-              color,
-            }}
-          />
-        );
-      case "LONG_DISTANCE_TRAIN" as google.maps.VehicleType:
-        return (
-          <TrainIcon
-            className="h-4 w-4 "
-            style={{
-              color,
-            }}
-          />
-        );
-      case google.maps.VehicleType.TRAM:
-        return <TramFront className="h-4 w-4 " style={{ color: color }} />;
-      case google.maps.VehicleType.HIGH_SPEED_TRAIN:
-        return (
-          <TrainFrontTunnelIcon
-            className="h-4 w-4 "
-            style={{
-              color,
-            }}
-          />
-        );
-      default:
-        return <Footprints className="h-4 w-4 " style={{ color: color }} />;
+
+  const routeSummary = useMemo(() => {
+    const types = route.legs
+      .filter((l) => l.type !== "WALK")
+      .map((l) => {
+        switch (l.type) {
+          case "BUS":
+            return l.routeName;
+          case "METRO":
+            return l.lineName;
+          case "THSR":
+            return `高鐵${l.trainNo}`;
+          case "TRA":
+            return `${l.trainTypeName}${l.trainNo}`;
+        }
+      });
+    return types.join(" → ");
+  }, [route.legs]);
+
+  const handleSelect = () => {
+    setRouteSelect({ index: idx, route });
+
+    if (map) {
+      const bounds = new google.maps.LatLngBounds();
+      for (const leg of route.legs) {
+        if (leg.polyline?.length) {
+          for (const [lng, lat] of leg.polyline) {
+            bounds.extend({ lat, lng });
+          }
+        }
+      }
+      map.fitBounds(bounds, { top: 50, bottom: 200, left: 50, right: 50 });
     }
   };
 
   return (
-    <Card>
+    <Card className={cn(isSelected && "ring-2 ring-primary")}>
       <CardHeader>
         <CardTitle className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">{routeLocalValue?.distance}</h1>
-
-          {routeLocalValue.duration && (
-            <div className="flex items-center gap-2 text-muted-foreground">
-              <Clock className="h-4 w-4" />
-              <span className="font-bold">{routeLocalValue?.duration}</span>
-            </div>
-          )}
+          <h2 className="text-lg font-bold">
+            {route.routeName}
+          </h2>
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Clock className="h-4 w-4" />
+            <span className="font-bold text-sm">
+              {formatDuration(route.totalMinutes)}
+            </span>
+          </div>
         </CardTitle>
-        {selectRoute?.index === idx &&
-          (isLoading ? (
-            <Badge variant="secondary" className="gap-2">
-              評分路線中 <Loader2 className=" animate-spin" />
+
+        {routeSummary && (
+          <p className="text-xs text-muted-foreground">{routeSummary}</p>
+        )}
+
+        <div className="flex items-center gap-2">
+          {label && (
+            <Badge
+              className="gap-1"
+              style={{
+                backgroundColor: getA11yLabelColor(label),
+                color: "#fff",
+              }}
+            >
+              <ShieldCheck className="h-3 w-3" />
+              {getA11yLabelText(label, userConfig.language)}{" "}
+              {route.accessibilityScore}
             </Badge>
-          ) : (
-            selectRoute.routeRank && (
-              <>
-                <Badge>
-                  {t("accessibleRank")}
-                  {selectRoute.routeRank?.route_total_score}
-                </Badge>
-                <p className=" flex flex-col gap-2 text-wrap overflow-hidden  text-sm bg-secondary rounded-3xl px-3 py-2 text-muted-foreground">
-                  {selectRoute.routeRank?.route_description}
-                  <Badge
-                    variant={"outline"}
-                    className="text-xs self-end  text-destructive whitespace-pre-wrap "
-                  >
-                    {t("AIwarning")}
-                  </Badge>
-                </p>
-              </>
-            )
-          ))}
-        {selectRoute?.index === idx && <Badge>{t("selectedRoute")}</Badge>}
+          )}
+          {route.transferCount > 0 && (
+            <Badge variant="outline" className="text-xs">
+              轉乘 {route.transferCount} 次
+            </Badge>
+          )}
+          {isSelected && <Badge>{t("selectedRoute")}</Badge>}
+        </div>
+
+        {isSelected && route.accessibilityHighlights?.length > 0 && (
+          <div className="space-y-1">
+            {route.accessibilityHighlights.map((h) => (
+              <p
+                key={h}
+                className="text-sm bg-secondary rounded-2xl px-3 py-2 text-muted-foreground"
+              >
+                {h}
+              </p>
+            ))}
+          </div>
+        )}
       </CardHeader>
 
       <CardContent className="space-y-3">
-        {/* 路徑步驟 */}
         <div className="relative space-y-2">
-          {route?.legs[0]?.steps?.map((step, index) => {
-            const isWalking =
-              step.travel_mode === google.maps.TravelMode.WALKING;
-            const isTransit =
-              step.travel_mode === google.maps.TravelMode.TRANSIT;
-
-            return (
-              <div
-                key={step.encoded_lat_lngs || index}
-                className="relative pl-8"
-              >
-                {index !== route.legs[0].steps.length - 1 && (
-                  <div
-                    className={cn(
-                      "absolute left-3.5 top-11 bottom-0 w-0.5",
-                      isWalking ? "bg-blue-300" : "bg-orange-300"
-                    )}
-                  />
-                )}
-
-                <div className="absolute left-0 top-1">
-                  <div
-                    className={cn(
-                      "flex items-center justify-center w-8 h-8 rounded-full border-2",
-                      stepColor(step)
-                    )}
-                  >
-                    {getIcon(step)}
-                  </div>
-                </div>
-
-                <div className="pb-4 ml-4">
-                  {isWalking && (
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">
-                        步行 {step.distance?.text}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        約 {step.duration?.text}
-                      </p>
-                      {step.instructions && (
-                        <p className="text-xs text-muted-foreground">
-                          {step.instructions.replaceAll(/<[^>]+>/g, "")}
-                        </p>
-                      )}
-                    </div>
+          {route.legs.map((leg, index) => (
+            <div key={`${leg.type}-${index}`} className="relative pl-8">
+              {index !== route.legs.length - 1 && (
+                <div
+                  className={cn(
+                    "absolute left-3.5 top-11 bottom-0 w-0.5",
+                    leg.type === "WALK" ? "bg-blue-300" : "bg-orange-300"
                   )}
+                />
+              )}
 
-                  {isTransit && step.transit && (
-                    <TransitDetail i={idx} j={index} />
+              <div className="absolute left-0 top-1">
+                <div
+                  className={cn(
+                    "flex items-center justify-center w-8 h-8 rounded-full border-2",
+                    legStepColor(leg)
                   )}
+                >
+                  <LegIcon leg={leg} />
                 </div>
               </div>
-            );
-          })}
+
+              <div className="pb-4 ml-4">
+                <LegDetail leg={leg} />
+              </div>
+            </div>
+          ))}
         </div>
 
-        <div className="flex justify-between max-[375px]:flex-col   max-[375px]:items-stretch gap-4  items-center pt-4 border-t">
+        <div className="flex justify-end pt-4 border-t">
           <Button
             aria-label="Select route"
-            onClick={() => {
-              getRouteRank(route);
-              setRouteSelect({ index: idx, route: route });
-            }}
-            disabled={selectRoute?.index === idx}
-            variant={"outline"}
+            onClick={handleSelect}
+            disabled={isSelected}
+            variant={isSelected ? "secondary" : "default"}
           >
-            {selectRoute?.index === idx ? t("selectedRoute") : t("selectRoute")}
-          </Button>
-          <Button
-            aria-label="Start navigation"
-            variant="default"
-            onClick={() => {
-              if (selectRoute?.index !== idx) {
-                getRouteRank(route);
-                setRouteSelect({ index: idx, route: route });
-              }
-
-              startNavigation(route.legs[0].steps);
-            }}
-          >
-            <FlagIcon className="mr-2 h-4 w-4" />
-            {t("startNavigation")}
+            {isSelected ? t("selectedRoute") : t("selectRoute")}
           </Button>
         </div>
       </CardContent>
