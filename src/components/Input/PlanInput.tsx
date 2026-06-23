@@ -27,17 +27,17 @@ export default function RoutePlanInput() {
 
   useEffect(() => {
     if (origin?.kind === "place") {
-      setOriginName(origin.place.displayName || "");
-    } else if (origin?.kind === "geocoder") {
-      setOriginName(origin.place.formatted_address || "");
+      setOriginName(origin.place.name || origin.place.display_name || "");
+    } else if (origin?.kind === "coordinate") {
+      setOriginName(origin.address || "");
     }
   }, [origin, setOriginName]);
 
   useEffect(() => {
     if (destination?.kind === "place") {
-      setDestinationName(destination.place.displayName || "");
-    } else if (destination?.kind === "geocoder") {
-      setDestinationName(destination.place.formatted_address || "");
+      setDestinationName(destination.place.name || destination.place.display_name || "");
+    } else if (destination?.kind === "coordinate") {
+      setDestinationName(destination.address || "");
     }
   }, [destination, setDestinationName]);
 

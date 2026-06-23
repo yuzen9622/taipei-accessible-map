@@ -1,4 +1,4 @@
-import type { IBathroom, metroA11yData } from ".";
+import type { IBathroom, LatLng, metroA11yData } from ".";
 
 type BusEstimate = {
   PlateNumb: string;
@@ -89,17 +89,20 @@ export type BusRealtimeInfo = {
   UpdateTime: string;
 };
 
-// export type RouteTransitDetail = {
-//   step: number;
-//   type: google.maps.VehicleType;
-
-//   nearbyStop?: BusRealtimeNearbyStop;
-//   realtimeInfo?: BusRealtimeInfo;
-// };
+// Vehicle types (replacing google.maps.VehicleType)
+export enum VehicleType {
+  BUS = "BUS",
+  INTERCITY_BUS = "INTERCITY_BUS",
+  RAIL = "RAIL",
+  HEAVY_RAIL = "HEAVY_RAIL",
+  HIGH_SPEED_TRAIN = "HIGH_SPEED_TRAIN",
+  SUBWAY = "SUBWAY",
+  TRAM = "TRAM",
+}
 
 type CommonTransitDetail = {
-  stepIndex: string; // 在整體路線中的步驟索引
-  type: google.maps.VehicleType;
+  stepIndex: string;
+  type: VehicleType;
   lineName: string;
   headsign: string;
   shortName: string;
@@ -109,7 +112,7 @@ type CommonTransitDetail = {
   arrivalLng: number;
 };
 export type BusTransitDetail = CommonTransitDetail & {
-  type: google.maps.VehicleType.BUS | google.maps.VehicleType.INTERCITY_BUS;
+  type: VehicleType.BUS | VehicleType.INTERCITY_BUS;
   nearbyStop?: BusRealtimeNearbyStop;
   realtimeInfo?: BusRealtimeInfo;
   routeShortName?: string;
@@ -117,17 +120,17 @@ export type BusTransitDetail = CommonTransitDetail & {
 
 export type RailTransitDetail = CommonTransitDetail & {
   type:
-    | google.maps.VehicleType.RAIL
-    | google.maps.VehicleType.HEAVY_RAIL
-    | google.maps.VehicleType.HIGH_SPEED_TRAIN;
+    | VehicleType.RAIL
+    | VehicleType.HEAVY_RAIL
+    | VehicleType.HIGH_SPEED_TRAIN;
   platform?: string;
   carNumber?: string;
 };
 
 export type SubwayTransitDetail = CommonTransitDetail & {
-  type: google.maps.VehicleType.SUBWAY | google.maps.VehicleType.TRAM;
-  headway?: number; // 列車間隔時間（分鐘）
-  lastTrainTimeText?: string; // 末班車時間
+  type: VehicleType.SUBWAY | VehicleType.TRAM;
+  headway?: number;
+  lastTrainTimeText?: string;
 };
 
 export type RouteTransitDetail =
@@ -136,11 +139,11 @@ export type RouteTransitDetail =
   | SubwayTransitDetail;
 
 export type RankRequest = {
-  start: google.maps.LatLngLiteral;
-  end: google.maps.LatLngLiteral;
+  start: LatLng;
+  end: LatLng;
   instructions: string;
   duration: number;
-  line?: google.maps.TransitLine;
+  line?: { name: string; shortName?: string };
 };
 export interface AIRankResponse {
   route_description: string;
@@ -182,8 +185,8 @@ export function isBusTransitDetail(
   detail: RouteTransitDetail
 ): detail is BusTransitDetail {
   return (
-    detail.type === google.maps.VehicleType.BUS ||
-    detail.type === google.maps.VehicleType.INTERCITY_BUS
+    detail.type === VehicleType.BUS ||
+    detail.type === VehicleType.INTERCITY_BUS
   );
 }
 
@@ -191,9 +194,9 @@ export function isRailTransitDetail(
   detail: RouteTransitDetail
 ): detail is RailTransitDetail {
   return (
-    detail.type === google.maps.VehicleType.RAIL ||
-    detail.type === google.maps.VehicleType.HEAVY_RAIL ||
-    detail.type === google.maps.VehicleType.HIGH_SPEED_TRAIN
+    detail.type === VehicleType.RAIL ||
+    detail.type === VehicleType.HEAVY_RAIL ||
+    detail.type === VehicleType.HIGH_SPEED_TRAIN
   );
 }
 
@@ -201,7 +204,7 @@ export function isSubwayTransitDetail(
   detail: RouteTransitDetail
 ): detail is SubwayTransitDetail {
   return (
-    detail.type === google.maps.VehicleType.SUBWAY ||
-    detail.type === google.maps.VehicleType.TRAM
+    detail.type === VehicleType.SUBWAY ||
+    detail.type === VehicleType.TRAM
   );
 }

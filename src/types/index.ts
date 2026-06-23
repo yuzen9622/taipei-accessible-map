@@ -1,3 +1,18 @@
+export type LatLng = { lat: number; lng: number };
+
+export type NominatimPlace = {
+  place_id: number;
+  osm_id?: number;
+  osm_type?: string;
+  lat: string;
+  lon: string;
+  display_name: string;
+  name?: string;
+  type?: string;
+  category?: string;
+  address?: Record<string, string>;
+};
+
 export enum A11yEnum {
   ELEVATOR = "電梯",
   RAMP = "斜坡",
@@ -7,41 +22,34 @@ export enum A11yEnum {
 
 export type Marker = {
   id: number | string;
-  position: google.maps.LatLngLiteral;
+  position: LatLng;
   content?: { title: string; desc: string };
   type: "pin";
   zIndex: number;
   a11yType: A11yEnum;
 };
-// --- 基底只給 PlaceDetail 用 ---
-type Base = {
-  position: google.maps.LatLngLiteral;
-};
 
-// --- 兩個實際類型 ---
+// --- PlaceDetail: discriminated union ---
 type PlaceType = {
   kind: "place";
-  place: google.maps.places.Place;
+  place: NominatimPlace;
 };
 
-type GeocoderType = {
-  kind: "geocoder";
-  place: google.maps.GeocoderResult;
+type CoordinateType = {
+  kind: "coordinate";
+  address: string;
 };
 
-type A11yGeocoderType = {
-  kind: "a11yGeocoder";
-  place: google.maps.GeocoderResult;
-  a11y: Marker;
+type Base = {
+  position: LatLng;
 };
 
-// --- Detail 需要帶座標 ---
-export type PlaceDetail = (PlaceType | GeocoderType | A11yGeocoderType) & Base;
+export type PlaceDetail = (PlaceType | CoordinateType) & Base;
 
-// --- InfoShow 只需要控制開關，不要 Base ---
+// --- InfoShow ---
 export type InfoShow =
   | (PlaceType & { isOpen: boolean })
-  | (GeocoderType & { isOpen: boolean })
+  | (CoordinateType & { isOpen: boolean })
   | { isOpen: boolean; kind: null };
 
 export type metroA11yData = {
@@ -61,15 +69,6 @@ export type metroA11yAPI = {
     offset: number;
     results: metroA11yData[];
   };
-};
-
-export type Navigation = {
-  isNavigating: boolean;
-  isCurrentLocation: boolean;
-  steps: { title: string; steps: google.maps.DirectionsStep[] }[];
-  currentStepIndex: number;
-  detailStepIndex: number;
-  totalSteps: number;
 };
 
 export interface IBathroom {

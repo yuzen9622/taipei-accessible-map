@@ -1,3 +1,4 @@
+import maplibregl from "maplibre-gl";
 import {
   BusIcon,
   Clock,
@@ -279,15 +280,17 @@ export const RouteCard = memo(function RouteCard({
     setRouteSelect({ index: idx, route });
 
     if (map) {
-      const bounds = new google.maps.LatLngBounds();
+      const bounds = new maplibregl.LngLatBounds();
       for (const leg of route.legs) {
         if (leg.polyline?.length) {
           for (const [lng, lat] of leg.polyline) {
-            bounds.extend({ lat, lng });
+            bounds.extend([lng, lat]);
           }
         }
       }
-      map.fitBounds(bounds, { top: 50, bottom: 200, left: 50, right: 50 });
+      map.fitBounds(bounds, {
+        padding: { top: 50, bottom: 200, left: 50, right: 50 },
+      });
     }
   };
 

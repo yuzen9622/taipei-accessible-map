@@ -7,6 +7,7 @@ import { useCallback } from "react";
 import useComputeRoute from "@/hook/useComputeRoute";
 
 import useMapStore from "@/stores/useMapStore";
+import type { LatLng } from "@/types";
 import { Button } from "../ui/button";
 import { DrawerFooter } from "../ui/drawer";
 
@@ -33,21 +34,22 @@ export default function TestDrawer() {
 
   const handlePlanRoute = useCallback(async () => {
     if (!infoShow.kind) return;
-    let latLng: google.maps.LatLngLiteral | null = null;
+    let latLng: LatLng | null = null;
     if (infoShow.kind === "place") {
       const place = infoShow.place;
-      if (!place.location) return;
-      latLng = place.location.toJSON();
+      const lat = parseFloat(place.lat);
+      const lng = parseFloat(place.lon);
+      latLng = { lat, lng };
       setDestination({
         kind: "place",
         place,
         position: latLng,
       });
-    } else {
-      latLng = infoShow.place.geometry.location.toJSON();
+    } else if (infoShow.kind === "coordinate") {
+      latLng = { lat: 0, lng: 0 }; // coordinate kind doesn't carry position on InfoShow
       setDestination({
-        kind: "geocoder",
-        place: infoShow.place,
+        kind: "coordinate",
+        address: infoShow.address,
         position: latLng,
       });
     }
@@ -88,8 +90,8 @@ export default function TestDrawer() {
           {infoShow.kind === "place" && (
             <PlaceDrawerContent place={infoShow.place} />
           )}
-          {infoShow.kind === "geocoder" && (
-            <GeocoderDrawerContent geocoder={infoShow.place} />
+          {infoShow.kind === "coordinate" && (
+            <GeocoderDrawerContent address={infoShow.address} />
           )}
           <DrawerFooter className="bg-background/95 backdrop-blur-md border-t w-full border-border py-3 flex justify-end gap-2">
             <Button
@@ -106,43 +108,24 @@ export default function TestDrawer() {
                 onClick={async () => {
                   if (!infoShow.kind) return;
                   try {
-                    let url = "https://www.google.com/maps";
+                    let url = "https://www.openstreetmap.org";
                     if (infoShow.kind === "place") {
                       const place = infoShow.place;
-                      url =
-                        place.googleMapsURI ||
-                        (place.id
-                          ? `https://www.google.com/maps/search/?api=1&query_place_id=${encodeURIComponent(
-                              place.id
-                            )}`
-                          : place.id
-                          ? `https://maps.app.goo.gl/${encodeURIComponent(
-                              place.id
-                            )}`
-                          : url);
-                    } else {
-                      // geocoder
-                      const g = infoShow.place.geometry?.location;
-                      if (g && typeof g.toJSON === "function") {
-                        const { lat, lng } = g.toJSON();
-                        url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-                          lat + "," + lng
-                        )}`;
-                      } else if (infoShow.place.place_id) {
-                        url = `https://www.google.com/maps/search/?api=1&query_place_id=${encodeURIComponent(
-                          infoShow.place.place_id
-                        )}`;
+                      if (place.osm_id && place.osm_type) {
+                        url = `https://www.openstreetmap.org/${place.osm_type}/${place.osm_id}`;
+                      } else {
+                        url = `https://www.openstreetmap.org/?mlat=${place.lat}&mlon=${place.lon}#map=18/${place.lat}/${place.lon}`;
                       }
+                    } else if (infoShow.kind === "coordinate") {
+                      url = `https://www.openstreetmap.org/#map=18/0/0`;
                     }
 
                     if (navigator.share) {
                       await navigator.share({ url });
                     } else if (navigator.clipboard.writeText) {
                       await navigator.clipboard.writeText(url);
-                      // minimal feedback — replace with your app's toast if available
                       alert("Link copied to clipboard");
                     } else {
-                      // fallback
                       window.open(url, "_blank");
                     }
                   } catch (err) {

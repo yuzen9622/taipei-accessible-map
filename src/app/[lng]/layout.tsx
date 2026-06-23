@@ -7,7 +7,7 @@ import type { Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import ClientLayout from "@/components/layout/client-layout";
-import GoogleMapProvider from "@/components/provider/GoogleMapProvider";
+import MapProvider from "@/components/provider/GoogleMapProvider";
 import { ThemeProvider } from "@/components/provider/ThemeProvider";
 import { Toaster } from "@/components/ui/sonner";
 import type { languages } from "@/i18n/setting";
@@ -56,7 +56,7 @@ export default async function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <GoogleMapProvider>
+        <MapProvider>
           <GoogleOAuthProvider
             clientId={process.env.NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID ?? ""}
           >
@@ -67,7 +67,7 @@ export default async function RootLayout({
               </ClientLayout>
             </ThemeProvider>
           </GoogleOAuthProvider>
-        </GoogleMapProvider>
+        </MapProvider>
         <Toaster />
       </body>
     </html>

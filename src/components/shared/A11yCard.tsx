@@ -64,18 +64,14 @@ export default function A11yCard({ place }: { place: Marker }) {
           className="mt-2 flex-1"
           disabled={isLoading}
           onClick={async () => {
-            const geocoder = new google.maps.Geocoder();
-            const geocodeResult = await geocoder.geocode({
-              location: place.position,
-            });
-            const geocode = geocodeResult.results[0];
+            const address = place.content?.title || `${place.position.lat}, ${place.position.lng}`;
             setDestination({
-              kind: "geocoder",
-              place: geocode,
-              position: geocode.geometry.location.toJSON(),
+              kind: "coordinate",
+              address,
+              position: place.position,
             });
             await handleComputeRoute({
-              destination: geocode.geometry.location.toJSON(),
+              destination: place.position,
             });
             setA11yDrawerOpen(false);
           }}
@@ -90,10 +86,9 @@ export default function A11yCard({ place }: { place: Marker }) {
           size="sm"
           className="mt-2 flex-1"
           onClick={() => {
-            // 可以在這裡加上點擊後的動作，例如在地圖上聚焦到該位置
             setSelectA11yPlace(place);
             console.log("Navigate to:", place.position);
-            map?.setCenter(place.position);
+            map?.setCenter([place.position.lng, place.position.lat]);
             map?.setZoom(18);
           }}
         >

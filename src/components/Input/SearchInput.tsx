@@ -14,21 +14,21 @@ export default function SearchInput() {
     (placeDetail: PlaceDetail) => {
       setSearchPlace(placeDetail);
       if (placeDetail.kind === "place") {
-        setInput(placeDetail.place.displayName || "");
+        setInput(placeDetail.place.name || placeDetail.place.display_name || "");
         setInfoShow({
           isOpen: true,
           kind: "place",
           place: placeDetail.place,
         });
-        if (map) map.panTo(placeDetail.position);
-      } else if (placeDetail.kind === "geocoder") {
-        setInput(placeDetail.place.formatted_address || "");
+        if (map) map.flyTo({ center: [placeDetail.position.lng, placeDetail.position.lat] });
+      } else if (placeDetail.kind === "coordinate") {
+        setInput(placeDetail.address || "");
         setInfoShow({
           isOpen: true,
-          kind: "geocoder",
-          place: placeDetail.place,
+          kind: "coordinate",
+          address: placeDetail.address,
         });
-        if (map) map.panTo(placeDetail.position);
+        if (map) map.flyTo({ center: [placeDetail.position.lng, placeDetail.position.lat] });
       }
     },
     [setSearchPlace, setInfoShow, map]

@@ -1,42 +1,34 @@
-import { useMapsLibrary } from "@vis.gl/react-google-maps";
 import { useEffect, useState } from "react";
 import useAuthStore from "@/stores/useAuthStore";
+import type { NominatimPlace } from "@/types";
 
 export default function usePlaceSuggestions(input: string) {
-  const [suggestions, setSuggestions] = useState<
-    google.maps.places.AutocompleteSuggestion[]
-  >([]);
+  const [suggestions, setSuggestions] = useState<NominatimPlace[]>([]);
   const [loading, setLoading] = useState(false);
   const { userConfig } = useAuthStore();
-  const placeLib = useMapsLibrary("places");
 
   useEffect(() => {
-    if (!placeLib) return;
-    const { AutocompleteSuggestion } = placeLib;
     if (!input) {
       setSuggestions([]);
       setLoading(false);
       return;
     }
-
-    const request = {
-      input,
-      region: "tw",
-      language: userConfig.language,
-    };
-
     setLoading(true);
-    const handler = setTimeout(() => {
-      AutocompleteSuggestion.fetchAutocompleteSuggestions(request).then(
-        (res) => {
-          setSuggestions(res.suggestions);
-          setLoading(false);
-        }
-      );
+    const handler = setTimeout(async () => {
+      try {
+        const lang = userConfig.language === "zh-TW" ? "zh" : "en";
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(input)}&countrycodes=tw&limit=5&accept-language=${lang}&addressdetails=1`
+        );
+        const data: NominatimPlace[] = await res.json();
+        setSuggestions(data);
+      } catch {
+        setSuggestions([]);
+      }
+      setLoading(false);
     }, 500);
-
     return () => clearTimeout(handler);
-  }, [input, placeLib, userConfig.language]);
+  }, [input, userConfig.language]);
 
   return { suggestions, loading };
 }

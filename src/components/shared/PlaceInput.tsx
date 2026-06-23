@@ -1,5 +1,4 @@
 "use client";
-import { useMapsLibrary } from "@vis.gl/react-google-maps";
 import { CrosshairIcon, LoaderCircle } from "lucide-react";
 import Image from "next/image";
 import type { InputHTMLAttributes } from "react";
@@ -7,38 +6,14 @@ import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import usePlacePredictions from "@/hook/usePlacePredictions";
 import { useAppTranslation } from "@/i18n/client";
-import { cn, getLocation } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
-import type { PlaceDetail } from "@/types";
+import type { NominatimPlace, PlaceDetail } from "@/types";
 
 import { Command, CommandGroup, CommandItem, CommandList } from "../ui/command";
 import { Input } from "../ui/input";
 
-const PLACE_FIELDS: Array<keyof google.maps.places.Place> = [
-  "id",
-  "displayName",
-  "formattedAddress",
-  "primaryTypeDisplayName",
-  "types",
-  "location",
-  "regularOpeningHours",
-  "photos",
-  "userRatingCount",
-  "rating",
-  "userRatingCount",
-  "editorialSummary",
-  "nationalPhoneNumber",
-  "svgIconMaskURI",
-  "websiteURI",
-  "accessibilityOptions",
-  "parkingOptions",
-  "paymentOptions",
-  "googleMapsURI",
-  "reviews",
-  "priceLevel",
-  "types",
-];
 type InputProps = InputHTMLAttributes<HTMLInputElement> & {
   onPlaceSelect: (places: PlaceDetail) => void;
 };
@@ -52,7 +27,6 @@ function PlaceInput({
   onChange,
   ...props
 }: InputProps) {
-  const placesLib = useMapsLibrary("places");
   const { t } = useAppTranslation("translation");
   const [open, setOpen] = useState(false);
   const { searchHistory, addSearchHistory, userLocation } = useMapStore();
@@ -61,94 +35,67 @@ function PlaceInput({
 
   const handlePlaceSubmit = useCallback(
     async (text: string) => {
-      if (!placesLib) return;
-      const { Place } = placesLib;
-      const places = await Place.searchByText({
-        fields: ["*"],
-        textQuery: text,
-        language: userConfig.language,
-      });
-      const latLng = getLocation(places.places[0]);
-      if (!latLng) return;
-      addSearchHistory({
-        kind: "place",
-        place: places.places[0],
-        position: latLng,
-      });
-      return places.places[0];
+      if (!text) return;
+      try {
+        const lang = userConfig.language === "zh-TW" ? "zh" : "en";
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(text)}&countrycodes=tw&limit=1&accept-language=${lang}&addressdetails=1`
+        );
+        const data: NominatimPlace[] = await res.json();
+        if (data.length === 0) return null;
+        const place = data[0];
+        const position = { lat: parseFloat(place.lat), lng: parseFloat(place.lon) };
+        const placeDetail: PlaceDetail = { kind: "place", place, position };
+        addSearchHistory(placeDetail);
+        return placeDetail;
+      } catch {
+        return null;
+      }
     },
-    [placesLib, addSearchHistory, userConfig]
+    [addSearchHistory, userConfig.language]
   );
 
   const handlePlaceClick = useCallback(
-    async (place: google.maps.places.AutocompleteSuggestion) => {
-      if (!placesLib || !place.placePrediction) return;
-      const { Place } = placesLib;
-      const langPlace = new Place({
-        id: place.placePrediction.placeId,
-        requestedLanguage: userConfig.language,
-      });
-
-      await langPlace.fetchFields({ fields: PLACE_FIELDS });
-
-      const latLng = getLocation(langPlace);
-      if (!latLng) return;
-      addSearchHistory({
-        kind: "place",
-        place: langPlace,
-        position: latLng,
-      });
-      onPlaceSelect({ kind: "place", place: langPlace, position: latLng });
-
+    (place: NominatimPlace) => {
+      const position = { lat: parseFloat(place.lat), lng: parseFloat(place.lon) };
+      const placeDetail: PlaceDetail = { kind: "place", place, position };
+      addSearchHistory(placeDetail);
+      onPlaceSelect(placeDetail);
       setOpen(false);
     },
-    [onPlaceSelect, placesLib, addSearchHistory, userConfig.language]
+    [onPlaceSelect, addSearchHistory]
   );
 
   const handleHistoryClick = useCallback(
-    async (place: PlaceDetail) => {
-      if (!placesLib) return;
-      const { Place } = placesLib;
-      if (place.kind === "place") {
-        const newPlace = new Place({ id: place.place.id });
-        await newPlace.fetchFields({ fields: PLACE_FIELDS });
-        const latLng = getLocation(newPlace);
-        if (!latLng) return;
-        onPlaceSelect({
-          kind: "place",
-          place: newPlace,
-          position: latLng,
-        });
-        addSearchHistory({
-          kind: "place",
-          place: newPlace,
-          position: latLng,
-        });
-      }
-
+    (history: PlaceDetail) => {
+      onPlaceSelect(history);
       setOpen(false);
     },
-    [onPlaceSelect, placesLib, addSearchHistory]
+    [onPlaceSelect]
   );
 
-  const handleNowClick = (userLocation?: google.maps.LatLngLiteral) => {
-    const geocoder = new google.maps.Geocoder();
-    if (!userLocation) {
+  const handleNowClick = async (loc?: { lat: number; lng: number }) => {
+    if (!loc) {
       toast.error("無法取得目前位置");
       return;
     }
-    geocoder.geocode({ location: userLocation }, (results, status) => {
-      if (status === "OK" && results && results[0]) {
-        const placeDetail: PlaceDetail = {
-          kind: "geocoder",
-          place: results[0],
-          position: results[0].geometry.location.toJSON(),
-        };
-        onPlaceSelect(placeDetail);
-        addSearchHistory(placeDetail);
-        setOpen(false);
-      }
-    });
+    try {
+      const lang = userConfig.language === "zh-TW" ? "zh" : "en";
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${loc.lat}&lon=${loc.lng}&accept-language=${lang}`
+      );
+      const data: NominatimPlace = await res.json();
+      const placeDetail: PlaceDetail = {
+        kind: "place",
+        place: data,
+        position: loc,
+      };
+      onPlaceSelect(placeDetail);
+      addSearchHistory(placeDetail);
+      setOpen(false);
+    } catch {
+      toast.error("無法取得位置資訊");
+    }
   };
 
   return (
@@ -163,15 +110,9 @@ function PlaceInput({
         <form
           onSubmit={async (e) => {
             e.preventDefault();
-            const place = await handlePlaceSubmit(value as string);
-            if (place) {
-              const latLng = getLocation(place);
-              if (!latLng) return;
-              onPlaceSelect({
-                kind: "place",
-                place: place,
-                position: latLng,
-              });
+            const placeDetail = await handlePlaceSubmit(value as string);
+            if (placeDetail) {
+              onPlaceSelect(placeDetail);
             }
             setOpen(false);
           }}
@@ -223,7 +164,7 @@ function PlaceInput({
                     <h1 className="text-lg font-semibold">目前位置</h1>
                   </span>
                 </CommandItem>
-                {searchHistory.map((history) => {
+                {searchHistory.map((history, idx) => {
                   if (history.kind === "place") {
                     const { place } = history;
                     return (
@@ -232,13 +173,13 @@ function PlaceInput({
                         onSelect={() => {
                           handleHistoryClick(history);
                         }}
-                        key={place.id}
+                        key={`${place.place_id}-${idx}`}
                         className=" flex justify-between rounded-3xl items-center"
                       >
                         <span className=" p-1 text-start">
-                          <p>{place.displayName}</p>
+                          <p>{place.name || place.display_name}</p>
                           <p className=" text-sm  text-muted-foreground/70">
-                            {place.formattedAddress}
+                            {place.display_name}
                           </p>
                         </span>
                       </CommandItem>
@@ -257,12 +198,12 @@ function PlaceInput({
                       onSelect={() => {
                         handlePlaceClick(suggestion);
                       }}
-                      key={suggestion.placePrediction?.placeId}
+                      key={suggestion.place_id}
                       className="block rounded-3xl"
                     >
-                      <p>{suggestion.placePrediction?.mainText?.text}</p>
+                      <p>{suggestion.name || suggestion.display_name}</p>
                       <p className=" text-sm  text-muted-foreground/70">
-                        {suggestion.placePrediction?.secondaryText?.text}
+                        {suggestion.display_name}
                       </p>
                     </CommandItem>
                   );

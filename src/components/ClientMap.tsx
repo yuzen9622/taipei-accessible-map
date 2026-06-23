@@ -1,25 +1,26 @@
 "use client";
 
-import {
-  type ColorScheme,
-  Map as GoogleMap,
-  useMap,
-  useMapsLibrary,
-} from "@vis.gl/react-google-maps";
+import Map, { NavigationControl } from "react-map-gl/maplibre";
 import { useTheme } from "next-themes";
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { toast } from "sonner";
+import type maplibregl from "maplibre-gl";
+import type { MapLayerMouseEvent } from "react-map-gl/maplibre";
 import NowPin from "@/components/shared/NowPin";
 import MapWrapper from "@/components/Wrapper/MapWrapper";
 import AccessibilityPin from "@/components/Wrapper/MetroA11yWrapper";
 import RouteLine from "@/components/Wrapper/RouteWrapper";
 import { useAppTranslation } from "@/i18n/client";
-import { getLocation } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import AIChatBot from "./AIChatBot";
 import GotoNowButton from "./shared/GotoNowButton";
 import SearchPin from "./shared/SearchPin";
 import TransitWrapper from "./Wrapper/TransitWrapper";
+
+const MAP_STYLES = {
+  light: "https://tiles.openfreemap.org/styles/liberty",
+  dark: "https://tiles.openfreemap.org/styles/dark_matter",
+};
 
 export default function ClientMap() {
   const {
@@ -32,26 +33,16 @@ export default function ClientMap() {
   } = useMapStore();
   const { theme } = useTheme();
   const { i18n } = useAppTranslation();
-  const MAP_DARK_MODE: Record<string, ColorScheme> = {
-    dark: "DARK",
-    light: "LIGHT",
-    system: "FOLLOW_SYSTEM",
-  };
 
-  const mapHook = useMap();
-  const placesLib = useMapsLibrary("places");
+  const mapStyle =
+    theme === "dark" ? MAP_STYLES.dark : MAP_STYLES.light;
 
-  const taipeiNewTaipeiBounds = {
-    north: 25.3167,
-    south: 24.8338,
-    east: 122.0348,
-    west: 120.3179,
-  };
-
-  useEffect(() => {
-    if (!mapHook) return;
-    setMap(mapHook);
-  }, [mapHook, setMap]);
+  const handleLoad = useCallback(
+    (evt: { target: maplibregl.Map }) => {
+      setMap(evt.target);
+    },
+    [setMap]
+  );
 
   useEffect(() => {
     navigator.geolocation.watchPosition(
@@ -69,57 +60,75 @@ export default function ClientMap() {
     );
   }, [setUserLocation]);
 
-  return (
-    <GoogleMap
-      key={i18n.language}
-      defaultZoom={15}
-      reuseMaps
-      colorScheme={MAP_DARK_MODE[theme ?? "system"]}
-      defaultCenter={{ lat: 25.03, lng: 121.55 }}
-      gestureHandling={"auto"}
-      // restriction={{
-      //   latLngBounds: taipeiNewTaipeiBounds,
-      //   strictBounds: true,
-      // }}
-      disableDefaultUI={true}
-      onClick={async (e) => {
-        e.stop();
+  const handleClick = useCallback(
+    async (e: MapLayerMouseEvent) => {
+      const { lngLat } = e;
+      const lat = lngLat.lat;
+      const lng = lngLat.lng;
+      const lang = i18n.language === "zh-TW" ? "zh-TW" : "en";
 
-        console.log(e.detail);
-        if (!placesLib || !mapHook) return;
-        if (e.detail.placeId) {
-          const place = new placesLib.Place({ id: e.detail.placeId });
-          setInfoShow({ isOpen: true, kind: null });
-          await place.fetchFields({ fields: ["*"] });
-          const latLng = getLocation(place);
-          if (!latLng) return;
-          mapHook.panTo(latLng);
-          mapHook.setZoom(18);
-          setInfoShow({ isOpen: true, place, kind: "place" });
-          setSearchPlace({ kind: "place", place, position: latLng });
-        } else {
-          const geocoder = new google.maps.Geocoder();
-          const result = await geocoder.geocode({ location: e.detail.latLng });
+      setInfoShow({ isOpen: true, kind: null });
 
-          mapHook.panTo(result.results[0].geometry.location);
-          mapHook.setZoom(18);
-          console.log(result.results[0]);
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=${lang}`
+        );
+        const data = await res.json();
+
+        if (data && data.place_id) {
+          const position = { lat, lng };
           setInfoShow({
             isOpen: true,
-            place: result.results[0],
-            kind: "geocoder",
+            place: data,
+            kind: "place",
           });
           setSearchPlace({
-            kind: "geocoder",
-            place: result.results[0],
-            position: result.results[0].geometry.location.toJSON(),
+            kind: "place",
+            place: data,
+            position,
+          });
+        } else {
+          setInfoShow({
+            isOpen: true,
+            address: data.display_name || `${lat}, ${lng}`,
+            kind: "coordinate",
+          });
+          setSearchPlace({
+            kind: "coordinate",
+            address: data.display_name || `${lat}, ${lng}`,
+            position: { lat, lng },
           });
         }
+      } catch {
+        setInfoShow({
+          isOpen: true,
+          address: `${lat}, ${lng}`,
+          kind: "coordinate",
+        });
+        setSearchPlace({
+          kind: "coordinate",
+          address: `${lat}, ${lng}`,
+          position: { lat, lng },
+        });
+      }
+    },
+    [i18n.language, setInfoShow, setSearchPlace]
+  );
+
+  return (
+    <Map
+      key={i18n.language}
+      initialViewState={{
+        longitude: 121.55,
+        latitude: 25.03,
+        zoom: 15,
       }}
-      mapId={process.env.NEXT_PUBLIC_MAP_ID}
-      defaultBounds={taipeiNewTaipeiBounds}
-      className=" relative flex-1 bg-background overflow-hidden"
+      mapStyle={mapStyle}
+      onClick={handleClick}
+      onLoad={handleLoad}
+      style={{ position: "relative", flex: 1, overflow: "hidden" }}
     >
+      <NavigationControl position="bottom-right" />
       <MapWrapper />
       <AccessibilityPin />
       <GotoNowButton />
@@ -132,6 +141,6 @@ export default function ClientMap() {
       <TransitWrapper />
       <AIChatBot />
       <RouteLine />
-    </GoogleMap>
+    </Map>
   );
 }

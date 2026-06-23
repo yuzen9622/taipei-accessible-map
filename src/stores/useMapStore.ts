@@ -1,12 +1,13 @@
 "use client";
 import { create } from "zustand";
-import type { InfoShow, Marker, PlaceDetail } from "@/types";
+import type { InfoShow, LatLng, Marker, PlaceDetail } from "@/types";
 import { A11yEnum } from "@/types/index";
 import type { AccessibleRoute } from "@/types/route";
+import type maplibregl from "maplibre-gl";
 
 interface MapState {
-  map: google.maps.Map | null;
-  userLocation: google.maps.LatLngLiteral | null;
+  map: maplibregl.Map | null;
+  userLocation: LatLng | null;
   origin: PlaceDetail | null;
   destination: PlaceDetail | null;
   infoShow: InfoShow;
@@ -29,8 +30,8 @@ interface MapState {
 }
 
 interface MapAction {
-  setMap: (map: google.maps.Map) => void;
-  setUserLocation: (location: google.maps.LatLngLiteral | null) => void;
+  setMap: (map: maplibregl.Map) => void;
+  setUserLocation: (location: LatLng | null) => void;
   setOrigin: (origin: PlaceDetail | null) => void;
   setDestination: (destination: PlaceDetail | null) => void;
   setInfoShow: (infoShow: Partial<InfoShow>) => void;
@@ -128,7 +129,7 @@ const useMapStore = create<MapStore>((set, get) => ({
 
     const newTerm = searchHistory.filter((item) => {
       if (item.kind === "place" && searchTerm.kind === "place") {
-        return item.place.id !== searchTerm.place.id;
+        return item.place.place_id !== searchTerm.place.place_id;
       }
       return true;
     });
@@ -165,8 +166,8 @@ const useMapStore = create<MapStore>((set, get) => ({
       infoShow:
         destination && destination.kind === "place"
           ? { isOpen: true, place: destination.place, kind: "place" }
-          : destination && destination.kind === "geocoder"
-            ? { isOpen: true, place: destination.place, kind: "geocoder" }
+          : destination && destination.kind === "coordinate"
+            ? { isOpen: true, address: destination.address, kind: "coordinate" }
             : { isOpen: false, kind: null },
       searchPlace:
         destination && destination.kind === "place"

@@ -1,4 +1,4 @@
-import { AdvancedMarker } from "@vis.gl/react-google-maps";
+import { Marker } from "react-map-gl/maplibre";
 import {
   BusIcon,
   Footprints,
@@ -7,14 +7,14 @@ import {
   TramFront,
 } from "lucide-react";
 
-import { Fragment, type JSX, useMemo } from "react";
+import { type JSX, useMemo } from "react";
 
 import useMapStore from "@/stores/useMapStore";
 import type { RouteLeg } from "@/types/route";
 import { getLegColor } from "@/types/route";
 import Polyline from "../Polyline";
 
-function polylineToPath(polyline: [number, number][]): google.maps.LatLngLiteral[] {
+function polylineToPath(polyline: [number, number][]): { lat: number; lng: number }[] {
   return polyline.map(([lng, lat]) => ({ lat, lng }));
 }
 
@@ -59,14 +59,22 @@ export default function RouteLine() {
     const startEndMarker = (
       <>
         {firstPath?.[0] && (
-          <AdvancedMarker position={firstPath[0]}>
+          <Marker
+            longitude={firstPath[0].lng}
+            latitude={firstPath[0].lat}
+            anchor="center"
+          >
             <div className="p-1 rounded-full bg-blue-700 outline-3 outline-offset-2 outline-background" />
-          </AdvancedMarker>
+          </Marker>
         )}
         {lastPath?.[lastPath.length - 1] && (
-          <AdvancedMarker position={lastPath[lastPath.length - 1]}>
+          <Marker
+            longitude={lastPath[lastPath.length - 1].lng}
+            latitude={lastPath[lastPath.length - 1].lat}
+            anchor="center"
+          >
             <div className="p-1 rounded-full bg-primary outline-3 outline-offset-2 outline-background" />
-          </AdvancedMarker>
+          </Marker>
         )}
       </>
     );
@@ -80,10 +88,11 @@ export default function RouteLine() {
 
       if (lastLegType !== null && lastLegType !== leg.type && path[0]) {
         markers.push(
-          <AdvancedMarker
+          <Marker
             key={`marker-${index}`}
-            position={path[0]}
-            zIndex={100}
+            longitude={path[0].lng}
+            latitude={path[0].lat}
+            anchor="center"
           >
             <div className="relative">
               <div
@@ -93,49 +102,35 @@ export default function RouteLine() {
                 {getLegIcon(leg)}
               </div>
             </div>
-          </AdvancedMarker>
+          </Marker>
         );
       }
 
       lastLegType = leg.type;
 
-      return (
-        <Fragment key={`leg-${index}`}>
-          {!isWalking && (
-            <Polyline
-              path={path}
-              strokeColor={color}
-              strokeOpacity={1}
-              strokeWeight={8}
-              zIndex={1}
-            />
-          )}
+      if (isWalking) {
+        return (
           <Polyline
+            key={`leg-${index}`}
+            id={`route-leg-${index}`}
             path={path}
-            strokeColor={"#ffffff"}
-            strokeOpacity={0}
-            strokeWeight={3}
-            zIndex={2}
-            icons={
-              isWalking
-                ? [
-                    {
-                      icon: {
-                        path: google.maps.SymbolPath.CIRCLE,
-                        fillColor: color,
-                        fillOpacity: 0.7,
-                        strokeColor: "#ffffff",
-                        strokeWeight: 1,
-                        scale: 5,
-                      },
-                      offset: "0",
-                      repeat: "15px",
-                    },
-                  ]
-                : undefined
-            }
+            strokeColor={color}
+            strokeOpacity={0.7}
+            strokeWeight={4}
+            dashArray={[2, 2]}
           />
-        </Fragment>
+        );
+      }
+
+      return (
+        <Polyline
+          key={`leg-${index}`}
+          id={`route-leg-${index}`}
+          path={path}
+          strokeColor={color}
+          strokeOpacity={1}
+          strokeWeight={8}
+        />
       );
     });
 

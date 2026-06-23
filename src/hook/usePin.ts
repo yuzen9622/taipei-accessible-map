@@ -1,19 +1,18 @@
 import { useCallback } from "react";
 import { toast } from "sonner";
+import type { LatLng } from "@/types";
 import useMapStore from "@/stores/useMapStore";
 
 export default function usePin() {
   const { map } = useMapStore();
   const handlePinClick = useCallback(
-    (position: google.maps.LatLngLiteral | null) => {
+    (position: LatLng | null) => {
       if (!map) return;
       if (!position) {
         toast.error("無法辨識位置");
         return;
       }
-      map.panBy(20, 20);
-      map.panTo(position);
-      map.setZoom(18);
+      map.flyTo({ center: [position.lng, position.lat], zoom: 18 });
     },
     [map]
   );

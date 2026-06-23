@@ -12,11 +12,6 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function getLocation(place: google.maps.places.Place) {
-  if (!place.location) return null;
-
-  return { lat: place.location?.lat(), lng: place.location?.lng() };
-}
 
 export function formatMetroA11y(places: metroA11yData[]) {
   return places.map((place) => {
@@ -57,10 +52,3 @@ export function formatBathroom(bathrooms: IBathroom[]) {
   }) as Marker[];
 }
 
-export async function getGeocoder(location: google.maps.LatLngLiteral) {
-  const geocoder = new google.maps.Geocoder();
-  const geocodeResult = await geocoder.geocode({
-    location,
-  });
-  return geocodeResult.results[0];
-}

@@ -1,7 +1,5 @@
 "use client";
-import { useMapsLibrary } from "@vis.gl/react-google-maps";
 import useComputeRoute from "@/hook/useComputeRoute";
-import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
 import type { GooglePlaceResult } from "@/types/transit";
 import { Badge } from "../ui/badge";
@@ -16,12 +14,10 @@ import {
 
 export default function PlaceCard({
   name,
-  place_id,
   formatted_address,
   rating,
   location,
 }: GooglePlaceResult) {
-  const placesLib = useMapsLibrary("places");
   const {
     setInfoShow,
     setDestination,
@@ -29,7 +25,6 @@ export default function PlaceCard({
     setSearchPlace,
     map,
   } = useMapStore();
-  const { userConfig } = useAuthStore();
   const { handleComputeRoute } = useComputeRoute();
   return (
     <Card className="hover:bg-muted/50">
@@ -45,24 +40,23 @@ export default function PlaceCard({
       <CardContent>
         <CardAction className="flex w-full  justify-between">
           <Button
-            onClick={async () => {
-              if (!placesLib || !map) return;
-              const { Place } = placesLib;
-              const langPlace = new Place({
-                id: place_id,
-                requestedLanguage: userConfig.language,
-              });
-
-              await langPlace.fetchFields({ fields: ["*"] });
-              map.setCenter({
+            onClick={() => {
+              if (!map) return;
+              const position = {
                 lat: location.latitude,
                 lng: location.longitude,
+              };
+              map.setCenter([position.lng, position.lat]);
+              map.setZoom(16);
+              setInfoShow({
+                isOpen: true,
+                kind: "coordinate",
+                address: formatted_address,
               });
-              setInfoShow({ isOpen: true, kind: "place", place: langPlace });
               setSearchPlace({
-                kind: "place",
-                place: langPlace,
-                position: { lat: location.latitude, lng: location.longitude },
+                kind: "coordinate",
+                address: formatted_address,
+                position,
               });
             }}
           >
@@ -70,24 +64,17 @@ export default function PlaceCard({
           </Button>
           <Button
             onClick={async () => {
-              if (!placesLib) return;
-              const { Place } = placesLib;
-              const langPlace = new Place({
-                id: place_id,
-                requestedLanguage: userConfig.language,
-              });
-
-              await langPlace.fetchFields({ fields: ["*"] });
+              const position = {
+                lat: location.latitude,
+                lng: location.longitude,
+              };
               setDestination({
-                kind: "place",
-                place: langPlace,
-                position: { lat: location.latitude, lng: location.longitude },
+                kind: "coordinate",
+                address: formatted_address,
+                position,
               });
               await handleComputeRoute({
-                destination: {
-                  lat: location.latitude,
-                  lng: location.longitude,
-                },
+                destination: position,
               });
               setA11yDrawerOpen(false);
             }}

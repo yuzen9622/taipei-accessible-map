@@ -1,48 +1,50 @@
-import { AdvancedMarker, Pin } from "@vis.gl/react-google-maps";
+import { Marker } from "react-map-gl/maplibre";
+import { MapPin } from "lucide-react";
 import { useCallback } from "react";
 import useMapStore from "@/stores/useMapStore";
-
 import type { PlaceDetail } from "@/types";
+
 export default function SearchPin({
   destination,
 }: {
   destination: PlaceDetail;
 }) {
   const { map, setInfoShow } = useMapStore();
-  const handleMarker = useCallback(
-    (e: google.maps.MapMouseEvent) => {
-      if (!map) return;
-      if (!e.latLng) return;
+  const handleMarker = useCallback(() => {
+    if (!map) return;
 
-      map.panTo({ lat: e.latLng.lat(), lng: e.latLng.lng() });
-      map.setZoom(18);
-      console.log("destination", destination);
-      if (destination)
-        if (destination.kind === "place") {
-          setInfoShow({
-            isOpen: true,
-            place: destination.place,
-            kind: "place",
-          });
-        } else if (destination.kind === "geocoder") {
-          setInfoShow({
-            isOpen: true,
-            place: destination.place,
-            kind: "geocoder",
-          });
-        }
-    },
-    [map, setInfoShow, destination],
-  );
+    map.flyTo({
+      center: [destination.position.lng, destination.position.lat],
+      zoom: 18,
+    });
+
+    if (destination) {
+      if (destination.kind === "place") {
+        setInfoShow({
+          isOpen: true,
+          place: destination.place,
+          kind: "place",
+        });
+      } else if (destination.kind === "coordinate") {
+        setInfoShow({
+          isOpen: true,
+          address: destination.address,
+          kind: "coordinate",
+        });
+      }
+    }
+  }, [map, setInfoShow, destination]);
 
   if (!destination) return null;
 
   return (
-    <AdvancedMarker
-      onClick={(e) => handleMarker(e)}
-      position={destination.position}
+    <Marker
+      longitude={destination.position.lng}
+      latitude={destination.position.lat}
+      anchor="bottom"
+      onClick={handleMarker}
     >
-      <Pin />
-    </AdvancedMarker>
+      <MapPin className="h-8 w-8 text-red-500 fill-red-500 drop-shadow-lg" />
+    </Marker>
   );
 }

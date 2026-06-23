@@ -1,7 +1,9 @@
+import { LngLatBounds } from "maplibre-gl";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { getAccessibleRoute } from "@/lib/api/a11y";
 import useMapStore from "@/stores/useMapStore";
+import type { LatLng } from "@/types";
 
 export default function useComputeRoute() {
   const [isLoading, setIsLoading] = useState(false);
@@ -17,8 +19,8 @@ export default function useComputeRoute() {
 
   const computeRoute = useCallback(
     async (params: {
-      origin?: google.maps.LatLngLiteral;
-      destination?: google.maps.LatLngLiteral;
+      origin?: LatLng;
+      destination?: LatLng;
       query?: string;
     }) => {
       const { origin, destination, query } = params;
@@ -59,16 +61,11 @@ export default function useComputeRoute() {
         setRouteSelect({ index: 0, route: routes[0] });
 
         if (map && response.data.origin && response.data.destination) {
-          const bounds = new google.maps.LatLngBounds();
-          bounds.extend({
-            lat: response.data.origin.lat,
-            lng: response.data.origin.lng,
-          });
-          bounds.extend({
-            lat: response.data.destination.lat,
-            lng: response.data.destination.lng,
-          });
-          map.fitBounds(bounds, { top: 50, bottom: 200, left: 50, right: 50 });
+          const bounds = new LngLatBounds(
+            [response.data.origin.lng, response.data.origin.lat],
+            [response.data.destination.lng, response.data.destination.lat]
+          );
+          map.fitBounds(bounds, { padding: { top: 50, bottom: 200, left: 50, right: 50 } });
         }
       } catch (error) {
         closeRouteDrawer();
@@ -90,8 +87,8 @@ export default function useComputeRoute() {
 
   const handleComputeRoute = useCallback(
     async (params: {
-      origin?: google.maps.LatLngLiteral;
-      destination?: google.maps.LatLngLiteral;
+      origin?: LatLng;
+      destination?: LatLng;
       query?: string;
     }) => {
       await computeRoute(params);
