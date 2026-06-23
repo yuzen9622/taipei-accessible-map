@@ -1,7 +1,7 @@
 import { BusIcon, Train, TramFront } from "lucide-react";
 
 export const END_POINT =
-  process.env.NEXT_PUBLIC_END_POINT || "http://localhost:8000/api/v1";
+  process.env.NEXT_PUBLIC_END_POINT || "http://localhost:8000";
 
 export enum ColorEnum {
   Default = "default",
@@ -22,7 +22,7 @@ export const ROUTE_COLORS = {
   TRAM: "#9B59B6",
 } as const;
 
-// ?��??��?
+// 圖標映射
 export const VEHICLE_ICONS = {
   BUS: BusIcon,
   SUBWAY: TramFront,
@@ -43,10 +43,10 @@ export enum LanguageEnum {
   Chinese = "zh-TW",
 }
 
-// 顏色主�??�置
+// 顏色主題配置
 export const colorThemeConfig = {
   [ColorEnum.Default]: {
-    label: "?�設",
+    label: "預設",
     primary: "hsl(222.2 84% 4.9%)",
     primaryForeground: "hsl(210 40% 98%)",
     secondary: "hsl(210 40% 96%)",
@@ -90,7 +90,7 @@ export const colorThemeConfig = {
     },
   },
   [ColorEnum.Blue]: {
-    label: "?�色",
+    label: "藍色",
     primary: "hsl(221 83% 53%)",
     primaryForeground: "hsl(0 0% 98%)",
     secondary: "hsl(221 40% 96%)",
@@ -200,10 +200,10 @@ export const colorThemeConfig = {
     },
   },
 };
-//字�?大�??�置
+//字體大小配置
 export const fontSizeConfig = {
   [FontSizeEnum.Small]: {
-    label: "�?,
+    label: "小",
     base: "text-sm",
     heading: "text-lg",
     subheading: "text-base",
@@ -216,7 +216,7 @@ export const fontSizeConfig = {
     },
   },
   [FontSizeEnum.Medium]: {
-    label: "�?,
+    label: "中",
     base: "text-base",
     heading: "text-xl",
     subheading: "text-lg",
@@ -229,7 +229,7 @@ export const fontSizeConfig = {
     },
   },
   [FontSizeEnum.Large]: {
-    label: "�?,
+    label: "大",
     base: "text-lg",
     heading: "text-2xl",
     subheading: "text-xl",
@@ -258,5 +258,5 @@ export const fontSizeConfig = {
 
 export const LanguageConfig = {
   [LanguageEnum.English]: { label: "English" },
-  [LanguageEnum.Chinese]: { label: "中�?" },
+  [LanguageEnum.Chinese]: { label: "中文" },
 };
