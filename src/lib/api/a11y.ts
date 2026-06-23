@@ -1,6 +1,6 @@
-import { END_POINT } from "@/lib/config";
+﻿import { END_POINT } from "@/lib/config";
 import { fetchRequest } from "@/lib/fetch";
-import type { IBathroom, Marker, metroA11yData } from "@/types";
+import type { IBathroom, metroA11yData } from "@/types";
 import type { ApiResponse } from "@/types/response";
 import type { AIChatResponse } from "@/types/transit";
 import type {
