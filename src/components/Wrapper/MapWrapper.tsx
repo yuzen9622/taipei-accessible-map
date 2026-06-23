@@ -5,12 +5,11 @@ import SearchInput from "../Input/SearchInput";
 import AccountLogin from "../shared/AccountLogin";
 
 export default function MapWrapper() {
-  const { selectRoute, navigationDrawerOpen } = useMapStore();
-  if (navigationDrawerOpen) return null;
+  const { selectRoute } = useMapStore();
   return (
-    <div className="  fixed inset-2 z-50  top-5 space-y-2  flex flex-col    pointer-events-none  mx-auto h-full">
-      <div className=" flex gap-2  flex-col  max-lg:items-start items-center lg:w-full lg:flex-row   ">
-        <span className="flex h-fit items-center gap-2 w-full max-w-[450px] ">
+    <div className="fixed inset-2 z-50 top-5 space-y-2 flex flex-col pointer-events-none mx-auto h-full">
+      <div className="flex gap-2 flex-col max-lg:items-start items-center lg:w-full lg:flex-row">
+        <span className="flex h-fit items-center gap-2 w-full max-w-[450px]">
           {selectRoute ? (
             <RoutePlanInput />
           ) : (

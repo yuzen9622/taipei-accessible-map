@@ -2,36 +2,85 @@
 import { fetchRequest } from "@/lib/fetch";
 import type { IBathroom, metroA11yData } from "@/types";
 import type { ApiResponse } from "@/types/response";
-import type { AccessibleRouteData, OsmA11y, RouteIntent } from "@/types/route";
+import type { AIChatResponse } from "@/types/transit";
+import type {
+  AccessibleRouteRequest,
+  AccessibleRouteData,
+  IntentResponse,
+} from "@/types/route";
 
 export async function getAllA11yPlaces() {
-  return fetchRequest(`${END_POINT}/a11y/all-places`) as Promise<ApiResponse<metroA11yData[]>>;
+  const response = await fetchRequest<ApiResponse<null>>(
+    `${END_POINT}/api/v1/a11y/all-places`
+  );
+  return response;
 }
 
 export async function getAllA11yBathrooms() {
-  return fetchRequest(`${END_POINT}/a11y/all-bathrooms`) as Promise<ApiResponse<IBathroom[]>>;
+  const response = await fetchRequest<ApiResponse<null>>(
+    `${END_POINT}/api/v1/a11y/all-bathrooms`
+  );
+  return response as ApiResponse<IBathroom[]>;
 }
 
-export async function getNearbyRouteA11yPlaces(point: { lat: number; lng: number }) {
-  return fetchRequest(`${END_POINT}/a11y/nearby-a11y?lat=${point.lat}&lng=${point.lng}`) as Promise<ApiResponse<{ nearbyMetroA11y: metroA11yData[]; nearbyBathroom: IBathroom[]; nearbyOsm: OsmA11y[] }>>;
-}
+export async function getNearbyRouteA11yPlaces(point: {
+  lat: number;
+  lng: number;
+}) {
+  const response = await fetchRequest<
+    ApiResponse<{
+      nearbyBathroom: IBathroom[];
+      nearbyMetroA11y: metroA11yData[];
+    }>
+  >(`${END_POINT}/api/v1/a11y/nearby-a11y?lat=${point.lat}&lng=${point.lng}`);
 
-export async function getOsmPlaceDetail(osmIds: string | string[]) {
-  const ids = Array.isArray(osmIds) ? osmIds.join(",") : osmIds;
-  return fetchRequest(`${END_POINT}/a11y/place?osmId=${encodeURIComponent(ids)}`) as Promise<ApiResponse<OsmA11y[]>>;
+  return response as ApiResponse<{
+    nearbyBathroom: IBathroom[];
+    nearbyMetroA11y: metroA11yData[];
+  }>;
 }
-
-export type AccessibleRouteRequest = {
-  origin?: string | { latitude: number; longitude: number };
-  destination?: string | { latitude: number; longitude: number };
-  query?: string;
-  userLocation?: { latitude: number; longitude: number };
-  mode?: RouteIntent["mode"];
-  maxTransfers?: number;
-  departureTime?: string;
-  format?: "standard" | "compact";
-};
 
 export async function getAccessibleRoute(request: AccessibleRouteRequest) {
-  return fetchRequest(`${END_POINT}/a11y/accessible-route`, { method: "POST", body: request }) as Promise<ApiResponse<AccessibleRouteData>>;
+  const response = await fetchRequest(
+    `${END_POINT}/api/v1/a11y/accessible-route`,
+    {
+      method: "POST",
+      body: request,
+    }
+  );
+  return response as ApiResponse<AccessibleRouteData>;
+}
+
+export async function getRouteIntent(
+  query: string,
+  language?: string,
+  lat?: number,
+  lng?: number
+) {
+  const response = await fetchRequest(`${END_POINT}/api/v1/ai/intent`, {
+    method: "POST",
+    body: { query, language, lat, lng },
+  });
+  return response as ApiResponse<IntentResponse>;
+}
+
+export async function chatWithA11yAI(
+  message: string,
+  lang: string,
+  lat?: number,
+  lng?: number,
+  history?: { role: string; parts: { text: string }[] }[]
+) {
+  const response = await fetchRequest(`${END_POINT}/api/v1/ai/chat`, {
+    method: "POST",
+    body: { message, lat, lng, history, lang },
+  });
+  return response as ApiResponse<AIChatResponse>;
+}
+
+export async function getOsmPlaceDetail(osmId: string) {
+  const response = await fetchRequest(
+    `${END_POINT}/api/v1/a11y/place?osmId=${osmId}`
+  );
+  return response;
 }
