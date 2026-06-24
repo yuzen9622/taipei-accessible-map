@@ -18,7 +18,7 @@ export default function HazardWrapper() {
     if (!userLocation) return;
     getNearbyHazardReports(userLocation.lat, userLocation.lng, 1000)
       .then((res) => {
-        if (res.ok && res.data) setHazards(res.data);
+        if (res.ok && res.data?.reports) setHazards(res.data.reports);
       })
       .catch(() => {});
   }, [userLocation]);

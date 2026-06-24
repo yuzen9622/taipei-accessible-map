@@ -44,7 +44,7 @@ export default function HomeContent() {
     if (!userLocation) return;
     getNearbyHazardReports(userLocation.lat, userLocation.lng, 500)
       .then((res) => {
-        if (res.ok && res.data) setNearbyHazards(res.data);
+        if (res.ok && res.data?.reports) setNearbyHazards(res.data.reports);
       })
       .catch(() => {});
   }, [userLocation]);

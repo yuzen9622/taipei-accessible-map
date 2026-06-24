@@ -82,7 +82,7 @@ export async function getNearbyHazardReports(lat: number, lng: number, radius = 
   const response = await fetchRequest(
     `${END_POINT}/api/v1/a11y/reports?lat=${lat}&lng=${lng}&radius=${radius}`
   );
-  return response as ApiResponse<HazardReport[]>;
+  return response as ApiResponse<{ reports: HazardReport[]; total: number }>;
 }
 
 export async function getMyHazardReports() {
