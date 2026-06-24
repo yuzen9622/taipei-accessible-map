@@ -19,17 +19,39 @@ export default function EnvironmentPanel({ onClose }: { onClose: () => void }) {
   const { userLocation } = useMapStore();
   const [data, setData] = useState<EnvironmentData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!userLocation) return;
+    if (!userLocation) {
+      setLoading(false);
+      setError(t("noLocation"));
+      return;
+    }
     setLoading(true);
+    setError(null);
+
+    const timeout = setTimeout(() => {
+      setLoading(false);
+      setError(t("requestTimeout"));
+    }, 10000);
+
     getEnvironmentInfo(userLocation.lat, userLocation.lng)
       .then((res) => {
-        if (res.ok && res.data) setData(res.data);
+        clearTimeout(timeout);
+        if (res.ok && res.data) {
+          setData(res.data);
+        } else {
+          setError(t("noData"));
+        }
       })
-      .catch(() => {})
+      .catch(() => {
+        clearTimeout(timeout);
+        setError(t("networkError"));
+      })
       .finally(() => setLoading(false));
-  }, [userLocation]);
+
+    return () => clearTimeout(timeout);
+  }, [userLocation, t]);
 
   return (
     <div className="space-y-4">
@@ -50,6 +72,30 @@ export default function EnvironmentPanel({ onClose }: { onClose: () => void }) {
       {loading ? (
         <div className="flex items-center justify-center py-8">
           <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      ) : error ? (
+        <div className="text-center py-8 space-y-2">
+          <Cloud className="h-8 w-8 mx-auto text-muted-foreground/40" />
+          <p className="text-sm text-muted-foreground">{error}</p>
+          <button
+            type="button"
+            onClick={() => {
+              setLoading(true);
+              setError(null);
+              if (userLocation) {
+                getEnvironmentInfo(userLocation.lat, userLocation.lng)
+                  .then((res) => {
+                    if (res.ok && res.data) setData(res.data);
+                    else setError(t("noData"));
+                  })
+                  .catch(() => setError(t("networkError")))
+                  .finally(() => setLoading(false));
+              }
+            }}
+            className="text-xs text-primary hover:underline"
+          >
+            {t("retry")}
+          </button>
         </div>
       ) : !data ? (
         <p className="text-sm text-muted-foreground text-center py-6">{t("noData")}</p>

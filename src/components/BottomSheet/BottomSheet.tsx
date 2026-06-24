@@ -1,7 +1,9 @@
 "use client";
 
-import { motion, AnimatePresence, useDragControls } from "motion/react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import AccountLogin from "@/components/shared/AccountLogin";
 import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import HomeContent from "./HomeContent";
@@ -20,8 +22,8 @@ export default function BottomSheet() {
   const [snap, setSnap] = useState<"peek" | "half" | "full">("half");
   const [sheetHeight, setSheetHeight] = useState(SNAP_POINTS.half);
   const [isDragging, setIsDragging] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const dragControls = useDragControls();
   const startY = useRef(0);
   const startHeight = useRef(0);
 
@@ -49,6 +51,14 @@ export default function BottomSheet() {
         break;
     }
   }, [sheetMode]);
+
+  const prevMode = useRef(sheetMode);
+  useEffect(() => {
+    if (prevMode.current !== sheetMode && collapsed) {
+      setCollapsed(false);
+    }
+    prevMode.current = sheetMode;
+  }, [sheetMode, collapsed]);
 
   const snapToNearest = useCallback((ratio: number) => {
     const points = [SNAP_POINTS.peek, SNAP_POINTS.half, SNAP_POINTS.full];
@@ -115,6 +125,12 @@ export default function BottomSheet() {
             <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
           </div>
 
+          {/* Mobile Header with Login */}
+          <div className="flex items-center justify-between px-4 pb-2">
+            <h1 className="text-base font-bold">♿ Accessible Taipei</h1>
+            <AccountLogin />
+          </div>
+
           {/* Content */}
           <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-safe">
             <AnimatePresence mode="wait">
@@ -134,9 +150,42 @@ export default function BottomSheet() {
       </div>
 
       {/* Desktop: Left Side Panel */}
-      <div className="hidden lg:block fixed left-3 top-3 bottom-3 w-[420px] z-40 pointer-events-none">
-        <div className="pointer-events-auto h-full bg-background/95 backdrop-blur-md rounded-2xl shadow-2xl border border-border/50 flex flex-col overflow-hidden">
-          <div className="flex-1 overflow-y-auto overflow-x-hidden p-5">
+      <div className="hidden lg:block fixed inset-0 z-40 pointer-events-none">
+        {/* Collapse/Expand toggle — positioned independently */}
+        <button
+          type="button"
+          aria-label={collapsed ? "展開側邊欄" : "收合側邊欄"}
+          onClick={() => setCollapsed(!collapsed)}
+          className={cn(
+            "pointer-events-auto fixed top-1/2 -translate-y-1/2 z-50 h-12 w-6 flex items-center justify-center",
+            "bg-background border border-border/50 shadow-lg rounded-r-lg border-l-0",
+            "hover:bg-muted hover:shadow-xl transition-all duration-300",
+            collapsed ? "left-0" : "left-[438px]"
+          )}
+        >
+          {collapsed ? (
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          ) : (
+            <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+          )}
+        </button>
+
+        {/* Panel */}
+        <motion.div
+          className="pointer-events-auto absolute left-3 top-3 bottom-3 w-[420px] bg-background/95 backdrop-blur-md rounded-2xl shadow-2xl border border-border/50 flex flex-col overflow-hidden"
+          animate={{
+            x: collapsed ? -440 : 0,
+            opacity: collapsed ? 0 : 1,
+          }}
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        >
+          {/* Desktop Header with Login */}
+          <div className="flex items-center justify-between p-5 pb-3 border-b border-border/30">
+            <h1 className="text-base font-bold">♿ Accessible Taipei</h1>
+            <AccountLogin />
+          </div>
+
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-5 pt-4">
             <AnimatePresence mode="wait">
               <motion.div
                 key={sheetMode}
@@ -149,7 +198,7 @@ export default function BottomSheet() {
               </motion.div>
             </AnimatePresence>
           </div>
-        </div>
+        </motion.div>
       </div>
     </>
   );

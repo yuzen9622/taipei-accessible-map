@@ -113,10 +113,10 @@ export default function AIChatBot() {
             <Button
               onClick={() => setOpen(true)}
               size="lg"
-              className="rounded-full h-12 w-12 shadow-lg bg-primary hover:bg-primary/90 transition-shadow hover:shadow-xl"
+              className="rounded-full h-14 w-14 shadow-2xl bg-primary hover:bg-primary/90 transition-all hover:shadow-3xl hover:scale-105 ring-4 ring-primary/20"
               aria-label={t("chatbot.open", "開啟聊天助理")}
             >
-              <BotMessageSquare className="h-5 w-5" />
+              <BotMessageSquare className="h-6 w-6" />
             </Button>
           </motion.div>
         ) : (
