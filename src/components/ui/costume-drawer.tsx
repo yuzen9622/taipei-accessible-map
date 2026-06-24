@@ -18,9 +18,7 @@ const CostumeDrawer = ({
     <Drawer
       open={open}
       onClose={onClose}
-      afterOpenChange={(c: boolean) => {
-        console.log("transitionEnd: ", c);
-      }}
+      afterOpenChange={() => {}}
       zIndex={zIndex}
       placement={placement}
       size={placement === "bottom" || placement === "top" ? size : 460}
@@ -32,6 +30,8 @@ const CostumeDrawer = ({
       getContainer={() => document.body}
     >
       <div
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
         className={cn(
           " relative flex flex-col pointer-events-auto lg:max-h-[calc(100dvh-12em)] sm:max-h-1/2 max-h-full h-fit  rounded-3xl  w-full overflow-y-hidden overflow-x-hidden bg-background shadow-xl"
         )}

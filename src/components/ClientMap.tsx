@@ -13,6 +13,7 @@ import RouteLine from "@/components/Wrapper/RouteWrapper";
 import { useAppTranslation } from "@/i18n/client";
 import useMapStore from "@/stores/useMapStore";
 import AIChatBot from "./AIChatBot";
+import AirQualityWidget from "./AirQualityWidget";
 import GotoNowButton from "./shared/GotoNowButton";
 import SearchPin from "./shared/SearchPin";
 import TransitWrapper from "./Wrapper/TransitWrapper";
@@ -30,6 +31,8 @@ export default function ClientMap() {
     setSearchPlace,
     searchPlace,
     destination,
+    setSheetMode,
+    isNavigating,
   } = useMapStore();
   const { theme } = useTheme();
   const { i18n } = useAppTranslation();
@@ -53,21 +56,22 @@ export default function ClientMap() {
         });
       },
       () => {
-        console.log("無法取得位置");
         toast.error("無法取得目前位置");
       },
-      { enableHighAccuracy: true, maximumAge: Infinity }
+      { enableHighAccuracy: true, maximumAge: 10000 }
     );
   }, [setUserLocation]);
 
   const handleClick = useCallback(
     async (e: MapLayerMouseEvent) => {
+      if (isNavigating) return;
       const { lngLat } = e;
       const lat = lngLat.lat;
       const lng = lngLat.lng;
       const lang = i18n.language === "zh-TW" ? "zh-TW" : "en";
 
       setInfoShow({ isOpen: true, kind: null });
+      setSheetMode("place");
 
       try {
         const res = await fetch(
@@ -92,6 +96,7 @@ export default function ClientMap() {
             isOpen: true,
             address: data.display_name || `${lat}, ${lng}`,
             kind: "coordinate",
+            position: { lat, lng },
           });
           setSearchPlace({
             kind: "coordinate",
@@ -104,6 +109,7 @@ export default function ClientMap() {
           isOpen: true,
           address: `${lat}, ${lng}`,
           kind: "coordinate",
+          position: { lat, lng },
         });
         setSearchPlace({
           kind: "coordinate",
@@ -112,7 +118,7 @@ export default function ClientMap() {
         });
       }
     },
-    [i18n.language, setInfoShow, setSearchPlace]
+    [i18n.language, setInfoShow, setSearchPlace, setSheetMode, isNavigating]
   );
 
   return (
@@ -128,8 +134,9 @@ export default function ClientMap() {
       onLoad={handleLoad}
       style={{ position: "relative", flex: 1, overflow: "hidden" }}
     >
-      <NavigationControl position="bottom-right" />
+      <NavigationControl position="top-right" showCompass={false} />
       <MapWrapper />
+      <AirQualityWidget />
       <AccessibilityPin />
       <GotoNowButton />
       <NowPin />

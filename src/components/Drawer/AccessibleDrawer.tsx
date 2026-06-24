@@ -55,8 +55,8 @@ export default function AccessibleDrawer() {
         };
       default:
         return {
-          title: "無障礙設施",
-          description: "提供身心障礙者使用的相關設施。",
+          title: t("a11yDefaultTitle"),
+          description: t("a11yDefaultDesc"),
         };
     }
   };
@@ -80,7 +80,7 @@ export default function AccessibleDrawer() {
         </span>
         <div>
           <Input
-            placeholder={`尋找無障礙${selectedA11yTypes.join(",")} 地點...`}
+            placeholder={t("searchA11yPlaceholder")}
             onChange={(e) => setSearchTerm(e.target.value)}
             value={searchTerm}
           />

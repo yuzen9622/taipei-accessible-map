@@ -1,13 +1,11 @@
 "use client";
 
 import { useCallback, useEffect } from "react";
-import AccessibleDrawer from "@/components/Drawer/AccessibleDrawer";
-import RouteDrawer from "@/components/Drawer/RouteDrawer";
+import BottomSheet from "@/components/BottomSheet/BottomSheet";
 import { refreshToken } from "@/lib/api/auth";
 import { getUserInfo } from "@/lib/api/user";
 import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
-import TestDrawer from "../Drawer/TestDrawer";
 
 export default function ClientLayout({
   children,
@@ -38,10 +36,8 @@ export default function ClientLayout({
 
   return (
     <div className="w-full h-dvh flex flex-col">
-      <TestDrawer />
-      <RouteDrawer />
-      <AccessibleDrawer />
       {children}
+      <BottomSheet />
     </div>
   );
 }

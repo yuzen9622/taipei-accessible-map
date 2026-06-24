@@ -1,27 +1,16 @@
 import useMapStore from "@/stores/useMapStore";
-import AccessibleToolBar from "../AccessibleToolBar";
 import RoutePlanInput from "../Input/PlanInput";
-import SearchInput from "../Input/SearchInput";
-import AccountLogin from "../shared/AccountLogin";
 
 export default function MapWrapper() {
   const { selectRoute } = useMapStore();
+
+  if (!selectRoute) return null;
+
   return (
-    <div className="fixed inset-2 z-50 top-5 space-y-2 flex flex-col pointer-events-none mx-auto h-full">
-      <div className="flex gap-2 flex-col max-lg:items-start items-center lg:w-full lg:flex-row">
-        <span className="flex h-fit items-center gap-2 w-full max-w-[450px]">
-          {selectRoute ? (
-            <RoutePlanInput />
-          ) : (
-            <>
-              <SearchInput /> <AccountLogin />
-            </>
-          )}
-        </span>
-        <span className="flex h-fit items-center gap-2 w-full max-w-[450px]">
-          {!selectRoute && <AccessibleToolBar />}
-        </span>
-      </div>
+    <div className="fixed inset-x-2 top-5 z-30 flex justify-center pointer-events-none">
+      <span className="flex h-fit items-center gap-2 w-full max-w-[450px] pointer-events-auto">
+        <RoutePlanInput />
+      </span>
     </div>
   );
 }

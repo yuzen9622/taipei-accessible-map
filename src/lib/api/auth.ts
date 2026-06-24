@@ -15,23 +15,18 @@ export async function login(
   }) as Promise<ApiResponse<{ user: UserDTO; config: UserConfig }>>;
 }
 
-export async function checkToken(
-  token: string
-): Promise<ApiResponse<{ user: UserDTO }>> {
-  return fetchRequest(`${END_POINT}/user/token`, {
-    method: "POST",
-    body: { token },
-  }) as Promise<ApiResponse<{ user: UserDTO }>>;
-}
-
 export async function refreshToken(): Promise<string | null> {
-  const response = await fetchRequest(`${END_POINT}/user/refresh`, {
-    method: "POST",
-  });
-  if (!response.ok) {
+  try {
+    const response = await fetchRequest(`${END_POINT}/user/refresh`, {
+      method: "POST",
+    });
+    if (!response.ok) {
+      return null;
+    }
+    return (response as unknown as Record<string, unknown>).accessToken as string || null;
+  } catch {
     return null;
   }
-  return response.accessToken || null;
 }
 
 export async function logout(): Promise<ApiResponse<null>> {

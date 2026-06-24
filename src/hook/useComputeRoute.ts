@@ -22,15 +22,15 @@ export default function useComputeRoute() {
       origin?: LatLng;
       destination?: LatLng;
       query?: string;
-    }) => {
+    }): Promise<boolean> => {
       const { origin, destination, query } = params;
 
-      if (!query && !origin && !destination) return;
+      if (!query && !origin && !destination) return false;
 
       const startLocation = origin || userLocation;
       const endLocation = destination || userLocation;
 
-      if (!query && (!startLocation || !endLocation)) return;
+      if (!query && (!startLocation || !endLocation)) return false;
 
       try {
         setIsLoading(true);
@@ -53,7 +53,7 @@ export default function useComputeRoute() {
         if (!response.data?.routes?.length) {
           closeRouteDrawer();
           toast.error("找不到合適的無障礙路線");
-          return;
+          return false;
         }
 
         const routes = response.data.routes;
@@ -67,10 +67,12 @@ export default function useComputeRoute() {
           );
           map.fitBounds(bounds, { padding: { top: 50, bottom: 200, left: 50, right: 50 } });
         }
+        return true;
       } catch (error) {
         closeRouteDrawer();
         console.error("Route planning error:", error);
         toast.error("路線規劃失敗，請稍後再試");
+        return false;
       } finally {
         setIsLoading(false);
       }
@@ -90,8 +92,8 @@ export default function useComputeRoute() {
       origin?: LatLng;
       destination?: LatLng;
       query?: string;
-    }) => {
-      await computeRoute(params);
+    }): Promise<boolean> => {
+      return computeRoute(params);
     },
     [computeRoute]
   );

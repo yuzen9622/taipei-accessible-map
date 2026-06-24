@@ -104,5 +104,14 @@
     "origin": "起點",
     "destination": "終點",
     "switchOriginDestination": "交換起終點",
-    "noRouteFound": "找不到合適的無障礙路線"
+    "noRouteFound": "找不到合適的無障礙路線",
+    "viewOnOSM": "在 OpenStreetMap 查看",
+    "a11yDefaultTitle": "無障礙設施",
+    "a11yDefaultDesc": "提供身心障礙者使用的相關設施。",
+    "searchA11yPlaceholder": "搜尋無障礙設施...",
+    "nearbyA11y": "附近無障礙設施",
+    "recentSearches": "最近搜尋",
+    "startNav": "開始導航",
+    "endNav": "結束導航",
+    "airQuality": "空氣品質"
 }

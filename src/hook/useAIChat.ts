@@ -1,33 +1,30 @@
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useAppTranslation } from "@/i18n/client";
-import { chatWithA11yAI } from "@/lib/api/a11y";
-import { formatBathroom, formatMetroA11y } from "@/lib/utils";
+import { streamChatWithAgent } from "@/lib/api/ai";
+import type { ChatMessage } from "@/lib/api/ai";
 import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
-import type { IBathroom, Marker, metroA11yData } from "@/types";
-import type { AIRouteResponse, GooglePlaceResult } from "@/types/transit";
 import useComputeRoute from "./useComputeRoute";
 
-export default function useAIChatTool() {
+export interface ChatBubble {
+  role: "user" | "assistant";
+  content: string;
+  isStreaming?: boolean;
+  planningRoute?: {
+    origin: string;
+    destination: string;
+    mode: string;
+  };
+}
+
+export default function useAIChat() {
   const { t } = useAppTranslation();
   const { userConfig } = useAuthStore();
 
-  const [messages, setMessages] = useState<
+  const [messages, setMessages] = useState<ChatBubble[]>([
     {
-      sender: string;
-      text: string;
-      a11y?: Marker[];
-      places?: GooglePlaceResult[];
-      planningRoute?: {
-        origin: string;
-        destination: string;
-        mode: string;
-      };
-    }[]
-  >([
-    {
-      sender: "ai",
-      text: t(
+      role: "assistant",
+      content: t(
         "assistFirstMessage",
         "你好！我是無障礙台北的 AI 助理，有什麼我能幫你的嗎？附近無障礙設施或者是問題回饋？請隨時提出！"
       ),
@@ -35,113 +32,113 @@ export default function useAIChatTool() {
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-
   const [open, setOpen] = useState(false);
   const { userLocation } = useMapStore();
-
   const { handleComputeRoute } = useComputeRoute();
+  const abortRef = useRef<AbortController | null>(null);
 
-  function nearbyA11y(params: {
-    nearbyBathroom: IBathroom[];
-    nearbyMetroA11y: metroA11yData[];
-  }) {
-    const { nearbyBathroom, nearbyMetroA11y } = params;
-    const formattedA11yInfo: Marker[] = [
-      ...formatBathroom(nearbyBathroom || []),
-      ...formatMetroA11y(nearbyMetroA11y || []),
-    ];
-    return formattedA11yInfo;
-  }
+  const chatHistory = useRef<ChatMessage[]>([
+    {
+      role: "system",
+      content: `你是「無障礙台北」的 AI 助理，專門協助使用者查詢無障礙相關資訊、路線規劃、附近設施。請使用${userConfig.language === "en" ? "英文" : "繁體中文"}回答。`,
+    },
+  ]);
 
-  async function planRoute(AIRouteResponse: AIRouteResponse) {
-    const origin = AIRouteResponse.origin;
-    const destination = AIRouteResponse.destination;
+  const handleSend = useCallback(
+    async (text: string) => {
+      const trimmed = text.trim();
+      if (!trimmed || isLoading) return;
 
-    handleComputeRoute({
-      origin: { lat: origin.latitude, lng: origin.longitude },
-      destination: {
-        lat: destination.latitude,
-        lng: destination.longitude,
-      },
-    });
+      setInput("");
+      setIsLoading(true);
 
-    return {
-      originName: `${origin.latitude}, ${origin.longitude}`,
-      destinationName: `${destination.latitude}, ${destination.longitude}`,
-    };
-  }
+      const userBubble: ChatBubble = { role: "user", content: trimmed };
+      setMessages((prev) => [...prev, userBubble]);
 
-  const handleSend = async (input: string) => {
-    if (input.trim() === "") return;
+      chatHistory.current.push({ role: "user", content: trimmed });
 
-    const userMsg = { sender: "user", text: input };
-    setMessages((prev) => [...prev, userMsg]);
+      const assistantBubble: ChatBubble = {
+        role: "assistant",
+        content: "",
+        isStreaming: true,
+      };
+      setMessages((prev) => [...prev, assistantBubble]);
 
-    setInput("");
-    setIsLoading(true);
-    const history = messages.map((message) => {
-      if (message.sender === "ai") {
-        return { role: "model", parts: [{ text: message.text }] };
-      }
-      return { role: "user", parts: [{ text: message.text }] };
-    });
-    const AIResponse = await chatWithA11yAI(
-      input,
-      userConfig.language,
-      userLocation?.lat,
-      userLocation?.lng,
-      history
-    );
+      const controller = new AbortController();
+      abortRef.current = controller;
 
-    if (AIResponse.data) {
-      if (AIResponse.data.a11yPlacesResults) {
-        const formattedA11yInfo = nearbyA11y(AIResponse.data.a11yPlacesResults);
-        setMessages((prev) => [
-          ...prev,
+      let fullText = "";
+
+      try {
+        await streamChatWithAgent(
           {
-            sender: "ai",
-            text: AIResponse.data?.message || "",
-            a11y: formattedA11yInfo,
+            messages: chatHistory.current,
+            stream: true,
+            temperature: 0.7,
+            ...(userLocation
+              ? {
+                  userLocation: {
+                    latitude: userLocation.lat,
+                    longitude: userLocation.lng,
+                  },
+                }
+              : {}),
           },
-        ]);
-      } else if (AIResponse.data.googlePlacesResults) {
-        const places = AIResponse.data.googlePlacesResults;
-        setMessages((prev) => [
-          ...prev,
-          {
-            sender: "ai",
-            text: AIResponse.data?.message || "",
-            places: places,
+          (chunk) => {
+            fullText += chunk;
+            setMessages((prev) => {
+              const updated = [...prev];
+              const last = updated[updated.length - 1];
+              if (last.role === "assistant") {
+                updated[updated.length - 1] = {
+                  ...last,
+                  content: fullText,
+                  isStreaming: true,
+                };
+              }
+              return updated;
+            });
           },
-        ]);
-      } else if (AIResponse.data.planRouteResult) {
-        const { originName, destinationName } = await planRoute(
-          AIResponse.data.planRouteResult
+          (toolName, toolArgs) => {
+            if (toolName === "plan_route") {
+              const args = typeof toolArgs === "string" ? JSON.parse(toolArgs) : toolArgs;
+              handleComputeRoute({
+                origin: { lat: args.origin?.latitude, lng: args.origin?.longitude },
+                destination: { lat: args.destination?.latitude, lng: args.destination?.longitude },
+              });
+            }
+          },
+          controller.signal
         );
-        setMessages((prev) => [
-          ...prev,
-          {
-            sender: "ai",
-            text: AIResponse.data?.message || "",
-            planningRoute: {
-              origin: originName,
-              destination: destinationName,
-              mode: "transit",
-            },
-          },
-        ]);
-      } else {
-        setMessages((prev) => [
-          ...prev,
-          {
-            sender: "ai",
-            text: AIResponse.data?.message || "",
-          },
-        ]);
+      } catch (err) {
+        if ((err as Error).name === "AbortError") return;
+        fullText = fullText || t("chatbot.error", "抱歉，發生錯誤，請稍後再試。");
+      } finally {
+        setMessages((prev) => {
+          const updated = [...prev];
+          const last = updated[updated.length - 1];
+          if (last.role === "assistant") {
+            updated[updated.length - 1] = {
+              ...last,
+              content: fullText,
+              isStreaming: false,
+            };
+          }
+          return updated;
+        });
+
+        chatHistory.current.push({ role: "assistant", content: fullText });
+        setIsLoading(false);
+        abortRef.current = null;
       }
-    }
+    },
+    [isLoading, userLocation, handleComputeRoute, t]
+  );
+
+  const stopStreaming = useCallback(() => {
+    abortRef.current?.abort();
     setIsLoading(false);
-  };
+  }, []);
 
   return {
     messages,
@@ -151,5 +148,6 @@ export default function useAIChatTool() {
     open,
     setOpen,
     handleSend,
+    stopStreaming,
   };
 }

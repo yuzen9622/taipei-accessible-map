@@ -1,5 +1,7 @@
 import { MapPin } from "lucide-react";
+import { useAppTranslation } from "@/i18n/client";
 import type { NominatimPlace } from "@/types";
+import { getPlaceTypeLabel } from "@/lib/placeTypes";
 import { DrawerHeader } from "./ui/drawer";
 
 export default function PlaceDrawerContent({
@@ -7,6 +9,8 @@ export default function PlaceDrawerContent({
 }: {
   place: NominatimPlace;
 }) {
+  const { t, i18n } = useAppTranslation();
+
   return (
     <DrawerHeader className="w-full flex flex-col gap-2 border-b border-border/50 py-3">
       <div className="flex items-center gap-2">
@@ -18,7 +22,7 @@ export default function PlaceDrawerContent({
       <p className="text-sm text-muted-foreground">{place.display_name}</p>
       {place.type && (
         <span className="inline-block w-fit px-2 py-1 rounded bg-primary/10 text-primary text-xs">
-          {place.type}
+          {getPlaceTypeLabel(place.type, i18n.language)}
         </span>
       )}
       {place.osm_id && (
@@ -28,7 +32,7 @@ export default function PlaceDrawerContent({
           rel="noopener noreferrer"
           className="text-sm text-blue-500 hover:underline"
         >
-          在 OpenStreetMap 查看
+          {t("viewOnOSM")}
         </a>
       )}
     </DrawerHeader>

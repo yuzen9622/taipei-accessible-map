@@ -49,7 +49,7 @@ export type PlaceDetail = (PlaceType | CoordinateType) & Base;
 // --- InfoShow ---
 export type InfoShow =
   | (PlaceType & { isOpen: boolean })
-  | (CoordinateType & { isOpen: boolean })
+  | (CoordinateType & { isOpen: boolean; position?: LatLng })
   | { isOpen: boolean; kind: null };
 
 export type metroA11yData = {

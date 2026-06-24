@@ -5,6 +5,8 @@ import { A11yEnum } from "@/types/index";
 import type { AccessibleRoute } from "@/types/route";
 import type maplibregl from "maplibre-gl";
 
+export type SheetMode = "home" | "place" | "route" | "a11y" | "navigation";
+
 interface MapState {
   map: maplibregl.Map | null;
   userLocation: LatLng | null;
@@ -27,6 +29,8 @@ interface MapState {
   savedPlaces: PlaceDetail[];
   originName: string;
   destinationName: string;
+  sheetMode: SheetMode;
+  isNavigating: boolean;
 }
 
 interface MapAction {
@@ -56,6 +60,8 @@ interface MapAction {
   setOriginName: (name: string) => void;
   setDestinationName: (name: string) => void;
   closeRouteDrawer: () => void;
+  setSheetMode: (mode: SheetMode) => void;
+  setIsNavigating: (v: boolean) => void;
 }
 
 type MapStore = MapState & MapAction;
@@ -152,8 +158,31 @@ const useMapStore = create<MapStore>((set, get) => ({
   setOriginName: (name) => set({ originName: name }),
   destinationName: "",
   setDestinationName: (name) => set({ destinationName: name }),
+  sheetMode: "home",
+  setSheetMode: (mode) => set({ sheetMode: mode }),
+  isNavigating: false,
+  setIsNavigating: (v) => {
+    const { map, userLocation } = get();
+    if (v) {
+      set({ isNavigating: true, sheetMode: "navigation" });
+      if (map) {
+        map.easeTo({
+          pitch: 60,
+          zoom: 17,
+          center: userLocation ? [userLocation.lng, userLocation.lat] : undefined,
+          duration: 1000,
+        });
+      }
+    } else {
+      set({ isNavigating: false, sheetMode: "route" });
+      if (map) {
+        map.easeTo({ pitch: 0, bearing: 0, duration: 1000 });
+      }
+    }
+  },
   closeRouteDrawer: () => {
     const { destination } = get();
+    const hasDestination = destination && (destination.kind === "place" || destination.kind === "coordinate");
     set({
       routeInfoShow: false,
       selectRoute: null,
@@ -163,6 +192,7 @@ const useMapStore = create<MapStore>((set, get) => ({
       origin: null,
       originName: "",
       destinationName: "",
+      sheetMode: hasDestination ? "place" : "home",
       infoShow:
         destination && destination.kind === "place"
           ? { isOpen: true, place: destination.place, kind: "place" }
@@ -176,7 +206,7 @@ const useMapStore = create<MapStore>((set, get) => ({
               kind: "place",
               position: destination.position,
             }
-          : undefined,
+          : null,
     });
   },
 }));

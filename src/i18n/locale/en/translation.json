@@ -103,5 +103,14 @@
     "origin": "Origin",
     "destination": "Destination",
     "switchOriginDestination": "Swap origin and destination",
-    "noRouteFound": "No suitable accessible route found"
+    "noRouteFound": "No suitable accessible route found",
+    "viewOnOSM": "View on OpenStreetMap",
+    "a11yDefaultTitle": "Accessible Facility",
+    "a11yDefaultDesc": "Facilities designed for people with disabilities.",
+    "searchA11yPlaceholder": "Search accessible facilities...",
+    "nearbyA11y": "Nearby Accessible Facilities",
+    "recentSearches": "Recent Searches",
+    "startNav": "Start Navigation",
+    "endNav": "End Navigation",
+    "airQuality": "Air Quality"
 }
