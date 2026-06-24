@@ -255,6 +255,84 @@ export interface AgentChatRequest {
   userLocation?: { latitude: number; longitude: number };
 }
 
+// --- Navigation Instructions (from /a11y/route/instructions) ---
+export type NavInstructionType = "turn" | "transit_board" | "transit_alight" | "facility" | "depart" | "arrive";
+export type RelativeDirection = "LEFT" | "RIGHT" | "SLIGHTLY_LEFT" | "SLIGHTLY_RIGHT" | "HARD_LEFT" | "HARD_RIGHT" | "CONTINUE" | "U_TURN";
+
+export interface NavInstruction {
+  text: string;
+  type: NavInstructionType;
+  bearing: number | null;
+  relativeDirection: RelativeDirection | null;
+  distanceM: number | null;
+  streetName: string | null;
+  legType: "WALK" | "BUS" | "METRO" | "THSR" | "TRA";
+  polylineIndex: number | null;
+}
+
+export interface NavInstructionsData {
+  routeId: string;
+  instructions: NavInstruction[];
+  totalSteps: number;
+}
+
+// --- Hazard Report (from /a11y/reports) ---
+export interface HazardGeoPoint {
+  type: "Point";
+  coordinates: [number, number];
+}
+
+export interface HazardReport {
+  _id: string;
+  reporterId: string;
+  hazardType: "obstacle" | "construction" | "data_error";
+  reportedLocation: HazardGeoPoint;
+  description?: string;
+  photoUrl?: string;
+  status: "pending" | "verified" | "rejected" | "expired";
+  exifValidation?: {
+    gpsMatch: boolean;
+    timeRecent: boolean;
+    distanceM: number;
+    minutesAgo: number;
+  };
+  aiAnalysis?: {
+    confidence: number;
+    labels: string[];
+    summary: string;
+  };
+  confirmCount?: number;
+  denyCount?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// --- Environment Info (from /a11y/environment) ---
+export interface EnvironmentData {
+  location: { lat: number; lng: number };
+  weather: {
+    status: "ok" | "unavailable";
+    temperature?: number;
+    precipitationProbability?: number;
+    windSpeed?: number;
+    windDirection?: string;
+    condition?: string;
+    forecastTime?: string;
+    reason?: string;
+  };
+  airQuality: {
+    status: "ok" | "unavailable";
+    description?: string;
+    quality?: AirQualityLevel;
+    reason?: string;
+  };
+  cameras?: {
+    status: "ok" | "unavailable";
+    items?: { name: string; url: string; distance: number }[];
+    reason?: string;
+  };
+}
+
 // --- Helper functions ---
 
 export function getA11yLabelColor(label: A11yLabel): string {

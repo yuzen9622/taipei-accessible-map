@@ -2,18 +2,26 @@
 
 import {
   Accessibility,
+  AlertTriangle,
   ArrowUpDown,
   ArrowUpRight,
   Clock,
+  Cloud,
   DoorOpen,
   MapPin,
 } from "lucide-react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import PlaceInput from "@/components/shared/PlaceInput";
 import { useAppTranslation } from "@/i18n/client";
+import { getNearbyHazardReports } from "@/lib/api/a11y";
 import useMapStore from "@/stores/useMapStore";
 import { A11yEnum, type PlaceDetail } from "@/types";
+import type { HazardReport } from "@/types/route";
 import { Badge } from "../ui/badge";
+import EnvironmentPanel from "./EnvironmentPanel";
+import HazardReportPanel from "./HazardReportPanel";
+
+type SubPanel = "none" | "environment" | "hazard";
 
 export default function HomeContent() {
   const { t } = useAppTranslation();
@@ -29,6 +37,17 @@ export default function HomeContent() {
     userLocation,
   } = useMapStore();
   const [input, setInput] = useState("");
+  const [subPanel, setSubPanel] = useState<SubPanel>("none");
+  const [nearbyHazards, setNearbyHazards] = useState<HazardReport[]>([]);
+
+  useEffect(() => {
+    if (!userLocation) return;
+    getNearbyHazardReports(userLocation.lat, userLocation.lng, 500)
+      .then((res) => {
+        if (res.ok && res.data) setNearbyHazards(res.data);
+      })
+      .catch(() => {});
+  }, [userLocation]);
 
   const handlePlaceChange = useCallback(
     (placeDetail: PlaceDetail) => {
@@ -71,6 +90,13 @@ export default function HomeContent() {
     })
     .slice(0, 6);
 
+  if (subPanel === "environment") {
+    return <EnvironmentPanel onClose={() => setSubPanel("none")} />;
+  }
+  if (subPanel === "hazard") {
+    return <HazardReportPanel onClose={() => setSubPanel("none")} />;
+  }
+
   return (
     <div className="space-y-5">
       {/* Search */}
@@ -85,7 +111,7 @@ export default function HomeContent() {
       </div>
 
       {/* A11y Quick Chips */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         {a11yChips.map((chip) => {
           const active = selectedA11yTypes.includes(chip.type);
           return (
@@ -104,7 +130,58 @@ export default function HomeContent() {
             </button>
           );
         })}
+        {/* Extra quick actions */}
+        <button
+          type="button"
+          onClick={() => setSubPanel("environment")}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium bg-sky-500/10 text-sky-600 dark:text-sky-400 hover:bg-sky-500/20 transition-colors"
+        >
+          <Cloud className="h-4 w-4" />
+          {t("environment")}
+        </button>
+        <button
+          type="button"
+          onClick={() => setSubPanel("hazard")}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors"
+        >
+          <AlertTriangle className="h-4 w-4" />
+          {t("reportHazard")}
+        </button>
       </div>
+
+      {/* Nearby Hazards */}
+      {nearbyHazards.length > 0 && (
+        <section>
+          <h2 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
+            <AlertTriangle className="h-4 w-4 text-amber-500" />
+            {t("nearbyHazards")}
+          </h2>
+          <div className="space-y-2">
+            {nearbyHazards.slice(0, 3).map((hazard) => (
+              <div
+                key={hazard._id}
+                className="flex items-center gap-3 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10"
+              >
+                <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">
+                    {t(hazard.hazardType === "data_error" ? "dataError" : hazard.hazardType)}
+                  </p>
+                  {hazard.description && (
+                    <p className="text-xs text-muted-foreground truncate">{hazard.description}</p>
+                  )}
+                </div>
+                <Badge
+                  variant={hazard.status === "verified" ? "default" : "secondary"}
+                  className="text-xs shrink-0"
+                >
+                  {hazard.status === "verified" ? t("confirmed") : t("pending")}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Nearby A11y Facilities */}
       {nearbyPlaces && nearbyPlaces.length > 0 && (
@@ -133,7 +210,7 @@ export default function HomeContent() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">
-                    {place.content?.title || "無障礙設施"}
+                    {place.content?.title || t("a11yDefaultTitle")}
                   </p>
                   <p className="text-xs text-muted-foreground truncate">
                     {place.content?.desc || ""}

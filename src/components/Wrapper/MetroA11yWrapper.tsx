@@ -29,10 +29,10 @@ export default function AccessibilityPin() {
     fetchAllA11yPlace();
   }, [fetchAllA11yPlace]);
 
-  // 根據選擇的類型過濾要顯示的標籤
   const filteredPlaces =
-    a11yPlaces?.filter((place) => selectedA11yTypes.includes(place.a11yType)) ||
-    [];
+    selectedA11yTypes.length === 0
+      ? a11yPlaces ?? []
+      : a11yPlaces?.filter((place) => selectedA11yTypes.includes(place.a11yType)) ?? [];
 
   return (
     <>

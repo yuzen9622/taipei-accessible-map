@@ -2,7 +2,7 @@
 
 import Map, { NavigationControl } from "react-map-gl/maplibre";
 import { useTheme } from "next-themes";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import type maplibregl from "maplibre-gl";
 import type { MapLayerMouseEvent } from "react-map-gl/maplibre";
@@ -16,6 +16,7 @@ import AIChatBot from "./AIChatBot";
 import AirQualityWidget from "./AirQualityWidget";
 import GotoNowButton from "./shared/GotoNowButton";
 import SearchPin from "./shared/SearchPin";
+import HazardWrapper from "./Wrapper/HazardWrapper";
 import TransitWrapper from "./Wrapper/TransitWrapper";
 
 const MAP_STYLES = {
@@ -40,6 +41,9 @@ export default function ClientMap() {
   const mapStyle =
     theme === "dark" ? MAP_STYLES.dark : MAP_STYLES.light;
 
+  const pointerDownTime = useRef(0);
+  const pointerDownPos = useRef<[number, number]>([0, 0]);
+
   const handleLoad = useCallback(
     (evt: { target: maplibregl.Map }) => {
       setMap(evt.target);
@@ -62,9 +66,19 @@ export default function ClientMap() {
     );
   }, [setUserLocation]);
 
+  const handleMouseDown = useCallback((e: MapLayerMouseEvent) => {
+    pointerDownTime.current = Date.now();
+    pointerDownPos.current = [e.point.x, e.point.y];
+  }, []);
+
   const handleClick = useCallback(
     async (e: MapLayerMouseEvent) => {
       if (isNavigating) return;
+      const dt = Date.now() - pointerDownTime.current;
+      const [sx, sy] = pointerDownPos.current;
+      const dx = Math.abs(e.point.x - sx);
+      const dy = Math.abs(e.point.y - sy);
+      if (dt > 300 || dx > 5 || dy > 5) return;
       const { lngLat } = e;
       const lat = lngLat.lat;
       const lng = lngLat.lng;
@@ -130,6 +144,7 @@ export default function ClientMap() {
         zoom: 15,
       }}
       mapStyle={mapStyle}
+      onMouseDown={handleMouseDown}
       onClick={handleClick}
       onLoad={handleLoad}
       style={{ position: "relative", flex: 1, overflow: "hidden" }}
@@ -146,6 +161,7 @@ export default function ClientMap() {
         <SearchPin destination={destination} />
       ) : null}
       <TransitWrapper />
+      <HazardWrapper />
       <AIChatBot />
       <RouteLine />
     </Map>

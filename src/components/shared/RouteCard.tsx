@@ -335,6 +335,22 @@ export const RouteCard = memo(function RouteCard({
           {isSelected && <Badge>{t("selectedRoute")}</Badge>}
         </div>
 
+        {isSelected && route.scoreComponents && (
+          <div className="grid grid-cols-3 gap-2 pt-1">
+            {(["facilityScore", "timeScore", "criticalFeatureScore"] as const).map((key) => {
+              const val = route.scoreComponents![key];
+              return (
+                <div key={key} className="text-center p-2 rounded-lg bg-muted/40">
+                  <p className="text-lg font-bold">{val}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {key === "facilityScore" ? t("facilityScore") ?? "設施" : key === "timeScore" ? t("timeScore") ?? "時間" : t("criticalScore") ?? "關鍵"}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         {isSelected && route.accessibilityHighlights?.length > 0 && (
           <div className="space-y-1">
             {route.accessibilityHighlights.map((h) => (
