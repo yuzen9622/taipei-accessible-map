@@ -12,6 +12,7 @@ import NavigationContent from "./NavigationContent";
 import PlaceContent from "./PlaceContent";
 import RouteContent from "./RouteContent";
 import RoutePlanContent from "./RoutePlanContent";
+import StationDetailContent from "./StationDetailContent";
 
 const SNAP_POINTS = {
   peek: 0.12,
@@ -52,6 +53,10 @@ export default function BottomSheet() {
         setSheetHeight(SNAP_POINTS.peek);
         break;
       case "a11y":
+        setSnap("half");
+        setSheetHeight(SNAP_POINTS.half);
+        break;
+      case "station":
         setSnap("half");
         setSheetHeight(SNAP_POINTS.half);
         break;
@@ -225,6 +230,8 @@ function SheetContent() {
       return <NavigationContent />;
     case "a11y":
       return <HomeContent />;
+    case "station":
+      return <StationDetailContent />;
     default:
       return <HomeContent />;
   }

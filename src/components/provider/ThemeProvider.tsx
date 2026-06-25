@@ -30,21 +30,27 @@ function ThemeSync({ children }: { children: React.ReactNode }) {
       fontSizeConfig[userConfig.fontSize || FontSizeEnum.Medium] ??
       fontSizeConfig[FontSizeEnum.Medium];
 
-    // 1) 設定 CSS 變數到 :root（可在全域 CSS 使用 var(--font-size-base)）
     if (typeof window !== "undefined") {
       const root = document.documentElement;
       Object.entries(cfg.cssVars || {}).forEach(([k, v]) => {
         root.style.setProperty(k, v as string);
       });
 
-      // 2) 切換 Tailwind 文字大小 class（例如 text-sm / text-base / text-lg）
       const allBases = Object.values(fontSizeConfig).map((c) => c.base);
-      // 先移除可能存在的 font-size class
       root.classList.remove(...allBases);
-      // 再加上目前的 base class
       if (cfg.base) root.classList.add(cfg.base);
     }
   }, [userConfig.fontSize]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const root = document.documentElement;
+    if (userConfig.highContrast) {
+      root.classList.add("high-contrast");
+    } else {
+      root.classList.remove("high-contrast");
+    }
+  }, [userConfig.highContrast]);
 
   return <>{children}</>;
 }

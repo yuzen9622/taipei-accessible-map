@@ -2,7 +2,7 @@
 
 import { useGoogleLogin } from "@react-oauth/google";
 
-import { Globe, Info, LogOut, Settings, Type, User } from "lucide-react";
+import { Contrast, Globe, Info, LogOut, Settings, Type, User } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
@@ -337,6 +337,19 @@ export default function AccountLogin() {
                   console.log("Change theme to", changeTheme);
                   updateUserConfig({ darkMode: changeTheme });
                 }}
+              />
+            </div>
+
+            {/* 高對比模式 */}
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-200 flex items-center gap-1">
+                <Contrast className="h-4 w-4" /> {t("highContrast")}
+              </span>
+              <Switch
+                id="highContrast"
+                className="bg-accent"
+                checked={userConfig.highContrast}
+                onCheckedChange={(checked) => updateUserConfig({ highContrast: checked })}
               />
             </div>
 

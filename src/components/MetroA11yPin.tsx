@@ -11,7 +11,7 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
 
 export default function MetroA11yPin({ place }: { place: MarkerType }) {
   const [open, setOpen] = useState(false);
-  const { selectA11yPlace, setSelectA11yPlace, setA11yDrawerOpen } =
+  const { selectA11yPlace, setSelectA11yPlace, setA11yDrawerOpen, setSheetMode } =
     useMapStore();
   const { handlePinClick } = usePin();
 
@@ -37,6 +37,7 @@ export default function MetroA11yPin({ place }: { place: MarkerType }) {
               handlePinClick(place.position);
               setSelectA11yPlace(place);
               setA11yDrawerOpen(true);
+              setSheetMode("station");
               setOpen(true);
             }}
           >

@@ -26,6 +26,7 @@ const useAuthStore = create<AuthStore>((set, get) => ({
     darkMode: "system",
     fontSize: FontSizeEnum.Medium,
     notifications: false,
+    highContrast: false,
     language: LanguageEnum.Chinese,
   },
   session: null,

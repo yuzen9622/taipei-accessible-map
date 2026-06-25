@@ -6,12 +6,14 @@ import {
   ArrowUpDown,
   Bookmark,
   BookmarkCheck,
+  Check,
   DoorOpen,
   ExternalLink,
   Loader2,
   MapPin,
   Navigation,
   Share2,
+  X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getNearbyRouteA11yPlaces } from "@/lib/api/a11y";
@@ -21,6 +23,7 @@ import useMapStore from "@/stores/useMapStore";
 import type { IBathroom, metroA11yData } from "@/types";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
+import PlaceReviewSection from "./PlaceReviewSection";
 
 export default function PlaceContent() {
   const { t, i18n } = useAppTranslation();
@@ -147,6 +150,35 @@ export default function PlaceContent() {
   const addressParts = isPlace && place!.address ? place!.address : null;
 
   const hasA11y = nearbyBathrooms.length > 0 || nearbyMetro.length > 0;
+
+  const a11yChecklist = useMemo(() => {
+    const items: { key: string; label: string; available: boolean }[] = [];
+    const hasBathroom = nearbyBathrooms.length > 0;
+    const hasElevator = nearbyMetro.length > 0;
+
+    if (isPlace && place) {
+      const tags = (place as Record<string, unknown>).extratags as Record<string, string> | undefined;
+      const wheelchair = tags?.wheelchair || (place as Record<string, unknown>).wheelchair;
+      items.push({
+        key: "wheelchair",
+        label: t("wheelchairAccess"),
+        available: wheelchair === "yes" || wheelchair === "limited",
+      });
+    } else {
+      items.push({ key: "wheelchair", label: t("wheelchairAccess"), available: false });
+    }
+
+    items.push(
+      { key: "elevator", label: t("hasElevator"), available: hasElevator },
+      { key: "ramp", label: t("hasRamp"), available: hasElevator },
+      { key: "toilet", label: t("hasAccessibleToilet"), available: hasBathroom },
+    );
+    return items;
+  }, [isPlace, place, nearbyBathrooms, nearbyMetro, t]);
+
+  const placeIdForReview = isPlace && place
+    ? (place.osm_id ? `${place.osm_type}_${place.osm_id}` : place.place_id?.toString() || "")
+    : placePosition ? `${placePosition.lat}_${placePosition.lng}` : "";
 
   return (
     <div className="space-y-4">
@@ -302,6 +334,38 @@ export default function PlaceContent() {
           <p className="text-sm text-muted-foreground py-2">{t("noNearbyA11y")}</p>
         )}
       </section>
+
+      {/* Accessibility Checklist */}
+      <section>
+        <h2 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
+          <Accessibility className="h-4 w-4" />
+          {t("a11yChecklist")}
+        </h2>
+        <div className="grid grid-cols-2 gap-2">
+          {a11yChecklist.map((item) => (
+            <div
+              key={item.key}
+              className={`flex items-center gap-2 p-2.5 rounded-xl text-sm ${
+                item.available
+                  ? "bg-green-500/10 text-green-700 dark:text-green-400"
+                  : "bg-muted/40 text-muted-foreground"
+              }`}
+            >
+              {item.available ? (
+                <Check className="h-4 w-4 shrink-0" />
+              ) : (
+                <X className="h-4 w-4 shrink-0 opacity-40" />
+              )}
+              <span className="truncate">{item.label}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Reviews */}
+      {placeIdForReview && (
+        <PlaceReviewSection placeId={placeIdForReview} />
+      )}
     </div>
   );
 }

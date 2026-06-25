@@ -16,6 +16,7 @@ export interface UserConfig {
   themeColor: ColorEnum;
   fontSize: FontSizeEnum;
   notifications: boolean;
+  highContrast: boolean;
   user_id?: string;
 }
 

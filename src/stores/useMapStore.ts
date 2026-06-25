@@ -5,7 +5,7 @@ import { A11yEnum } from "@/types/index";
 import type { AccessibleRoute } from "@/types/route";
 import type maplibregl from "maplibre-gl";
 
-export type SheetMode = "home" | "place" | "plan" | "route" | "a11y" | "navigation";
+export type SheetMode = "home" | "place" | "plan" | "route" | "a11y" | "navigation" | "station";
 
 interface MapState {
   map: maplibregl.Map | null;
