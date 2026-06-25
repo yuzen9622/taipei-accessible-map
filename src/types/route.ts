@@ -375,6 +375,18 @@ export interface DisabledParking {
   importedAt: string;
 }
 
+// --- OSM Place Detail (from /a11y/place) ---
+export interface OsmPlaceDetail {
+  osmId: string;
+  name?: string;
+  category?: string;
+  wheelchair?: "yes" | "limited" | "no";
+  wheelchairDescription?: string;
+  tags?: Record<string, string>;
+  location?: GeoPoint;
+  facilities?: SlimOsmA11y[];
+}
+
 // --- Bus Arrival (from /transit/bus/arrival) ---
 export interface BilingualName {
   Zh_tw: string;

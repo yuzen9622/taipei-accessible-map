@@ -245,5 +245,11 @@
     "shortcutSearch": "聚焦搜尋欄",
     "shortcutClose": "關閉彈出視窗",
     "shortcutMyLocation": "回到目前位置",
-    "shortcutHint": "按下 ? 隨時開啟此面板"
+    "shortcutHint": "按下 ? 隨時開啟此面板",
+    "hasTactilePaving": "有導盲磚",
+    "wheelchairLimited": "輪椅部分可通行",
+    "wheelchairYes": "輪椅完全可通行",
+    "wheelchairNo": "輪椅不可通行",
+    "osmAccessibilityInfo": "OpenStreetMap 無障礙資訊",
+    "osmFacilities": "相關無障礙設施"
 }

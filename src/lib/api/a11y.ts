@@ -11,6 +11,7 @@ import type {
   EnvironmentData,
   WelfareInstitution,
   DisabledParking,
+  OsmPlaceDetail,
 } from "@/types/route";
 
 export async function getAllA11yPlaces() {
@@ -67,7 +68,7 @@ export async function getOsmPlaceDetail(osmId: string) {
   const response = await fetchRequest(
     `${END_POINT}/api/v1/a11y/place?osmId=${osmId}`
   );
-  return response;
+  return response as ApiResponse<OsmPlaceDetail | OsmPlaceDetail[]>;
 }
 
 export async function createHazardReport(formData: FormData) {

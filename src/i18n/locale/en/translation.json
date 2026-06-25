@@ -244,5 +244,11 @@
     "shortcutSearch": "Focus search bar",
     "shortcutClose": "Close popup",
     "shortcutMyLocation": "Go to my location",
-    "shortcutHint": "Press ? anytime to open this panel"
+    "shortcutHint": "Press ? anytime to open this panel",
+    "hasTactilePaving": "Has Tactile Paving",
+    "wheelchairLimited": "Partially wheelchair accessible",
+    "wheelchairYes": "Fully wheelchair accessible",
+    "wheelchairNo": "Not wheelchair accessible",
+    "osmAccessibilityInfo": "OSM Accessibility Info",
+    "osmFacilities": "Related Accessible Facilities"
 }
