@@ -5,10 +5,12 @@ import {
   AlertTriangle,
   ArrowUpDown,
   ArrowUpRight,
+  Bookmark,
   Clock,
   Cloud,
   DoorOpen,
   MapPin,
+  Navigation,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import PlaceInput from "@/components/shared/PlaceInput";
@@ -35,6 +37,7 @@ export default function HomeContent() {
     selectedA11yTypes,
     a11yPlaces,
     userLocation,
+    savedPlaces,
   } = useMapStore();
   const [input, setInput] = useState("");
   const [subPanel, setSubPanel] = useState<SubPanel>("none");
@@ -110,27 +113,55 @@ export default function HomeContent() {
         />
       </div>
 
+      {/* Route Planning Entry */}
+      <button
+        type="button"
+        onClick={() => setSheetMode("plan")}
+        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/5 hover:bg-primary/10 border border-primary/10 transition-colors text-left"
+      >
+        <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+          <Navigation className="h-4 w-4 text-primary" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold">{t("planRoute")}</p>
+          <p className="text-xs text-muted-foreground">{t("planRouteDesc")}</p>
+        </div>
+      </button>
+
       {/* A11y Quick Chips */}
-      <div className="flex gap-2 flex-wrap">
-        {a11yChips.map((chip) => {
-          const active = selectedA11yTypes.includes(chip.type);
-          return (
-            <button
-              key={chip.type}
-              type="button"
-              onClick={() => toggleA11yType(chip.type)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-all
-                ${active
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "bg-muted/60 text-muted-foreground hover:bg-muted"
-                }`}
-            >
-              <chip.Icon className="h-4 w-4" />
-              <span>{chip.label}</span>
-            </button>
-          );
-        })}
-        {/* Extra quick actions */}
+      <div className="space-y-2">
+        <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
+          <Accessibility className="h-4 w-4" />
+          {t("accessibleTitle")}
+        </h2>
+        <div className="flex gap-2 flex-wrap">
+          {a11yChips.map((chip) => {
+            const active = selectedA11yTypes.includes(chip.type);
+            return (
+              <button
+                key={chip.type}
+                type="button"
+                onClick={() => toggleA11yType(chip.type)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-all
+                  ${active
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted/60 text-muted-foreground hover:bg-muted"
+                  }`}
+              >
+                <chip.Icon className="h-4 w-4" />
+                <span>{chip.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Extra quick actions */}
+      <div className="space-y-2">
+        <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
+          {t("quickActions")}
+        </h2>
+        <div className="flex gap-2 flex-wrap">
         <button
           type="button"
           onClick={() => setSubPanel("environment")}
@@ -147,6 +178,7 @@ export default function HomeContent() {
           <AlertTriangle className="h-4 w-4" />
           {t("reportHazard")}
         </button>
+        </div>
       </div>
 
       {/* Nearby Hazards */}
@@ -219,6 +251,35 @@ export default function HomeContent() {
                 <ArrowUpRight className="h-4 w-4 text-muted-foreground/50 shrink-0" />
               </button>
             ))}
+          </div>
+        </section>
+      )}
+
+      {/* Saved Places */}
+      {savedPlaces.length > 0 && (
+        <section>
+          <h2 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
+            <Bookmark className="h-4 w-4" />
+            {t("savedPlaces")}
+          </h2>
+          <div className="space-y-1">
+            {savedPlaces.slice(0, 5).map((item, idx) => {
+              const name =
+                item.kind === "place"
+                  ? item.place.name || item.place.display_name
+                  : item.address;
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handlePlaceChange(item)}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted/60 transition-colors text-left"
+                >
+                  <Bookmark className="h-4 w-4 text-primary shrink-0" />
+                  <span className="text-sm truncate">{name}</span>
+                </button>
+              );
+            })}
           </div>
         </section>
       )}

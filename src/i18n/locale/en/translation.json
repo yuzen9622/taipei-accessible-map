@@ -157,5 +157,22 @@
     "timeScore": "Time Score",
     "criticalScore": "Critical Feature Score",
     "walk": "Walk",
-    "transfer": "{{count}} transfer(s)"
+    "transfer": "{{count}} transfer(s)",
+    "myLocation": "Your location",
+    "chooseOrigin": "Choose origin",
+    "chooseDestination": "Choose destination",
+    "useMyLocationAsOrigin": "Use current location as origin",
+    "searchRoute": "Plan route",
+    "swapOriginDest": "Swap origin and destination",
+    "planRouteDesc": "Choose origin and destination for accessible routes",
+    "savedPlaces": "Saved Places",
+    "savePlace": "Save",
+    "unsavePlace": "Unsave",
+    "addressInfo": "Address Info",
+    "road": "Road",
+    "district": "District",
+    "city": "City",
+    "postcode": "Postcode",
+    "noNearbyA11y": "No nearby accessibility facilities found",
+    "quickActions": "Quick Actions"
 }

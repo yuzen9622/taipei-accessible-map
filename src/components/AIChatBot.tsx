@@ -97,7 +97,7 @@ export default function AIChatBot() {
   return (
     <div
       className={cn(
-        "fixed flex items-end justify-end bottom-44 lg:bottom-16 right-3 z-50",
+        "fixed flex items-end justify-end bottom-44 lg:bottom-[80px] right-3 z-50",
         open && "bottom-2 lg:bottom-2"
       )}
     >
@@ -113,7 +113,7 @@ export default function AIChatBot() {
             <Button
               onClick={() => setOpen(true)}
               size="lg"
-              className="rounded-full h-14 w-14 shadow-2xl bg-primary hover:bg-primary/90 transition-all hover:shadow-3xl hover:scale-105 ring-4 ring-primary/20"
+              className="rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all text-foreground"
               aria-label={t("chatbot.open", "開啟聊天助理")}
             >
               <BotMessageSquare className="h-6 w-6" />

@@ -1,19 +1,24 @@
 "use client";
 
 import {
+  Accessibility,
   ArrowLeft,
+  ArrowUpDown,
+  Bookmark,
+  BookmarkCheck,
+  DoorOpen,
   ExternalLink,
   Loader2,
   MapPin,
   Navigation,
   Share2,
 } from "lucide-react";
-import { useCallback } from "react";
-import useComputeRoute from "@/hook/useComputeRoute";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { getNearbyRouteA11yPlaces } from "@/lib/api/a11y";
 import { useAppTranslation } from "@/i18n/client";
 import { getPlaceTypeLabel } from "@/lib/placeTypes";
 import useMapStore from "@/stores/useMapStore";
-import type { LatLng } from "@/types";
+import type { IBathroom, metroA11yData } from "@/types";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 
@@ -24,10 +29,43 @@ export default function PlaceContent() {
     setInfoShow,
     setSearchPlace,
     setDestination,
+    setDestinationName,
     userLocation,
     setSheetMode,
+    addSavedPlace,
+    removeSavedPlace,
+    isSavedPlace,
+    map,
   } = useMapStore();
-  const { isLoading, handleComputeRoute } = useComputeRoute();
+
+  const [nearbyBathrooms, setNearbyBathrooms] = useState<IBathroom[]>([]);
+  const [nearbyMetro, setNearbyMetro] = useState<metroA11yData[]>([]);
+  const [a11yLoading, setA11yLoading] = useState(false);
+
+  const placePosition = useMemo(() => {
+    if (!infoShow.kind) return null;
+    if (infoShow.kind === "place") {
+      return { lat: parseFloat(infoShow.place.lat), lng: parseFloat(infoShow.place.lon) };
+    }
+    if (infoShow.kind === "coordinate" && infoShow.position) {
+      return infoShow.position;
+    }
+    return null;
+  }, [infoShow]);
+
+  useEffect(() => {
+    if (!placePosition) return;
+    setA11yLoading(true);
+    getNearbyRouteA11yPlaces(placePosition)
+      .then((res) => {
+        if (res.ok && res.data) {
+          setNearbyBathrooms(res.data.nearbyBathroom || []);
+          setNearbyMetro(res.data.nearbyMetroA11y || []);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setA11yLoading(false));
+  }, [placePosition]);
 
   const handleBack = useCallback(() => {
     setInfoShow({ isOpen: false, kind: null });
@@ -35,28 +73,22 @@ export default function PlaceContent() {
     setSheetMode("home");
   }, [setInfoShow, setSearchPlace, setSheetMode]);
 
-  const handlePlanRoute = useCallback(async () => {
+  const handlePlanRoute = useCallback(() => {
     if (!infoShow.kind) return;
-    let latLng: LatLng | null = null;
 
     if (infoShow.kind === "place") {
       const place = infoShow.place;
-      latLng = { lat: parseFloat(place.lat), lng: parseFloat(place.lon) };
+      const latLng = { lat: parseFloat(place.lat), lng: parseFloat(place.lon) };
       setDestination({ kind: "place", place, position: latLng });
+      setDestinationName(place.name || place.display_name || "");
     } else if (infoShow.kind === "coordinate") {
-      latLng = infoShow.position ?? userLocation ?? { lat: 25.0478, lng: 121.5319 };
+      const latLng = infoShow.position ?? userLocation ?? { lat: 25.0478, lng: 121.5319 };
       setDestination({ kind: "coordinate", address: infoShow.address, position: latLng });
+      setDestinationName(infoShow.address || "");
     }
 
-    const success = await handleComputeRoute({
-      origin: userLocation ?? { lat: 25.0478, lng: 121.5319 },
-      destination: latLng ?? undefined,
-    });
-    if (success) {
-      setSearchPlace(null);
-      setSheetMode("route");
-    }
-  }, [infoShow, userLocation, setDestination, handleComputeRoute, setSearchPlace, setSheetMode]);
+    setSheetMode("plan");
+  }, [infoShow, userLocation, setDestination, setDestinationName, setSheetMode]);
 
   const handleShare = useCallback(async () => {
     if (!infoShow.kind) return;
@@ -76,6 +108,28 @@ export default function PlaceContent() {
     } catch { /* user cancelled */ }
   }, [infoShow]);
 
+  const currentPlace: import("@/types").PlaceDetail | null = useMemo(() => {
+    if (!infoShow.kind) return null;
+    if (infoShow.kind === "place") {
+      return { kind: "place", place: infoShow.place, position: { lat: parseFloat(infoShow.place.lat), lng: parseFloat(infoShow.place.lon) } };
+    }
+    if (infoShow.kind === "coordinate" && infoShow.position) {
+      return { kind: "coordinate", address: infoShow.address, position: infoShow.position };
+    }
+    return null;
+  }, [infoShow]);
+
+  const saved = currentPlace ? isSavedPlace(currentPlace) : false;
+
+  const handleToggleSave = useCallback(() => {
+    if (!currentPlace) return;
+    if (saved) {
+      removeSavedPlace(currentPlace);
+    } else {
+      addSavedPlace(currentPlace);
+    }
+  }, [currentPlace, saved, addSavedPlace, removeSavedPlace]);
+
   if (!infoShow.kind) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -90,6 +144,9 @@ export default function PlaceContent() {
     ? place!.name || place!.display_name
     : infoShow.address;
   const address = isPlace ? place!.display_name : infoShow.address;
+  const addressParts = isPlace && place!.address ? place!.address : null;
+
+  const hasA11y = nearbyBathrooms.length > 0 || nearbyMetro.length > 0;
 
   return (
     <div className="space-y-4">
@@ -137,20 +194,18 @@ export default function PlaceContent() {
       <div className="flex gap-2">
         <Button
           onClick={handlePlanRoute}
-          disabled={isLoading}
           className="flex-1 rounded-xl h-11"
         >
-          {isLoading ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
-              {t("loadingRoute")}
-            </>
-          ) : (
-            <>
-              <Navigation className="h-4 w-4 mr-1.5" />
-              {t("planRoute")}
-            </>
-          )}
+          <Navigation className="h-4 w-4 mr-1.5" />
+          {t("planRoute")}
+        </Button>
+        <Button
+          onClick={handleToggleSave}
+          variant={saved ? "default" : "outline"}
+          size="icon"
+          className="rounded-xl h-11 w-11 shrink-0"
+        >
+          {saved ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
         </Button>
         <Button
           onClick={handleShare}
@@ -161,6 +216,92 @@ export default function PlaceContent() {
           <Share2 className="h-4 w-4" />
         </Button>
       </div>
+
+      {/* Address Details */}
+      {addressParts && (
+        <section className="rounded-xl bg-muted/30 p-3 space-y-1.5">
+          <h2 className="text-sm font-semibold flex items-center gap-1.5">
+            <MapPin className="h-4 w-4 text-muted-foreground" />
+            {t("addressInfo")}
+          </h2>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+            {addressParts.road && (
+              <div><span className="text-muted-foreground">{t("road")}:</span> {addressParts.road}</div>
+            )}
+            {(addressParts.suburb || addressParts.neighbourhood) && (
+              <div><span className="text-muted-foreground">{t("district")}:</span> {addressParts.suburb || addressParts.neighbourhood}</div>
+            )}
+            {(addressParts.city || addressParts.town || addressParts.county) && (
+              <div><span className="text-muted-foreground">{t("city")}:</span> {addressParts.city || addressParts.town || addressParts.county}</div>
+            )}
+            {addressParts.postcode && (
+              <div><span className="text-muted-foreground">{t("postcode")}:</span> {addressParts.postcode}</div>
+            )}
+          </div>
+        </section>
+      )}
+
+      {/* Nearby Accessibility Facilities */}
+      <section>
+        <h2 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
+          <Accessibility className="h-4 w-4" />
+          {t("nearbyA11y")}
+        </h2>
+
+        {a11yLoading ? (
+          <div className="flex items-center gap-2 py-3 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            {t("loadingRoute")}...
+          </div>
+        ) : hasA11y ? (
+          <div className="space-y-2">
+            {nearbyBathrooms.slice(0, 4).map((b) => (
+              <button
+                key={b._id}
+                type="button"
+                onClick={() => {
+                  if (map) map.flyTo({ center: [b.longitude, b.latitude], zoom: 17 });
+                }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/40 hover:bg-muted/70 transition-colors text-left"
+              >
+                <div className="h-9 w-9 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
+                  <DoorOpen className="h-4 w-4 text-blue-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{b.name}</p>
+                  <p className="text-xs text-muted-foreground truncate">{b.address}</p>
+                </div>
+                <Badge variant="secondary" className="text-xs shrink-0">
+                  {t("accessibleToilet")}
+                </Badge>
+              </button>
+            ))}
+            {nearbyMetro.slice(0, 4).map((m) => (
+              <button
+                key={m._id}
+                type="button"
+                onClick={() => {
+                  if (map) map.flyTo({ center: [parseFloat(m.經度), parseFloat(m.緯度)], zoom: 17 });
+                }}
+                className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/40 hover:bg-muted/70 transition-colors text-left"
+              >
+                <div className="h-9 w-9 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
+                  <ArrowUpDown className="h-4 w-4 text-green-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{m["出入口電梯/無障礙坡道名稱"]}</p>
+                  <p className="text-xs text-muted-foreground truncate">{t("elevator")} · {m.出入口編號}</p>
+                </div>
+                <Badge variant="secondary" className="text-xs shrink-0">
+                  {t("elevator")}
+                </Badge>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground py-2">{t("noNearbyA11y")}</p>
+        )}
+      </section>
     </div>
   );
 }

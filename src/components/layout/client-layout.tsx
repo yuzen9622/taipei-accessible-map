@@ -12,7 +12,7 @@ export default function ClientLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { initSearchHistory } = useMapStore();
+  const { initSearchHistory, initSavedPlaces } = useMapStore();
   const { setSession, setUser, setUserConfig } = useAuthStore();
   const getNewAccessToken = useCallback(async () => {
     const token = await refreshToken();
@@ -28,11 +28,15 @@ export default function ClientLayout({
 
   useEffect(() => {
     const storedHistory = localStorage.getItem("searchHistory");
+    const storedSaved = localStorage.getItem("savedPlaces");
     getNewAccessToken();
     if (storedHistory) {
       initSearchHistory(JSON.parse(storedHistory));
     }
-  }, [initSearchHistory, getNewAccessToken]);
+    if (storedSaved) {
+      initSavedPlaces(JSON.parse(storedSaved));
+    }
+  }, [initSearchHistory, initSavedPlaces, getNewAccessToken]);
 
   return (
     <div className="w-full h-dvh flex flex-col">

@@ -78,7 +78,9 @@ export default function ClientMap() {
       const [sx, sy] = pointerDownPos.current;
       const dx = Math.abs(e.point.x - sx);
       const dy = Math.abs(e.point.y - sy);
-      if (dt > 300 || dx > 5 || dy > 5) return;
+      // Only trigger on deliberate taps: short press + minimal movement
+      if (dt > 250 || dx > 4 || dy > 4) return;
+
       const { lngLat } = e;
       const lat = lngLat.lat;
       const lng = lngLat.lng;
@@ -89,11 +91,23 @@ export default function ClientMap() {
 
       try {
         const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=${lang}`
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=${lang}&zoom=18&addressdetails=1`
         );
         const data = await res.json();
 
-        if (data && data.place_id) {
+        if (data && data.place_id && data.name) {
+          const position = { lat, lng };
+          setInfoShow({
+            isOpen: true,
+            place: data,
+            kind: "place",
+          });
+          setSearchPlace({
+            kind: "place",
+            place: data,
+            position,
+          });
+        } else if (data && data.place_id) {
           const position = { lat, lng };
           setInfoShow({
             isOpen: true,
@@ -106,30 +120,10 @@ export default function ClientMap() {
             position,
           });
         } else {
-          setInfoShow({
-            isOpen: true,
-            address: data.display_name || `${lat}, ${lng}`,
-            kind: "coordinate",
-            position: { lat, lng },
-          });
-          setSearchPlace({
-            kind: "coordinate",
-            address: data.display_name || `${lat}, ${lng}`,
-            position: { lat, lng },
-          });
+          setInfoShow({ isOpen: false, kind: null });
         }
       } catch {
-        setInfoShow({
-          isOpen: true,
-          address: `${lat}, ${lng}`,
-          kind: "coordinate",
-          position: { lat, lng },
-        });
-        setSearchPlace({
-          kind: "coordinate",
-          address: `${lat}, ${lng}`,
-          position: { lat, lng },
-        });
+        setInfoShow({ isOpen: false, kind: null });
       }
     },
     [i18n.language, setInfoShow, setSearchPlace, setSheetMode, isNavigating]

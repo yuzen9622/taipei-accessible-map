@@ -16,6 +16,7 @@ import { Input } from "../ui/input";
 
 type InputProps = InputHTMLAttributes<HTMLInputElement> & {
   onPlaceSelect: (places: PlaceDetail) => void;
+  hideIcon?: boolean;
 };
 
 function PlaceInput({
@@ -25,6 +26,7 @@ function PlaceInput({
   placeholder = "今天想去哪兒...",
   value,
   onChange,
+  hideIcon,
   ...props
 }: InputProps) {
   const { t } = useAppTranslation("translation");
@@ -101,12 +103,14 @@ function PlaceInput({
   return (
     <div
       className={cn(
-        " relative w-full bg-card px-3 py-1  pointer-events-auto rounded-t-3xl",
-        !open && "rounded-3xl"
+        "relative w-full pointer-events-auto",
+        hideIcon
+          ? "bg-transparent px-1 py-0.5"
+          : cn("bg-card px-3 py-1 rounded-t-3xl", !open && "rounded-3xl")
       )}
     >
       <div className={cn("w-full flex items-center gap-2 px-2")}>
-        <Image src={"/logo.webp"} width={20} height={20} alt="search" />
+        {!hideIcon && <Image src={"/logo.webp"} width={20} height={20} alt="search" />}
         <form
           onSubmit={async (e) => {
             e.preventDefault();

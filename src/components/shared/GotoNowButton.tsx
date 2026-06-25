@@ -16,9 +16,9 @@ export default function GotoNowButton() {
         variant="secondary"
         size="icon"
         onClick={() => handlePinClick(userLocation)}
-        className="rounded-full h-12 w-12 shadow-xl backdrop-blur-sm bg-background border-2 border-primary/20 hover:bg-primary/5 hover:border-primary/40 hover:shadow-2xl transition-all"
+        className="rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all"
       >
-        <Navigation className="h-5 w-5 text-primary" />
+        <Navigation className="h-5 w-5 text-foreground" />
       </Button>
     </div>
   );

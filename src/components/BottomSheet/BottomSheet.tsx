@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import Image from "next/image";
 import { motion, AnimatePresence } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import AccountLogin from "@/components/shared/AccountLogin";
@@ -10,6 +11,7 @@ import HomeContent from "./HomeContent";
 import NavigationContent from "./NavigationContent";
 import PlaceContent from "./PlaceContent";
 import RouteContent from "./RouteContent";
+import RoutePlanContent from "./RoutePlanContent";
 
 const SNAP_POINTS = {
   peek: 0.12,
@@ -34,6 +36,10 @@ export default function BottomSheet() {
         setSheetHeight(SNAP_POINTS.half);
         break;
       case "place":
+        setSnap("half");
+        setSheetHeight(SNAP_POINTS.half);
+        break;
+      case "plan":
         setSnap("half");
         setSheetHeight(SNAP_POINTS.half);
         break;
@@ -127,7 +133,7 @@ export default function BottomSheet() {
 
           {/* Mobile Header with Login */}
           <div className="flex items-center justify-between px-4 pb-2">
-            <h1 className="text-base font-bold">♿ Accessible Taipei</h1>
+            <h1 className="text-base font-bold flex items-center gap-1.5"><Image src="/logo.webp" width={22} height={22} alt="" /> Accessible Taipei</h1>
             <AccountLogin />
           </div>
 
@@ -181,7 +187,7 @@ export default function BottomSheet() {
         >
           {/* Desktop Header with Login */}
           <div className="flex items-center justify-between p-5 pb-3 border-b border-border/30">
-            <h1 className="text-base font-bold">♿ Accessible Taipei</h1>
+            <h1 className="text-base font-bold flex items-center gap-1.5"><Image src="/logo.webp" width={22} height={22} alt="" /> Accessible Taipei</h1>
             <AccountLogin />
           </div>
 
@@ -211,6 +217,8 @@ function SheetContent() {
       return <HomeContent />;
     case "place":
       return <PlaceContent />;
+    case "plan":
+      return <RoutePlanContent />;
     case "route":
       return <RouteContent />;
     case "navigation":

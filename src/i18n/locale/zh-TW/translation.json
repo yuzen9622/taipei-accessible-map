@@ -158,5 +158,22 @@
     "timeScore": "時間分數",
     "criticalScore": "關鍵設施分數",
     "walk": "步行",
-    "transfer": "轉乘 {{count}} 次"
+    "transfer": "轉乘 {{count}} 次",
+    "myLocation": "你的位置",
+    "chooseOrigin": "選擇起點",
+    "chooseDestination": "選擇終點",
+    "useMyLocationAsOrigin": "使用目前位置作為起點",
+    "searchRoute": "開始規劃",
+    "swapOriginDest": "交換起終點",
+    "planRouteDesc": "選擇起點與終點，規劃無障礙路線",
+    "savedPlaces": "收藏地點",
+    "savePlace": "收藏",
+    "unsavePlace": "取消收藏",
+    "addressInfo": "地址資訊",
+    "road": "路/街",
+    "district": "區域",
+    "city": "城市",
+    "postcode": "郵遞區號",
+    "noNearbyA11y": "附近暫無無障礙設施資料",
+    "quickActions": "快捷功能"
 }

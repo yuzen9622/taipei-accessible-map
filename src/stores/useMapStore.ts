@@ -5,7 +5,7 @@ import { A11yEnum } from "@/types/index";
 import type { AccessibleRoute } from "@/types/route";
 import type maplibregl from "maplibre-gl";
 
-export type SheetMode = "home" | "place" | "route" | "a11y" | "navigation";
+export type SheetMode = "home" | "place" | "plan" | "route" | "a11y" | "navigation";
 
 interface MapState {
   map: maplibregl.Map | null;
@@ -59,6 +59,10 @@ interface MapAction {
   addRouteA11y: (a11y: Marker[]) => void;
   setOriginName: (name: string) => void;
   setDestinationName: (name: string) => void;
+  initSavedPlaces: (places: PlaceDetail[]) => void;
+  addSavedPlace: (place: PlaceDetail) => void;
+  removeSavedPlace: (place: PlaceDetail) => void;
+  isSavedPlace: (place: PlaceDetail) => boolean;
   closeRouteDrawer: () => void;
   setSheetMode: (mode: SheetMode) => void;
   setIsNavigating: (v: boolean) => void;
@@ -146,6 +150,40 @@ const useMapStore = create<MapStore>((set, get) => ({
   },
   clearSearchHistory: () => set({ searchHistory: [] }),
   savedPlaces: [],
+  initSavedPlaces: (places) => set({ savedPlaces: places }),
+  addSavedPlace: (place) => {
+    const { savedPlaces } = get();
+    const exists = savedPlaces.some((p) => {
+      if (p.kind === "place" && place.kind === "place") {
+        return p.place.place_id === place.place.place_id;
+      }
+      return p.position.lat === place.position.lat && p.position.lng === place.position.lng;
+    });
+    if (exists) return;
+    const updated = [place, ...savedPlaces];
+    localStorage.setItem("savedPlaces", JSON.stringify(updated));
+    set({ savedPlaces: updated });
+  },
+  removeSavedPlace: (place) => {
+    const { savedPlaces } = get();
+    const updated = savedPlaces.filter((p) => {
+      if (p.kind === "place" && place.kind === "place") {
+        return p.place.place_id !== place.place.place_id;
+      }
+      return p.position.lat !== place.position.lat || p.position.lng !== place.position.lng;
+    });
+    localStorage.setItem("savedPlaces", JSON.stringify(updated));
+    set({ savedPlaces: updated });
+  },
+  isSavedPlace: (place) => {
+    const { savedPlaces } = get();
+    return savedPlaces.some((p) => {
+      if (p.kind === "place" && place.kind === "place") {
+        return p.place.place_id === place.place.place_id;
+      }
+      return p.position.lat === place.position.lat && p.position.lng === place.position.lng;
+    });
+  },
   routeA11y: [],
   setRouteA11y: (a11y) => {
     const deduped = Array.from(

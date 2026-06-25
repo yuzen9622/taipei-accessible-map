@@ -115,7 +115,7 @@ export default function AccountLogin() {
           <Button
             aria-label="Account setting"
             size="icon"
-            className="text-white hover:text-primary  focus:ring-2  bg-blue-500  hover:bg-background relative pointer-events-auto  focus:ring-white rounded-full transition-colors duration-200"
+            className="text-muted-foreground hover:text-foreground focus:ring-2 bg-muted/60 hover:bg-muted border border-border/50 relative pointer-events-auto focus:ring-primary/30 rounded-full transition-colors duration-200"
           >
             {user?.avatar ? (
               <Image
