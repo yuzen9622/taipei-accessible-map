@@ -133,23 +133,8 @@ export default function PlaceContent() {
     }
   }, [currentPlace, saved, addSavedPlace, removeSavedPlace]);
 
-  if (!infoShow.kind) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
   const isPlace = infoShow.kind === "place";
   const place = isPlace ? infoShow.place : null;
-  const name = isPlace
-    ? place!.name || place!.display_name
-    : infoShow.address;
-  const address = isPlace ? place!.display_name : infoShow.address;
-  const addressParts = isPlace && place!.address ? place!.address : null;
-
-  const hasA11y = nearbyBathrooms.length > 0 || nearbyMetro.length > 0;
 
   const a11yChecklist = useMemo(() => {
     const items: { key: string; label: string; available: boolean }[] = [];
@@ -179,6 +164,21 @@ export default function PlaceContent() {
   const placeIdForReview = isPlace && place
     ? (place.osm_id ? `${place.osm_type}_${place.osm_id}` : place.place_id?.toString() || "")
     : placePosition ? `${placePosition.lat}_${placePosition.lng}` : "";
+
+  if (!infoShow.kind) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  const name = isPlace
+    ? place!.name || place!.display_name
+    : infoShow.address;
+  const address = isPlace ? place!.display_name : infoShow.address;
+  const addressParts = isPlace && place!.address ? place!.address : null;
+  const hasA11y = nearbyBathrooms.length > 0 || nearbyMetro.length > 0;
 
   return (
     <div className="space-y-4">
