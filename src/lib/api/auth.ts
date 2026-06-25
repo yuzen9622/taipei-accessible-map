@@ -9,7 +9,7 @@ export async function login(
   avatar: string,
   client_id: string
 ) {
-  return fetchRequest(`${END_POINT}/user/login`, {
+  return fetchRequest(`${END_POINT}/api/v1/user/login`, {
     method: "POST",
     body: { email, name, avatar, client_id },
   }) as Promise<ApiResponse<{ user: UserDTO; config: UserConfig }>>;
@@ -17,7 +17,7 @@ export async function login(
 
 export async function refreshToken(): Promise<string | null> {
   try {
-    const response = await fetchRequest(`${END_POINT}/user/refresh`, {
+    const response = await fetchRequest(`${END_POINT}/api/v1/user/refresh`, {
       method: "POST",
     });
     if (!response.ok) {
@@ -30,7 +30,7 @@ export async function refreshToken(): Promise<string | null> {
 }
 
 export async function logout(): Promise<ApiResponse<null>> {
-  return fetchRequest(`${END_POINT}/user/logout`, {
+  return fetchRequest(`${END_POINT}/api/v1/user/logout`, {
     method: "POST",
     requireAuth: true,
   }) as Promise<ApiResponse<null>>;

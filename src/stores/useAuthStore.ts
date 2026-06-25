@@ -38,7 +38,6 @@ const useAuthStore = create<AuthStore>((set, get) => ({
   },
   updateUserConfig: (config) => {
     const user = get().user;
-    console.log("Updating user config:", config);
     if (user) {
       updateConfig({ user_id: user._id, ...config });
     }

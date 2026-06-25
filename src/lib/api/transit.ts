@@ -20,7 +20,7 @@ export async function getBusRealtimeNearbyStop({
 }) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10_000);
-  const data = (await fetchRequest(`${END_POINT}/transit/bus`, {
+  const data = (await fetchRequest(`${END_POINT}/api/v1/transit/bus`, {
     method: "POST",
     body: {
       arrival_stop,
@@ -45,7 +45,7 @@ export async function getRealtimeBusPosition(
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10_000);
   const data = (await fetchRequest(
-    `${END_POINT}/transit/bus/realtime?plate_number=${plate_number}&arrival_lat=${arrival_lat}&arrival_lng=${arrival_lng}&route_name=${route_name}`,
+    `${END_POINT}/api/v1/transit/bus/realtime?plate_number=${plate_number}&arrival_lat=${arrival_lat}&arrival_lng=${arrival_lng}&route_name=${route_name}`,
     {
       method: "GET",
       signal: controller.signal,
@@ -59,7 +59,7 @@ export async function getRealtimeBusPosition(
 export async function getTrainData() {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10_000);
-  const data = await fetchRequest(`${END_POINT}/transit/train`, {
+  const data = await fetchRequest(`${END_POINT}/api/v1/transit/train`, {
     method: "GET",
     signal: controller.signal,
   });

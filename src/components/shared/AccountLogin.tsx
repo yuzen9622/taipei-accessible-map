@@ -90,10 +90,10 @@ export default function AccountLogin() {
           });
         }
       } catch (error) {
-        console.log("Google 登入失敗", error);
+        void error;
       }
     },
-    onError: (errorResponse) => console.log(errorResponse),
+    onError: () => {},
   });
 
   const handleNotifyChange = (checked: boolean) => {
@@ -334,7 +334,6 @@ export default function AccountLogin() {
               <ThemeSwitcher
                 value={userConfig.darkMode}
                 onChange={(changeTheme) => {
-                  console.log("Change theme to", changeTheme);
                   updateUserConfig({ darkMode: changeTheme });
                 }}
               />

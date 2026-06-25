@@ -21,7 +21,7 @@ export default function AccessibilityPin() {
       const bathroomsMarkers: Marker[] = formatBathroom(bathrooms);
       setA11yPlaces([...formatData, ...bathroomsMarkers]);
     } catch (error) {
-      console.log(error);
+      void error;
     }
   }, [setA11yPlaces]);
 

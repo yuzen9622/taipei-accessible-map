@@ -87,7 +87,6 @@ export default function A11yCard({ place }: { place: Marker }) {
           className="mt-2 flex-1"
           onClick={() => {
             setSelectA11yPlace(place);
-            console.log("Navigate to:", place.position);
             map?.setCenter([place.position.lng, place.position.lat]);
             map?.setZoom(18);
           }}
