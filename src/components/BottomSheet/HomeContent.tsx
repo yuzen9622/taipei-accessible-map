@@ -6,6 +6,8 @@ import {
   ArrowUpDown,
   ArrowUpRight,
   Bookmark,
+  Bus,
+  CircleParking,
   Clock,
   Cloud,
   DoorOpen,
@@ -21,11 +23,13 @@ import useMapStore from "@/stores/useMapStore";
 import { A11yEnum, type PlaceDetail } from "@/types";
 import type { HazardReport } from "@/types/route";
 import { Badge } from "../ui/badge";
+import BusPanel from "./BusPanel";
 import EnvironmentPanel from "./EnvironmentPanel";
 import HazardReportPanel from "./HazardReportPanel";
+import ParkingPanel from "./ParkingPanel";
 import WelfarePanel from "./WelfarePanel";
 
-type SubPanel = "none" | "environment" | "hazard" | "welfare";
+type SubPanel = "none" | "environment" | "hazard" | "welfare" | "parking" | "bus";
 
 export default function HomeContent() {
   const { t } = useAppTranslation();
@@ -103,6 +107,12 @@ export default function HomeContent() {
   }
   if (subPanel === "welfare") {
     return <WelfarePanel onClose={() => setSubPanel("none")} />;
+  }
+  if (subPanel === "parking") {
+    return <ParkingPanel onClose={() => setSubPanel("none")} />;
+  }
+  if (subPanel === "bus") {
+    return <BusPanel onClose={() => setSubPanel("none")} />;
   }
 
   return (
@@ -190,6 +200,22 @@ export default function HomeContent() {
         >
           <Heart className="h-4 w-4" />
           {t("welfare")}
+        </button>
+        <button
+          type="button"
+          onClick={() => setSubPanel("parking")}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20 transition-colors"
+        >
+          <CircleParking className="h-4 w-4" />
+          {t("parking")}
+        </button>
+        <button
+          type="button"
+          onClick={() => setSubPanel("bus")}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+        >
+          <Bus className="h-4 w-4" />
+          {t("busInfo")}
         </button>
         </div>
       </div>

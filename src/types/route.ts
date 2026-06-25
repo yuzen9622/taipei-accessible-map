@@ -257,13 +257,13 @@ export interface AgentChatRequest {
 
 // --- Navigation Instructions (from /a11y/route/instructions) ---
 export type NavInstructionType = "turn" | "transit_board" | "transit_alight" | "facility" | "depart" | "arrive";
-export type RelativeDirection = "LEFT" | "RIGHT" | "SLIGHTLY_LEFT" | "SLIGHTLY_RIGHT" | "HARD_LEFT" | "HARD_RIGHT" | "CONTINUE" | "U_TURN";
+export type RelativeDirection = "正前方" | "左前方" | "右前方" | "左側" | "右側" | "左後方" | "右後方" | "正後方" | null;
 
 export interface NavInstruction {
   text: string;
   type: NavInstructionType;
   bearing: number | null;
-  relativeDirection: RelativeDirection | null;
+  relativeDirection: RelativeDirection;
   distanceM: number | null;
   streetName: string | null;
   legType: "WALK" | "BUS" | "METRO" | "THSR" | "TRA";
@@ -271,9 +271,16 @@ export interface NavInstruction {
 }
 
 export interface NavInstructionsData {
-  routeId: string;
   instructions: NavInstruction[];
+  initialBearing: number;
   totalSteps: number;
+  warnings: string[];
+}
+
+export interface NavInstructionsRequest {
+  route: { routeId?: string; legs: RouteLeg[] };
+  userHeading?: number;
+  language?: string;
 }
 
 // --- Hazard Report (from /a11y/reports) ---
@@ -349,6 +356,58 @@ export interface EnvironmentData {
     items?: { name: string; url: string; distance: number }[];
     reason?: string;
   };
+}
+
+// --- Disabled Parking (from /a11y/parking/nearby) ---
+export interface DisabledParking {
+  _id: string;
+  city: string;
+  district: string;
+  areacode?: string;
+  quantity: number;
+  placeName: string;
+  chargeType?: string;
+  spaceLabel?: string;
+  isMarked: boolean;
+  latitude: number;
+  longitude: number;
+  location: GeoPoint;
+  importedAt: string;
+}
+
+// --- Bus Arrival (from /transit/bus/arrival) ---
+export interface BilingualName {
+  Zh_tw: string;
+  En: string;
+}
+
+export interface EstimatedTimeOfArrival {
+  StopUID: string;
+  StopName: BilingualName;
+  Direction: 0 | 1;
+  EstimateTime: number | null;
+  StopStatus: number;
+  MessageType?: number;
+  PlateNumb?: string;
+  RouteName?: BilingualName;
+  SubRouteName?: BilingualName;
+}
+
+// --- Bus Realtime Positions (from /transit/bus/positions) ---
+export interface BusPosition {
+  PositionLon: number;
+  PositionLat: number;
+}
+
+export interface RealTimeByFrequency {
+  PlateNumb: string;
+  OperatorNo?: string;
+  Direction: 0 | 1;
+  BusPosition: BusPosition;
+  Speed?: number;
+  GPSTime?: string;
+  UpdateTime?: string;
+  RouteName?: BilingualName;
 }
 
 // --- Helper functions ---

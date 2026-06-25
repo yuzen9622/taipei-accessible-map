@@ -38,14 +38,17 @@ export default function NavigationContent() {
   }, []);
 
   useEffect(() => {
-    if (!route?.routeId) return;
-    getRouteInstructions(route.routeId, i18n.language).then((res) => {
+    if (!route) return;
+    getRouteInstructions({
+      route: { routeId: route.routeId, legs: route.legs },
+      language: i18n.language === "en" ? "en" : "zh-TW",
+    }).then((res) => {
       if (res.ok && res.data?.instructions) {
         setInstructions(res.data.instructions);
         setCurrentStep(0);
       }
     }).catch(() => {});
-  }, [route?.routeId, i18n.language]);
+  }, [route, i18n.language]);
 
   const speak = useCallback(
     (text: string) => {

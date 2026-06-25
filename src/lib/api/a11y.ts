@@ -6,9 +6,11 @@ import type {
   AccessibleRouteRequest,
   AccessibleRouteData,
   NavInstructionsData,
+  NavInstructionsRequest,
   HazardReport,
   EnvironmentData,
   WelfareInstitution,
+  DisabledParking,
 } from "@/types/route";
 
 export async function getAllA11yPlaces() {
@@ -53,10 +55,10 @@ export async function getAccessibleRoute(request: AccessibleRouteRequest) {
   return response as ApiResponse<AccessibleRouteData>;
 }
 
-export async function getRouteInstructions(routeId: string, language = "zh-TW") {
+export async function getRouteInstructions(request: NavInstructionsRequest) {
   const response = await fetchRequest(
     `${END_POINT}/api/v1/a11y/route/instructions`,
-    { method: "POST", body: { routeId, language } }
+    { method: "POST", body: request }
   );
   return response as ApiResponse<NavInstructionsData>;
 }
@@ -120,4 +122,11 @@ export async function getEnvironmentInfo(lat: number, lng: number) {
     `${END_POINT}/api/v1/a11y/environment?lat=${lat}&lng=${lng}`
   );
   return response as ApiResponse<EnvironmentData>;
+}
+
+export async function getNearbyParking(lat: number, lng: number, radius = 500) {
+  const response = await fetchRequest(
+    `${END_POINT}/api/v1/a11y/parking/nearby?lat=${lat}&lng=${lng}&radius=${radius}`
+  );
+  return response as ApiResponse<DisabledParking[]>;
 }

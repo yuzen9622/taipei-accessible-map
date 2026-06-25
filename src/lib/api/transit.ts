@@ -1,5 +1,6 @@
 import type { ApiResponse } from "@/types/response";
 import type { BusRealtimeNearbyStop } from "@/types/transit";
+import type { EstimatedTimeOfArrival, RealTimeByFrequency } from "@/types/route";
 import { END_POINT } from "../config";
 import { fetchRequest } from "../fetch";
 
@@ -52,6 +53,41 @@ export async function getRealtimeBusPosition(
     }
   )) as ApiResponse<BusRealtimeNearbyStop[]>;
 
+  clearTimeout(timeout);
+  return data;
+}
+
+export async function getBusArrival(
+  routeName: string,
+  stopName: string,
+  city = "台北",
+  direction?: 0 | 1
+) {
+  const params = new URLSearchParams({ routeName, stopName, city });
+  if (direction !== undefined) params.set("direction", String(direction));
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
+  const data = (await fetchRequest(
+    `${END_POINT}/api/v1/transit/bus/arrival?${params}`,
+    { signal: controller.signal }
+  )) as ApiResponse<EstimatedTimeOfArrival[]>;
+  clearTimeout(timeout);
+  return data;
+}
+
+export async function getBusPositions(
+  routeName: string,
+  city = "台北",
+  direction?: 0 | 1
+) {
+  const params = new URLSearchParams({ routeName, city });
+  if (direction !== undefined) params.set("direction", String(direction));
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
+  const data = (await fetchRequest(
+    `${END_POINT}/api/v1/transit/bus/positions?${params}`,
+    { signal: controller.signal }
+  )) as ApiResponse<RealTimeByFrequency[]>;
   clearTimeout(timeout);
   return data;
 }
