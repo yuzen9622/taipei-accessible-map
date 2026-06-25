@@ -18,6 +18,7 @@ import GotoNowButton from "./shared/GotoNowButton";
 import SearchPin from "./shared/SearchPin";
 import HazardWrapper from "./Wrapper/HazardWrapper";
 import TransitWrapper from "./Wrapper/TransitWrapper";
+import VisualA11yWrapper from "./Wrapper/VisualA11yWrapper";
 
 const MAP_STYLES = {
   light: "https://tiles.openfreemap.org/styles/liberty",
@@ -156,6 +157,7 @@ export default function ClientMap() {
       ) : null}
       <TransitWrapper />
       <HazardWrapper />
+      <VisualA11yWrapper />
       <AIChatBot />
       <RouteLine />
     </Map>

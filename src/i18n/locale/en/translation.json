@@ -196,5 +196,18 @@
     "stationDetail": "Station Accessibility Info",
     "exitInfo": "Exit Info",
     "elevatorLocation": "Elevator Location",
-    "stationA11yFacilities": "Station Facilities"
+    "stationA11yFacilities": "Station Facilities",
+    "audioSignals": "Audio Signals",
+    "tactilePaving": "Tactile Paving",
+    "visualA11y": "Visual Impairment Aid",
+    "audioSignalDesc": "Intersections with audio signals for safe crossing",
+    "tactilePavingDesc": "Locations with tactile paving to guide visually impaired pedestrians",
+    "buttonOperated": "Button Operated",
+    "hasVibration": "Has Vibration",
+    "noVibration": "No Vibration",
+    "crossingType": "Crossing Type",
+    "busStop": "Bus Stop",
+    "crossing": "Crossing",
+    "kerb": "Kerb",
+    "osmDataSource": "Data source: OpenStreetMap"
 }

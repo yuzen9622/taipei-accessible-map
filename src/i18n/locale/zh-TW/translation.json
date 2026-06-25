@@ -197,5 +197,18 @@
     "stationDetail": "車站無障礙資訊",
     "exitInfo": "出口資訊",
     "elevatorLocation": "電梯位置",
-    "stationA11yFacilities": "站內無障礙設施"
+    "stationA11yFacilities": "站內無障礙設施",
+    "audioSignals": "有聲號誌",
+    "tactilePaving": "導盲磚",
+    "visualA11y": "視障輔助",
+    "audioSignalDesc": "設有有聲號誌的路口，提供視障者安全過馬路提示",
+    "tactilePavingDesc": "設有導盲磚的地點，引導視障者行走",
+    "buttonOperated": "按鈕式",
+    "hasVibration": "有振動提示",
+    "noVibration": "無振動提示",
+    "crossingType": "路口類型",
+    "busStop": "公車站",
+    "crossing": "路口",
+    "kerb": "路緣",
+    "osmDataSource": "資料來源：OpenStreetMap"
 }

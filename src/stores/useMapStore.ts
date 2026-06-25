@@ -31,6 +31,7 @@ interface MapState {
   destinationName: string;
   sheetMode: SheetMode;
   isNavigating: boolean;
+  visualA11yVisible: boolean;
 }
 
 interface MapAction {
@@ -66,6 +67,8 @@ interface MapAction {
   closeRouteDrawer: () => void;
   setSheetMode: (mode: SheetMode) => void;
   setIsNavigating: (v: boolean) => void;
+  setVisualA11yVisible: (v: boolean) => void;
+  toggleVisualA11y: () => void;
 }
 
 type MapStore = MapState & MapAction;
@@ -196,6 +199,9 @@ const useMapStore = create<MapStore>((set, get) => ({
   setOriginName: (name) => set({ originName: name }),
   destinationName: "",
   setDestinationName: (name) => set({ destinationName: name }),
+  visualA11yVisible: false,
+  setVisualA11yVisible: (v) => set({ visualA11yVisible: v }),
+  toggleVisualA11y: () => set({ visualA11yVisible: !get().visualA11yVisible }),
   sheetMode: "home",
   setSheetMode: (mode) => set({ sheetMode: mode }),
   isNavigating: false,
