@@ -9,7 +9,6 @@ import {
   Clock,
   Cloud,
   DoorOpen,
-  Eye,
   MapPin,
   Navigation,
 } from "lucide-react";
@@ -37,8 +36,6 @@ export default function HomeContent() {
     toggleA11yType,
     selectedA11yTypes,
     a11yPlaces,
-    visualA11yVisible,
-    toggleVisualA11y,
     userLocation,
     savedPlaces,
   } = useMapStore();
@@ -180,18 +177,6 @@ export default function HomeContent() {
         >
           <AlertTriangle className="h-4 w-4" />
           {t("reportHazard")}
-        </button>
-        <button
-          type="button"
-          onClick={toggleVisualA11y}
-          className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-colors ${
-            visualA11yVisible
-              ? "bg-violet-500 text-white shadow-sm"
-              : "bg-violet-500/10 text-violet-600 dark:text-violet-400 hover:bg-violet-500/20"
-          }`}
-        >
-          <Eye className="h-4 w-4" />
-          {t("visualA11y")}
         </button>
         </div>
       </div>
