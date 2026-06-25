@@ -9,6 +9,7 @@ import {
   Clock,
   Cloud,
   DoorOpen,
+  Heart,
   MapPin,
   Navigation,
 } from "lucide-react";
@@ -22,8 +23,9 @@ import type { HazardReport } from "@/types/route";
 import { Badge } from "../ui/badge";
 import EnvironmentPanel from "./EnvironmentPanel";
 import HazardReportPanel from "./HazardReportPanel";
+import WelfarePanel from "./WelfarePanel";
 
-type SubPanel = "none" | "environment" | "hazard";
+type SubPanel = "none" | "environment" | "hazard" | "welfare";
 
 export default function HomeContent() {
   const { t } = useAppTranslation();
@@ -98,6 +100,9 @@ export default function HomeContent() {
   }
   if (subPanel === "hazard") {
     return <HazardReportPanel onClose={() => setSubPanel("none")} />;
+  }
+  if (subPanel === "welfare") {
+    return <WelfarePanel onClose={() => setSubPanel("none")} />;
   }
 
   return (
@@ -177,6 +182,14 @@ export default function HomeContent() {
         >
           <AlertTriangle className="h-4 w-4" />
           {t("reportHazard")}
+        </button>
+        <button
+          type="button"
+          onClick={() => setSubPanel("welfare")}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition-colors"
+        >
+          <Heart className="h-4 w-4" />
+          {t("welfare")}
         </button>
         </div>
       </div>

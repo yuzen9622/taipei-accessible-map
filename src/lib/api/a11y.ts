@@ -8,6 +8,7 @@ import type {
   NavInstructionsData,
   HazardReport,
   EnvironmentData,
+  WelfareInstitution,
 } from "@/types/route";
 
 export async function getAllA11yPlaces() {
@@ -98,6 +99,20 @@ export async function confirmHazardReport(id: string, confirm: boolean) {
     { method: "POST", body: { confirm } }
   );
   return response as ApiResponse<unknown>;
+}
+
+export async function getNearbyWelfare(lat: number, lng: number, radius = 1000) {
+  const response = await fetchRequest(
+    `${END_POINT}/api/v1/a11y/welfare/nearby?lat=${lat}&lng=${lng}&radius=${radius}`
+  );
+  return response as ApiResponse<WelfareInstitution[]>;
+}
+
+export async function getWelfareDetail(id: string) {
+  const response = await fetchRequest(
+    `${END_POINT}/api/v1/a11y/welfare/${id}`
+  );
+  return response as ApiResponse<WelfareInstitution>;
 }
 
 export async function getEnvironmentInfo(lat: number, lng: number) {

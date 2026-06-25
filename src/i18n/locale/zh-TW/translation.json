@@ -197,5 +197,9 @@
     "stationDetail": "車站無障礙資訊",
     "exitInfo": "出口資訊",
     "elevatorLocation": "電梯位置",
-    "stationA11yFacilities": "站內無障礙設施"
+    "stationA11yFacilities": "站內無障礙設施",
+    "welfare": "福利機構",
+    "noNearbyWelfare": "附近沒有福利機構",
+    "foundNearby": "找到 {{count}} 個附近機構",
+    "capacity": "收容"
 }

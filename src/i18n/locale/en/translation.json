@@ -196,5 +196,9 @@
     "stationDetail": "Station Accessibility Info",
     "exitInfo": "Exit Info",
     "elevatorLocation": "Elevator Location",
-    "stationA11yFacilities": "Station Facilities"
+    "stationA11yFacilities": "Station Facilities",
+    "welfare": "Welfare Centers",
+    "noNearbyWelfare": "No welfare centers nearby",
+    "foundNearby": "Found {{count}} nearby centers",
+    "capacity": "Capacity"
 }

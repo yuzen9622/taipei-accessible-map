@@ -307,6 +307,24 @@ export interface HazardReport {
   updatedAt?: string;
 }
 
+// --- Welfare Institution (from /a11y/welfare) ---
+export interface WelfareInstitution {
+  _id: string;
+  name: string;
+  county: string;
+  district: string;
+  address: string;
+  phone: string;
+  type: string;
+  approvedCapacity: { residential: number; night: number; day: number };
+  actualServed: { residential: number; night: number; day: number };
+  evaluationTerm: string;
+  evaluationGrade: string;
+  geocoded: boolean;
+  location?: { type: "Point"; coordinates: [number, number] };
+  importedAt: string;
+}
+
 // --- Environment Info (from /a11y/environment) ---
 export interface EnvironmentData {
   location: { lat: number; lng: number };
