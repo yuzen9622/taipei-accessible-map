@@ -231,5 +231,19 @@
     "board": "上車",
     "alight": "下車",
     "facility": "設施",
-    "noInstructions": "無導航指引"
+    "noInstructions": "無導航指引",
+    "expandSidebar": "展開側邊欄",
+    "collapseSidebar": "收合側邊欄",
+    "close": "關閉",
+    "viewAll": "查看全部",
+    "savedPlacesCount": "共 {{count}} 個收藏地點",
+    "noSavedPlaces": "尚無收藏地點",
+    "noSavedPlacesHint": "瀏覽地點後，點擊收藏按鈕即可加入",
+    "skipToMap": "跳至地圖主要內容",
+    "keyboardShortcuts": "鍵盤快捷鍵",
+    "shortcutHelp": "開啟 / 關閉快捷鍵說明",
+    "shortcutSearch": "聚焦搜尋欄",
+    "shortcutClose": "關閉彈出視窗",
+    "shortcutMyLocation": "回到目前位置",
+    "shortcutHint": "按下 ? 隨時開啟此面板"
 }

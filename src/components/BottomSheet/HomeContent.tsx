@@ -27,9 +27,10 @@ import BusPanel from "./BusPanel";
 import EnvironmentPanel from "./EnvironmentPanel";
 import HazardReportPanel from "./HazardReportPanel";
 import ParkingPanel from "./ParkingPanel";
+import SavedPlacesPanel from "./SavedPlacesPanel";
 import WelfarePanel from "./WelfarePanel";
 
-type SubPanel = "none" | "environment" | "hazard" | "welfare" | "parking" | "bus";
+type SubPanel = "none" | "environment" | "hazard" | "welfare" | "parking" | "bus" | "saved";
 
 export default function HomeContent() {
   const { t } = useAppTranslation();
@@ -113,6 +114,9 @@ export default function HomeContent() {
   }
   if (subPanel === "bus") {
     return <BusPanel onClose={() => setSubPanel("none")} />;
+  }
+  if (subPanel === "saved") {
+    return <SavedPlacesPanel onClose={() => setSubPanel("none")} />;
   }
 
   return (
@@ -297,10 +301,21 @@ export default function HomeContent() {
       {/* Saved Places */}
       {savedPlaces.length > 0 && (
         <section>
-          <h2 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
-            <Bookmark className="h-4 w-4" />
-            {t("savedPlaces")}
-          </h2>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
+              <Bookmark className="h-4 w-4" />
+              {t("savedPlaces")}
+            </h2>
+            {savedPlaces.length > 3 && (
+              <button
+                type="button"
+                onClick={() => setSubPanel("saved")}
+                className="text-xs text-primary hover:underline font-medium"
+              >
+                {t("viewAll")}
+              </button>
+            )}
+          </div>
           <div className="space-y-1">
             {savedPlaces.slice(0, 5).map((item, idx) => {
               const name =

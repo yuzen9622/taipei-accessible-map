@@ -31,6 +31,7 @@ interface MapState {
   destinationName: string;
   sheetMode: SheetMode;
   isNavigating: boolean;
+  sidebarCollapsed: boolean;
 }
 
 interface MapAction {
@@ -66,6 +67,7 @@ interface MapAction {
   closeRouteDrawer: () => void;
   setSheetMode: (mode: SheetMode) => void;
   setIsNavigating: (v: boolean) => void;
+  setSidebarCollapsed: (v: boolean) => void;
 }
 
 type MapStore = MapState & MapAction;
@@ -198,6 +200,8 @@ const useMapStore = create<MapStore>((set, get) => ({
   setDestinationName: (name) => set({ destinationName: name }),
   sheetMode: "home",
   setSheetMode: (mode) => set({ sheetMode: mode }),
+  sidebarCollapsed: false,
+  setSidebarCollapsed: (v) => set({ sidebarCollapsed: v }),
   isNavigating: false,
   setIsNavigating: (v) => {
     const { map, userLocation } = get();

@@ -19,6 +19,7 @@ import type { ChatBubble, ToolActivity } from "@/hook/useAIChat";
 import { TOOL_LABELS } from "@/hook/useAIChat";
 import { useAppTranslation } from "@/i18n/client";
 import { cn } from "@/lib/utils";
+import useMapStore from "@/stores/useMapStore";
 import MarkdownText from "./shared/MarkdownText";
 import { Avatar } from "./ui/avatar";
 import { Badge } from "./ui/badge";
@@ -121,6 +122,7 @@ function MessageBubble({ message }: { message: ChatBubble }) {
 
 export default function AIChatBot() {
   const { t } = useAppTranslation();
+  const { sidebarCollapsed } = useMapStore();
   const {
     messages,
     handleSend,
@@ -156,9 +158,14 @@ export default function AIChatBot() {
   return (
     <div
       className={cn(
-        "fixed flex items-end justify-end bottom-44 lg:bottom-[80px] right-3 z-50",
-        open && "bottom-2 lg:bottom-2"
+        "fixed flex items-end z-50",
+        "bottom-44 right-3 justify-end",
+        "lg:bottom-[80px] lg:right-auto lg:justify-start",
+        sidebarCollapsed ? "lg:left-8" : "lg:left-[460px]",
+        open && "bottom-2 lg:bottom-2",
+        open && (sidebarCollapsed ? "lg:left-3" : "lg:left-[445px]")
       )}
+      style={{ transition: "left 0.3s ease, bottom 0.3s ease" }}
     >
       <AnimatePresence mode="wait">
         {!open ? (

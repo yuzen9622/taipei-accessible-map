@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect } from "react";
 import BottomSheet from "@/components/BottomSheet/BottomSheet";
+import KeyboardShortcuts from "@/components/shared/KeyboardShortcuts";
+import SkipNavLink from "@/components/shared/SkipNavLink";
 import { refreshToken } from "@/lib/api/auth";
 import { getUserInfo } from "@/lib/api/user";
 import useAuthStore from "@/stores/useAuthStore";
@@ -40,8 +42,12 @@ export default function ClientLayout({
 
   return (
     <div className="w-full h-dvh flex flex-col">
-      {children}
+      <SkipNavLink />
+      <main id="main-map" className="flex-1 relative" role="main" aria-label="Map">
+        {children}
+      </main>
       <BottomSheet />
+      <KeyboardShortcuts />
     </div>
   );
 }

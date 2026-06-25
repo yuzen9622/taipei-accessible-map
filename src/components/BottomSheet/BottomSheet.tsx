@@ -1,12 +1,15 @@
 "use client";
 
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import AccountLogin from "@/components/shared/AccountLogin";
+import PlaceInput from "@/components/shared/PlaceInput";
+import { useAppTranslation } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
+import type { PlaceDetail } from "@/types";
 import HomeContent from "./HomeContent";
 import NavigationContent from "./NavigationContent";
 import PlaceContent from "./PlaceContent";
@@ -21,11 +24,21 @@ const SNAP_POINTS = {
 };
 
 export default function BottomSheet() {
-  const { sheetMode } = useMapStore();
+  const { t } = useAppTranslation();
+  const {
+    sheetMode,
+    sidebarCollapsed: collapsed,
+    setSidebarCollapsed: setCollapsed,
+    setSearchPlace,
+    setInfoShow,
+    setSheetMode,
+    map,
+  } = useMapStore();
   const [snap, setSnap] = useState<"peek" | "half" | "full">("half");
   const [sheetHeight, setSheetHeight] = useState(SNAP_POINTS.half);
   const [isDragging, setIsDragging] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  const [miniSearchOpen, setMiniSearchOpen] = useState(false);
+  const [miniSearchInput, setMiniSearchInput] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
   const startY = useRef(0);
   const startHeight = useRef(0);
@@ -33,32 +46,17 @@ export default function BottomSheet() {
   useEffect(() => {
     switch (sheetMode) {
       case "home":
-        setSnap("half");
-        setSheetHeight(SNAP_POINTS.half);
-        break;
       case "place":
-        setSnap("half");
-        setSheetHeight(SNAP_POINTS.half);
-        break;
       case "plan":
-        setSnap("half");
-        setSheetHeight(SNAP_POINTS.half);
-        break;
       case "route":
+      case "a11y":
+      case "station":
         setSnap("half");
         setSheetHeight(SNAP_POINTS.half);
         break;
       case "navigation":
         setSnap("peek");
         setSheetHeight(SNAP_POINTS.peek);
-        break;
-      case "a11y":
-        setSnap("half");
-        setSheetHeight(SNAP_POINTS.half);
-        break;
-      case "station":
-        setSnap("half");
-        setSheetHeight(SNAP_POINTS.half);
         break;
     }
   }, [sheetMode]);
@@ -69,7 +67,7 @@ export default function BottomSheet() {
       setCollapsed(false);
     }
     prevMode.current = sheetMode;
-  }, [sheetMode, collapsed]);
+  }, [sheetMode, collapsed, setCollapsed]);
 
   const snapToNearest = useCallback((ratio: number) => {
     const points = [SNAP_POINTS.peek, SNAP_POINTS.half, SNAP_POINTS.full];
@@ -114,6 +112,33 @@ export default function BottomSheet() {
     setIsDragging(false);
     snapToNearest(sheetHeight);
   }, [isDragging, sheetHeight, snapToNearest]);
+
+  const handleMiniSearchSelect = useCallback(
+    (placeDetail: PlaceDetail) => {
+      setSearchPlace(placeDetail);
+      if (placeDetail.kind === "place") {
+        setInfoShow({
+          isOpen: true,
+          kind: "place",
+          place: placeDetail.place,
+        });
+        if (map) map.flyTo({ center: [placeDetail.position.lng, placeDetail.position.lat] });
+      } else if (placeDetail.kind === "coordinate") {
+        setInfoShow({
+          isOpen: true,
+          kind: "coordinate",
+          address: placeDetail.address,
+          position: placeDetail.position,
+        });
+        if (map) map.flyTo({ center: [placeDetail.position.lng, placeDetail.position.lat] });
+      }
+      setSheetMode("place");
+      setCollapsed(false);
+      setMiniSearchOpen(false);
+      setMiniSearchInput("");
+    },
+    [setSearchPlace, setInfoShow, map, setSheetMode, setCollapsed]
+  );
 
   return (
     <>
@@ -165,7 +190,7 @@ export default function BottomSheet() {
         {/* Collapse/Expand toggle — positioned independently */}
         <button
           type="button"
-          aria-label={collapsed ? "展開側邊欄" : "收合側邊欄"}
+          aria-label={collapsed ? t("expandSidebar") : t("collapseSidebar")}
           onClick={() => setCollapsed(!collapsed)}
           className={cn(
             "pointer-events-auto fixed top-1/2 -translate-y-1/2 z-50 h-12 w-6 flex items-center justify-center",
@@ -181,8 +206,59 @@ export default function BottomSheet() {
           )}
         </button>
 
+        {/* Collapsed: Floating mini search bar */}
+        <AnimatePresence>
+          {collapsed && (
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              className="pointer-events-auto fixed top-3 left-3 z-50"
+              role="search"
+              aria-label={t("searchPlaceHolder")}
+            >
+              {miniSearchOpen ? (
+                <div className="w-[340px] bg-background/95 backdrop-blur-md rounded-2xl shadow-2xl border border-border/50 overflow-visible">
+                  <PlaceInput
+                    className="border-none"
+                    value={miniSearchInput}
+                    onChange={(e) => setMiniSearchInput((e.target as HTMLInputElement).value)}
+                    placeholder={t("searchPlaceHolder")}
+                    onPlaceSelect={handleMiniSearchSelect}
+                    hideIcon
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMiniSearchOpen(false);
+                      setMiniSearchInput("");
+                    }}
+                    className="absolute top-2 right-2 h-7 w-7 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors"
+                    aria-label={t("close")}
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setMiniSearchOpen(true)}
+                  className="flex items-center gap-2.5 h-11 px-4 bg-background/95 backdrop-blur-md rounded-full shadow-lg border border-border/50 hover:shadow-xl hover:bg-muted/80 transition-all min-w-[200px]"
+                  aria-label={t("searchPlaceHolder")}
+                >
+                  <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="text-sm text-muted-foreground truncate">{t("searchPlaceHolder")}</span>
+                </button>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Panel */}
         <motion.div
+          role="navigation"
+          aria-label={t("title")}
           className="pointer-events-auto absolute left-3 top-3 bottom-3 w-[420px] bg-background/95 backdrop-blur-md rounded-2xl shadow-2xl border border-border/50 flex flex-col overflow-hidden"
           animate={{
             x: collapsed ? -440 : 0,

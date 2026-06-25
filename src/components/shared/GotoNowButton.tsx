@@ -2,15 +2,23 @@
 
 import { Navigation } from "lucide-react";
 import usePin from "@/hook/usePin";
+import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import { Button } from "../ui/button";
 
 export default function GotoNowButton() {
   const { handlePinClick } = usePin();
-  const { userLocation } = useMapStore();
+  const { userLocation, sidebarCollapsed } = useMapStore();
 
   return (
-    <div className="absolute bottom-32 lg:bottom-5 right-3 z-20">
+    <div
+      className={cn(
+        "absolute z-20 transition-all duration-300",
+        "bottom-32 right-3",
+        "lg:bottom-5",
+        sidebarCollapsed ? "lg:left-8 lg:right-auto" : "lg:left-[460px] lg:right-auto"
+      )}
+    >
       <Button
         aria-label="回到目前位置"
         variant="secondary"

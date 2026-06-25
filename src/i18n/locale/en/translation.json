@@ -230,5 +230,19 @@
     "board": "Board",
     "alight": "Alight",
     "facility": "Facility",
-    "noInstructions": "No navigation instructions"
+    "noInstructions": "No navigation instructions",
+    "expandSidebar": "Expand sidebar",
+    "collapseSidebar": "Collapse sidebar",
+    "close": "Close",
+    "viewAll": "View all",
+    "savedPlacesCount": "{{count}} saved place(s)",
+    "noSavedPlaces": "No saved places yet",
+    "noSavedPlacesHint": "Browse places and tap the bookmark button to save",
+    "skipToMap": "Skip to map content",
+    "keyboardShortcuts": "Keyboard Shortcuts",
+    "shortcutHelp": "Open / close shortcut help",
+    "shortcutSearch": "Focus search bar",
+    "shortcutClose": "Close popup",
+    "shortcutMyLocation": "Go to my location",
+    "shortcutHint": "Press ? anytime to open this panel"
 }
