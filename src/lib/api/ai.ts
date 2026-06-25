@@ -7,12 +7,12 @@ export type ChatMessage = { role: "system"|"user"|"assistant"|"tool"; content: s
 export type AgentChatRequest = { messages: ChatMessage[]; model?: string; stream?: boolean; temperature?: number; userLocation?: { latitude: number; longitude: number } };
 
 export async function chatWithAgent(request: AgentChatRequest) {
-  return fetchRequest(`${END_POINT}/ai/chat`, { method: "POST", body: { ...request, stream: false } }) as Promise<ApiResponse<unknown>>;
+  return fetchRequest(`${END_POINT}/api/v1/ai/chat`, { method: "POST", body: { ...request, stream: false } }) as Promise<ApiResponse<unknown>>;
 }
 
 export async function streamChatWithAgent(request: AgentChatRequest, onChunk: (text: string) => void, onToolCall?: (name: string, args: unknown) => void, signal?: AbortSignal): Promise<void> {
   const token = await getAccessToken();
-  const response = await fetch(`${END_POINT}/ai/chat`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ ...request, stream: true }), signal });
+  const response = await fetch(`${END_POINT}/api/v1/ai/chat`, { method: "POST", credentials: "include", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ ...request, stream: true }), signal });
   if (!response.body) return;
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
@@ -35,9 +35,9 @@ export async function streamChatWithAgent(request: AgentChatRequest, onChunk: (t
 }
 
 export async function parseIntent(query: string) {
-  return fetchRequest(`${END_POINT}/ai/intent`, { method: "POST", body: { query } }) as Promise<ApiResponse<RouteIntent>>;
+  return fetchRequest(`${END_POINT}/api/v1/ai/intent`, { method: "POST", body: { query } }) as Promise<ApiResponse<RouteIntent>>;
 }
 
 export async function explainRoute(route: AccessibleRoute, mode: RouteIntent["mode"] = "normal", language: "zh-TW"|"en" = "zh-TW") {
-  return fetchRequest(`${END_POINT}/ai/explain`, { method: "POST", body: { route, mode, language } }) as Promise<ApiResponse<RouteExplanation>>;
+  return fetchRequest(`${END_POINT}/api/v1/ai/explain`, { method: "POST", body: { route, mode, language } }) as Promise<ApiResponse<RouteExplanation>>;
 }

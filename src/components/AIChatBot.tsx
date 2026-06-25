@@ -2,14 +2,21 @@
 
 import {
   BotMessageSquare,
+  CircleCheck,
+  Loader2,
+  MapPin,
+  Route,
+  Search,
   SendHorizonal,
   Square,
+  Wind,
   XIcon,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Fragment, useEffect, useRef } from "react";
 import useAIChat from "@/hook/useAIChat";
-import type { ChatBubble } from "@/hook/useAIChat";
+import type { ChatBubble, ToolActivity } from "@/hook/useAIChat";
+import { TOOL_LABELS } from "@/hook/useAIChat";
 import { useAppTranslation } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 import MarkdownText from "./shared/MarkdownText";
@@ -19,6 +26,15 @@ import { Button } from "./ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "./ui/card";
 import { Input } from "./ui/input";
 import { ScrollArea } from "./ui/scroll-area";
+
+const TOOL_ICONS: Record<string, React.ReactNode> = {
+  plan_route: <Route className="h-3.5 w-3.5" />,
+  search_places: <Search className="h-3.5 w-3.5" />,
+  get_nearby: <MapPin className="h-3.5 w-3.5" />,
+  get_weather: <Wind className="h-3.5 w-3.5" />,
+  get_air_quality: <Wind className="h-3.5 w-3.5" />,
+  analyze_route: <Route className="h-3.5 w-3.5" />,
+};
 
 function StreamingDots() {
   return (
@@ -35,27 +51,70 @@ function StreamingDots() {
   );
 }
 
+function ToolActivityIndicator({ activity }: { activity: ToolActivity }) {
+  const isRunning = activity.status === "running";
+  const label = TOOL_LABELS[activity.name] || activity.name;
+  const icon = TOOL_ICONS[activity.name] || <Search className="h-3.5 w-3.5" />;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, height: 0 }}
+      animate={{ opacity: 1, height: "auto" }}
+      transition={{ duration: 0.2 }}
+      className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-muted-foreground bg-muted/50 border border-border/40 w-fit"
+    >
+      {isRunning ? (
+        <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+      ) : (
+        <CircleCheck className="h-3.5 w-3.5 text-green-500" />
+      )}
+      <span className="flex items-center gap-1.5">
+        {icon}
+        {label}
+        {isRunning && "..."}
+      </span>
+    </motion.div>
+  );
+}
+
 function MessageBubble({ message }: { message: ChatBubble }) {
   const isUser = message.role === "user";
+  const hasToolActivities =
+    !isUser && message.toolActivities && message.toolActivities.length > 0;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
-      className={cn("flex", isUser ? "justify-end" : "justify-start")}
+      className={cn("flex flex-col gap-1.5", isUser ? "items-end" : "items-start")}
     >
-      <div
-        className={cn(
-          "max-w-[85%] w-fit px-3 py-2 rounded-2xl text-sm",
-          isUser
-            ? "bg-primary text-primary-foreground rounded-tr-sm"
-            : "bg-muted rounded-tl-sm"
-        )}
-      >
-        <MarkdownText>{message.content}</MarkdownText>
-        {message.isStreaming && !message.content && <StreamingDots />}
-      </div>
+      {hasToolActivities && (
+        <div className="flex flex-col gap-1">
+          <AnimatePresence>
+            {message.toolActivities!.map((activity, idx) => (
+              <ToolActivityIndicator key={`${activity.name}-${idx}`} activity={activity} />
+            ))}
+          </AnimatePresence>
+        </div>
+      )}
+
+      {(message.content || (message.isStreaming && !message.content)) && (
+        <div
+          className={cn(
+            "max-w-[85%] w-fit px-3 py-2 rounded-2xl text-sm",
+            isUser
+              ? "bg-primary text-primary-foreground rounded-tr-sm"
+              : "bg-muted rounded-tl-sm"
+          )}
+        >
+          {message.content ? (
+            <MarkdownText>{message.content}</MarkdownText>
+          ) : (
+            <StreamingDots />
+          )}
+        </div>
+      )}
     </motion.div>
   );
 }

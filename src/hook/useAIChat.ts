@@ -6,16 +6,27 @@ import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
 import useComputeRoute from "./useComputeRoute";
 
+export interface ToolActivity {
+  name: string;
+  args?: unknown;
+  status: "running" | "done";
+}
+
 export interface ChatBubble {
   role: "user" | "assistant";
   content: string;
   isStreaming?: boolean;
-  planningRoute?: {
-    origin: string;
-    destination: string;
-    mode: string;
-  };
+  toolActivities?: ToolActivity[];
 }
+
+export const TOOL_LABELS: Record<string, string> = {
+  plan_route: "規劃路線",
+  search_places: "搜尋地點",
+  get_nearby: "查詢附近設施",
+  get_weather: "查詢天氣",
+  get_air_quality: "查詢空氣品質",
+  analyze_route: "分析路線",
+};
 
 export default function useAIChat() {
   const { t } = useAppTranslation();
@@ -61,6 +72,7 @@ export default function useAIChat() {
         role: "assistant",
         content: "",
         isStreaming: true,
+        toolActivities: [],
       };
       setMessages((prev) => [...prev, assistantBubble]);
 
@@ -90,21 +102,53 @@ export default function useAIChat() {
               const updated = [...prev];
               const last = updated[updated.length - 1];
               if (last.role === "assistant") {
+                const activities = last.toolActivities?.map((a) => ({
+                  ...a,
+                  status: "done" as const,
+                }));
                 updated[updated.length - 1] = {
                   ...last,
                   content: fullText,
                   isStreaming: true,
+                  toolActivities: activities,
                 };
               }
               return updated;
             });
           },
           (toolName, toolArgs) => {
+            setMessages((prev) => {
+              const updated = [...prev];
+              const last = updated[updated.length - 1];
+              if (last.role === "assistant") {
+                const existing = last.toolActivities || [];
+                const doneExisting = existing.map((a) => ({
+                  ...a,
+                  status: "done" as const,
+                }));
+                updated[updated.length - 1] = {
+                  ...last,
+                  toolActivities: [
+                    ...doneExisting,
+                    { name: toolName, args: toolArgs, status: "running" },
+                  ],
+                };
+              }
+              return updated;
+            });
+
             if (toolName === "plan_route") {
-              const args = typeof toolArgs === "string" ? JSON.parse(toolArgs) : toolArgs;
+              const args =
+                typeof toolArgs === "string" ? JSON.parse(toolArgs) : toolArgs;
               handleComputeRoute({
-                origin: { lat: args.origin?.latitude, lng: args.origin?.longitude },
-                destination: { lat: args.destination?.latitude, lng: args.destination?.longitude },
+                origin: {
+                  lat: args.origin?.latitude,
+                  lng: args.origin?.longitude,
+                },
+                destination: {
+                  lat: args.destination?.latitude,
+                  lng: args.destination?.longitude,
+                },
               });
             }
           },
@@ -112,16 +156,22 @@ export default function useAIChat() {
         );
       } catch (err) {
         if ((err as Error).name === "AbortError") return;
-        fullText = fullText || t("chatbot.error", "抱歉，發生錯誤，請稍後再試。");
+        fullText =
+          fullText || t("chatbot.error", "抱歉，發生錯誤，請稍後再試。");
       } finally {
         setMessages((prev) => {
           const updated = [...prev];
           const last = updated[updated.length - 1];
           if (last.role === "assistant") {
+            const activities = last.toolActivities?.map((a) => ({
+              ...a,
+              status: "done" as const,
+            }));
             updated[updated.length - 1] = {
               ...last,
               content: fullText,
               isStreaming: false,
+              toolActivities: activities,
             };
           }
           return updated;
