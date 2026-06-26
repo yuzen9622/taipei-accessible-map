@@ -12,7 +12,7 @@ services:
 
   tunnel:
     image: cloudflare/cloudflared:latest
-    container_name: cloudflare-tunnel
+    container_name: frontend-cloudflare-tunnel
     restart: always
     # 使用 Cloudflare Tunnel Token 啟動
     # 您需要在同目錄的 .env 檔案中設定 TUNNEL_TOKEN=你的Token
