@@ -34,6 +34,7 @@ interface MapState {
   isNavigating: boolean;
   sidebarCollapsed: boolean;
   activeRailPanel: RailPanel;
+  drawerPinned: boolean;
 }
 
 interface MapAction {
@@ -71,6 +72,7 @@ interface MapAction {
   setIsNavigating: (v: boolean) => void;
   setSidebarCollapsed: (v: boolean) => void;
   setActiveRailPanel: (panel: RailPanel) => void;
+  setDrawerPinned: (v: boolean) => void;
 }
 
 type MapStore = MapState & MapAction;
@@ -118,20 +120,13 @@ const useMapStore = create<MapStore>((set, get) => ({
   toggleA11yType: (type: A11yEnum) => {
     const { selectedA11yTypes } = get();
     if (type === A11yEnum.NONE) {
-      set({
-        selectedA11yTypes: [],
-        a11yDrawerOpen: false,
-      });
+      set({ selectedA11yTypes: [], a11yDrawerOpen: false });
       return;
     }
     const newTypes = selectedA11yTypes.includes(type)
       ? selectedA11yTypes.filter((t) => t !== type)
       : [...selectedA11yTypes, type];
-
-    set({
-      selectedA11yTypes: newTypes,
-      a11yDrawerOpen: newTypes.length > 0,
-    });
+    set({ selectedA11yTypes: newTypes, a11yDrawerOpen: newTypes.length > 0 });
   },
   a11yDrawerOpen: false,
   setA11yDrawerOpen: (open) => set({ a11yDrawerOpen: open }),
@@ -141,14 +136,12 @@ const useMapStore = create<MapStore>((set, get) => ({
   initSearchHistory: (history) => set({ searchHistory: history }),
   addSearchHistory: (searchTerm: PlaceDetail) => {
     const { searchHistory } = get();
-
     const newTerm = searchHistory.filter((item) => {
       if (item.kind === "place" && searchTerm.kind === "place") {
         return item.place.place_id !== searchTerm.place.place_id;
       }
       return true;
     });
-
     const newHistory = [searchTerm, ...newTerm.slice(0, 9)];
     localStorage.setItem("searchHistory", JSON.stringify(newHistory));
     set({ searchHistory: newHistory });
@@ -159,9 +152,7 @@ const useMapStore = create<MapStore>((set, get) => ({
   addSavedPlace: (place) => {
     const { savedPlaces } = get();
     const exists = savedPlaces.some((p) => {
-      if (p.kind === "place" && place.kind === "place") {
-        return p.place.place_id === place.place.place_id;
-      }
+      if (p.kind === "place" && place.kind === "place") return p.place.place_id === place.place.place_id;
       return p.position.lat === place.position.lat && p.position.lng === place.position.lng;
     });
     if (exists) return;
@@ -172,9 +163,7 @@ const useMapStore = create<MapStore>((set, get) => ({
   removeSavedPlace: (place) => {
     const { savedPlaces } = get();
     const updated = savedPlaces.filter((p) => {
-      if (p.kind === "place" && place.kind === "place") {
-        return p.place.place_id !== place.place.place_id;
-      }
+      if (p.kind === "place" && place.kind === "place") return p.place.place_id !== place.place.place_id;
       return p.position.lat !== place.position.lat || p.position.lng !== place.position.lng;
     });
     localStorage.setItem("savedPlaces", JSON.stringify(updated));
@@ -183,17 +172,13 @@ const useMapStore = create<MapStore>((set, get) => ({
   isSavedPlace: (place) => {
     const { savedPlaces } = get();
     return savedPlaces.some((p) => {
-      if (p.kind === "place" && place.kind === "place") {
-        return p.place.place_id === place.place.place_id;
-      }
+      if (p.kind === "place" && place.kind === "place") return p.place.place_id === place.place.place_id;
       return p.position.lat === place.position.lat && p.position.lng === place.position.lng;
     });
   },
   routeA11y: [],
   setRouteA11y: (a11y) => {
-    const deduped = Array.from(
-      new Map(a11y.map((m) => [m.id, m])).values()
-    ) as Marker[];
+    const deduped = Array.from(new Map(a11y.map((m) => [m.id, m])).values()) as Marker[];
     set({ routeA11y: deduped });
   },
   addRouteA11y: (a11y) => set({ routeA11y: [...get().routeA11y, ...a11y] }),
@@ -207,24 +192,20 @@ const useMapStore = create<MapStore>((set, get) => ({
   setSidebarCollapsed: (v) => set({ sidebarCollapsed: v }),
   activeRailPanel: "search" as RailPanel,
   setActiveRailPanel: (panel) => set({ activeRailPanel: panel }),
+  drawerPinned: false,
+  setDrawerPinned: (v) => {
+    set({ drawerPinned: v });
+    setTimeout(() => get().map?.resize(), 350);
+  },
   isNavigating: false,
   setIsNavigating: (v) => {
     const { map, userLocation } = get();
     if (v) {
       set({ isNavigating: true, sheetMode: "navigation" });
-      if (map) {
-        map.easeTo({
-          pitch: 60,
-          zoom: 17,
-          center: userLocation ? [userLocation.lng, userLocation.lat] : undefined,
-          duration: 1000,
-        });
-      }
+      if (map) map.easeTo({ pitch: 60, zoom: 17, center: userLocation ? [userLocation.lng, userLocation.lat] : undefined, duration: 1000 });
     } else {
       set({ isNavigating: false, sheetMode: "route" });
-      if (map) {
-        map.easeTo({ pitch: 0, bearing: 0, duration: 1000 });
-      }
+      if (map) map.easeTo({ pitch: 0, bearing: 0, duration: 1000 });
     }
   },
   closeRouteDrawer: () => {
@@ -248,11 +229,7 @@ const useMapStore = create<MapStore>((set, get) => ({
             : { isOpen: false, kind: null },
       searchPlace:
         destination && destination.kind === "place"
-          ? {
-              place: destination.place,
-              kind: "place",
-              position: destination.position,
-            }
+          ? { place: destination.place, kind: "place", position: destination.position }
           : null,
     });
   },

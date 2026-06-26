@@ -93,7 +93,7 @@ export default function TestDrawer() {
           {infoShow.kind === "coordinate" && (
             <GeocoderDrawerContent address={infoShow.address} />
           )}
-          <DrawerFooter className="bg-background/95 backdrop-blur-md border-t w-full border-border py-3 flex justify-end gap-2">
+          <DrawerFooter className="bg-background border-t w-full border-border py-3 flex justify-end gap-2">
             <Button
               aria-label="Plan route"
               disabled={isLoading}

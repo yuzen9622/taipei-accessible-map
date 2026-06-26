@@ -96,11 +96,11 @@ export default function AirQualityWidget() {
         layout
         onClick={() => setExpanded(!expanded)}
         className={`
-          ${config.bg} backdrop-blur-md
-          rounded-2xl shadow-lg border border-white/20 dark:border-white/10
+          ${config.bg}
+          rounded-xl shadow-md border border-white/20 dark:border-white/10
           px-3 py-2 flex items-center gap-2
           cursor-pointer select-none
-          transition-colors hover:shadow-xl
+          transition-colors
         `}
         whileTap={{ scale: 0.96 }}
         aria-label={t("airQuality", "空氣品質")}

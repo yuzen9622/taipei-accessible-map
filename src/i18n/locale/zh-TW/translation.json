@@ -237,6 +237,8 @@
     "noInstructions": "無導航指引",
     "expandSidebar": "展開側邊欄",
     "collapseSidebar": "收合側邊欄",
+    "pinSidebar": "固定側邊欄",
+    "unpinSidebar": "取消固定側邊欄",
     "close": "關閉",
     "viewAll": "查看全部",
     "savedPlacesCount": "共 {{count}} 個收藏地點",
@@ -260,5 +262,10 @@
     "railA11y": "無障礙",
     "railBus": "公車",
     "railParking": "停車",
-    "railMore": "更多"
+    "railMore": "更多",
+    "editQuickActions": "編輯快捷功能",
+    "resetDefault": "重置為預設",
+    "maxQuickActions": "最多顯示 4 個快捷按鈕",
+    "show": "顯示",
+    "hide": "隱藏"
 }

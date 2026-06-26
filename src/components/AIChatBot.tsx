@@ -122,8 +122,7 @@ function MessageBubble({ message }: { message: ChatBubble }) {
 
 export default function AIChatBot() {
   const { t } = useAppTranslation();
-  const { sidebarCollapsed, activeRailPanel } = useMapStore();
-  const panelOpen = activeRailPanel !== "none";
+  const { sidebarCollapsed, activeRailPanel, drawerPinned } = useMapStore();
   const {
     messages,
     handleSend,
@@ -161,20 +160,10 @@ export default function AIChatBot() {
       className={cn(
         "fixed flex items-end z-50",
         "bottom-44 right-3 justify-end",
-        "lg:bottom-[80px] lg:right-auto lg:justify-start",
-        sidebarCollapsed
-          ? "lg:left-8"
-          : panelOpen
-            ? "lg:left-[468px]"
-            : "lg:left-[76px]",
-        open && "bottom-2 lg:bottom-2",
-        open && (sidebarCollapsed
-          ? "lg:left-3"
-          : panelOpen
-            ? "lg:left-[453px]"
-            : "lg:left-[68px]")
+        "lg:bottom-5 lg:right-5 lg:left-auto lg:justify-end",
+        open && "bottom-2 lg:bottom-2 lg:right-3"
       )}
-      style={{ transition: "left 0.3s ease, bottom 0.3s ease" }}
+      style={{ transition: "bottom 0.3s ease" }}
     >
       <AnimatePresence mode="wait">
         {!open ? (
@@ -188,7 +177,7 @@ export default function AIChatBot() {
             <Button
               onClick={() => setOpen(true)}
               size="lg"
-              className="rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all text-foreground"
+              className="rounded-full h-11 w-11 shadow-md bg-background/90  border border-border/50 hover:bg-muted hover:shadow-lg transition-all text-foreground"
               aria-label={t("chatbot.open", "開啟聊天助理")}
             >
               <BotMessageSquare className="h-6 w-6" />
@@ -203,7 +192,7 @@ export default function AIChatBot() {
             transition={{ duration: 0.25, ease: "easeOut" }}
             className="w-[92vw] max-w-lg"
           >
-            <Card className="h-[calc(100dvh-5rem)] gap-0 flex flex-col shadow-xl border border-border/50 backdrop-blur-sm overflow-hidden">
+            <Card className="h-[calc(100dvh-5rem)] gap-0 flex flex-col shadow-lg border border-border/50  overflow-hidden">
               <CardHeader className="px-4 py-3 border-b flex flex-row items-center space-y-0 gap-2">
                 <Avatar className="h-8 w-8 flex items-center justify-center bg-primary/10">
                   <BotMessageSquare className="h-4 w-4 text-primary" />

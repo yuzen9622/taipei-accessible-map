@@ -236,6 +236,8 @@
     "noInstructions": "No navigation instructions",
     "expandSidebar": "Expand sidebar",
     "collapseSidebar": "Collapse sidebar",
+    "pinSidebar": "Pin sidebar",
+    "unpinSidebar": "Unpin sidebar",
     "close": "Close",
     "viewAll": "View all",
     "savedPlacesCount": "{{count}} saved place(s)",
@@ -259,5 +261,10 @@
     "railA11y": "A11y",
     "railBus": "Bus",
     "railParking": "Parking",
-    "railMore": "More"
+    "railMore": "More",
+    "editQuickActions": "Edit Quick Actions",
+    "resetDefault": "Reset to Default",
+    "maxQuickActions": "Show up to 4 quick actions",
+    "show": "Show",
+    "hide": "Hide"
 }

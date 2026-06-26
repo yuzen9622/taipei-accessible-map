@@ -2,6 +2,7 @@
 
 import {
   Bus,
+  Clock,
   Loader2,
   Search,
   X,
@@ -9,71 +10,44 @@ import {
 import { useCallback, useState } from "react";
 import { useAppTranslation } from "@/i18n/client";
 import { getBusArrival } from "@/lib/api/transit";
-import type { EstimatedTimeOfArrival } from "@/types/route";
+import type { BusArrivalItem } from "@/lib/api/transit";
 import { Badge } from "../ui/badge";
 
-function stopStatusText(status: number, t: (k: string) => string): string {
-  switch (status) {
-    case 1:
-      return t("notDeparted");
-    case 2:
-      return t("trafficStop");
-    case 3:
-      return t("lastBusPassed");
-    case 4:
-      return t("noService");
-    default:
-      return t("noData");
-  }
-}
+function ArrivalCard({ item }: { item: BusArrivalItem }) {
+  const isArriving = item.estimateMinutes <= 1 && item.statusLabel !== "尚未發車";
+  const isNormal = item.estimateMinutes > 1;
 
-function ArrivalCard({ item, t }: { item: EstimatedTimeOfArrival; t: (k: string, opts?: Record<string, unknown>) => string }) {
-  const estimateText = (() => {
-    if (item.EstimateTime === null) return stopStatusText(item.StopStatus, t);
-    if (item.EstimateTime <= 60) return t("arriving");
-    const minutes = Math.ceil(item.EstimateTime / 60);
-    return t("minutesAway", { minutes });
+  const displayText = (() => {
+    if (item.estimateMinutes === 0 && item.statusLabel) return item.statusLabel;
+    if (item.estimateMinutes <= 1) return item.statusLabel || "進站中";
+    return `${item.estimateMinutes} 分鐘`;
   })();
 
-  const isArriving = item.EstimateTime !== null && item.EstimateTime <= 60;
-  const isNormal = item.EstimateTime !== null && item.EstimateTime > 60;
-
   return (
-    <div className="p-3 rounded-xl bg-muted/40 border border-border/30 space-y-2">
+    <div className="p-3 rounded-xl bg-muted/40 border border-border/30 space-y-1.5">
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold truncate">
-            {item.StopName.Zh_tw}
-          </p>
-          {item.RouteName && (
-            <p className="text-xs text-muted-foreground truncate">
-              {item.RouteName.Zh_tw}
-            </p>
-          )}
+          <p className="text-sm font-semibold truncate">{item.stopName}</p>
+          <p className="text-xs text-muted-foreground">{item.directionLabel}</p>
         </div>
         <Badge
           variant="secondary"
           className={`text-xs shrink-0 ${
             isArriving
-              ? "text-emerald-600 bg-emerald-500/10"
+              ? "text-amber-600 bg-amber-500/10"
               : isNormal
                 ? "text-emerald-600 bg-emerald-500/10"
                 : "text-muted-foreground bg-muted/60"
           }`}
         >
-          {estimateText}
+          <Clock className="h-3 w-3 mr-1" />
+          {displayText}
         </Badge>
       </div>
-
-      {item.PlateNumb && (
-        <div className="flex items-center gap-1.5">
-          <Badge
-            variant="outline"
-            className="text-[10px] font-mono px-1.5 py-0"
-          >
-            {item.PlateNumb}
-          </Badge>
-        </div>
+      {item.plateNumb && (
+        <Badge variant="outline" className="text-[10px] font-mono px-1.5 py-0">
+          {item.plateNumb}
+        </Badge>
       )}
     </div>
   );
@@ -84,12 +58,12 @@ export default function BusPanel({ onClose }: { onClose: () => void }) {
   const [routeName, setRouteName] = useState("");
   const [stopName, setStopName] = useState("");
   const [direction, setDirection] = useState<0 | 1>(0);
-  const [data, setData] = useState<EstimatedTimeOfArrival[]>([]);
+  const [arrivals, setArrivals] = useState<BusArrivalItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
 
-  const canSearch = routeName.trim() || stopName.trim();
+  const canSearch = routeName.trim() && stopName.trim();
 
   const handleSearch = useCallback(async () => {
     if (!canSearch) return;
@@ -99,18 +73,19 @@ export default function BusPanel({ onClose }: { onClose: () => void }) {
 
     try {
       const res = await getBusArrival(
-        routeName.trim() || undefined,
-        stopName.trim() || undefined,
+        routeName.trim(),
+        stopName.trim(),
+        "台北",
         direction
       );
       if (res.ok && res.data) {
-        setData(res.data);
+        setArrivals(res.data.arrivals ?? []);
       } else {
-        setData([]);
+        setArrivals([]);
         setError(t("noBusData"));
       }
     } catch {
-      setData([]);
+      setArrivals([]);
       setError(t("networkError"));
     } finally {
       setLoading(false);
@@ -123,7 +98,6 @@ export default function BusPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-base font-bold flex items-center gap-2">
           <Bus className="h-4.5 w-4.5 text-emerald-500" />
@@ -139,10 +113,8 @@ export default function BusPanel({ onClose }: { onClose: () => void }) {
         </button>
       </div>
 
-      {/* Search hint */}
       <p className="text-xs text-muted-foreground">{t("busSearchHint")}</p>
 
-      {/* Search inputs */}
       <div className="space-y-2">
         <div className="flex gap-2">
           <input
@@ -165,7 +137,6 @@ export default function BusPanel({ onClose }: { onClose: () => void }) {
           />
         </div>
 
-        {/* Direction toggle + search button */}
         <div className="flex items-center gap-2">
           <div className="flex rounded-lg bg-muted/60 border border-border/30 p-0.5 text-xs" role="radiogroup" aria-label={t("outbound")}>
             <button
@@ -207,7 +178,6 @@ export default function BusPanel({ onClose }: { onClose: () => void }) {
         </div>
       </div>
 
-      {/* Results */}
       {loading ? (
         <div className="flex items-center justify-center py-8">
           <Loader2 className="h-6 w-6 animate-spin text-emerald-500" />
@@ -217,28 +187,20 @@ export default function BusPanel({ onClose }: { onClose: () => void }) {
           <Bus className="h-8 w-8 mx-auto text-muted-foreground/40" />
           <p className="text-sm text-muted-foreground">{error}</p>
         </div>
-      ) : searched && data.length === 0 ? (
+      ) : searched && arrivals.length === 0 ? (
         <div className="text-center py-8 space-y-2">
           <Bus className="h-8 w-8 mx-auto text-muted-foreground/40" />
           <p className="text-sm text-muted-foreground">{t("noBusData")}</p>
         </div>
-      ) : data.length > 0 ? (
+      ) : arrivals.length > 0 ? (
         <div className="space-y-2" role="list" aria-label={t("busInfo")}>
-          {routeName.trim() && !stopName.trim() && (
-            <p className="text-xs text-muted-foreground font-medium">
-              {t("busRouteResults", { route: routeName.trim() })}
-            </p>
-          )}
-          {stopName.trim() && !routeName.trim() && (
-            <p className="text-xs text-muted-foreground font-medium">
-              {t("busStopResults", { stop: stopName.trim() })}
-            </p>
-          )}
-          {data.map((item) => (
+          <p className="text-xs text-muted-foreground font-medium">
+            {t("busRouteResults", { route: routeName.trim() })}
+          </p>
+          {arrivals.map((item, idx) => (
             <ArrivalCard
-              key={`${item.StopUID}-${item.Direction}`}
+              key={`${item.stopName}-${item.direction}-${idx}`}
               item={item}
-              t={t}
             />
           ))}
         </div>

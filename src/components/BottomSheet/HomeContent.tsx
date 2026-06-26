@@ -7,16 +7,22 @@ import {
   ArrowUpRight,
   Bookmark,
   Bus,
+  Check,
   CircleParking,
   Clock,
   Cloud,
   DoorOpen,
+  GripVertical,
   Heart,
   MapPin,
   Navigation,
+  Pencil,
+  RotateCcw,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import type { LucideIcon } from "lucide-react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PlaceInput from "@/components/shared/PlaceInput";
+import useQuickActions from "@/hook/useQuickActions";
 import { useAppTranslation } from "@/i18n/client";
 import { getNearbyHazardReports } from "@/lib/api/a11y";
 import useMapStore from "@/stores/useMapStore";
@@ -31,6 +37,34 @@ import SavedPlacesPanel from "./SavedPlacesPanel";
 import WelfarePanel from "./WelfarePanel";
 
 type SubPanel = "none" | "environment" | "hazard" | "welfare" | "parking" | "bus" | "saved";
+
+const ACTION_META: Record<string, { Icon: LucideIcon; labelKey: string; pillClass: string }> = {
+  environment: {
+    Icon: Cloud,
+    labelKey: "environment",
+    pillClass: "bg-sky-500/10 text-sky-600 dark:text-sky-400 hover:bg-sky-500/20",
+  },
+  hazard: {
+    Icon: AlertTriangle,
+    labelKey: "reportHazard",
+    pillClass: "bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20",
+  },
+  parking: {
+    Icon: CircleParking,
+    labelKey: "parking",
+    pillClass: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20",
+  },
+  bus: {
+    Icon: Bus,
+    labelKey: "busInfo",
+    pillClass: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20",
+  },
+  welfare: {
+    Icon: Heart,
+    labelKey: "welfare",
+    pillClass: "bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20",
+  },
+};
 
 export default function HomeContent() {
   const { t } = useAppTranslation();
@@ -49,14 +83,18 @@ export default function HomeContent() {
   const [input, setInput] = useState("");
   const [subPanel, setSubPanel] = useState<SubPanel>("none");
   const [nearbyHazards, setNearbyHazards] = useState<HazardReport[]>([]);
+  const [editMode, setEditMode] = useState(false);
+  const { actions, visibleActions, toggleVisibility, moveItem, reset } = useQuickActions();
 
   useEffect(() => {
     if (!userLocation) return;
+    let cancelled = false;
     getNearbyHazardReports(userLocation.lat, userLocation.lng, 500)
       .then((res) => {
-        if (res.ok && res.data?.reports) setNearbyHazards(res.data.reports);
+        if (!cancelled && res.ok && res.data?.reports) setNearbyHazards(res.data.reports);
       })
       .catch(() => {});
+    return () => { cancelled = true; };
   }, [userLocation]);
 
   const handlePlaceChange = useCallback(
@@ -85,39 +123,29 @@ export default function HomeContent() {
     [setSearchPlace, setInfoShow, map, setSheetMode]
   );
 
-  const a11yChips = [
+  const a11yChips = useMemo(() => [
     { type: A11yEnum.ELEVATOR, Icon: ArrowUpDown, label: t("elevator") },
     { type: A11yEnum.RAMP, Icon: Accessibility, label: t("ramp") },
     { type: A11yEnum.RESTROOM, Icon: DoorOpen, label: t("toilet") },
-  ];
+  ], [t]);
 
-  const nearbyPlaces = a11yPlaces
-    ?.filter((p) => {
-      if (!userLocation) return false;
-      const dx = p.position.lat - userLocation.lat;
-      const dy = p.position.lng - userLocation.lng;
-      return Math.sqrt(dx * dx + dy * dy) < 0.02;
-    })
-    .slice(0, 6);
+  const nearbyPlaces = useMemo(() => {
+    if (!a11yPlaces || !userLocation) return [];
+    return a11yPlaces
+      .filter((p) => {
+        const dx = p.position.lat - userLocation.lat;
+        const dy = p.position.lng - userLocation.lng;
+        return Math.sqrt(dx * dx + dy * dy) < 0.02;
+      })
+      .slice(0, 6);
+  }, [a11yPlaces, userLocation]);
 
-  if (subPanel === "environment") {
-    return <EnvironmentPanel onClose={() => setSubPanel("none")} />;
-  }
-  if (subPanel === "hazard") {
-    return <HazardReportPanel onClose={() => setSubPanel("none")} />;
-  }
-  if (subPanel === "welfare") {
-    return <WelfarePanel onClose={() => setSubPanel("none")} />;
-  }
-  if (subPanel === "parking") {
-    return <ParkingPanel onClose={() => setSubPanel("none")} />;
-  }
-  if (subPanel === "bus") {
-    return <BusPanel onClose={() => setSubPanel("none")} />;
-  }
-  if (subPanel === "saved") {
-    return <SavedPlacesPanel onClose={() => setSubPanel("none")} />;
-  }
+  if (subPanel === "environment") return <EnvironmentPanel onClose={() => setSubPanel("none")} />;
+  if (subPanel === "hazard") return <HazardReportPanel onClose={() => setSubPanel("none")} />;
+  if (subPanel === "welfare") return <WelfarePanel onClose={() => setSubPanel("none")} />;
+  if (subPanel === "parking") return <ParkingPanel onClose={() => setSubPanel("none")} />;
+  if (subPanel === "bus") return <BusPanel onClose={() => setSubPanel("none")} />;
+  if (subPanel === "saved") return <SavedPlacesPanel onClose={() => setSubPanel("none")} />;
 
   return (
     <div className="space-y-5">
@@ -175,53 +203,48 @@ export default function HomeContent() {
         </div>
       </div>
 
-      {/* Extra quick actions */}
+      {/* Quick actions — customizable, pill-style colored buttons */}
       <div className="space-y-2">
-        <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
-          {t("quickActions")}
-        </h2>
-        <div className="flex gap-2 flex-wrap">
-        <button
-          type="button"
-          onClick={() => setSubPanel("environment")}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium bg-sky-500/10 text-sky-600 dark:text-sky-400 hover:bg-sky-500/20 transition-colors"
-        >
-          <Cloud className="h-4 w-4" />
-          {t("environment")}
-        </button>
-        <button
-          type="button"
-          onClick={() => setSubPanel("hazard")}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors"
-        >
-          <AlertTriangle className="h-4 w-4" />
-          {t("reportHazard")}
-        </button>
-        <button
-          type="button"
-          onClick={() => setSubPanel("welfare")}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition-colors"
-        >
-          <Heart className="h-4 w-4" />
-          {t("welfare")}
-        </button>
-        <button
-          type="button"
-          onClick={() => setSubPanel("parking")}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20 transition-colors"
-        >
-          <CircleParking className="h-4 w-4" />
-          {t("parking")}
-        </button>
-        <button
-          type="button"
-          onClick={() => setSubPanel("bus")}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors"
-        >
-          <Bus className="h-4 w-4" />
-          {t("busInfo")}
-        </button>
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
+            {t("quickActions")}
+          </h2>
+          <button
+            type="button"
+            onClick={() => setEditMode(!editMode)}
+            className="h-7 w-7 rounded-lg flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors"
+            aria-label={t("editQuickActions")}
+          >
+            {editMode ? <Check className="h-3.5 w-3.5" /> : <Pencil className="h-3.5 w-3.5" />}
+          </button>
         </div>
+
+        {editMode ? (
+          <QuickActionsEditor
+            actions={actions}
+            onToggle={toggleVisibility}
+            onMove={moveItem}
+            onReset={reset}
+          />
+        ) : (
+          <div className="flex gap-2 flex-wrap">
+            {visibleActions.map((action) => {
+              const meta = ACTION_META[action.id];
+              if (!meta) return null;
+              return (
+                <button
+                  key={action.id}
+                  type="button"
+                  onClick={() => setSubPanel(action.id as SubPanel)}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-colors ${meta.pillClass}`}
+                >
+                  <meta.Icon className="h-4 w-4" />
+                  {t(meta.labelKey)}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Nearby Hazards */}
@@ -259,7 +282,7 @@ export default function HomeContent() {
       )}
 
       {/* Nearby A11y Facilities */}
-      {nearbyPlaces && nearbyPlaces.length > 0 && (
+      {nearbyPlaces.length > 0 && (
         <section>
           <h2 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
             <Accessibility className="h-4 w-4" />
@@ -366,6 +389,80 @@ export default function HomeContent() {
           </div>
         </section>
       )}
+    </div>
+  );
+}
+
+function QuickActionsEditor({
+  actions,
+  onToggle,
+  onMove,
+  onReset,
+}: {
+  actions: { id: string; visible: boolean }[];
+  onToggle: (id: string) => void;
+  onMove: (from: number, to: number) => void;
+  onReset: () => void;
+}) {
+  const { t } = useAppTranslation();
+  const dragItem = useRef<number | null>(null);
+
+  const handleDragStart = (idx: number) => {
+    dragItem.current = idx;
+  };
+
+  const handleDrop = (targetIdx: number) => {
+    if (dragItem.current !== null && dragItem.current !== targetIdx) {
+      onMove(dragItem.current, targetIdx);
+    }
+    dragItem.current = null;
+  };
+
+  const visibleCount = actions.filter((a) => a.visible).length;
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-muted-foreground">{t("maxQuickActions")}</p>
+      {actions.map((action, idx) => {
+        const meta = ACTION_META[action.id];
+        if (!meta) return null;
+        const canEnable = action.visible || visibleCount < 4;
+        return (
+          <div
+            key={action.id}
+            draggable
+            onDragStart={() => handleDragStart(idx)}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={() => handleDrop(idx)}
+            className="flex items-center gap-2 px-3 py-2.5 rounded-lg border border-border/30 bg-background cursor-grab active:cursor-grabbing"
+          >
+            <GripVertical className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+            <meta.Icon className="h-4 w-4 text-muted-foreground shrink-0" />
+            <span className="text-sm flex-1">{t(meta.labelKey)}</span>
+            <button
+              type="button"
+              onClick={() => canEnable && onToggle(action.id)}
+              disabled={!canEnable && !action.visible}
+              className={`h-5 w-5 rounded border flex items-center justify-center transition-colors ${
+                action.visible
+                  ? "bg-foreground border-foreground text-background"
+                  : "border-border/60 hover:border-foreground/40"
+              }`}
+              aria-label={action.visible ? t("hide") : t("show")}
+            >
+              {action.visible && <Check className="h-3 w-3" />}
+            </button>
+          </div>
+        );
+      })}
+      <button
+        type="button"
+        onClick={onReset}
+        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors px-1 py-1"
+      >
+        <RotateCcw className="h-3 w-3" />
+        {t("resetDefault")}
+      </button>
     </div>
   );
 }

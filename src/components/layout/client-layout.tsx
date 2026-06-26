@@ -14,7 +14,7 @@ export default function ClientLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { initSearchHistory, initSavedPlaces } = useMapStore();
+  const { initSearchHistory, initSavedPlaces, drawerPinned, sidebarCollapsed } = useMapStore();
   const { setSession, setUser, setUserConfig } = useAuthStore();
   const getNewAccessToken = useCallback(async () => {
     const token = await refreshToken();
@@ -40,10 +40,23 @@ export default function ClientLayout({
     }
   }, [initSearchHistory, initSavedPlaces, getNewAccessToken]);
 
+  const showPinnedSidebar = drawerPinned && !sidebarCollapsed;
+
   return (
-    <div className="w-full h-dvh flex flex-col">
+    <div
+      className="w-full h-dvh flex flex-col"
+      style={{
+        paddingLeft: showPinnedSidebar ? 420 : 0,
+        transition: "padding-left 0.3s ease",
+      }}
+    >
       <SkipNavLink />
-      <main id="main-map" className="flex-1 relative" role="main" aria-label="Map">
+      <main
+        id="main-map"
+        className="flex-1 relative"
+        role="main"
+        aria-label="Map"
+      >
         {children}
       </main>
       <BottomSheet />
