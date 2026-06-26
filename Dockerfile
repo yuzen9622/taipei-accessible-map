@@ -12,6 +12,12 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Set build arguments for Next.js build-time env variables
+ARG NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID
+ENV NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID=$NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID
+ARG NEXT_PUBLIC_END_POINT
+ENV NEXT_PUBLIC_END_POINT=$NEXT_PUBLIC_END_POINT
+
 # Disable telemetry during the build
 ENV NEXT_TELEMETRY_DISABLED=1
 

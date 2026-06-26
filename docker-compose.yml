@@ -3,6 +3,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID=${NEXT_PUBLIC_GOOGLE_OAUTH_CLIENT_ID}
+        - NEXT_PUBLIC_END_POINT=${NEXT_PUBLIC_END_POINT}
     container_name: taipei-accessible-web
     restart: always
     ports:
