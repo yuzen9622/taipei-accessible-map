@@ -122,7 +122,8 @@ function MessageBubble({ message }: { message: ChatBubble }) {
 
 export default function AIChatBot() {
   const { t } = useAppTranslation();
-  const { sidebarCollapsed } = useMapStore();
+  const { sidebarCollapsed, activeRailPanel } = useMapStore();
+  const panelOpen = activeRailPanel !== "none";
   const {
     messages,
     handleSend,
@@ -161,9 +162,17 @@ export default function AIChatBot() {
         "fixed flex items-end z-50",
         "bottom-44 right-3 justify-end",
         "lg:bottom-[80px] lg:right-auto lg:justify-start",
-        sidebarCollapsed ? "lg:left-8" : "lg:left-[460px]",
+        sidebarCollapsed
+          ? "lg:left-8"
+          : panelOpen
+            ? "lg:left-[468px]"
+            : "lg:left-[76px]",
         open && "bottom-2 lg:bottom-2",
-        open && (sidebarCollapsed ? "lg:left-3" : "lg:left-[445px]")
+        open && (sidebarCollapsed
+          ? "lg:left-3"
+          : panelOpen
+            ? "lg:left-[453px]"
+            : "lg:left-[68px]")
       )}
       style={{ transition: "left 0.3s ease, bottom 0.3s ease" }}
     >

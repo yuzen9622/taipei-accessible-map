@@ -6,6 +6,7 @@ import type { AccessibleRoute } from "@/types/route";
 import type maplibregl from "maplibre-gl";
 
 export type SheetMode = "home" | "place" | "plan" | "route" | "a11y" | "navigation" | "station";
+export type RailPanel = "none" | "search" | "route" | "a11y" | "bus" | "parking" | "environment" | "hazard" | "welfare" | "saved";
 
 interface MapState {
   map: maplibregl.Map | null;
@@ -32,6 +33,7 @@ interface MapState {
   sheetMode: SheetMode;
   isNavigating: boolean;
   sidebarCollapsed: boolean;
+  activeRailPanel: RailPanel;
 }
 
 interface MapAction {
@@ -68,6 +70,7 @@ interface MapAction {
   setSheetMode: (mode: SheetMode) => void;
   setIsNavigating: (v: boolean) => void;
   setSidebarCollapsed: (v: boolean) => void;
+  setActiveRailPanel: (panel: RailPanel) => void;
 }
 
 type MapStore = MapState & MapAction;
@@ -202,6 +205,8 @@ const useMapStore = create<MapStore>((set, get) => ({
   setSheetMode: (mode) => set({ sheetMode: mode }),
   sidebarCollapsed: false,
   setSidebarCollapsed: (v) => set({ sidebarCollapsed: v }),
+  activeRailPanel: "search" as RailPanel,
+  setActiveRailPanel: (panel) => set({ activeRailPanel: panel }),
   isNavigating: false,
   setIsNavigating: (v) => {
     const { map, userLocation } = get();

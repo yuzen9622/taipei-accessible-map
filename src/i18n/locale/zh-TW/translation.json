@@ -221,6 +221,9 @@
     "outbound": "去程",
     "inbound": "返程",
     "noBusData": "查無到站資料",
+    "busSearchHint": "輸入公車路線或站牌名稱查詢（擇一即可）",
+    "busRouteResults": "路線 {{route}} 到站資訊",
+    "busStopResults": "{{stop}} 站到站資訊",
     "navInstructions": "逐步導航",
     "initialBearing": "初始方位",
     "navWarnings": "注意事項",
@@ -251,5 +254,11 @@
     "wheelchairYes": "輪椅完全可通行",
     "wheelchairNo": "輪椅不可通行",
     "osmAccessibilityInfo": "OpenStreetMap 無障礙資訊",
-    "osmFacilities": "相關無障礙設施"
+    "osmFacilities": "相關無障礙設施",
+    "railSearch": "搜尋",
+    "railRoute": "路線",
+    "railA11y": "無障礙",
+    "railBus": "公車",
+    "railParking": "停車",
+    "railMore": "更多"
 }

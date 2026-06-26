@@ -89,14 +89,20 @@ export default function BusPanel({ onClose }: { onClose: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
 
+  const canSearch = routeName.trim() || stopName.trim();
+
   const handleSearch = useCallback(async () => {
-    if (!routeName.trim() || !stopName.trim()) return;
+    if (!canSearch) return;
     setLoading(true);
     setError(null);
     setSearched(true);
 
     try {
-      const res = await getBusArrival(routeName.trim(), stopName.trim(), "台北", direction);
+      const res = await getBusArrival(
+        routeName.trim() || undefined,
+        stopName.trim() || undefined,
+        direction
+      );
       if (res.ok && res.data) {
         setData(res.data);
       } else {
@@ -109,7 +115,7 @@ export default function BusPanel({ onClose }: { onClose: () => void }) {
     } finally {
       setLoading(false);
     }
-  }, [routeName, stopName, direction, t]);
+  }, [routeName, stopName, direction, canSearch, t]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") void handleSearch();
@@ -127,10 +133,14 @@ export default function BusPanel({ onClose }: { onClose: () => void }) {
           type="button"
           onClick={onClose}
           className="h-7 w-7 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted"
+          aria-label={t("close")}
         >
           <X className="h-3.5 w-3.5" />
         </button>
       </div>
+
+      {/* Search hint */}
+      <p className="text-xs text-muted-foreground">{t("busSearchHint")}</p>
 
       {/* Search inputs */}
       <div className="space-y-2">
@@ -141,7 +151,8 @@ export default function BusPanel({ onClose }: { onClose: () => void }) {
             onChange={(e) => setRouteName(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={t("routeName")}
-            className="flex-1 h-9 px-3 rounded-lg bg-muted/60 border border-border/30 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+            aria-label={t("routeName")}
+            className="flex-1 h-10 px-3 rounded-lg bg-muted/60 border border-border/30 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
           />
           <input
             type="text"
@@ -149,17 +160,20 @@ export default function BusPanel({ onClose }: { onClose: () => void }) {
             onChange={(e) => setStopName(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={t("stopName")}
-            className="flex-1 h-9 px-3 rounded-lg bg-muted/60 border border-border/30 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+            aria-label={t("stopName")}
+            className="flex-1 h-10 px-3 rounded-lg bg-muted/60 border border-border/30 text-sm placeholder:text-muted-foreground/60 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
           />
         </div>
 
         {/* Direction toggle + search button */}
         <div className="flex items-center gap-2">
-          <div className="flex rounded-lg bg-muted/60 border border-border/30 p-0.5 text-xs">
+          <div className="flex rounded-lg bg-muted/60 border border-border/30 p-0.5 text-xs" role="radiogroup" aria-label={t("outbound")}>
             <button
               type="button"
+              role="radio"
+              aria-checked={direction === 0}
               onClick={() => setDirection(0)}
-              className={`px-3 py-1 rounded-md transition-colors ${
+              className={`px-3 py-1.5 rounded-md transition-colors ${
                 direction === 0
                   ? "bg-emerald-500/10 text-emerald-600 font-medium"
                   : "text-muted-foreground hover:text-foreground"
@@ -169,8 +183,10 @@ export default function BusPanel({ onClose }: { onClose: () => void }) {
             </button>
             <button
               type="button"
+              role="radio"
+              aria-checked={direction === 1}
               onClick={() => setDirection(1)}
-              className={`px-3 py-1 rounded-md transition-colors ${
+              className={`px-3 py-1.5 rounded-md transition-colors ${
                 direction === 1
                   ? "bg-emerald-500/10 text-emerald-600 font-medium"
                   : "text-muted-foreground hover:text-foreground"
@@ -182,8 +198,8 @@ export default function BusPanel({ onClose }: { onClose: () => void }) {
           <button
             type="button"
             onClick={() => void handleSearch()}
-            disabled={!routeName.trim() || !stopName.trim() || loading}
-            className="ml-auto flex items-center gap-1.5 h-8 px-3 rounded-lg bg-emerald-500/10 text-emerald-600 text-sm font-medium hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            disabled={!canSearch || loading}
+            className="ml-auto flex items-center gap-1.5 h-9 px-4 rounded-lg bg-emerald-500/10 text-emerald-600 text-sm font-medium hover:bg-emerald-500/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
             <Search className="h-3.5 w-3.5" />
             {t("searchBus")}
@@ -207,7 +223,17 @@ export default function BusPanel({ onClose }: { onClose: () => void }) {
           <p className="text-sm text-muted-foreground">{t("noBusData")}</p>
         </div>
       ) : data.length > 0 ? (
-        <div className="space-y-2">
+        <div className="space-y-2" role="list" aria-label={t("busInfo")}>
+          {routeName.trim() && !stopName.trim() && (
+            <p className="text-xs text-muted-foreground font-medium">
+              {t("busRouteResults", { route: routeName.trim() })}
+            </p>
+          )}
+          {stopName.trim() && !routeName.trim() && (
+            <p className="text-xs text-muted-foreground font-medium">
+              {t("busStopResults", { stop: stopName.trim() })}
+            </p>
+          )}
           {data.map((item) => (
             <ArrivalCard
               key={`${item.StopUID}-${item.Direction}`}

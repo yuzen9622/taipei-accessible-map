@@ -93,7 +93,7 @@ export default function ParkingPanel({ onClose }: { onClose: () => void }) {
     setLoading(true);
     setError(null);
 
-    getNearbyParking(userLocation.lat, userLocation.lng, 500)
+    getNearbyParking(userLocation.lat, userLocation.lng)
       .then((res) => {
         if (res.ok && res.data) {
           setData(res.data);

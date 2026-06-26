@@ -8,7 +8,8 @@ import { Button } from "../ui/button";
 
 export default function GotoNowButton() {
   const { handlePinClick } = usePin();
-  const { userLocation, sidebarCollapsed } = useMapStore();
+  const { userLocation, sidebarCollapsed, activeRailPanel } = useMapStore();
+  const panelOpen = activeRailPanel !== "none";
 
   return (
     <div
@@ -16,7 +17,11 @@ export default function GotoNowButton() {
         "absolute z-20 transition-all duration-300",
         "bottom-32 right-3",
         "lg:bottom-5",
-        sidebarCollapsed ? "lg:left-8 lg:right-auto" : "lg:left-[460px] lg:right-auto"
+        sidebarCollapsed
+          ? "lg:left-8 lg:right-auto"
+          : panelOpen
+            ? "lg:left-[468px] lg:right-auto"
+            : "lg:left-[76px] lg:right-auto"
       )}
     >
       <Button

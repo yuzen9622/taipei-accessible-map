@@ -125,9 +125,9 @@ export async function getEnvironmentInfo(lat: number, lng: number) {
   return response as ApiResponse<EnvironmentData>;
 }
 
-export async function getNearbyParking(lat: number, lng: number, radius = 500) {
+export async function getNearbyParking(lat: number, lng: number) {
   const response = await fetchRequest(
-    `${END_POINT}/api/v1/a11y/parking/nearby?lat=${lat}&lng=${lng}&radius=${radius}`
+    `${END_POINT}/api/v1/a11y/parking/nearby?lat=${lat}&lng=${lng}`
   );
   return response as ApiResponse<DisabledParking[]>;
 }

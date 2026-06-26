@@ -58,12 +58,13 @@ export async function getRealtimeBusPosition(
 }
 
 export async function getBusArrival(
-  routeName: string,
-  stopName: string,
-  city = "台北",
+  routeName?: string,
+  stopName?: string,
   direction?: 0 | 1
 ) {
-  const params = new URLSearchParams({ routeName, stopName, city });
+  const params = new URLSearchParams();
+  if (routeName) params.set("route_name", routeName);
+  if (stopName) params.set("stop_name", stopName);
   if (direction !== undefined) params.set("direction", String(direction));
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10_000);
@@ -77,10 +78,9 @@ export async function getBusArrival(
 
 export async function getBusPositions(
   routeName: string,
-  city = "台北",
   direction?: 0 | 1
 ) {
-  const params = new URLSearchParams({ routeName, city });
+  const params = new URLSearchParams({ route_name: routeName });
   if (direction !== undefined) params.set("direction", String(direction));
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10_000);
