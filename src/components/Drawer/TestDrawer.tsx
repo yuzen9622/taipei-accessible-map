@@ -1,13 +1,10 @@
 "use client";
 
-import { Loader2, Share2, X } from "lucide-react";
+import { Share2, X } from "lucide-react";
 
 import { useCallback } from "react";
 
-import useComputeRoute from "@/hook/useComputeRoute";
-
 import useMapStore from "@/stores/useMapStore";
-import type { LatLng } from "@/types";
 import { Button } from "../ui/button";
 import { DrawerFooter } from "../ui/drawer";
 
@@ -27,45 +24,43 @@ export default function TestDrawer() {
     setInfoShow,
     setSearchPlace,
     setDestination,
-    userLocation,
+    setDestinationName,
+    setSheetMode,
   } = useMapStore();
   const { t } = useAppTranslation("translation");
-  const { isLoading, handleComputeRoute } = useComputeRoute();
 
-  const handlePlanRoute = useCallback(async () => {
+  const handlePlanRoute = useCallback(() => {
     if (!infoShow.kind) return;
-    let latLng: LatLng | null = null;
+
     if (infoShow.kind === "place") {
       const place = infoShow.place;
       const lat = parseFloat(place.lat);
       const lng = parseFloat(place.lon);
-      latLng = { lat, lng };
       setDestination({
         kind: "place",
         place,
-        position: latLng,
+        position: { lat, lng },
       });
+      setDestinationName(place.name || place.display_name || "");
     } else if (infoShow.kind === "coordinate") {
-      latLng = infoShow.position ?? userLocation ?? { lat: 25.0478, lng: 121.5319 };
+      const pos = infoShow.position ?? { lat: 25.0478, lng: 121.5319 };
       setDestination({
         kind: "coordinate",
         address: infoShow.address,
-        position: latLng,
+        position: pos,
       });
+      setDestinationName(infoShow.address || "");
     }
 
-    await handleComputeRoute({
-      origin: userLocation ?? { lat: 25.0478, lng: 121.5319 },
-      destination: latLng ?? undefined,
-    });
     setSearchPlace(null);
     setInfoShow({ isOpen: false });
+    setSheetMode("plan");
   }, [
-    userLocation,
     infoShow,
     setSearchPlace,
     setDestination,
-    handleComputeRoute,
+    setDestinationName,
+    setSheetMode,
     setInfoShow,
   ]);
 
@@ -96,12 +91,10 @@ export default function TestDrawer() {
           <DrawerFooter className="bg-background border-t w-full border-border py-3 flex justify-end gap-2">
             <Button
               aria-label="Plan route"
-              disabled={isLoading}
               onClick={handlePlanRoute}
               className="flex-1"
             >
-              {isLoading ? t("loadingRoute") : t("planRoute")}
-              {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+              {t("planRoute")}
             </Button>
             <div className="flex gap-2">
               <Button
