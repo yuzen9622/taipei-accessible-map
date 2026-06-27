@@ -36,7 +36,7 @@ export default function RoutePlanContent() {
 
   const [originInput, setOriginInput] = useState(originName || "");
   const [destInput, setDestInput] = useState(destinationName || "");
-  const [useMyLocation, setUseMyLocation] = useState(!origin);
+  const [useMyLocation, setUseMyLocation] = useState(!origin && !!userLocation);
 
   useEffect(() => {
     setOriginInput(originName || "");
