@@ -75,8 +75,9 @@ export default function useComputeRoute() {
       } catch (error) {
         closeRouteDrawer();
         console.error("Route planning error:", error);
-        useStatusStore.getState().failAction("路線規劃遇到問題，請稍後再試");
-        toast.error("路線規劃失敗，請稍後再試");
+        const msg = error instanceof Error ? error.message : "路線規劃遇到問題，請稍後再試";
+        useStatusStore.getState().failAction(msg);
+        toast.error(msg);
         return false;
       } finally {
         setIsLoading(false);
