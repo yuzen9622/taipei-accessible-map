@@ -22,16 +22,19 @@ export default function useComputeRoute() {
     async (params: {
       origin?: LatLng;
       destination?: LatLng;
+      originName?: string;
+      destinationName?: string;
       query?: string;
     }): Promise<boolean> => {
-      const { origin, destination, query } = params;
+      const { origin, destination, originName, destinationName, query } = params;
 
-      if (!query && !origin && !destination) return false;
+      if (!query && !origin && !destination && !originName && !destinationName) return false;
 
       const startLocation = origin || userLocation;
       const endLocation = destination || userLocation;
 
-      if (!query && (!startLocation || !endLocation)) return false;
+      if (!query && !originName && !startLocation) return false;
+      if (!query && !destinationName && !endLocation) return false;
 
       try {
         setIsLoading(true);
@@ -39,13 +42,14 @@ export default function useComputeRoute() {
         setRouteInfoShow(true);
         useStatusStore.getState().startAction("plan_route");
 
+        const resolvedOrigin: string | { latitude: number; longitude: number } | undefined =
+          originName || (startLocation ? { latitude: startLocation.lat, longitude: startLocation.lng } : undefined);
+        const resolvedDestination: string | { latitude: number; longitude: number } | undefined =
+          destinationName || (endLocation ? { latitude: endLocation.lat, longitude: endLocation.lng } : undefined);
+
         const response = await getAccessibleRoute({
-          origin: startLocation
-            ? { latitude: startLocation.lat, longitude: startLocation.lng }
-            : undefined,
-          destination: endLocation
-            ? { latitude: endLocation.lat, longitude: endLocation.lng }
-            : undefined,
+          origin: resolvedOrigin,
+          destination: resolvedDestination,
           query: query || undefined,
           userLocation: userLocation
             ? { latitude: userLocation.lat, longitude: userLocation.lng }
@@ -97,6 +101,8 @@ export default function useComputeRoute() {
     async (params: {
       origin?: LatLng;
       destination?: LatLng;
+      originName?: string;
+      destinationName?: string;
       query?: string;
     }): Promise<boolean> => {
       return computeRoute(params);

@@ -123,11 +123,17 @@ export default function RoutePlanContent() {
       : origin?.position ?? null;
     const destPos = destination?.position ?? null;
 
-    if (!originPos || !destPos) return;
+    const oName = useMyLocation ? undefined : (originName || originInput).trim() || undefined;
+    const dName = (destinationName || destInput).trim() || undefined;
+
+    if (!oName && !originPos) return;
+    if (!dName && !destPos) return;
 
     const success = await handleComputeRoute({
-      origin: originPos,
-      destination: destPos,
+      origin: originPos ?? undefined,
+      destination: destPos ?? undefined,
+      originName: oName,
+      destinationName: dName,
     });
     if (success) {
       setSearchPlace(null);
@@ -138,6 +144,10 @@ export default function RoutePlanContent() {
     userLocation,
     origin,
     destination,
+    originName,
+    destinationName,
+    originInput,
+    destInput,
     handleComputeRoute,
     setSearchPlace,
     setSheetMode,
@@ -148,8 +158,8 @@ export default function RoutePlanContent() {
   }, [setSheetMode]);
 
   const canStart =
-    (useMyLocation ? !!userLocation : !!origin?.position) &&
-    !!destination?.position;
+    (useMyLocation ? !!userLocation : !!(origin?.position || originInput.trim())) &&
+    !!(destination?.position || destInput.trim());
 
   return (
     <div className="space-y-4">
