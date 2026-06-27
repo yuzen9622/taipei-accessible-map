@@ -25,8 +25,9 @@ export default function useComputeRoute() {
       originName?: string;
       destinationName?: string;
       query?: string;
+      mode?: "wheelchair" | "elderly" | "visual_impaired" | "normal";
     }): Promise<boolean> => {
-      const { origin, destination, originName, destinationName, query } = params;
+      const { origin, destination, originName, destinationName, query, mode } = params;
 
       if (!query && !origin && !destination && !originName && !destinationName) return false;
 
@@ -51,6 +52,7 @@ export default function useComputeRoute() {
           origin: resolvedOrigin,
           destination: resolvedDestination,
           query: query || undefined,
+          mode: mode || undefined,
           userLocation: userLocation
             ? { latitude: userLocation.lat, longitude: userLocation.lng }
             : undefined,
@@ -67,12 +69,28 @@ export default function useComputeRoute() {
         setComputeRoutes(routes);
         setRouteSelect({ index: 0, route: routes[0] });
 
-        if (map && response.data.origin && response.data.destination) {
-          const bounds = new LngLatBounds(
-            [response.data.origin.lng, response.data.origin.lat],
-            [response.data.destination.lng, response.data.destination.lat]
-          );
-          map.fitBounds(bounds, { padding: { top: 50, bottom: 200, left: 50, right: 50 } });
+        if (map) {
+          const bounds = new LngLatBounds();
+          let hasPoints = false;
+
+          if (response.data.origin && response.data.destination) {
+            bounds.extend([response.data.origin.lng, response.data.origin.lat]);
+            bounds.extend([response.data.destination.lng, response.data.destination.lat]);
+            hasPoints = true;
+          }
+
+          for (const leg of routes[0].legs) {
+            if (leg.polyline?.length) {
+              for (const [lng, lat] of leg.polyline) {
+                bounds.extend([lng, lat]);
+                hasPoints = true;
+              }
+            }
+          }
+
+          if (hasPoints) {
+            map.fitBounds(bounds, { padding: { top: 50, bottom: 300, left: 50, right: 50 } });
+          }
         }
         useStatusStore.getState().succeedAction("plan_route");
         return true;
@@ -104,6 +122,7 @@ export default function useComputeRoute() {
       originName?: string;
       destinationName?: string;
       query?: string;
+      mode?: "wheelchair" | "elderly" | "visual_impaired" | "normal";
     }): Promise<boolean> => {
       return computeRoute(params);
     },

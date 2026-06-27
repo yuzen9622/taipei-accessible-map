@@ -3,11 +3,16 @@
 import {
   ArrowLeft,
   ArrowUpDown,
+  Bus,
   CircleDot,
+  Footprints,
   Loader2,
   MapPin,
   Navigation,
   Search,
+  Accessibility,
+  Eye,
+  Heart,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import PlaceInput from "@/components/shared/PlaceInput";
@@ -16,6 +21,8 @@ import { useAppTranslation } from "@/i18n/client";
 import useMapStore from "@/stores/useMapStore";
 import type { PlaceDetail } from "@/types";
 import { Button } from "../ui/button";
+
+type A11yMode = "normal" | "wheelchair" | "elderly" | "visual_impaired";
 
 export default function RoutePlanContent() {
   const { t } = useAppTranslation();
@@ -37,6 +44,7 @@ export default function RoutePlanContent() {
   const [originInput, setOriginInput] = useState(originName || "");
   const [destInput, setDestInput] = useState(destinationName || "");
   const [useMyLocation, setUseMyLocation] = useState(!origin && !!userLocation);
+  const [mode, setMode] = useState<A11yMode>("normal");
 
   useEffect(() => {
     setOriginInput(originName || "");
@@ -134,6 +142,7 @@ export default function RoutePlanContent() {
       destination: destPos ?? undefined,
       originName: oName,
       destinationName: dName,
+      mode,
     });
     if (success) {
       setSearchPlace(null);
@@ -245,6 +254,30 @@ export default function RoutePlanContent() {
           {t("useMyLocationAsOrigin")}
         </button>
       )}
+
+      {/* Mode selector */}
+      <div className="flex gap-1.5">
+        {([
+          { key: "normal" as const, icon: <Bus className="h-4 w-4" />, label: t("transit") || "大眾運輸" },
+          { key: "wheelchair" as const, icon: <Accessibility className="h-4 w-4" />, label: t("wheelchair") || "輪椅" },
+          { key: "elderly" as const, icon: <Heart className="h-4 w-4" />, label: t("elderly") || "年長者" },
+          { key: "visual_impaired" as const, icon: <Eye className="h-4 w-4" />, label: t("visualImpaired") || "視障" },
+        ]).map(({ key, icon, label }) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setMode(key)}
+            className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-xl text-xs font-medium transition-colors ${
+              mode === key
+                ? "bg-primary text-primary-foreground"
+                : "bg-muted/50 text-muted-foreground hover:bg-muted"
+            }`}
+          >
+            {icon}
+            {label}
+          </button>
+        ))}
+      </div>
 
       {/* Start Route */}
       <Button
