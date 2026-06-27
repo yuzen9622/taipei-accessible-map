@@ -110,7 +110,8 @@ export async function getBusArrival(
   city = "台北",
   direction?: 0 | 1
 ) {
-  const params = new URLSearchParams({ routeName, stopName, city });
+  const params = new URLSearchParams({ routeName, city });
+  if (stopName) params.set("stopName", stopName);
   if (direction !== undefined) params.set("direction", String(direction));
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10_000);
@@ -118,6 +119,55 @@ export async function getBusArrival(
     `${END_POINT}/api/v1/transit/bus/arrival?${params}`,
     { signal: controller.signal }
   )) as ApiResponse<BusArrivalData>;
+  clearTimeout(timeout);
+  return data;
+}
+
+export interface BusSearchRouteItem {
+  routeName: string;
+  city: string;
+  departure: string;
+  destination: string;
+}
+
+export interface BusSearchRoutesData {
+  routes: BusSearchRouteItem[];
+}
+
+export async function searchBusRoutes(keyword: string) {
+  const params = new URLSearchParams({ keyword });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
+  const data = (await fetchRequest(
+    `${END_POINT}/api/v1/transit/bus/search-routes?${params}`,
+    { signal: controller.signal }
+  )) as ApiResponse<BusSearchRoutesData>;
+  clearTimeout(timeout);
+  return data;
+}
+
+export interface BusRouteData {
+  routeName: string;
+  city: string;
+  operators?: string[];
+  directions: {
+    direction: 0 | 1;
+    directionLabel: string;
+    from: string;
+    to: string;
+    stopCount: number;
+    stops: { seq: number; name: string; lat: number; lng: number }[];
+  }[];
+}
+
+export async function getBusRoute(routeName: string, city = "台北") {
+  const params = new URLSearchParams({ routeName, city });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
+  const data = (await fetchRequest(
+    `${END_POINT}/api/v1/transit/bus/route?${params}`,
+    { signal: controller.signal }
+  )) as ApiResponse<BusRouteData>;
   clearTimeout(timeout);
   return data;
 }
@@ -150,18 +200,7 @@ export async function getTrainData() {
   return data;
 }
 
-// --- New endpoints (stubs — backend not yet deployed) ---
-
-export async function searchBusRoutes(keyword: string) {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10_000);
-  const data = (await fetchRequest(
-    `${END_POINT}/api/v1/transit/bus/search-routes?keyword=${encodeURIComponent(keyword)}`,
-    { signal: controller.signal }
-  )) as ApiResponse<BusRouteSearchResult[]>;
-  clearTimeout(timeout);
-  return data;
-}
+// --- Additional endpoints ---
 
 export async function getBusRouteStops(
   routeName: string,

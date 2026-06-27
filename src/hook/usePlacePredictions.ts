@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import useAuthStore from "@/stores/useAuthStore";
+import useStatusStore from "@/stores/useStatusStore";
 import type { NominatimPlace } from "@/types";
 
 export default function usePlaceSuggestions(input: string) {
@@ -16,14 +17,17 @@ export default function usePlaceSuggestions(input: string) {
     setLoading(true);
     const handler = setTimeout(async () => {
       try {
+        useStatusStore.getState().startAction("search_place");
         const lang = userConfig.language === "zh-TW" ? "zh" : "en";
         const res = await fetch(
           `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(input)}&countrycodes=tw&limit=5&accept-language=${lang}&addressdetails=1`
         );
         const data: NominatimPlace[] = await res.json();
         setSuggestions(data);
+        useStatusStore.getState().succeedAction("search_place");
       } catch {
         setSuggestions([]);
+        useStatusStore.getState().failAction("搜尋地點時遇到問題");
       }
       setLoading(false);
     }, 500);

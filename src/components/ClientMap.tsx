@@ -12,6 +12,7 @@ import AccessibilityPin from "@/components/Wrapper/MetroA11yWrapper";
 import RouteLine from "@/components/Wrapper/RouteWrapper";
 import { useAppTranslation } from "@/i18n/client";
 import useMapStore from "@/stores/useMapStore";
+import useStatusStore from "@/stores/useStatusStore";
 import AIChatBot from "./AIChatBot";
 import AirQualityWidget from "./AirQualityWidget";
 import GotoNowButton from "./shared/GotoNowButton";
@@ -52,15 +53,18 @@ export default function ClientMap() {
   );
 
   useEffect(() => {
+    useStatusStore.getState().startAction("get_location");
     navigator.geolocation.watchPosition(
       (pos) => {
         setUserLocation({
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
         });
+        useStatusStore.getState().succeedAction("get_location");
       },
       () => {
         toast.error("無法取得目前位置");
+        useStatusStore.getState().failAction("無法取得你的位置");
       },
       { enableHighAccuracy: true, maximumAge: 10000 }
     );

@@ -221,6 +221,9 @@
     "inbound": "Inbound",
     "noBusData": "No arrival data found",
     "busSearchHint": "Enter bus route or stop name (either one is fine)",
+    "busRouteMatches": "Found {{count}} matching route(s)",
+    "busSelectStop": "Route {{route}} stops (tap to check arrivals)",
+    "busNeedRoute": "Please enter a route name to search stops",
     "busRouteResults": "Route {{route}} arrivals",
     "busStopResults": "{{stop}} stop arrivals",
     "navInstructions": "Turn-by-Turn Navigation",
@@ -266,5 +269,7 @@
     "resetDefault": "Reset to Default",
     "maxQuickActions": "Show up to 4 quick actions",
     "show": "Show",
-    "hide": "Hide"
+    "hide": "Hide",
+    "statusBarReady": "Ready to search accessible routes",
+    "showStatusBar": "Show system status notifications"
 }

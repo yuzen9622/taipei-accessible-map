@@ -222,6 +222,9 @@
     "inbound": "返程",
     "noBusData": "查無到站資料",
     "busSearchHint": "輸入公車路線或站牌名稱查詢（擇一即可）",
+    "busRouteMatches": "找到 {{count}} 條匹配路線",
+    "busSelectStop": "路線 {{route}} 站牌列表（點選查詢到站）",
+    "busNeedRoute": "請輸入路線名稱以查詢站牌",
     "busRouteResults": "路線 {{route}} 到站資訊",
     "busStopResults": "{{stop}} 站到站資訊",
     "navInstructions": "逐步導航",
@@ -267,5 +270,7 @@
     "resetDefault": "重置為預設",
     "maxQuickActions": "最多顯示 4 個快捷按鈕",
     "show": "顯示",
-    "hide": "隱藏"
+    "hide": "隱藏",
+    "statusBarReady": "準備好可以查詢無障礙路線",
+    "showStatusBar": "顯示系統處理狀態提示"
 }

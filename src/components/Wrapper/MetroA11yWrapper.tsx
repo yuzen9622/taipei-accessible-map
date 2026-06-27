@@ -3,6 +3,7 @@ import MetroA11yPin from "@/components/MetroA11yPin";
 import { getAllA11yBathrooms, getAllA11yPlaces } from "@/lib/api/a11y";
 import { formatBathroom, formatMetroA11y } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
+import useStatusStore from "@/stores/useStatusStore";
 import type { IBathroom, Marker, metroA11yData } from "@/types";
 
 export default function AccessibilityPin() {
@@ -11,6 +12,7 @@ export default function AccessibilityPin() {
 
   const fetchAllA11yPlace = useCallback(async () => {
     try {
+      useStatusStore.getState().startAction("load_a11y");
       const res = await getAllA11yPlaces();
 
       const places = res.data as metroA11yData[];
@@ -20,8 +22,10 @@ export default function AccessibilityPin() {
       const bathrooms = bathroomRes.data as IBathroom[];
       const bathroomsMarkers: Marker[] = formatBathroom(bathrooms);
       setA11yPlaces([...formatData, ...bathroomsMarkers]);
+      useStatusStore.getState().succeedAction("load_a11y");
     } catch (error) {
       void error;
+      useStatusStore.getState().failAction("載入無障礙設施資料時遇到問題");
     }
   }, [setA11yPlaces]);
 

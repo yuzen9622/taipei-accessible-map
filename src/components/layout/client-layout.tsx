@@ -8,6 +8,7 @@ import { refreshToken } from "@/lib/api/auth";
 import { getUserInfo } from "@/lib/api/user";
 import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
+import useStatusStore from "@/stores/useStatusStore";
 
 export default function ClientLayout({
   children,
@@ -29,6 +30,7 @@ export default function ClientLayout({
   }, [setSession, setUser, setUserConfig]);
 
   useEffect(() => {
+    useStatusStore.getState().startAction("load_preferences");
     const storedHistory = localStorage.getItem("searchHistory");
     const storedSaved = localStorage.getItem("savedPlaces");
     getNewAccessToken();
@@ -38,6 +40,7 @@ export default function ClientLayout({
     if (storedSaved) {
       initSavedPlaces(JSON.parse(storedSaved));
     }
+    useStatusStore.getState().succeedAction("load_preferences");
   }, [initSearchHistory, initSavedPlaces, getNewAccessToken]);
 
   const showPinnedSidebar = drawerPinned && !sidebarCollapsed;
@@ -46,7 +49,7 @@ export default function ClientLayout({
     <div
       className="w-full h-dvh flex flex-col"
       style={{
-        paddingLeft: showPinnedSidebar ? 420 : 0,
+        paddingLeft: showPinnedSidebar ? 436 : 0,
         transition: "padding-left 0.3s ease",
       }}
     >

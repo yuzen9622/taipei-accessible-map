@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { useAppTranslation } from "@/i18n/client";
 import { createHazardReport } from "@/lib/api/a11y";
 import useMapStore from "@/stores/useMapStore";
+import useStatusStore from "@/stores/useStatusStore";
 import { Button } from "../ui/button";
 
 const HAZARD_TYPES = [
@@ -50,6 +51,7 @@ export default function HazardReportPanel({ onClose }: { onClose: () => void }) 
     }
 
     setIsSubmitting(true);
+    useStatusStore.getState().startAction("upload_hazard");
     try {
       const formData = new FormData();
       formData.append("hazardType", hazardType);
@@ -60,12 +62,15 @@ export default function HazardReportPanel({ onClose }: { onClose: () => void }) 
 
       const res = await createHazardReport(formData);
       if (res.ok) {
+        useStatusStore.getState().succeedAction("upload_hazard");
         toast.success(t("reportSuccess"));
         onClose();
       } else {
+        useStatusStore.getState().failAction("回報送出失敗，請稍後再試");
         toast.error(t("reportFailed"));
       }
     } catch {
+      useStatusStore.getState().failAction("回報送出失敗，請稍後再試");
       toast.error(t("reportFailed"));
     } finally {
       setIsSubmitting(false);
