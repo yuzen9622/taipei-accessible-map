@@ -231,3 +231,15 @@ export async function getNearbyBusStops(lat: number, lng: number, radius?: numbe
   clearTimeout(timeout);
   return data;
 }
+
+export async function getBusTimetable(routeName: string) {
+  const params = new URLSearchParams({ routeName });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
+  const data = (await fetchRequest(
+    `${END_POINT}/api/v1/transit/bus/timetable?${params}`,
+    { signal: controller.signal }
+  )) as ApiResponse<unknown>;
+  clearTimeout(timeout);
+  return data;
+}

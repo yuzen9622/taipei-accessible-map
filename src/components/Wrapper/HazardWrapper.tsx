@@ -16,7 +16,7 @@ export default function HazardWrapper() {
 
   useEffect(() => {
     if (!userLocation) return;
-    getNearbyHazardReports(userLocation.lat, userLocation.lng, 1000)
+    getNearbyHazardReports(userLocation.lat, userLocation.lng, { radius: 1000 })
       .then((res) => {
         if (res.ok && res.data?.reports) setHazards(res.data.reports);
       })

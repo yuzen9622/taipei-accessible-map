@@ -89,7 +89,7 @@ export default function HomeContent() {
   useEffect(() => {
     if (!userLocation) return;
     let cancelled = false;
-    getNearbyHazardReports(userLocation.lat, userLocation.lng, 500)
+    getNearbyHazardReports(userLocation.lat, userLocation.lng, { radius: 500 })
       .then((res) => {
         if (!cancelled && res.ok && res.data?.reports) setNearbyHazards(res.data.reports);
       })

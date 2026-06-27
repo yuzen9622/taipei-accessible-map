@@ -422,6 +422,42 @@ export interface RealTimeByFrequency {
   RouteName?: BilingualName;
 }
 
+// --- Review (from /a11y/reviews) ---
+export interface PlaceReviewData {
+  _id: string;
+  osmId: string;
+  placeType: string;
+  userId: string;
+  userName?: string;
+  rating: number;
+  comment: string;
+  ratings?: {
+    passageWidth?: number;
+    restroomQuality?: number;
+    elevatorCondition?: number;
+    serviceAttitude?: number;
+  };
+  helpful?: number;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface ReviewSummary {
+  averageRating: number;
+  totalReviews: number;
+  ratingDistribution?: Record<string, number>;
+}
+
+// --- Visual Accessibility (from /a11y/visual-a11y) ---
+export interface VisualA11yFacility {
+  _id: string;
+  type: string;
+  name?: string;
+  location: GeoPoint;
+  address?: string;
+  description?: string;
+}
+
 // --- Helper functions ---
 
 export function getA11yLabelColor(label: A11yLabel): string {

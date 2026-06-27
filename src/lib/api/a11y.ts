@@ -12,6 +12,9 @@ import type {
   WelfareInstitution,
   DisabledParking,
   OsmPlaceDetail,
+  PlaceReviewData,
+  ReviewSummary,
+  VisualA11yFacility,
 } from "@/types/route";
 
 export async function getAllA11yPlaces() {
@@ -82,9 +85,18 @@ export async function createHazardReport(formData: FormData) {
   return response.json() as Promise<ApiResponse<HazardReport>>;
 }
 
-export async function getNearbyHazardReports(lat: number, lng: number, radius = 500) {
+export async function getNearbyHazardReports(
+  lat: number,
+  lng: number,
+  options?: { radius?: number; hazardType?: string; status?: string; limit?: number }
+) {
+  const params = new URLSearchParams({ lat: String(lat), lng: String(lng) });
+  if (options?.radius) params.set("radius", String(options.radius));
+  if (options?.hazardType) params.set("hazardType", options.hazardType);
+  if (options?.status) params.set("status", options.status);
+  if (options?.limit) params.set("limit", String(options.limit));
   const response = await fetchRequest(
-    `${END_POINT}/api/v1/a11y/reports?lat=${lat}&lng=${lng}&radius=${radius}`
+    `${END_POINT}/api/v1/a11y/reports?${params}`
   );
   return response as ApiResponse<{ reports: HazardReport[]; total: number }>;
 }
@@ -130,4 +142,87 @@ export async function getNearbyParking(lat: number, lng: number) {
     `${END_POINT}/api/v1/a11y/parking/nearby?lat=${lat}&lng=${lng}`
   );
   return response as ApiResponse<DisabledParking[]>;
+}
+
+export async function getHazardReportDetail(id: string) {
+  const response = await fetchRequest(
+    `${END_POINT}/api/v1/a11y/reports/${id}`
+  );
+  return response as ApiResponse<HazardReport>;
+}
+
+export async function getWelfare(options?: { county?: string; type?: string }) {
+  const params = new URLSearchParams();
+  if (options?.county) params.set("county", options.county);
+  if (options?.type) params.set("type", options.type);
+  const qs = params.toString();
+  const response = await fetchRequest(
+    `${END_POINT}/api/v1/a11y/welfare${qs ? `?${qs}` : ""}`
+  );
+  return response as ApiResponse<WelfareInstitution[]>;
+}
+
+export async function getVisualA11y(
+  lat: number,
+  lng: number,
+  options?: { radius?: number; type?: string }
+) {
+  const params = new URLSearchParams({ lat: String(lat), lng: String(lng) });
+  if (options?.radius) params.set("radius", String(options.radius));
+  if (options?.type) params.set("type", options.type);
+  const response = await fetchRequest(
+    `${END_POINT}/api/v1/a11y/visual-a11y?${params}`
+  );
+  return response as ApiResponse<VisualA11yFacility[]>;
+}
+
+export async function createReview(data: {
+  osmId: string;
+  placeType: string;
+  rating: number;
+  comment: string;
+  ratings?: Record<string, number>;
+}) {
+  const response = await authenticatedRequest(
+    `${END_POINT}/api/v1/a11y/reviews`,
+    { method: "POST", body: data }
+  );
+  return response as ApiResponse<PlaceReviewData>;
+}
+
+export async function getReviews(osmId: string, placeType: string, page = 1, limit = 20) {
+  const params = new URLSearchParams({
+    osmId,
+    placeType,
+    page: String(page),
+    limit: String(limit),
+  });
+  const response = await fetchRequest(
+    `${END_POINT}/api/v1/a11y/reviews?${params}`
+  );
+  return response as ApiResponse<{ reviews: PlaceReviewData[]; total: number }>;
+}
+
+export async function updateReview(id: string, data: { rating?: number; comment?: string; ratings?: Record<string, number> }) {
+  const response = await authenticatedRequest(
+    `${END_POINT}/api/v1/a11y/reviews/${id}`,
+    { method: "PATCH", body: data }
+  );
+  return response as ApiResponse<PlaceReviewData>;
+}
+
+export async function deleteReview(id: string) {
+  const response = await authenticatedRequest(
+    `${END_POINT}/api/v1/a11y/reviews/${id}`,
+    { method: "DELETE" }
+  );
+  return response as ApiResponse<unknown>;
+}
+
+export async function getReviewSummary(osmId: string, placeType: string) {
+  const params = new URLSearchParams({ osmId, placeType });
+  const response = await fetchRequest(
+    `${END_POINT}/api/v1/a11y/reviews/summary?${params}`
+  );
+  return response as ApiResponse<ReviewSummary>;
 }
