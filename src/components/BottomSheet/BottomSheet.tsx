@@ -81,6 +81,9 @@ export default function BottomSheet() {
     setSearchPlace,
     setInfoShow,
     setSheetMode,
+    setComputeRoutes,
+    setRouteA11y,
+    setRouteSelect,
     map,
   } = useMapStore();
   const [snap, setSnap] = useState<"peek" | "half" | "full">("half");
@@ -178,22 +181,28 @@ export default function BottomSheet() {
         // Reset to home mode if we were in a mode panel
         if (modePanelActive) {
           setSheetMode("home");
+          // Clear route overlays from map when leaving route mode
+          setComputeRoutes(null);
+          setRouteA11y([]);
+          setRouteSelect(null);
         }
         setActiveRailPanel(panel);
       }
       setMoreOpen(false);
     },
-    [activeRailPanel, modePanelActive, setActiveRailPanel, setSheetMode]
+    [activeRailPanel, modePanelActive, setActiveRailPanel, setSheetMode, setComputeRoutes, setRouteA11y, setRouteSelect]
   );
 
   const handlePanelClose = useCallback(() => {
     if (modePanelActive) {
       setSheetMode("home");
       setActiveRailPanel("search");
+      setComputeRoutes(null);
+      setRouteA11y([]);
     } else {
       setActiveRailPanel("none");
     }
-  }, [modePanelActive, setSheetMode, setActiveRailPanel]);
+  }, [modePanelActive, setSheetMode, setActiveRailPanel, setComputeRoutes, setRouteA11y, setRouteSelect]);
 
   return (
     <>
@@ -484,7 +493,7 @@ function DesktopPanelContent() {
   switch (activeRailPanel) {
     case "search": return <HomeContent />;
     case "a11y": return <HomeContent />;
-    case "bus": return <BusPanel onClose={noop} />;
+    case "bus": return <BusPanel onClose={noop} hideHeader />;
     case "parking": return <ParkingPanel onClose={noop} />;
     case "saved": return <SavedPlacesPanel onClose={noop} />;
     case "environment": return <EnvironmentPanel onClose={noop} />;

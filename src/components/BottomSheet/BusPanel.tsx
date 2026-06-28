@@ -43,7 +43,7 @@ function ArrivalCard({ item }: { item: BusArrivalItem }) {
   );
 }
 
-export default function BusPanel({ onClose }: { onClose: () => void }) {
+export default function BusPanel({ onClose, hideHeader }: { onClose: () => void; hideHeader?: boolean }) {
   const { t } = useAppTranslation();
   const [routeName, setRouteName] = useState("");
   const [stopName, setStopName] = useState("");
@@ -54,7 +54,7 @@ export default function BusPanel({ onClose }: { onClose: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
 
-  const canSearch = routeName.trim().length > 0 && stopName.trim().length > 0;
+  const canSearch = routeName.trim().length > 0 || stopName.trim().length > 0;
 
   const handleSearch = useCallback(async () => {
     if (!canSearch) return;
@@ -64,8 +64,8 @@ export default function BusPanel({ onClose }: { onClose: () => void }) {
 
     try {
       const res = await getBusArrival(
-        routeName.trim(),
-        stopName.trim(),
+        routeName.trim() || undefined,
+        stopName.trim() || undefined,
         direction,
         city
       );
@@ -93,21 +93,23 @@ export default function BusPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-bold flex items-center gap-2">
-          <Bus className="h-4.5 w-4.5 text-emerald-500" />
-          {t("busInfo")}
-        </h2>
-        <button
-          type="button"
-          onClick={onClose}
-          className="h-7 w-7 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted"
-          aria-label={t("close")}
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
-      </div>
+      {/* Header — hidden on desktop rail panel which has its own */}
+      {!hideHeader && (
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-bold flex items-center gap-2">
+            <Bus className="h-4.5 w-4.5 text-emerald-500" />
+            {t("busInfo")}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-7 w-7 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted"
+            aria-label={t("close")}
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
 
       <p className="text-xs text-muted-foreground">{t("busSearchHint")}</p>
 
