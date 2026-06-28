@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import MetroA11yPin from "@/components/MetroA11yPin";
 import { getAllA11yBathrooms, getAllA11yPlaces } from "@/lib/api/a11y";
 import { formatBathroom, formatMetroA11y } from "@/lib/utils";
@@ -29,10 +29,12 @@ export default function AccessibilityPin() {
     fetchAllA11yPlace();
   }, [fetchAllA11yPlace]);
 
-  const filteredPlaces =
-    selectedA11yTypes.length === 0
+  const filteredPlaces = useMemo(() =>
+    selectedA11yTypes.size === 0
       ? a11yPlaces ?? []
-      : a11yPlaces?.filter((place) => selectedA11yTypes.includes(place.a11yType)) ?? [];
+      : a11yPlaces?.filter((place) => selectedA11yTypes.has(place.a11yType)) ?? [],
+    [selectedA11yTypes, a11yPlaces],
+  );
 
   return (
     <>

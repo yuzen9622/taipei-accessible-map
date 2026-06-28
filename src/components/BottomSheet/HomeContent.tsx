@@ -96,7 +96,7 @@ export default function HomeContent() {
       if (!userLocation) return false;
       const dx = p.position.lat - userLocation.lat;
       const dy = p.position.lng - userLocation.lng;
-      return Math.sqrt(dx * dx + dy * dy) < 0.02;
+      return dx * dx + dy * dy < 0.0004;
     })
     .slice(0, 6);
 
@@ -155,7 +155,7 @@ export default function HomeContent() {
         </h2>
         <div className="flex gap-2 flex-wrap">
           {a11yChips.map((chip) => {
-            const active = selectedA11yTypes.includes(chip.type);
+            const active = selectedA11yTypes.has(chip.type);
             return (
               <button
                 key={chip.type}
