@@ -60,16 +60,18 @@ export default function PlaceContent() {
 
   useEffect(() => {
     if (!placePosition) return;
+    const controller = new AbortController();
     setA11yLoading(true);
-    getNearbyRouteA11yPlaces(placePosition)
+    getNearbyRouteA11yPlaces(placePosition, controller.signal)
       .then((res) => {
-        if (res.ok && res.data) {
+        if (!controller.signal.aborted && res.ok && res.data) {
           setNearbyBathrooms(res.data.nearbyBathroom || []);
           setNearbyMetro(res.data.nearbyMetroA11y || []);
         }
       })
       .catch(() => {})
-      .finally(() => setA11yLoading(false));
+      .finally(() => { if (!controller.signal.aborted) setA11yLoading(false); });
+    return () => controller.abort();
   }, [placePosition]);
 
   useEffect(() => {
@@ -82,14 +84,16 @@ export default function PlaceContent() {
       setOsmDetail(null);
       return;
     }
-    getOsmPlaceDetail(String(osmId))
+    const controller = new AbortController();
+    getOsmPlaceDetail(String(osmId), controller.signal)
       .then((res) => {
-        if (res.ok && res.data) {
+        if (!controller.signal.aborted && res.ok && res.data) {
           const detail = Array.isArray(res.data) ? res.data[0] : res.data;
           setOsmDetail(detail ?? null);
         }
       })
       .catch(() => {});
+    return () => controller.abort();
   }, [infoShow]);
 
   const handleBack = useCallback(() => {
@@ -203,6 +207,16 @@ export default function PlaceContent() {
 
     return items;
   }, [isPlace, place, nearbyBathrooms, nearbyMetro, osmDetail, t]);
+
+  const handleFlyTo = useCallback(
+    (lng: number, lat: number, zoom = 17) => {
+      if (map) map.flyTo({ center: [lng, lat], zoom });
+    },
+    [map],
+  );
+
+  const bathroomsSliced = useMemo(() => nearbyBathrooms.slice(0, 4), [nearbyBathrooms]);
+  const metroSliced = useMemo(() => nearbyMetro.slice(0, 4), [nearbyMetro]);
 
   const placeIdForReview = isPlace && place
     ? (place.osm_id ? `${place.osm_type}_${place.osm_id}` : place.place_id?.toString() || "")
@@ -330,13 +344,11 @@ export default function PlaceContent() {
           </div>
         ) : hasA11y ? (
           <div className="space-y-2">
-            {nearbyBathrooms.slice(0, 4).map((b) => (
+            {bathroomsSliced.map((b) => (
               <button
                 key={b._id}
                 type="button"
-                onClick={() => {
-                  if (map) map.flyTo({ center: [b.longitude, b.latitude], zoom: 17 });
-                }}
+                onClick={() => handleFlyTo(b.longitude, b.latitude)}
                 className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/40 hover:bg-muted/70 transition-colors text-left"
               >
                 <div className="h-9 w-9 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
@@ -351,13 +363,11 @@ export default function PlaceContent() {
                 </Badge>
               </button>
             ))}
-            {nearbyMetro.slice(0, 4).map((m) => (
+            {metroSliced.map((m) => (
               <button
                 key={m._id}
                 type="button"
-                onClick={() => {
-                  if (map) map.flyTo({ center: [parseFloat(m.經度), parseFloat(m.緯度)], zoom: 17 });
-                }}
+                onClick={() => handleFlyTo(parseFloat(m.經度), parseFloat(m.緯度))}
                 className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/40 hover:bg-muted/70 transition-colors text-left"
               >
                 <div className="h-9 w-9 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
@@ -433,9 +443,7 @@ export default function PlaceContent() {
                   key={f.osmId}
                   type="button"
                   onClick={() => {
-                    if (map && f.location) {
-                      map.flyTo({ center: [f.location.coordinates[0], f.location.coordinates[1]], zoom: 18 });
-                    }
+                    if (f.location) handleFlyTo(f.location.coordinates[0], f.location.coordinates[1], 18);
                   }}
                   className="w-full flex items-center gap-2 p-2 rounded-lg bg-muted/40 hover:bg-muted/70 transition-colors text-left text-sm"
                 >

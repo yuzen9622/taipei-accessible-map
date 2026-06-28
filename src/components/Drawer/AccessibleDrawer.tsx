@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useAppTranslation } from "@/i18n/client";
 import useMapStore from "@/stores/useMapStore";
 import { A11yEnum, type Marker } from "@/types/index";
@@ -22,19 +22,22 @@ export default function AccessibleDrawer() {
   const { t } = useAppTranslation("translation");
   const [searchTerm, setSearchTerm] = useState("");
 
-  const searchToA11yPlaces = (term: string, place: Marker) => {
+  const searchToA11yPlaces = useCallback((term: string, place: Marker) => {
     if (term.trim() === "") return true;
     return place.content?.title.includes(term);
-  };
+  }, []);
 
-  const filteredPlaces =
-    (routeA11y.length > 0 && routeA11y) ||
-    a11yPlaces?.filter(
+  const filteredPlaces = useMemo(() => {
+    if (routeA11y.length > 0) return routeA11y;
+    return a11yPlaces?.filter(
       (place) =>
         selectedA11yTypes.has(place.a11yType) &&
         searchToA11yPlaces(searchTerm, place)
-    ) ||
-    [];
+    ) ?? [];
+  }, [routeA11y, a11yPlaces, selectedA11yTypes, searchTerm, searchToA11yPlaces]);
+
+  const MAX_VISIBLE = 100;
+  const visiblePlaces = useMemo(() => filteredPlaces.slice(0, MAX_VISIBLE), [filteredPlaces]);
 
   const getA11yTypeDescription = (type: A11yEnum) => {
     switch (type) {
@@ -98,10 +101,15 @@ export default function AccessibleDrawer() {
                 </div>
               );
             })}
-            {filteredPlaces.length > 0 &&
-              filteredPlaces.map((place) => (
+            {visiblePlaces.length > 0 &&
+              visiblePlaces.map((place) => (
                 <A11yCard key={place.id} place={place} />
               ))}
+            {filteredPlaces.length > MAX_VISIBLE && (
+              <p className="text-xs text-center text-muted-foreground py-2">
+                {`顯示前 ${MAX_VISIBLE} 筆，共 ${filteredPlaces.length} 筆`}
+              </p>
+            )}
           </div>
         </div>
       </div>

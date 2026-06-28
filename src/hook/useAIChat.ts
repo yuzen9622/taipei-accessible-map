@@ -55,6 +55,9 @@ export default function useAIChat() {
     },
   ]);
 
+  const markDone = (activities: ToolActivity[] | undefined) =>
+    activities?.map((a) => ({ ...a, status: "done" as const }));
+
   const handleSend = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
@@ -102,10 +105,7 @@ export default function useAIChat() {
               const updated = [...prev];
               const last = updated[updated.length - 1];
               if (last.role === "assistant") {
-                const activities = last.toolActivities?.map((a) => ({
-                  ...a,
-                  status: "done" as const,
-                }));
+                const activities = markDone(last.toolActivities);
                 updated[updated.length - 1] = {
                   ...last,
                   content: fullText,
@@ -122,10 +122,7 @@ export default function useAIChat() {
               const last = updated[updated.length - 1];
               if (last.role === "assistant") {
                 const existing = last.toolActivities || [];
-                const doneExisting = existing.map((a) => ({
-                  ...a,
-                  status: "done" as const,
-                }));
+                const doneExisting = markDone(existing) ?? [];
                 updated[updated.length - 1] = {
                   ...last,
                   toolActivities: [

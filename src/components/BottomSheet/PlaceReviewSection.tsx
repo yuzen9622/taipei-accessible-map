@@ -1,7 +1,7 @@
 "use client";
 
 import { MessageSquare, Star, ThumbsUp } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAppTranslation } from "@/i18n/client";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
@@ -119,13 +119,18 @@ export default function PlaceReviewSection({ placeId }: { placeId: string }) {
     [reviews, placeId]
   );
 
-  const avgScore =
-    reviews.length > 0
-      ? reviews.reduce((sum, r) => {
-          const vals = Object.values(r.ratings).filter((v) => v > 0);
-          return sum + (vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0);
-        }, 0) / reviews.length
-      : 0;
+  const reviewsWithScores = useMemo(() =>
+    reviews.map((r) => {
+      const vals = Object.values(r.ratings).filter((v) => v > 0);
+      return { ...r, avg: vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0 };
+    }),
+    [reviews],
+  );
+
+  const avgScore = useMemo(() => {
+    if (reviewsWithScores.length === 0) return 0;
+    return reviewsWithScores.reduce((sum, r) => sum + r.avg, 0) / reviewsWithScores.length;
+  }, [reviewsWithScores]);
 
   return (
     <section>
@@ -198,10 +203,7 @@ export default function PlaceReviewSection({ placeId }: { placeId: string }) {
       {/* Review list */}
       {reviews.length > 0 ? (
         <div className="space-y-2">
-          {reviews.slice(0, 5).map((review) => {
-            const vals = Object.values(review.ratings).filter((v) => v > 0);
-            const avg = vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
-            return (
+          {reviewsWithScores.slice(0, 5).map((review) => (
               <div
                 key={review.id}
                 className="rounded-xl bg-muted/40 p-3 space-y-1.5"
@@ -209,10 +211,10 @@ export default function PlaceReviewSection({ placeId }: { placeId: string }) {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-medium">{review.author}</span>
-                    {avg > 0 && (
+                    {review.avg > 0 && (
                       <div className="flex items-center gap-0.5">
                         <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                        <span className="text-xs text-muted-foreground">{avg.toFixed(1)}</span>
+                        <span className="text-xs text-muted-foreground">{review.avg.toFixed(1)}</span>
                       </div>
                     )}
                   </div>
@@ -232,8 +234,7 @@ export default function PlaceReviewSection({ placeId }: { placeId: string }) {
                   {t("reviewHelpful")} {review.helpful > 0 && `(${review.helpful})`}
                 </button>
               </div>
-            );
-          })}
+            ))}
         </div>
       ) : (
         <p className="text-sm text-muted-foreground py-2">{t("noReviews")}</p>

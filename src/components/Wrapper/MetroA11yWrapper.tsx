@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import MetroA11yPin from "@/components/MetroA11yPin";
 import { getAllA11yBathrooms, getAllA11yPlaces } from "@/lib/api/a11y";
 import { formatBathroom, formatMetroA11y } from "@/lib/utils";
@@ -9,25 +9,18 @@ export default function AccessibilityPin() {
   const { selectedA11yTypes, a11yPlaces, setA11yPlaces, routeA11y } =
     useMapStore();
 
-  const fetchAllA11yPlace = useCallback(async () => {
-    try {
-      const res = await getAllA11yPlaces();
-
-      const places = res.data as metroA11yData[];
-      const formatData: Marker[] = formatMetroA11y(places);
-      const bathroomRes = await getAllA11yBathrooms();
-
-      const bathrooms = bathroomRes.data as IBathroom[];
-      const bathroomsMarkers: Marker[] = formatBathroom(bathrooms);
-      setA11yPlaces([...formatData, ...bathroomsMarkers]);
-    } catch (error) {
-      void error;
-    }
-  }, [setA11yPlaces]);
-
   useEffect(() => {
-    fetchAllA11yPlace();
-  }, [fetchAllA11yPlace]);
+    const controller = new AbortController();
+    Promise.all([getAllA11yPlaces(), getAllA11yBathrooms()])
+      .then(([placesRes, bathroomRes]) => {
+        if (controller.signal.aborted) return;
+        const places = placesRes.data as metroA11yData[];
+        const bathrooms = bathroomRes.data as IBathroom[];
+        setA11yPlaces([...formatMetroA11y(places), ...formatBathroom(bathrooms)]);
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [setA11yPlaces]);
 
   const filteredPlaces = useMemo(() =>
     selectedA11yTypes.size === 0

@@ -162,6 +162,7 @@ const useMapStore = create<MapStore>((set, get) => ({
   removeSavedPlace: (place) => {
     const { savedPlaces, savedPlaceKeys } = get();
     const key = placeKey(place);
+    if (!savedPlaceKeys.has(key)) return;
     const updated = savedPlaces.filter((p) => placeKey(p) !== key);
     const nextKeys = new Set(savedPlaceKeys);
     nextKeys.delete(key);

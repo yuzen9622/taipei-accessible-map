@@ -15,7 +15,7 @@ import {
   MapPin,
   Navigation,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import PlaceInput from "@/components/shared/PlaceInput";
 import { useAppTranslation } from "@/i18n/client";
 import { getNearbyHazardReports } from "@/lib/api/a11y";
@@ -52,11 +52,14 @@ export default function HomeContent() {
 
   useEffect(() => {
     if (!userLocation) return;
-    getNearbyHazardReports(userLocation.lat, userLocation.lng, 500)
+    const controller = new AbortController();
+    getNearbyHazardReports(userLocation.lat, userLocation.lng, 500, controller.signal)
       .then((res) => {
-        if (res.ok && res.data?.reports) setNearbyHazards(res.data.reports);
+        if (!controller.signal.aborted && res.ok && res.data?.reports)
+          setNearbyHazards(res.data.reports);
       })
       .catch(() => {});
+    return () => controller.abort();
   }, [userLocation]);
 
   const handlePlaceChange = useCallback(
@@ -91,14 +94,24 @@ export default function HomeContent() {
     { type: A11yEnum.RESTROOM, Icon: DoorOpen, label: t("toilet") },
   ];
 
-  const nearbyPlaces = a11yPlaces
-    ?.filter((p) => {
-      if (!userLocation) return false;
-      const dx = p.position.lat - userLocation.lat;
-      const dy = p.position.lng - userLocation.lng;
-      return dx * dx + dy * dy < 0.0004;
-    })
-    .slice(0, 6);
+  const nearbyPlaces = useMemo(() =>
+    a11yPlaces
+      ?.filter((p) => {
+        if (!userLocation) return false;
+        const dx = p.position.lat - userLocation.lat;
+        const dy = p.position.lng - userLocation.lng;
+        return dx * dx + dy * dy < 0.0004;
+      })
+      .slice(0, 6) ?? [],
+    [a11yPlaces, userLocation],
+  );
+
+  const handleFlyToPlace = useCallback(
+    (lng: number, lat: number) => {
+      if (map) map.flyTo({ center: [lng, lat], zoom: 17 });
+    },
+    [map],
+  );
 
   if (subPanel === "environment") {
     return <EnvironmentPanel onClose={() => setSubPanel("none")} />;
@@ -259,7 +272,7 @@ export default function HomeContent() {
       )}
 
       {/* Nearby A11y Facilities */}
-      {nearbyPlaces && nearbyPlaces.length > 0 && (
+      {nearbyPlaces.length > 0 && (
         <section>
           <h2 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
             <Accessibility className="h-4 w-4" />
@@ -270,14 +283,7 @@ export default function HomeContent() {
               <button
                 key={place.id}
                 type="button"
-                onClick={() => {
-                  if (map) {
-                    map.flyTo({
-                      center: [place.position.lng, place.position.lat],
-                      zoom: 17,
-                    });
-                  }
-                }}
+                onClick={() => handleFlyToPlace(place.position.lng, place.position.lat)}
                 className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/40 hover:bg-muted/70 transition-colors text-left"
               >
                 <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">

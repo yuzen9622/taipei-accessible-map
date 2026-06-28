@@ -31,13 +31,13 @@ export async function getAllA11yBathrooms() {
 export async function getNearbyRouteA11yPlaces(point: {
   lat: number;
   lng: number;
-}) {
+}, signal?: AbortSignal) {
   const response = await fetchRequest<
     ApiResponse<{
       nearbyBathroom: IBathroom[];
       nearbyMetroA11y: metroA11yData[];
     }>
-  >(`${END_POINT}/api/v1/a11y/nearby-a11y?lat=${point.lat}&lng=${point.lng}`);
+  >(`${END_POINT}/api/v1/a11y/nearby-a11y?lat=${point.lat}&lng=${point.lng}`, signal ? { signal } : undefined);
 
   return response as ApiResponse<{
     nearbyBathroom: IBathroom[];
@@ -64,9 +64,10 @@ export async function getRouteInstructions(request: NavInstructionsRequest) {
   return response as ApiResponse<NavInstructionsData>;
 }
 
-export async function getOsmPlaceDetail(osmId: string) {
+export async function getOsmPlaceDetail(osmId: string, signal?: AbortSignal) {
   const response = await fetchRequest(
-    `${END_POINT}/api/v1/a11y/place?osmId=${osmId}`
+    `${END_POINT}/api/v1/a11y/place?osmId=${osmId}`,
+    signal ? { signal } : undefined
   );
   return response as ApiResponse<OsmPlaceDetail | OsmPlaceDetail[]>;
 }
@@ -82,9 +83,10 @@ export async function createHazardReport(formData: FormData) {
   return response.json() as Promise<ApiResponse<HazardReport>>;
 }
 
-export async function getNearbyHazardReports(lat: number, lng: number, radius = 500) {
+export async function getNearbyHazardReports(lat: number, lng: number, radius = 500, signal?: AbortSignal) {
   const response = await fetchRequest(
-    `${END_POINT}/api/v1/a11y/reports?lat=${lat}&lng=${lng}&radius=${radius}`
+    `${END_POINT}/api/v1/a11y/reports?lat=${lat}&lng=${lng}&radius=${radius}`,
+    signal ? { signal } : undefined
   );
   return response as ApiResponse<{ reports: HazardReport[]; total: number }>;
 }
