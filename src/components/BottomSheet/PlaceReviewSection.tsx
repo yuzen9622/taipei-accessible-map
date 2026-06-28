@@ -56,9 +56,11 @@ function StarRating({
   );
 }
 
+const OSM_TYPES = new Set(["node", "way", "relation"]);
+
 function parseOsmPlaceId(placeId: string): { osmId: string; placeType: string } {
   const parts = placeId.split("_");
-  if (parts.length >= 2 && ["node", "way", "relation"].includes(parts[0])) {
+  if (parts.length >= 2 && OSM_TYPES.has(parts[0])) {
     return { osmId: parts.slice(1).join("_"), placeType: parts[0] };
   }
   return { osmId: placeId, placeType: "node" };

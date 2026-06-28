@@ -22,12 +22,13 @@ interface MapState {
     route: AccessibleRoute;
   } | null;
   routeA11y: Marker[];
-  selectedA11yTypes: A11yEnum[];
+  selectedA11yTypes: Set<A11yEnum>;
   a11yDrawerOpen: boolean;
   selectA11yPlace: Marker | null;
   a11yPlaces: Marker[] | null;
   searchHistory: PlaceDetail[];
   savedPlaces: PlaceDetail[];
+  savedPlaceKeys: Set<string>;
   originName: string;
   destinationName: string;
   sheetMode: SheetMode;
@@ -77,6 +78,10 @@ interface MapAction {
 
 type MapStore = MapState & MapAction;
 
+function placeKey(p: PlaceDetail): string {
+  return p.kind === "place" ? `p_${p.place.place_id}` : `c_${p.position.lat}_${p.position.lng}`;
+}
+
 const useMapStore = create<MapStore>((set, get) => ({
   map: null,
   setMap: (map) => set({ map }),
@@ -116,17 +121,17 @@ const useMapStore = create<MapStore>((set, get) => ({
       } as MapStore["selectRoute"],
     });
   },
-  selectedA11yTypes: [],
+  selectedA11yTypes: new Set<A11yEnum>(),
   toggleA11yType: (type: A11yEnum) => {
     const { selectedA11yTypes } = get();
     if (type === A11yEnum.NONE) {
-      set({ selectedA11yTypes: [], a11yDrawerOpen: false });
+      set({ selectedA11yTypes: new Set(), a11yDrawerOpen: false });
       return;
     }
-    const newTypes = selectedA11yTypes.includes(type)
-      ? selectedA11yTypes.filter((t) => t !== type)
-      : [...selectedA11yTypes, type];
-    set({ selectedA11yTypes: newTypes, a11yDrawerOpen: newTypes.length > 0 });
+    const next = new Set(selectedA11yTypes);
+    if (next.has(type)) next.delete(type);
+    else next.add(type);
+    set({ selectedA11yTypes: next, a11yDrawerOpen: next.size > 0 });
   },
   a11yDrawerOpen: false,
   setA11yDrawerOpen: (open) => set({ a11yDrawerOpen: open }),
@@ -136,45 +141,37 @@ const useMapStore = create<MapStore>((set, get) => ({
   initSearchHistory: (history) => set({ searchHistory: history }),
   addSearchHistory: (searchTerm: PlaceDetail) => {
     const { searchHistory } = get();
-    const newTerm = searchHistory.filter((item) => {
-      if (item.kind === "place" && searchTerm.kind === "place") {
-        return item.place.place_id !== searchTerm.place.place_id;
-      }
-      return true;
-    });
-    const newHistory = [searchTerm, ...newTerm.slice(0, 9)];
+    const key = placeKey(searchTerm);
+    const deduped = searchHistory.filter((item) => placeKey(item) !== key);
+    const newHistory = [searchTerm, ...deduped.slice(0, 9)];
     localStorage.setItem("searchHistory", JSON.stringify(newHistory));
     set({ searchHistory: newHistory });
   },
   clearSearchHistory: () => set({ searchHistory: [] }),
   savedPlaces: [],
-  initSavedPlaces: (places) => set({ savedPlaces: places }),
+  savedPlaceKeys: new Set<string>(),
+  initSavedPlaces: (places) => set({ savedPlaces: places, savedPlaceKeys: new Set(places.map(placeKey)) }),
   addSavedPlace: (place) => {
-    const { savedPlaces } = get();
-    const exists = savedPlaces.some((p) => {
-      if (p.kind === "place" && place.kind === "place") return p.place.place_id === place.place.place_id;
-      return p.position.lat === place.position.lat && p.position.lng === place.position.lng;
-    });
-    if (exists) return;
+    const { savedPlaces, savedPlaceKeys } = get();
+    const key = placeKey(place);
+    if (savedPlaceKeys.has(key)) return;
     const updated = [place, ...savedPlaces];
+    const nextKeys = new Set(savedPlaceKeys);
+    nextKeys.add(key);
     localStorage.setItem("savedPlaces", JSON.stringify(updated));
-    set({ savedPlaces: updated });
+    set({ savedPlaces: updated, savedPlaceKeys: nextKeys });
   },
   removeSavedPlace: (place) => {
-    const { savedPlaces } = get();
-    const updated = savedPlaces.filter((p) => {
-      if (p.kind === "place" && place.kind === "place") return p.place.place_id !== place.place.place_id;
-      return p.position.lat !== place.position.lat || p.position.lng !== place.position.lng;
-    });
+    const { savedPlaces, savedPlaceKeys } = get();
+    const key = placeKey(place);
+    const updated = savedPlaces.filter((p) => placeKey(p) !== key);
+    const nextKeys = new Set(savedPlaceKeys);
+    nextKeys.delete(key);
     localStorage.setItem("savedPlaces", JSON.stringify(updated));
-    set({ savedPlaces: updated });
+    set({ savedPlaces: updated, savedPlaceKeys: nextKeys });
   },
   isSavedPlace: (place) => {
-    const { savedPlaces } = get();
-    return savedPlaces.some((p) => {
-      if (p.kind === "place" && place.kind === "place") return p.place.place_id === place.place.place_id;
-      return p.position.lat === place.position.lat && p.position.lng === place.position.lng;
-    });
+    return get().savedPlaceKeys.has(placeKey(place));
   },
   routeA11y: [],
   setRouteA11y: (a11y) => {

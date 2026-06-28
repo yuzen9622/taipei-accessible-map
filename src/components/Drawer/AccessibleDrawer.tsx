@@ -31,7 +31,7 @@ export default function AccessibleDrawer() {
     (routeA11y.length > 0 && routeA11y) ||
     a11yPlaces?.filter(
       (place) =>
-        selectedA11yTypes.includes(place.a11yType) &&
+        selectedA11yTypes.has(place.a11yType) &&
         searchToA11yPlaces(searchTerm, place)
     ) ||
     [];
@@ -87,7 +87,7 @@ export default function AccessibleDrawer() {
         </div>
         <div className=" flex-1 overflow-y-auto ">
           <div className="space-y-4  overflow-auto">
-            {selectedA11yTypes?.map((type) => {
+            {Array.from(selectedA11yTypes).map((type) => {
               const info = getA11yTypeDescription(type);
               return (
                 <div key={type} className="border rounded-lg p-3">

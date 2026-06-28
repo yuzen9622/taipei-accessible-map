@@ -185,9 +185,10 @@ export default function PlaceContent() {
       items.push({ key: "wheelchair", label: t("wheelchairAccess"), available: false });
     }
 
-    const hasOsmElevator = osmFacilities?.some((f) => f.category === "elevator") ?? false;
-    const hasOsmRamp = osmFacilities?.some((f) => f.category === "ramp" || f.category === "kerb_cut") ?? false;
-    const hasOsmToilet = osmFacilities?.some((f) => f.category === "toilet") ?? false;
+    const facilityCategories = new Set(osmFacilities?.map((f) => f.category));
+    const hasOsmElevator = facilityCategories.has("elevator");
+    const hasOsmRamp = facilityCategories.has("ramp") || facilityCategories.has("kerb_cut");
+    const hasOsmToilet = facilityCategories.has("toilet");
     const hasOsmTactile = osmTags?.tactile_paving === "yes";
 
     items.push(

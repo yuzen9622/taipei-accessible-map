@@ -34,7 +34,7 @@ export default function AccessibleToolBar() {
       )}
     >
       {toolbarItems.map((item) => {
-        const isSelected = selectedA11yTypes.includes(item.type);
+        const isSelected = selectedA11yTypes.has(item.type);
 
         return (
           <button

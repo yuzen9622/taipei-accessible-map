@@ -131,11 +131,12 @@ export default function HomeContent() {
 
   const nearbyPlaces = useMemo(() => {
     if (!a11yPlaces || !userLocation) return [];
+    const threshold = 0.02 * 0.02;
     return a11yPlaces
       .filter((p) => {
         const dx = p.position.lat - userLocation.lat;
         const dy = p.position.lng - userLocation.lng;
-        return Math.sqrt(dx * dx + dy * dy) < 0.02;
+        return dx * dx + dy * dy < threshold;
       })
       .slice(0, 6);
   }, [a11yPlaces, userLocation]);
@@ -183,7 +184,7 @@ export default function HomeContent() {
         </h2>
         <div className="flex gap-2 flex-wrap">
           {a11yChips.map((chip) => {
-            const active = selectedA11yTypes.includes(chip.type);
+            const active = selectedA11yTypes.has(chip.type);
             return (
               <button
                 key={chip.type}
