@@ -78,12 +78,12 @@ export default function BottomSheet() {
     setSidebarCollapsed: setCollapsed,
     activeRailPanel,
     setActiveRailPanel,
-    setSearchPlace,
-    setInfoShow,
     setSheetMode,
     setComputeRoutes,
     setRouteA11y,
     setRouteSelect,
+    setInfoShow,
+    setSearchPlace,
     map,
   } = useMapStore();
   const [snap, setSnap] = useState<"peek" | "half" | "full">("half");
@@ -181,16 +181,17 @@ export default function BottomSheet() {
         // Reset to home mode if we were in a mode panel
         if (modePanelActive) {
           setSheetMode("home");
-          // Clear route overlays from map when leaving route mode
           setComputeRoutes(null);
           setRouteA11y([]);
           setRouteSelect(null);
+          setInfoShow({ isOpen: false, kind: null });
+          setSearchPlace(null);
         }
         setActiveRailPanel(panel);
       }
       setMoreOpen(false);
     },
-    [activeRailPanel, modePanelActive, setActiveRailPanel, setSheetMode, setComputeRoutes, setRouteA11y, setRouteSelect]
+    [activeRailPanel, modePanelActive, setActiveRailPanel, setSheetMode, setComputeRoutes, setRouteA11y, setRouteSelect, setInfoShow, setSearchPlace]
   );
 
   const handlePanelClose = useCallback(() => {
@@ -199,10 +200,13 @@ export default function BottomSheet() {
       setActiveRailPanel("search");
       setComputeRoutes(null);
       setRouteA11y([]);
+      setRouteSelect(null);
+      setInfoShow({ isOpen: false, kind: null });
+      setSearchPlace(null);
     } else {
       setActiveRailPanel("none");
     }
-  }, [modePanelActive, setSheetMode, setActiveRailPanel, setComputeRoutes, setRouteA11y, setRouteSelect]);
+  }, [modePanelActive, setSheetMode, setActiveRailPanel, setComputeRoutes, setRouteA11y, setRouteSelect, setInfoShow, setSearchPlace]);
 
   return (
     <>
@@ -494,11 +498,11 @@ function DesktopPanelContent() {
     case "search": return <HomeContent />;
     case "a11y": return <HomeContent />;
     case "bus": return <BusPanel onClose={noop} hideHeader />;
-    case "parking": return <ParkingPanel onClose={noop} />;
-    case "saved": return <SavedPlacesPanel onClose={noop} />;
-    case "environment": return <EnvironmentPanel onClose={noop} />;
-    case "hazard": return <HazardReportPanel onClose={noop} />;
-    case "welfare": return <WelfarePanel onClose={noop} />;
+    case "parking": return <ParkingPanel onClose={noop} hideHeader />;
+    case "saved": return <SavedPlacesPanel onClose={noop} hideHeader />;
+    case "environment": return <EnvironmentPanel onClose={noop} hideHeader />;
+    case "hazard": return <HazardReportPanel onClose={noop} hideHeader />;
+    case "welfare": return <WelfarePanel onClose={noop} hideHeader />;
     default: return <HomeContent />;
   }
 }

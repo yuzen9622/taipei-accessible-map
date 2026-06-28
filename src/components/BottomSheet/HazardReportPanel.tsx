@@ -23,7 +23,7 @@ const HAZARD_TYPES = [
   { value: "data_error" as const, Icon: AlertTriangle, color: "text-red-500" },
 ];
 
-export default function HazardReportPanel({ onClose }: { onClose: () => void }) {
+export default function HazardReportPanel({ onClose, hideHeader }: { onClose: () => void; hideHeader?: boolean }) {
   const { t } = useAppTranslation();
   const { userLocation } = useMapStore();
 
@@ -75,19 +75,21 @@ export default function HazardReportPanel({ onClose }: { onClose: () => void }) 
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-bold flex items-center gap-2">
-          <AlertTriangle className="h-4.5 w-4.5 text-amber-500" />
-          {t("reportHazard")}
-        </h2>
-        <button
-          type="button"
-          onClick={onClose}
-          className="h-7 w-7 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted"
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
-      </div>
+      {!hideHeader && (
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-bold flex items-center gap-2">
+            <AlertTriangle className="h-4.5 w-4.5 text-amber-500" />
+            {t("reportHazard")}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-7 w-7 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Location */}
       {userLocation && (

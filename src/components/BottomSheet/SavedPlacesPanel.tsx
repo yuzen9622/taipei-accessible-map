@@ -68,7 +68,7 @@ function SavedPlaceCard({
   );
 }
 
-export default function SavedPlacesPanel({ onClose }: { onClose: () => void }) {
+export default function SavedPlacesPanel({ onClose, hideHeader }: { onClose: () => void; hideHeader?: boolean }) {
   const { t } = useAppTranslation();
   const {
     savedPlaces,
@@ -104,20 +104,22 @@ export default function SavedPlacesPanel({ onClose }: { onClose: () => void }) {
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-bold flex items-center gap-2">
-          <Bookmark className="h-4.5 w-4.5 text-primary" />
-          {t("savedPlaces")}
-        </h2>
-        <button
-          type="button"
-          onClick={onClose}
-          className="h-7 w-7 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors"
-          aria-label={t("close")}
-        >
-          <X className="h-3.5 w-3.5" />
-        </button>
-      </div>
+      {!hideHeader && (
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-bold flex items-center gap-2">
+            <Bookmark className="h-4.5 w-4.5 text-primary" />
+            {t("savedPlaces")}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="h-7 w-7 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors"
+            aria-label={t("close")}
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* Count */}
       {savedPlaces.length > 0 && (
