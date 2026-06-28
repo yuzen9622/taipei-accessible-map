@@ -3,9 +3,7 @@
 import {
   ArrowLeft,
   ArrowUpDown,
-  CircleDot,
   Loader2,
-  MapPin,
   Navigation,
   Search,
 } from "lucide-react";
@@ -165,71 +163,76 @@ export default function RoutePlanContent() {
         <h1 className="text-lg font-bold">{t("planRoute")}</h1>
       </div>
 
-      {/* Origin / Destination Inputs */}
-      <div className="flex gap-2">
-        {/* Route dots */}
-        <div className="flex flex-col items-center pt-3 gap-0.5">
-          <CircleDot className="h-4 w-4 text-primary shrink-0" />
-          <div className="flex-1 w-0.5 bg-border min-h-[24px]" />
-          <MapPin className="h-4 w-4 text-destructive shrink-0" />
-        </div>
+      {/* Origin / Destination — Gaode-style card */}
+      <div className="rounded-2xl border border-border bg-card shadow-sm overflow-visible">
+        <div className="flex">
+          {/* Left: colored dots + line */}
+          <div className="flex flex-col items-center py-4 px-3">
+            <div className="h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20 shrink-0" />
+            <div className="flex-1 w-px bg-border my-1 min-h-[20px]" />
+            <div className="h-3 w-3 rounded-full bg-red-500 ring-2 ring-red-500/20 shrink-0" />
+          </div>
 
-        {/* Input fields */}
-        <div className="flex-1 space-y-2 min-w-0">
-          {/* Origin */}
-          <div className="relative rounded-xl border border-border overflow-visible">
-            {useMyLocation ? (
-              <button
-                type="button"
-                onClick={() => setUseMyLocation(false)}
-                className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-left bg-primary/5"
-              >
-                <Navigation className="h-4 w-4 text-primary shrink-0" />
-                <span className="text-primary font-medium">{t("myLocation")}</span>
-              </button>
-            ) : (
+          {/* Right: input fields */}
+          <div className="flex-1 min-w-0 py-1">
+            {/* Origin input */}
+            <div className="relative overflow-visible">
+              {useMyLocation ? (
+                <button
+                  type="button"
+                  onClick={() => setUseMyLocation(false)}
+                  className="w-full flex items-center gap-2 px-2 py-3 text-sm text-left"
+                >
+                  <Navigation className="h-4 w-4 text-emerald-500 shrink-0" />
+                  <span className="text-emerald-600 dark:text-emerald-400 font-medium">{t("myLocation")}</span>
+                </button>
+              ) : (
+                <PlaceInput
+                  hideIcon
+                  className="border-none shadow-none text-sm h-11"
+                  value={originInput}
+                  onChange={(e) => setOriginInput((e.target as HTMLInputElement).value)}
+                  placeholder={t("chooseOrigin")}
+                  onPlaceSelect={handleOriginSelect}
+                />
+              )}
+            </div>
+
+            {/* Divider */}
+            <div className="border-t border-border/60 mx-1" />
+
+            {/* Destination input */}
+            <div className="relative overflow-visible">
               <PlaceInput
                 hideIcon
-                className="border-none text-sm"
-                value={originInput}
-                onChange={(e) => setOriginInput((e.target as HTMLInputElement).value)}
-                placeholder={t("chooseOrigin")}
-                onPlaceSelect={handleOriginSelect}
+                className="border-none shadow-none text-sm h-11"
+                value={destInput}
+                onChange={(e) => setDestInput((e.target as HTMLInputElement).value)}
+                placeholder={t("chooseDestination")}
+                onPlaceSelect={handleDestSelect}
               />
-            )}
+            </div>
           </div>
 
-          {/* Destination */}
-          <div className="relative rounded-xl border border-border overflow-visible">
-            <PlaceInput
-              hideIcon
-              className="border-none text-sm"
-              value={destInput}
-              onChange={(e) => setDestInput((e.target as HTMLInputElement).value)}
-              placeholder={t("chooseDestination")}
-              onPlaceSelect={handleDestSelect}
-            />
+          {/* Swap button */}
+          <div className="flex items-center px-2">
+            <button
+              type="button"
+              onClick={handleSwap}
+              className="h-9 w-9 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors"
+            >
+              <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+            </button>
           </div>
-        </div>
-
-        {/* Swap button */}
-        <div className="flex flex-col items-center justify-center">
-          <button
-            type="button"
-            onClick={handleSwap}
-            className="h-9 w-9 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors"
-          >
-            <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
-          </button>
         </div>
       </div>
 
-      {/* My Location shortcut (when not using it) */}
+      {/* My Location shortcut */}
       {!useMyLocation && (
         <button
           type="button"
           onClick={handleUseMyLocation}
-          className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-primary hover:bg-primary/5 transition-colors w-full"
+          className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/5 transition-colors w-full"
         >
           <Navigation className="h-4 w-4" />
           {t("useMyLocationAsOrigin")}

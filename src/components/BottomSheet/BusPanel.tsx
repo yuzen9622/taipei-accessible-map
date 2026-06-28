@@ -8,73 +8,37 @@ import {
 } from "lucide-react";
 import { useCallback, useState } from "react";
 import { useAppTranslation } from "@/i18n/client";
-import { getBusArrival } from "@/lib/api/transit";
-import type { EstimatedTimeOfArrival } from "@/types/route";
+import { getBusArrival, type BusArrivalItem } from "@/lib/api/transit";
 import { Badge } from "../ui/badge";
 
-function stopStatusText(status: number, t: (k: string) => string): string {
-  switch (status) {
-    case 1:
-      return t("notDeparted");
-    case 2:
-      return t("trafficStop");
-    case 3:
-      return t("lastBusPassed");
-    case 4:
-      return t("noService");
-    default:
-      return t("noData");
-  }
-}
+const CITIES = [
+  { value: "台北", label: "台北" },
+  { value: "新北", label: "新北" },
+  { value: "桃園", label: "桃園" },
+  { value: "台中", label: "台中" },
+  { value: "台南", label: "台南" },
+  { value: "高雄", label: "高雄" },
+];
 
-function ArrivalCard({ item, t }: { item: EstimatedTimeOfArrival; t: (k: string, opts?: Record<string, unknown>) => string }) {
-  const estimateText = (() => {
-    if (item.EstimateTime === null) return stopStatusText(item.StopStatus, t);
-    if (item.EstimateTime <= 60) return t("arriving");
-    const minutes = Math.ceil(item.EstimateTime / 60);
-    return t("minutesAway", { minutes });
-  })();
-
-  const isArriving = item.EstimateTime !== null && item.EstimateTime <= 60;
-  const isNormal = item.EstimateTime !== null && item.EstimateTime > 60;
+function ArrivalCard({ item }: { item: BusArrivalItem }) {
+  const hasEstimate = item.estimateMinutes !== null;
 
   return (
-    <div className="p-3 rounded-xl bg-muted/40 border border-border/30 space-y-2">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold truncate">
-            {item.StopName.Zh_tw}
-          </p>
-          {item.RouteName && (
-            <p className="text-xs text-muted-foreground truncate">
-              {item.RouteName.Zh_tw}
-            </p>
-          )}
-        </div>
+    <div className="p-3 rounded-xl bg-muted/40 border border-border/30">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm font-semibold truncate flex-1">{item.stopName}</p>
         <Badge
           variant="secondary"
           className={`text-xs shrink-0 ${
-            isArriving
+            hasEstimate
               ? "text-emerald-600 bg-emerald-500/10"
-              : isNormal
-                ? "text-emerald-600 bg-emerald-500/10"
-                : "text-muted-foreground bg-muted/60"
+              : "text-muted-foreground bg-muted/60"
           }`}
         >
-          {estimateText}
+          {hasEstimate ? `${item.estimateMinutes} 分鐘` : item.statusLabel}
         </Badge>
       </div>
-
-      {item.PlateNumb && (
-        <div className="flex items-center gap-1.5">
-          <Badge
-            variant="outline"
-            className="text-[10px] font-mono px-1.5 py-0"
-          >
-            {item.PlateNumb}
-          </Badge>
-        </div>
-      )}
+      <p className="text-xs text-muted-foreground mt-1">{item.directionLabel}</p>
     </div>
   );
 }
@@ -83,13 +47,14 @@ export default function BusPanel({ onClose }: { onClose: () => void }) {
   const { t } = useAppTranslation();
   const [routeName, setRouteName] = useState("");
   const [stopName, setStopName] = useState("");
+  const [city, setCity] = useState("台北");
   const [direction, setDirection] = useState<0 | 1>(0);
-  const [data, setData] = useState<EstimatedTimeOfArrival[]>([]);
+  const [data, setData] = useState<BusArrivalItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searched, setSearched] = useState(false);
 
-  const canSearch = routeName.trim() || stopName.trim();
+  const canSearch = routeName.trim().length > 0 && stopName.trim().length > 0;
 
   const handleSearch = useCallback(async () => {
     if (!canSearch) return;
@@ -99,23 +64,28 @@ export default function BusPanel({ onClose }: { onClose: () => void }) {
 
     try {
       const res = await getBusArrival(
-        routeName.trim() || undefined,
-        stopName.trim() || undefined,
-        direction
+        routeName.trim(),
+        stopName.trim(),
+        direction,
+        city
       );
-      if (res.ok && res.data) {
-        setData(res.data);
+      if (res.ok && res.data?.arrivals) {
+        setData(res.data.arrivals);
+        if (res.data.arrivals.length === 0) {
+          setError(t("noBusData"));
+        }
       } else {
         setData([]);
-        setError(t("noBusData"));
+        setError((res as { message?: string }).message || t("noBusData"));
       }
-    } catch {
+    } catch (err) {
       setData([]);
-      setError(t("networkError"));
+      const msg = err instanceof Error ? err.message : t("networkError");
+      setError(msg);
     } finally {
       setLoading(false);
     }
-  }, [routeName, stopName, direction, canSearch, t]);
+  }, [routeName, stopName, direction, city, canSearch, t]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") void handleSearch();
@@ -139,7 +109,6 @@ export default function BusPanel({ onClose }: { onClose: () => void }) {
         </button>
       </div>
 
-      {/* Search hint */}
       <p className="text-xs text-muted-foreground">{t("busSearchHint")}</p>
 
       {/* Search inputs */}
@@ -165,9 +134,19 @@ export default function BusPanel({ onClose }: { onClose: () => void }) {
           />
         </div>
 
-        {/* Direction toggle + search button */}
-        <div className="flex items-center gap-2">
-          <div className="flex rounded-lg bg-muted/60 border border-border/30 p-0.5 text-xs" role="radiogroup" aria-label={t("outbound")}>
+        {/* City + Direction + Search */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <select
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            className="h-9 px-2 rounded-lg bg-muted/60 border border-border/30 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+          >
+            {CITIES.map((c) => (
+              <option key={c.value} value={c.value}>{c.label}</option>
+            ))}
+          </select>
+
+          <div className="flex rounded-lg bg-muted/60 border border-border/30 p-0.5 text-xs" role="radiogroup">
             <button
               type="button"
               role="radio"
@@ -195,6 +174,7 @@ export default function BusPanel({ onClose }: { onClose: () => void }) {
               {t("inbound")}
             </button>
           </div>
+
           <button
             type="button"
             onClick={() => void handleSearch()}
@@ -224,22 +204,8 @@ export default function BusPanel({ onClose }: { onClose: () => void }) {
         </div>
       ) : data.length > 0 ? (
         <div className="space-y-2" role="list" aria-label={t("busInfo")}>
-          {routeName.trim() && !stopName.trim() && (
-            <p className="text-xs text-muted-foreground font-medium">
-              {t("busRouteResults", { route: routeName.trim() })}
-            </p>
-          )}
-          {stopName.trim() && !routeName.trim() && (
-            <p className="text-xs text-muted-foreground font-medium">
-              {t("busStopResults", { stop: stopName.trim() })}
-            </p>
-          )}
-          {data.map((item) => (
-            <ArrivalCard
-              key={`${item.StopUID}-${item.Direction}`}
-              item={item}
-              t={t}
-            />
+          {data.map((item, idx) => (
+            <ArrivalCard key={`${item.stopName}-${item.direction}-${idx}`} item={item} />
           ))}
         </div>
       ) : null}

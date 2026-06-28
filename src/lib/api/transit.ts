@@ -60,20 +60,30 @@ export async function getRealtimeBusPosition(
 export async function getBusArrival(
   routeName?: string,
   stopName?: string,
-  direction?: 0 | 1
+  direction?: 0 | 1,
+  city?: string
 ) {
   const params = new URLSearchParams();
-  if (routeName) params.set("route_name", routeName);
-  if (stopName) params.set("stop_name", stopName);
+  if (routeName) params.set("routeName", routeName);
+  if (stopName) params.set("stopName", stopName);
   if (direction !== undefined) params.set("direction", String(direction));
+  if (city) params.set("city", city);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10_000);
   const data = (await fetchRequest(
     `${END_POINT}/api/v1/transit/bus/arrival?${params}`,
     { signal: controller.signal }
-  )) as ApiResponse<EstimatedTimeOfArrival[]>;
+  )) as ApiResponse<{ routeName: string; city: string; stopName: string; arrivals: BusArrivalItem[] }>;
   clearTimeout(timeout);
   return data;
+}
+
+export interface BusArrivalItem {
+  stopName: string;
+  direction: 0 | 1;
+  directionLabel: string;
+  estimateMinutes: number | null;
+  statusLabel: string;
 }
 
 export async function getBusPositions(
