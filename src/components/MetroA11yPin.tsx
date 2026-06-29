@@ -11,8 +11,12 @@ import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
 
 export default function MetroA11yPin({ place }: { place: MarkerType }) {
   const [open, setOpen] = useState(false);
-  const { selectA11yPlace, setSelectA11yPlace, setA11yDrawerOpen, setSheetMode } =
-    useMapStore();
+  const {
+    selectA11yPlace,
+    setSelectA11yPlace,
+    setA11yDrawerOpen,
+    setSheetMode,
+  } = useMapStore();
   const { handlePinClick } = usePin();
 
   const A11yIcon = () => {
@@ -47,7 +51,7 @@ export default function MetroA11yPin({ place }: { place: MarkerType }) {
               className={cn(
                 "bg-background p-1 text-muted-foreground ring-2 ring-ring rounded-full cursor-pointer",
                 selectA11yPlace?.id === place.id &&
-                  "ring-accent-foreground text-accent-foreground"
+                  "ring-accent-foreground text-accent-foreground",
               )}
             >
               {A11yIcon()}

@@ -1,27 +1,30 @@
 "use client";
 
-import Map, { NavigationControl } from "react-map-gl/maplibre";
-import { useTheme } from "next-themes";
-import { useCallback, useEffect, useRef } from "react";
-import { toast } from "sonner";
 import type maplibregl from "maplibre-gl";
+import { useTheme } from "next-themes";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { MapLayerMouseEvent } from "react-map-gl/maplibre";
+import Map, { NavigationControl } from "react-map-gl/maplibre";
+import { toast } from "sonner";
 import NowPin from "@/components/shared/NowPin";
 import MapWrapper from "@/components/Wrapper/MapWrapper";
 import AccessibilityPin from "@/components/Wrapper/MetroA11yWrapper";
 import RouteLine from "@/components/Wrapper/RouteWrapper";
 import { useAppTranslation } from "@/i18n/client";
 import useMapStore from "@/stores/useMapStore";
+import useNavStore from "@/stores/useNavStore";
 import AIChatBot from "./AIChatBot";
 import AirQualityWidget from "./AirQualityWidget";
+import NavigationController from "./NavigationController";
 import GotoNowButton from "./shared/GotoNowButton";
 import SearchPin from "./shared/SearchPin";
+import AIResultWrapper from "./Wrapper/AIResultWrapper";
 import HazardWrapper from "./Wrapper/HazardWrapper";
 import TransitWrapper from "./Wrapper/TransitWrapper";
 
 const MAP_STYLES = {
   light: "https://tiles.openfreemap.org/styles/liberty",
-  dark: "https://tiles.openfreemap.org/styles/dark_matter",
+  dark: "https://tiles.openfreemap.org/styles/dark",
 };
 
 export default function ClientMap() {
@@ -35,11 +38,15 @@ export default function ClientMap() {
     setSheetMode,
     isNavigating,
   } = useMapStore();
-  const { theme } = useTheme();
+  const { resolvedTheme } = useTheme();
   const { i18n } = useAppTranslation();
+  const [mounted, setMounted] = useState(false);
 
-  const mapStyle =
-    theme === "dark" ? MAP_STYLES.dark : MAP_STYLES.light;
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const mapStyle = resolvedTheme === "dark" ? MAP_STYLES.dark : MAP_STYLES.light;
 
   const pointerDownTime = useRef(0);
   const pointerDownPos = useRef<[number, number]>([0, 0]);
@@ -48,22 +55,30 @@ export default function ClientMap() {
     (evt: { target: maplibregl.Map }) => {
       setMap(evt.target);
     },
-    [setMap]
+    [setMap],
   );
 
   useEffect(() => {
-    navigator.geolocation.watchPosition(
+    const watchId = navigator.geolocation.watchPosition(
       (pos) => {
         setUserLocation({
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
         });
+        // Capture GPS course-over-ground as a heading fallback (null when
+        // stationary). Pushed via getState() so this high-frequency value does
+        // not re-render the whole map through useMapStore.
+        const h = pos.coords.heading;
+        useNavStore
+          .getState()
+          .setGpsHeading(typeof h === "number" && !Number.isNaN(h) ? h : null);
       },
       () => {
         toast.error("無法取得目前位置");
       },
-      { enableHighAccuracy: true, maximumAge: 10000 }
+      { enableHighAccuracy: true, maximumAge: 1000 },
     );
+    return () => navigator.geolocation.clearWatch(watchId);
   }, [setUserLocation]);
 
   const handleMouseDown = useCallback((e: MapLayerMouseEvent) => {
@@ -91,7 +106,7 @@ export default function ClientMap() {
 
       try {
         const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=${lang}&zoom=18&addressdetails=1`
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=${lang}&zoom=18&addressdetails=1`,
         );
         const data = await res.json();
 
@@ -126,8 +141,10 @@ export default function ClientMap() {
         setInfoShow({ isOpen: false, kind: null });
       }
     },
-    [i18n.language, setInfoShow, setSearchPlace, setSheetMode, isNavigating]
+    [i18n.language, setInfoShow, setSearchPlace, setSheetMode, isNavigating],
   );
+
+  if (!mounted) return <div style={{ flex: 1, backgroundColor: "transparent" }} />;
 
   return (
     <Map
@@ -158,6 +175,8 @@ export default function ClientMap() {
       <HazardWrapper />
       <AIChatBot />
       <RouteLine />
+      <AIResultWrapper />
+      {isNavigating && <NavigationController />}
     </Map>
   );
 }

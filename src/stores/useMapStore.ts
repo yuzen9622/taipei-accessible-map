@@ -1,12 +1,35 @@
 "use client";
+import type maplibregl from "maplibre-gl";
 import { create } from "zustand";
-import type { InfoShow, LatLng, Marker, PlaceDetail } from "@/types";
+import type {
+  AiResultMarker,
+  InfoShow,
+  LatLng,
+  Marker,
+  PlaceDetail,
+} from "@/types";
 import { A11yEnum } from "@/types/index";
 import type { AccessibleRoute } from "@/types/route";
-import type maplibregl from "maplibre-gl";
 
-export type SheetMode = "home" | "place" | "plan" | "route" | "a11y" | "navigation" | "station";
-export type RailPanel = "none" | "search" | "route" | "a11y" | "bus" | "parking" | "environment" | "hazard" | "welfare" | "saved";
+export type SheetMode =
+  | "home"
+  | "place"
+  | "plan"
+  | "route"
+  | "a11y"
+  | "navigation"
+  | "station";
+export type RailPanel =
+  | "none"
+  | "search"
+  | "route"
+  | "a11y"
+  | "bus"
+  | "parking"
+  | "environment"
+  | "hazard"
+  | "welfare"
+  | "saved";
 
 interface MapState {
   map: maplibregl.Map | null;
@@ -35,6 +58,8 @@ interface MapState {
   isNavigating: boolean;
   sidebarCollapsed: boolean;
   activeRailPanel: RailPanel;
+  chatOpen: boolean;
+  aiResultMarkers: AiResultMarker[];
 }
 
 interface MapAction {
@@ -51,7 +76,7 @@ interface MapAction {
     route: Partial<{
       index: number;
       route: AccessibleRoute;
-    }> | null
+    }> | null,
   ) => void;
   toggleA11yType: (type: A11yEnum) => void;
   setA11yDrawerOpen: (open: boolean) => void;
@@ -72,12 +97,16 @@ interface MapAction {
   setIsNavigating: (v: boolean) => void;
   setSidebarCollapsed: (v: boolean) => void;
   setActiveRailPanel: (panel: RailPanel) => void;
+  setChatOpen: (v: boolean) => void;
+  setAiResultMarkers: (markers: AiResultMarker[]) => void;
 }
 
 type MapStore = MapState & MapAction;
 
 function placeKey(p: PlaceDetail): string {
-  return p.kind === "place" ? `p_${p.place.place_id}` : `c_${p.position.lat}_${p.position.lng}`;
+  return p.kind === "place"
+    ? `p_${p.place.place_id}`
+    : `c_${p.position.lat}_${p.position.lng}`;
 }
 
 const useMapStore = create<MapStore>((set, get) => ({
@@ -136,11 +165,28 @@ const useMapStore = create<MapStore>((set, get) => ({
   a11yPlaces: null,
   setA11yPlaces: (places) => set({ a11yPlaces: places }),
   searchHistory: [],
-  initSearchHistory: (history) => set({ searchHistory: history }),
+  initSearchHistory: (history) => {
+    const validHistory = history.filter(item => {
+      const name = item.kind === "place" ? item.place.name || item.place.display_name : item.address;
+      return Boolean(name && name.trim());
+    });
+    const seen = new Set<string>();
+    const dedupedHistory = validHistory.filter(item => {
+      const name = item.kind === "place" ? item.place.name || item.place.display_name : item.address;
+      if (seen.has(name)) return false;
+      seen.add(name);
+      return true;
+    });
+    set({ searchHistory: dedupedHistory });
+  },
   addSearchHistory: (searchTerm: PlaceDetail) => {
+    const name = searchTerm.kind === "place" ? searchTerm.place.name || searchTerm.place.display_name : searchTerm.address;
+    if (!name || !name.trim()) return;
     const { searchHistory } = get();
-    const key = placeKey(searchTerm);
-    const deduped = searchHistory.filter((item) => placeKey(item) !== key);
+    const deduped = searchHistory.filter((item) => {
+      const itemName = item.kind === "place" ? item.place.name || item.place.display_name : item.address;
+      return itemName !== name;
+    });
     const newHistory = [searchTerm, ...deduped.slice(0, 9)];
     localStorage.setItem("searchHistory", JSON.stringify(newHistory));
     set({ searchHistory: newHistory });
@@ -148,8 +194,16 @@ const useMapStore = create<MapStore>((set, get) => ({
   clearSearchHistory: () => set({ searchHistory: [] }),
   savedPlaces: [],
   savedPlaceKeys: new Set<string>(),
-  initSavedPlaces: (places) => set({ savedPlaces: places, savedPlaceKeys: new Set(places.map(placeKey)) }),
+  initSavedPlaces: (places) => {
+    const validPlaces = places.filter(item => {
+      const name = item.kind === "place" ? item.place.name || item.place.display_name : item.address;
+      return Boolean(name && name.trim());
+    });
+    set({ savedPlaces: validPlaces, savedPlaceKeys: new Set(validPlaces.map(placeKey)) });
+  },
   addSavedPlace: (place) => {
+    const name = place.kind === "place" ? place.place.name || place.place.display_name : place.address;
+    if (!name || !name.trim()) return;
     const { savedPlaces, savedPlaceKeys } = get();
     const key = placeKey(place);
     if (savedPlaceKeys.has(key)) return;
@@ -175,7 +229,7 @@ const useMapStore = create<MapStore>((set, get) => ({
   routeA11y: [],
   setRouteA11y: (a11y) => {
     const deduped = Array.from(
-      new Map(a11y.map((m) => [m.id, m])).values()
+      new Map(a11y.map((m) => [m.id, m])).values(),
     ) as Marker[];
     set({ routeA11y: deduped });
   },
@@ -190,6 +244,10 @@ const useMapStore = create<MapStore>((set, get) => ({
   setSidebarCollapsed: (v) => set({ sidebarCollapsed: v }),
   activeRailPanel: "search" as RailPanel,
   setActiveRailPanel: (panel) => set({ activeRailPanel: panel }),
+  chatOpen: false,
+  setChatOpen: (v) => set({ chatOpen: v }),
+  aiResultMarkers: [],
+  setAiResultMarkers: (markers) => set({ aiResultMarkers: markers }),
   isNavigating: false,
   setIsNavigating: (v) => {
     const { map, userLocation } = get();
@@ -199,7 +257,9 @@ const useMapStore = create<MapStore>((set, get) => ({
         map.easeTo({
           pitch: 60,
           zoom: 17,
-          center: userLocation ? [userLocation.lng, userLocation.lat] : undefined,
+          center: userLocation
+            ? [userLocation.lng, userLocation.lat]
+            : undefined,
           duration: 1000,
         });
       }
@@ -212,7 +272,9 @@ const useMapStore = create<MapStore>((set, get) => ({
   },
   closeRouteDrawer: () => {
     const { destination } = get();
-    const hasDestination = destination && (destination.kind === "place" || destination.kind === "coordinate");
+    const hasDestination =
+      destination &&
+      (destination.kind === "place" || destination.kind === "coordinate");
     set({
       routeInfoShow: false,
       selectRoute: null,
