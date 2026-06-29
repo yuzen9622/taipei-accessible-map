@@ -15,6 +15,13 @@ export const BUS_STATUS = {
   4: "今日未營運",
 } as const;
 
+export type BusSearchResult = {
+  routeName: string;
+  city: string;
+  departure: string;
+  destination: string;
+};
+
 export type BusRealtimeNearbyStop = {
   PlateNumb: string;
   StopUID: string;
@@ -182,16 +189,15 @@ export interface AIChatResponse {
 }
 
 export function isBusTransitDetail(
-  detail: RouteTransitDetail
+  detail: RouteTransitDetail,
 ): detail is BusTransitDetail {
   return (
-    detail.type === VehicleType.BUS ||
-    detail.type === VehicleType.INTERCITY_BUS
+    detail.type === VehicleType.BUS || detail.type === VehicleType.INTERCITY_BUS
   );
 }
 
 export function isRailTransitDetail(
-  detail: RouteTransitDetail
+  detail: RouteTransitDetail,
 ): detail is RailTransitDetail {
   return (
     detail.type === VehicleType.RAIL ||
@@ -201,10 +207,7 @@ export function isRailTransitDetail(
 }
 
 export function isSubwayTransitDetail(
-  detail: RouteTransitDetail
+  detail: RouteTransitDetail,
 ): detail is SubwayTransitDetail {
-  return (
-    detail.type === VehicleType.SUBWAY ||
-    detail.type === VehicleType.TRAM
-  );
+  return detail.type === VehicleType.SUBWAY || detail.type === VehicleType.TRAM;
 }

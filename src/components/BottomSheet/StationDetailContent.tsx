@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  ArrowLeft,
-  ArrowUpDown,
-  DoorOpen,
-  MapPin,
-  Train,
-} from "lucide-react";
+import { ArrowLeft, ArrowUpDown, DoorOpen, MapPin, Train } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getNearbyRouteA11yPlaces } from "@/lib/api/a11y";
 import { useAppTranslation } from "@/i18n/client";
@@ -16,7 +10,8 @@ import { Badge } from "../ui/badge";
 
 export default function StationDetailContent() {
   const { t } = useAppTranslation();
-  const { selectA11yPlace, setSheetMode, setSelectA11yPlace, map } = useMapStore();
+  const { selectA11yPlace, setSheetMode, setSelectA11yPlace, map } =
+    useMapStore();
 
   const [nearbyBathrooms, setNearbyBathrooms] = useState<IBathroom[]>([]);
   const [nearbyMetro, setNearbyMetro] = useState<metroA11yData[]>([]);
@@ -102,12 +97,12 @@ export default function StationDetailContent() {
               </h2>
               <div className="space-y-2">
                 {groupedByExit.map(([exit, items]) => (
-                  <div
-                    key={exit}
-                    className="rounded-xl bg-muted/30 p-3"
-                  >
+                  <div key={exit} className="rounded-xl bg-muted/30 p-3">
                     <div className="flex items-center gap-2 mb-2">
-                      <Badge variant="outline" className="rounded-full text-xs font-semibold">
+                      <Badge
+                        variant="outline"
+                        className="rounded-full text-xs font-semibold"
+                      >
                         {exit}
                       </Badge>
                     </div>
@@ -117,7 +112,14 @@ export default function StationDetailContent() {
                           key={m._id}
                           type="button"
                           onClick={() => {
-                            if (map) map.flyTo({ center: [parseFloat(m.經度), parseFloat(m.緯度)], zoom: 18 });
+                            if (map)
+                              map.flyTo({
+                                center: [
+                                  parseFloat(m.經度),
+                                  parseFloat(m.緯度),
+                                ],
+                                zoom: 18,
+                              });
                           }}
                           className="w-full flex items-center gap-2.5 p-2 rounded-lg hover:bg-muted/50 transition-colors text-left"
                         >
@@ -149,7 +151,11 @@ export default function StationDetailContent() {
                     key={b._id}
                     type="button"
                     onClick={() => {
-                      if (map) map.flyTo({ center: [b.longitude, b.latitude], zoom: 17 });
+                      if (map)
+                        map.flyTo({
+                          center: [b.longitude, b.latitude],
+                          zoom: 17,
+                        });
                     }}
                     className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/40 hover:bg-muted/70 transition-colors text-left"
                   >
@@ -158,7 +164,9 @@ export default function StationDetailContent() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{b.name}</p>
-                      <p className="text-xs text-muted-foreground truncate">{b.address}</p>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {b.address}
+                      </p>
                     </div>
                   </button>
                 ))}

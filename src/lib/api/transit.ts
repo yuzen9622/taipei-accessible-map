@@ -1,6 +1,9 @@
 import type { ApiResponse } from "@/types/response";
-import type { BusRealtimeNearbyStop } from "@/types/transit";
-import type { EstimatedTimeOfArrival, RealTimeByFrequency } from "@/types/route";
+import type { BusRealtimeNearbyStop, BusSearchResult } from "@/types/transit";
+import type {
+  EstimatedTimeOfArrival,
+  RealTimeByFrequency,
+} from "@/types/route";
 import { END_POINT } from "../config";
 import { fetchRequest } from "../fetch";
 
@@ -41,7 +44,7 @@ export async function getRealtimeBusPosition(
   plate_number: string,
   arrival_lat: number,
   arrival_lng: number,
-  route_name: string
+  route_name: string,
 ) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10_000);
@@ -50,7 +53,7 @@ export async function getRealtimeBusPosition(
     {
       method: "GET",
       signal: controller.signal,
-    }
+    },
   )) as ApiResponse<BusRealtimeNearbyStop[]>;
 
   clearTimeout(timeout);
@@ -61,7 +64,7 @@ export async function getBusArrival(
   routeName?: string,
   stopName?: string,
   direction?: 0 | 1,
-  city?: string
+  city?: string,
 ) {
   const params = new URLSearchParams();
   if (routeName) params.set("routeName", routeName);
@@ -72,8 +75,13 @@ export async function getBusArrival(
   const timeout = setTimeout(() => controller.abort(), 10_000);
   const data = (await fetchRequest(
     `${END_POINT}/api/v1/transit/bus/arrival?${params}`,
-    { signal: controller.signal }
-  )) as ApiResponse<{ routeName: string; city: string; stopName: string; arrivals: BusArrivalItem[] }>;
+    { signal: controller.signal },
+  )) as ApiResponse<{
+    routeName: string;
+    city: string;
+    stopName: string;
+    arrivals: BusArrivalItem[];
+  }>;
   clearTimeout(timeout);
   return data;
 }
@@ -86,17 +94,14 @@ export interface BusArrivalItem {
   statusLabel: string;
 }
 
-export async function getBusPositions(
-  routeName: string,
-  direction?: 0 | 1
-) {
+export async function getBusPositions(routeName: string, direction?: 0 | 1) {
   const params = new URLSearchParams({ route_name: routeName });
   if (direction !== undefined) params.set("direction", String(direction));
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10_000);
   const data = (await fetchRequest(
     `${END_POINT}/api/v1/transit/bus/positions?${params}`,
-    { signal: controller.signal }
+    { signal: controller.signal },
   )) as ApiResponse<RealTimeByFrequency[]>;
   clearTimeout(timeout);
   return data;
@@ -109,6 +114,42 @@ export async function getTrainData() {
     method: "GET",
     signal: controller.signal,
   });
+  clearTimeout(timeout);
+  return data;
+}
+
+export async function searchBusRoutes(keyword: string) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
+  const data = (await fetchRequest(
+    `${END_POINT}/api/v1/transit/bus/search-routes?keyword=${encodeURIComponent(keyword)}`,
+    { signal: controller.signal },
+  )) as ApiResponse<{ routes: BusSearchResult[] }>;
+  clearTimeout(timeout);
+  return data;
+}
+
+export interface RouteDetailStop {
+  seq: number;
+  name: string;
+  lat: number;
+  lng: number;
+  estimateMinutes: number | null;
+  statusLabel: string;
+}
+
+export interface RouteDetailDirection {
+  direction: 0 | 1;
+  stops: RouteDetailStop[];
+}
+
+export async function getBusRouteDetail(routeName: string, city: string) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
+  const data = (await fetchRequest(
+    `${END_POINT}/api/v1/transit/bus/route-detail?routeName=${encodeURIComponent(routeName)}&city=${encodeURIComponent(city)}`,
+    { signal: controller.signal },
+  )) as ApiResponse<{ directions: RouteDetailDirection[] }>;
   clearTimeout(timeout);
   return data;
 }
