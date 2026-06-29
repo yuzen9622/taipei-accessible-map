@@ -1,7 +1,8 @@
 import { useCallback, useRef, useState } from "react";
 import { useAppTranslation } from "@/i18n/client";
-import { streamChatWithAgent } from "@/lib/api/ai";
+import { a11yPlacesToMarkers, googlePlacesToMarkers } from "@/lib/aiResults";
 import type { ChatMessage } from "@/lib/api/ai";
+import { streamChatWithAgent } from "@/lib/api/ai";
 import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
 import useComputeRoute from "./useComputeRoute";
@@ -9,6 +10,7 @@ import useComputeRoute from "./useComputeRoute";
 export interface ToolActivity {
   name: string;
   args?: unknown;
+  result?: unknown;
   status: "running" | "done";
 }
 
@@ -20,12 +22,52 @@ export interface ChatBubble {
 }
 
 export const TOOL_LABELS: Record<string, string> = {
+  findGooglePlaces: "搜尋周邊地點",
+  findA11yPlaces: "查詢無障礙設施",
+  getA11yFacilityDetails: "查詢無障礙設施詳情",
+  planAccessibleRoute: "規劃無障礙路線",
+  getNavInstructions: "產生導航指引",
+  getBusRoute: "查詢公車路線",
+  getBusRouteDetail: "查詢公車路線詳情",
+  getBusArrival: "查詢公車預估到站時間",
+  getBusTimetable: "查詢公車時刻表",
+  trackBuses: "追蹤公車即時動態",
+  getAirQuality: "查詢空氣品質",
+  getEnvironmentInfo: "查詢周邊環境資訊",
+  getNearbyHazards: "查詢附近障礙物",
+  findNearbyParking: "查詢身障停車位",
+  saveMemory: "記錄偏好設定",
+  deleteMemory: "刪除偏好設定",
+  searchAccessibilityGuide: "查詢無障礙指南",
   plan_route: "規劃路線",
   search_places: "搜尋地點",
   get_nearby: "查詢附近設施",
   get_weather: "查詢天氣",
-  get_air_quality: "查詢空氣品質",
   analyze_route: "分析路線",
+};
+
+/**
+ * 每個工具執行時的專屬 loading 文字（已含「正在…」與結尾「…」）。
+ * 找不到對應時，AIChatBot 會退回 `正在${TOOL_LABELS[name]}…` 或工具原名。
+ */
+export const TOOL_LOADING_TEXT: Record<string, string> = {
+  findGooglePlaces: "正在搜尋周邊地點…",
+  findA11yPlaces: "正在查詢周邊無障礙設施…",
+  getA11yFacilityDetails: "正在查詢無障礙設施詳情…",
+  planAccessibleRoute: "正在為你規劃無障礙路線…",
+  getNavInstructions: "正在產生導航指引…",
+  getBusRoute: "正在查詢公車路線…",
+  getBusRouteDetail: "正在查詢公車路線詳情…",
+  getBusArrival: "正在查詢公車到站時間…",
+  getBusTimetable: "正在查詢公車時刻表…",
+  trackBuses: "正在追蹤公車即時動態…",
+  getAirQuality: "正在查詢空氣品質…",
+  getEnvironmentInfo: "正在查詢周邊環境資訊…",
+  getNearbyHazards: "正在查詢附近路況與障礙物…",
+  findNearbyParking: "正在尋找身障停車位…",
+  saveMemory: "正在記住你的偏好…",
+  deleteMemory: "正在刪除記憶…",
+  searchAccessibilityGuide: "正在查詢無障礙指南…",
 };
 
 export default function useAIChat() {
@@ -37,15 +79,20 @@ export default function useAIChat() {
       role: "assistant",
       content: t(
         "assistFirstMessage",
-        "你好！我是無障礙台北的 AI 助理，有什麼我能幫你的嗎？附近無障礙設施或者是問題回饋？請隨時提出！"
+        "你好！我是無障礙台北的 AI 助理，有什麼我能幫你的嗎？附近無障礙設施或者是問題回饋？請隨時提出！",
       ),
     },
   ]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [open, setOpen] = useState(false);
-  const { userLocation } = useMapStore();
-  const { handleComputeRoute } = useComputeRoute();
+  const {
+    userLocation,
+    chatOpen: open,
+    setChatOpen: setOpen,
+    setSheetMode,
+    setAiResultMarkers,
+  } = useMapStore();
+  const { handleComputeRoute, setComputedRouteData } = useComputeRoute();
   const abortRef = useRef<AbortController | null>(null);
 
   const chatHistory = useRef<ChatMessage[]>([
@@ -65,6 +112,7 @@ export default function useAIChat() {
 
       setInput("");
       setIsLoading(true);
+      setAiResultMarkers([]); // 清掉上一輪查詢的地圖標記
 
       const userBubble: ChatBubble = { role: "user", content: trimmed };
       setMessages((prev) => [...prev, userBubble]);
@@ -116,40 +164,127 @@ export default function useAIChat() {
               return updated;
             });
           },
-          (toolName, toolArgs) => {
+          (toolName, toolArgs, isDone, result) => {
             setMessages((prev) => {
               const updated = [...prev];
               const last = updated[updated.length - 1];
               if (last.role === "assistant") {
-                const existing = last.toolActivities || [];
-                const doneExisting = markDone(existing) ?? [];
-                updated[updated.length - 1] = {
-                  ...last,
-                  toolActivities: [
-                    ...doneExisting,
-                    { name: toolName, args: toolArgs, status: "running" },
-                  ],
-                };
+                const existing = last.toolActivities
+                  ? [...last.toolActivities]
+                  : [];
+                // Find if this tool is already in the list
+                const idx = existing.findIndex(
+                  (a) => a.name === toolName && a.status === "running",
+                );
+
+                if (idx !== -1) {
+                  existing[idx] = {
+                    ...existing[idx],
+                    args: toolArgs,
+                    result,
+                    status: isDone ? "done" : "running",
+                  };
+                  updated[updated.length - 1] = {
+                    ...last,
+                    toolActivities: existing,
+                  };
+                } else {
+                  const doneExisting = markDone(existing) ?? [];
+                  updated[updated.length - 1] = {
+                    ...last,
+                    toolActivities: [
+                      ...doneExisting,
+                      {
+                        name: toolName,
+                        args: toolArgs,
+                        result,
+                        status: isDone ? "done" : "running",
+                      },
+                    ],
+                  };
+                }
               }
               return updated;
             });
 
-            if (toolName === "plan_route") {
-              const args =
-                typeof toolArgs === "string" ? JSON.parse(toolArgs) : toolArgs;
-              handleComputeRoute({
-                origin: {
-                  lat: args.origin?.latitude,
-                  lng: args.origin?.longitude,
-                },
-                destination: {
-                  lat: args.destination?.latitude,
-                  lng: args.destination?.longitude,
-                },
-              });
+            if (isDone) {
+              // 把查詢結果畫成地圖上的可點標記（自動縮放由 AIResultWrapper 處理）
+              if (toolName === "findA11yPlaces") {
+                setAiResultMarkers(a11yPlacesToMarkers(result));
+              } else if (toolName === "findGooglePlaces") {
+                setAiResultMarkers(googlePlacesToMarkers(result));
+              } else if (
+                toolName === "plan_route" ||
+                toolName === "planAccessibleRoute"
+              ) {
+                const res = (result ?? {}) as any;
+                const args = (
+                  typeof toolArgs === "string"
+                    ? JSON.parse(toolArgs || "{}")
+                    : (toolArgs ?? {})
+                ) as any;
+
+                // 起終點座標：優先用工具結果，其次用工具參數
+                const oLat =
+                  res.origin?.lat ??
+                  res.origin?.latitude ??
+                  args.origin?.latitude ??
+                  args.origin?.lat;
+                const oLng =
+                  res.origin?.lng ??
+                  res.origin?.longitude ??
+                  args.origin?.longitude ??
+                  args.origin?.lng;
+                const dLat =
+                  res.destination?.lat ??
+                  res.destination?.latitude ??
+                  args.destination?.latitude ??
+                  args.destination?.lat;
+                const dLng =
+                  res.destination?.lng ??
+                  res.destination?.longitude ??
+                  args.destination?.longitude ??
+                  args.destination?.lng;
+                const hasCoords =
+                  Number.isFinite(oLat) &&
+                  Number.isFinite(oLng) &&
+                  Number.isFinite(dLat) &&
+                  Number.isFinite(dLng);
+
+                // AI 路線本身是否已含可畫線的 polyline
+                const aiRoutes = res.routes;
+                const drawable =
+                  Array.isArray(aiRoutes) &&
+                  aiRoutes.length > 0 &&
+                  aiRoutes.some((r: any) =>
+                    r?.legs?.some((l: any) => l?.polyline?.length),
+                  );
+
+                const showRoutePanel = () => {
+                  setSheetMode("route");
+                  setOpen(false);
+                };
+
+                if (drawable) {
+                  setComputedRouteData(res.origin, res.destination, aiRoutes);
+                  showRoutePanel();
+                } else if (hasCoords) {
+                  // AI 路線缺 polyline → 用座標重新查完整路線（含畫線資料）
+                  void handleComputeRoute({
+                    origin: { lat: oLat, lng: oLng },
+                    destination: { lat: dLat, lng: dLng },
+                  }).then((ok) => {
+                    if (ok) showRoutePanel();
+                  });
+                } else if (Array.isArray(aiRoutes) && aiRoutes.length > 0) {
+                  // 退而求其次：至少顯示路線卡片
+                  setComputedRouteData(res.origin, res.destination, aiRoutes);
+                  showRoutePanel();
+                }
+              }
             }
           },
-          controller.signal
+          controller.signal,
         );
       } catch (err) {
         if ((err as Error).name === "AbortError") return;
@@ -179,7 +314,16 @@ export default function useAIChat() {
         abortRef.current = null;
       }
     },
-    [isLoading, userLocation, handleComputeRoute, t]
+    [
+      isLoading,
+      userLocation,
+      handleComputeRoute,
+      setComputedRouteData,
+      setSheetMode,
+      setOpen,
+      setAiResultMarkers,
+      t,
+    ],
   );
 
   const stopStreaming = useCallback(() => {

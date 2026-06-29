@@ -2,22 +2,26 @@
 
 import {
   BotMessageSquare,
-  CircleCheck,
+  CheckCircle2,
+  ChevronRight,
   Loader2,
   MapPin,
   Route,
   Search,
   SendHorizonal,
   Square,
+  TerminalIcon,
+  Thermometer,
   Wind,
   XIcon,
 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { Fragment, useEffect, useRef } from "react";
-import useAIChat from "@/hook/useAIChat";
 import type { ChatBubble, ToolActivity } from "@/hook/useAIChat";
-import { TOOL_LABELS } from "@/hook/useAIChat";
+import useAIChat, { TOOL_LABELS, TOOL_LOADING_TEXT } from "@/hook/useAIChat";
+import useOpenAiResult from "@/hook/useOpenAiResult";
 import { useAppTranslation } from "@/i18n/client";
+import { a11yPlacesToMarkers, googlePlacesToMarkers } from "@/lib/aiResults";
 import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import MarkdownText from "./shared/MarkdownText";
@@ -29,91 +33,151 @@ import { Input } from "./ui/input";
 import { ScrollArea } from "./ui/scroll-area";
 
 const TOOL_ICONS: Record<string, React.ReactNode> = {
-  plan_route: <Route className="h-3.5 w-3.5" />,
-  search_places: <Search className="h-3.5 w-3.5" />,
-  get_nearby: <MapPin className="h-3.5 w-3.5" />,
-  get_weather: <Wind className="h-3.5 w-3.5" />,
-  get_air_quality: <Wind className="h-3.5 w-3.5" />,
-  analyze_route: <Route className="h-3.5 w-3.5" />,
+  findGooglePlaces: <Search className="h-4 w-4" />,
+  findA11yPlaces: <MapPin className="h-4 w-4" />,
+  getA11yFacilityDetails: <MapPin className="h-4 w-4" />,
+  planAccessibleRoute: <Route className="h-4 w-4" />,
+  getNavInstructions: <Route className="h-4 w-4" />,
+  getBusRoute: <MapPin className="h-4 w-4" />,
+  getBusRouteDetail: <MapPin className="h-4 w-4" />,
+  getBusArrival: <MapPin className="h-4 w-4" />,
+  getBusTimetable: <MapPin className="h-4 w-4" />,
+  trackBuses: <MapPin className="h-4 w-4" />,
+  getAirQuality: <Wind className="h-4 w-4" />,
+  getEnvironmentInfo: <Thermometer className="h-4 w-4" />,
+  getNearbyHazards: <MapPin className="h-4 w-4" />,
+  findNearbyParking: <MapPin className="h-4 w-4" />,
+  saveMemory: <TerminalIcon className="h-4 w-4" />,
+  deleteMemory: <TerminalIcon className="h-4 w-4" />,
+  searchAccessibilityGuide: <Search className="h-4 w-4" />,
+  plan_route: <Route className="h-4 w-4" />,
+  search_places: <Search className="h-4 w-4" />,
+  get_nearby: <MapPin className="h-4 w-4" />,
+  get_weather: <Thermometer className="h-4 w-4" />,
+  analyze_route: <Route className="h-4 w-4" />,
 };
 
-function StreamingDots() {
+function ThinkingIndicator({ label }: { label: string }) {
   return (
-    <div className="flex gap-1.5 px-3 py-3 rounded-2xl text-sm w-fit bg-muted items-center">
-      {[0, 0.15, 0.3].map((delay) => (
-        <motion.div
-          key={delay}
-          animate={{ y: [0, -3, 0] }}
-          transition={{ repeat: Infinity, duration: 0.8, delay }}
-          className="bg-primary/60 w-1.5 h-1.5 rounded-full"
-        />
-      ))}
-    </div>
+    <motion.div
+      initial={{ opacity: 0, y: 2 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex items-center gap-2 text-[13px] text-muted-foreground py-1.5 px-1"
+    >
+      <Loader2 className="h-3.5 w-3.5 animate-spin text-primary/70 shrink-0" />
+      <span className="animate-pulse">{label}</span>
+    </motion.div>
   );
 }
 
-function ToolActivityIndicator({ activity }: { activity: ToolActivity }) {
-  const isRunning = activity.status === "running";
-  const label = TOOL_LABELS[activity.name] || activity.name;
-  const icon = TOOL_ICONS[activity.name] || <Search className="h-3.5 w-3.5" />;
+function ToolResultCarousel({ activity }: { activity: ToolActivity }) {
+  const { openAiResult } = useOpenAiResult();
+
+  const isPlaces = activity.name === "findGooglePlaces";
+  const markers = isPlaces
+    ? googlePlacesToMarkers(activity.result)
+    : activity.name === "findA11yPlaces"
+      ? a11yPlacesToMarkers(activity.result)
+      : [];
+
+  if (markers.length === 0) return null;
 
   return (
     <motion.div
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: "auto" }}
-      transition={{ duration: 0.2 }}
-      className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-muted-foreground bg-muted/50 border border-border/40 w-fit"
+      initial={{ opacity: 0, y: 5 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex flex-col gap-2 mt-2 w-full"
     >
-      {isRunning ? (
-        <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-      ) : (
-        <CircleCheck className="h-3.5 w-3.5 text-green-500" />
-      )}
-      <span className="flex items-center gap-1.5">
-        {icon}
-        {label}
-        {isRunning && "..."}
-      </span>
+      <div className="text-xs font-semibold text-muted-foreground px-1 flex items-center gap-1.5">
+        {isPlaces ? (
+          <Search className="h-3.5 w-3.5" />
+        ) : (
+          <MapPin className="h-3.5 w-3.5" />
+        )}
+        {isPlaces ? "周邊地點" : "無障礙設施"} ({markers.length})
+      </div>
+      <div className="flex gap-2.5 overflow-x-auto pb-3 pt-1 px-1 snap-x w-full max-w-[85vw] sm:max-w-[420px] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/40 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent">
+        {markers.map((m) => (
+          <button
+            key={m.id}
+            type="button"
+            onClick={() => openAiResult(m)}
+            className="shrink-0 snap-start flex flex-col items-start text-left p-3 rounded-xl bg-card border border-border/60 shadow-sm w-[200px] cursor-pointer hover:border-primary/40 hover:shadow-md transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+          >
+            <div className="w-full font-semibold text-[14px] text-foreground leading-tight mb-1 truncate">
+              {m.title}
+            </div>
+            {m.desc && (
+              <div className="w-full text-[12px] text-muted-foreground line-clamp-2">
+                {m.desc}
+              </div>
+            )}
+          </button>
+        ))}
+      </div>
     </motion.div>
   );
 }
 
 function MessageBubble({ message }: { message: ChatBubble }) {
   const isUser = message.role === "user";
-  const hasToolActivities =
-    !isUser && message.toolActivities && message.toolActivities.length > 0;
+  const activities = message.toolActivities ?? [];
+  const doneActivities = activities.filter(
+    (a) =>
+      a.status === "done" &&
+      (a.name === "findGooglePlaces" || a.name === "findA11yPlaces"),
+  );
+
+  // 載入文字：優先顯示進行中的工具，否則最後一個工具，再否則「思考中」
+  // 各工具有專屬文字（TOOL_LOADING_TEXT），找不到才退回通用寫法
+  const running = activities.find((a) => a.status === "running");
+  const latest = activities[activities.length - 1];
+  const labelFor = (name: string) =>
+    TOOL_LOADING_TEXT[name] ||
+    (TOOL_LABELS[name] ? `正在${TOOL_LABELS[name]}…` : `正在${name}…`);
+  const loadingLabel = running
+    ? labelFor(running.name)
+    : latest
+      ? labelFor(latest.name)
+      : "思考中…";
+
+  const showLoading =
+    !isUser && message.isStreaming && (!message.content || !!running);
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
-      className={cn("flex flex-col gap-1.5", isUser ? "items-end" : "items-start")}
-    >
-      {hasToolActivities && (
-        <div className="flex flex-col gap-1">
-          <AnimatePresence>
-            {message.toolActivities!.map((activity, idx) => (
-              <ToolActivityIndicator key={`${activity.name}-${idx}`} activity={activity} />
-            ))}
-          </AnimatePresence>
-        </div>
+      className={cn(
+        "flex flex-col gap-1.5 w-full",
+        isUser ? "items-end" : "items-start",
       )}
+    >
+      {showLoading && <ThinkingIndicator label={loadingLabel} />}
 
-      {(message.content || (message.isStreaming && !message.content)) && (
+      {message.content && (
         <div
           className={cn(
             "max-w-[85%] w-fit px-3 py-2 rounded-2xl text-sm",
             isUser
               ? "bg-primary text-primary-foreground rounded-tr-sm"
-              : "bg-muted rounded-tl-sm"
+              : "bg-muted rounded-tl-sm shadow-sm border border-border/30",
           )}
         >
-          {message.content ? (
-            <MarkdownText>{message.content}</MarkdownText>
-          ) : (
-            <StreamingDots />
-          )}
+          <MarkdownText>{message.content}</MarkdownText>
+        </div>
+      )}
+
+      {/* Render done results only after streaming is finished, below the content */}
+      {!message.isStreaming && !isUser && doneActivities.length > 0 && (
+        <div className="flex flex-col gap-3 w-full mt-1 overflow-hidden">
+          {doneActivities.map((activity, idx) => (
+            <ToolResultCarousel
+              key={`${activity.name}-${idx}-done`}
+              activity={activity}
+            />
+          ))}
         </div>
       )}
     </motion.div>
@@ -150,7 +214,8 @@ export default function AIChatBot() {
   }, [messages, open]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    // !isComposing：避免中文輸入法選字時按 Enter 誤送出（與 PlanInput 一致）
+    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
       handleSend(input);
     }
@@ -168,11 +233,12 @@ export default function AIChatBot() {
             ? "lg:left-[468px]"
             : "lg:left-[76px]",
         open && "bottom-2 lg:bottom-2",
-        open && (sidebarCollapsed
-          ? "lg:left-3"
-          : panelOpen
-            ? "lg:left-[453px]"
-            : "lg:left-[68px]")
+        open &&
+          (sidebarCollapsed
+            ? "lg:left-3"
+            : panelOpen
+              ? "lg:left-[453px]"
+              : "lg:left-[68px]"),
       )}
       style={{ transition: "left 0.3s ease, bottom 0.3s ease" }}
     >
@@ -233,7 +299,7 @@ export default function AIChatBot() {
                   ))}
                   {isLoading &&
                     messages[messages.length - 1]?.role !== "assistant" && (
-                      <StreamingDots />
+                      <ThinkingIndicator label="思考中…" />
                     )}
                 </CardContent>
               </ScrollArea>
