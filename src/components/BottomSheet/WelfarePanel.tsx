@@ -80,14 +80,21 @@ function WelfareCard({
           </button>
         )}
         <span className="text-xs text-muted-foreground ml-auto">
-          {t("capacity")}: {item.actualServed.residential}/{item.approvedCapacity.residential}
+          {t("capacity")}: {item.actualServed.residential}/
+          {item.approvedCapacity.residential}
         </span>
       </div>
     </div>
   );
 }
 
-export default function WelfarePanel({ onClose, hideHeader }: { onClose: () => void; hideHeader?: boolean }) {
+export default function WelfarePanel({
+  onClose,
+  hideHeader,
+}: {
+  onClose: () => void;
+  hideHeader?: boolean;
+}) {
   const { t } = useAppTranslation();
   const { userLocation, map } = useMapStore();
   const [data, setData] = useState<WelfareInstitution[]>([]);

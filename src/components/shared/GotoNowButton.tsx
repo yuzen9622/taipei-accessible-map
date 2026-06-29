@@ -21,7 +21,7 @@ export default function GotoNowButton() {
           ? "lg:left-8 lg:right-auto"
           : panelOpen
             ? "lg:left-[468px] lg:right-auto"
-            : "lg:left-[76px] lg:right-auto"
+            : "lg:left-[76px] lg:right-auto",
       )}
     >
       <Button

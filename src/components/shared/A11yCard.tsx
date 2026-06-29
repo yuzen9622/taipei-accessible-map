@@ -35,7 +35,7 @@ export default function A11yCard({ place }: { place: Marker }) {
       key={place.id}
       className={cn(
         "border rounded-lg p-3 hover:bg-muted/50 text-start transition-colors w-full",
-        selectA11yPlace?.id === place.id && "border-accent-foreground"
+        selectA11yPlace?.id === place.id && "border-accent-foreground",
       )}
     >
       <div className="flex items-start justify-between mb-2">
@@ -64,7 +64,9 @@ export default function A11yCard({ place }: { place: Marker }) {
           className="mt-2 flex-1"
           disabled={isLoading}
           onClick={async () => {
-            const address = place.content?.title || `${place.position.lat}, ${place.position.lng}`;
+            const address =
+              place.content?.title ||
+              `${place.position.lat}, ${place.position.lng}`;
             setDestination({
               kind: "coordinate",
               address,

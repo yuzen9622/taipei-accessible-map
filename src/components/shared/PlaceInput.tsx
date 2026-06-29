@@ -1,5 +1,5 @@
 "use client";
-import { CrosshairIcon, LoaderCircle } from "lucide-react";
+import { Navigation, LoaderCircle } from "lucide-react";
 import Image from "next/image";
 import type { InputHTMLAttributes } from "react";
 import { useCallback, useState } from "react";
@@ -41,12 +41,15 @@ function PlaceInput({
       try {
         const lang = userConfig.language === "zh-TW" ? "zh" : "en";
         const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(text)}&countrycodes=tw&limit=1&accept-language=${lang}&addressdetails=1`
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(text)}&countrycodes=tw&limit=1&accept-language=${lang}&addressdetails=1`,
         );
         const data: NominatimPlace[] = await res.json();
         if (data.length === 0) return null;
         const place = data[0];
-        const position = { lat: parseFloat(place.lat), lng: parseFloat(place.lon) };
+        const position = {
+          lat: parseFloat(place.lat),
+          lng: parseFloat(place.lon),
+        };
         const placeDetail: PlaceDetail = { kind: "place", place, position };
         addSearchHistory(placeDetail);
         return placeDetail;
@@ -54,18 +57,21 @@ function PlaceInput({
         return null;
       }
     },
-    [addSearchHistory, userConfig.language]
+    [addSearchHistory, userConfig.language],
   );
 
   const handlePlaceClick = useCallback(
     (place: NominatimPlace) => {
-      const position = { lat: parseFloat(place.lat), lng: parseFloat(place.lon) };
+      const position = {
+        lat: parseFloat(place.lat),
+        lng: parseFloat(place.lon),
+      };
       const placeDetail: PlaceDetail = { kind: "place", place, position };
       addSearchHistory(placeDetail);
       onPlaceSelect(placeDetail);
       setOpen(false);
     },
-    [onPlaceSelect, addSearchHistory]
+    [onPlaceSelect, addSearchHistory],
   );
 
   const handleHistoryClick = useCallback(
@@ -73,7 +79,7 @@ function PlaceInput({
       onPlaceSelect(history);
       setOpen(false);
     },
-    [onPlaceSelect]
+    [onPlaceSelect],
   );
 
   const handleNowClick = async (loc?: { lat: number; lng: number }) => {
@@ -81,23 +87,13 @@ function PlaceInput({
       toast.error("無法取得目前位置");
       return;
     }
-    try {
-      const lang = userConfig.language === "zh-TW" ? "zh" : "en";
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${loc.lat}&lon=${loc.lng}&accept-language=${lang}`
-      );
-      const data: NominatimPlace = await res.json();
-      const placeDetail: PlaceDetail = {
-        kind: "place",
-        place: data,
-        position: loc,
-      };
-      onPlaceSelect(placeDetail);
-      addSearchHistory(placeDetail);
-      setOpen(false);
-    } catch {
-      toast.error("無法取得位置資訊");
-    }
+    const placeDetail: PlaceDetail = {
+      kind: "coordinate",
+      address: "你的位置",
+      position: loc,
+    };
+    onPlaceSelect(placeDetail);
+    setOpen(false);
   };
 
   return (
@@ -106,11 +102,13 @@ function PlaceInput({
         "relative w-full pointer-events-auto",
         hideIcon
           ? "bg-transparent px-1 py-0.5"
-          : cn("bg-card px-3 py-1 rounded-t-3xl", !open && "rounded-3xl")
+          : cn("bg-card px-3 py-1 rounded-t-3xl", !open && "rounded-3xl"),
       )}
     >
       <div className={cn("w-full flex items-center gap-2 px-2")}>
-        {!hideIcon && <Image src={"/logo.webp"} width={20} height={20} alt="search" />}
+        {!hideIcon && (
+          <Image src={"/logo.webp"} width={20} height={20} alt="search" />
+        )}
         <form
           onSubmit={async (e) => {
             e.preventDefault();
@@ -128,7 +126,7 @@ function PlaceInput({
             tabIndex={0}
             className={cn(
               "  shadow-none  bg-transparent! h-fit ring-transparent focus-visible:ring-transparent",
-              className
+              className,
             )}
             value={value}
             onChange={(e) => {
@@ -152,7 +150,7 @@ function PlaceInput({
       </div>
       <div className=" absolute inset-0 z-10 top-10/12">
         <Command className="w-full  text-start   shadow relative h-fit overflow-auto rounded-b-3xl">
-          <CommandList>
+          <CommandList onMouseDown={(e) => e.preventDefault()}>
             {value === "" && open && (
               <CommandGroup heading={t("searchHistory")}>
                 <CommandItem
@@ -163,9 +161,9 @@ function PlaceInput({
                   key={"now_location"}
                   className=" flex justify-between rounded-3xl items-center"
                 >
-                  <span className=" p-1 text-start flex items-center gap-2">
-                    <CrosshairIcon className=" text-muted-foreground/70" />
-                    <h1 className="text-lg font-semibold">目前位置</h1>
+                  <span className="p-1 text-start flex items-center gap-2 text-emerald-500 dark:text-emerald-400">
+                    <Navigation className="w-5 h-5" />
+                    <span className="text-base font-medium">你的位置</span>
                   </span>
                 </CommandItem>
                 {searchHistory.map((history, idx) => {

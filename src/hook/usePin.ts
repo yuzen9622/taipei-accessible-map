@@ -14,7 +14,7 @@ export default function usePin() {
       }
       map.flyTo({ center: [position.lng, position.lat], zoom: 18 });
     },
-    [map]
+    [map],
   );
   return { handlePinClick };
 }

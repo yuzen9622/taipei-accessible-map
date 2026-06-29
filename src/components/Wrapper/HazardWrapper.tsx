@@ -59,14 +59,21 @@ export default function HazardWrapper() {
           <div className="space-y-1 min-w-[160px]">
             <p className="text-sm font-semibold flex items-center gap-1.5">
               <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
-              {t(selected.hazardType === "data_error" ? "dataError" : selected.hazardType)}
+              {t(
+                selected.hazardType === "data_error"
+                  ? "dataError"
+                  : selected.hazardType,
+              )}
             </p>
             {selected.description && (
-              <p className="text-xs text-muted-foreground">{selected.description}</p>
+              <p className="text-xs text-muted-foreground">
+                {selected.description}
+              </p>
             )}
             <p className="text-xs text-muted-foreground">
               {selected.status === "verified" ? t("confirmed") : t("pending")}
-              {selected.confirmCount != null && ` · ${selected.confirmCount} ${t("confirmed")}`}
+              {selected.confirmCount != null &&
+                ` · ${selected.confirmCount} ${t("confirmed")}`}
             </p>
           </div>
         </Popup>

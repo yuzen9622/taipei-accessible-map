@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  Bookmark,
-  MapPin,
-  Navigation,
-  Trash2,
-  X,
-} from "lucide-react";
+import { Bookmark, MapPin, Navigation, Trash2, X } from "lucide-react";
 import { useCallback } from "react";
 import { useAppTranslation } from "@/i18n/client";
 import useMapStore from "@/stores/useMapStore";
@@ -26,8 +20,7 @@ function SavedPlaceCard({
     item.kind === "place"
       ? item.place.name || item.place.display_name
       : item.address;
-  const address =
-    item.kind === "place" ? item.place.display_name : undefined;
+  const address = item.kind === "place" ? item.place.display_name : undefined;
 
   return (
     <div className="group p-3 rounded-xl bg-muted/40 border border-border/30 hover:bg-muted/60 transition-colors">
@@ -68,7 +61,13 @@ function SavedPlaceCard({
   );
 }
 
-export default function SavedPlacesPanel({ onClose, hideHeader }: { onClose: () => void; hideHeader?: boolean }) {
+export default function SavedPlacesPanel({
+  onClose,
+  hideHeader,
+}: {
+  onClose: () => void;
+  hideHeader?: boolean;
+}) {
   const { t } = useAppTranslation();
   const {
     savedPlaces,
@@ -84,21 +83,34 @@ export default function SavedPlacesPanel({ onClose, hideHeader }: { onClose: () 
       setSearchPlace(item);
       if (item.kind === "place") {
         setInfoShow({ isOpen: true, kind: "place", place: item.place });
-        if (map) map.flyTo({ center: [item.position.lng, item.position.lat], zoom: 17 });
+        if (map)
+          map.flyTo({
+            center: [item.position.lng, item.position.lat],
+            zoom: 17,
+          });
       } else if (item.kind === "coordinate") {
-        setInfoShow({ isOpen: true, kind: "coordinate", address: item.address, position: item.position });
-        if (map) map.flyTo({ center: [item.position.lng, item.position.lat], zoom: 17 });
+        setInfoShow({
+          isOpen: true,
+          kind: "coordinate",
+          address: item.address,
+          position: item.position,
+        });
+        if (map)
+          map.flyTo({
+            center: [item.position.lng, item.position.lat],
+            zoom: 17,
+          });
       }
       setSheetMode("place");
     },
-    [map, setSearchPlace, setInfoShow, setSheetMode]
+    [map, setSearchPlace, setInfoShow, setSheetMode],
   );
 
   const handleRemove = useCallback(
     (item: PlaceDetail) => {
       removeSavedPlace(item);
     },
-    [removeSavedPlace]
+    [removeSavedPlace],
   );
 
   return (
@@ -133,7 +145,9 @@ export default function SavedPlacesPanel({ onClose, hideHeader }: { onClose: () 
         <div className="text-center py-12 space-y-3">
           <Bookmark className="h-10 w-10 mx-auto text-muted-foreground/30" />
           <p className="text-sm text-muted-foreground">{t("noSavedPlaces")}</p>
-          <p className="text-xs text-muted-foreground/70">{t("noSavedPlacesHint")}</p>
+          <p className="text-xs text-muted-foreground/70">
+            {t("noSavedPlacesHint")}
+          </p>
         </div>
       ) : (
         <div className="space-y-2">

@@ -103,7 +103,12 @@ export default function PlaceReviewSection({ placeId }: { placeId: string }) {
     const updated = [review, ...reviews];
     setReviews(updated);
     localStorage.setItem(getStorageKey(placeId), JSON.stringify(updated));
-    setRatings({ passageWidth: 0, restroomQuality: 0, elevatorCondition: 0, serviceAttitude: 0 });
+    setRatings({
+      passageWidth: 0,
+      restroomQuality: 0,
+      elevatorCondition: 0,
+      serviceAttitude: 0,
+    });
     setComment("");
     setShowForm(false);
   }, [ratings, comment, reviews, placeId]);
@@ -111,25 +116,33 @@ export default function PlaceReviewSection({ placeId }: { placeId: string }) {
   const handleHelpful = useCallback(
     (reviewId: string) => {
       const updated = reviews.map((r) =>
-        r.id === reviewId ? { ...r, helpful: r.helpful + 1 } : r
+        r.id === reviewId ? { ...r, helpful: r.helpful + 1 } : r,
       );
       setReviews(updated);
       localStorage.setItem(getStorageKey(placeId), JSON.stringify(updated));
     },
-    [reviews, placeId]
+    [reviews, placeId],
   );
 
-  const reviewsWithScores = useMemo(() =>
-    reviews.map((r) => {
-      const vals = Object.values(r.ratings).filter((v) => v > 0);
-      return { ...r, avg: vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0 };
-    }),
+  const reviewsWithScores = useMemo(
+    () =>
+      reviews.map((r) => {
+        const vals = Object.values(r.ratings).filter((v) => v > 0);
+        return {
+          ...r,
+          avg:
+            vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0,
+        };
+      }),
     [reviews],
   );
 
   const avgScore = useMemo(() => {
     if (reviewsWithScores.length === 0) return 0;
-    return reviewsWithScores.reduce((sum, r) => sum + r.avg, 0) / reviewsWithScores.length;
+    return (
+      reviewsWithScores.reduce((sum, r) => sum + r.avg, 0) /
+      reviewsWithScores.length
+    );
   }, [reviewsWithScores]);
 
   return (
@@ -204,37 +217,40 @@ export default function PlaceReviewSection({ placeId }: { placeId: string }) {
       {reviews.length > 0 ? (
         <div className="space-y-2">
           {reviewsWithScores.slice(0, 5).map((review) => (
-              <div
-                key={review.id}
-                className="rounded-xl bg-muted/40 p-3 space-y-1.5"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium">{review.author}</span>
-                    {review.avg > 0 && (
-                      <div className="flex items-center gap-0.5">
-                        <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                        <span className="text-xs text-muted-foreground">{review.avg.toFixed(1)}</span>
-                      </div>
-                    )}
-                  </div>
-                  <span className="text-xs text-muted-foreground">
-                    {new Date(review.createdAt).toLocaleDateString()}
-                  </span>
+            <div
+              key={review.id}
+              className="rounded-xl bg-muted/40 p-3 space-y-1.5"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium">{review.author}</span>
+                  {review.avg > 0 && (
+                    <div className="flex items-center gap-0.5">
+                      <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                      <span className="text-xs text-muted-foreground">
+                        {review.avg.toFixed(1)}
+                      </span>
+                    </div>
+                  )}
                 </div>
-                {review.comment && (
-                  <p className="text-sm leading-relaxed">{review.comment}</p>
-                )}
-                <button
-                  type="button"
-                  onClick={() => handleHelpful(review.id)}
-                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <ThumbsUp className="h-3 w-3" />
-                  {t("reviewHelpful")} {review.helpful > 0 && `(${review.helpful})`}
-                </button>
+                <span className="text-xs text-muted-foreground">
+                  {new Date(review.createdAt).toLocaleDateString()}
+                </span>
               </div>
-            ))}
+              {review.comment && (
+                <p className="text-sm leading-relaxed">{review.comment}</p>
+              )}
+              <button
+                type="button"
+                onClick={() => handleHelpful(review.id)}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <ThumbsUp className="h-3 w-3" />
+                {t("reviewHelpful")}{" "}
+                {review.helpful > 0 && `(${review.helpful})`}
+              </button>
+            </div>
+          ))}
         </div>
       ) : (
         <p className="text-sm text-muted-foreground py-2">{t("noReviews")}</p>

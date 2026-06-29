@@ -2,7 +2,15 @@
 
 import { useGoogleLogin } from "@react-oauth/google";
 
-import { Contrast, Globe, Info, LogOut, Settings, Type, User } from "lucide-react";
+import {
+  Contrast,
+  Globe,
+  Info,
+  LogOut,
+  Settings,
+  Type,
+  User,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
@@ -62,7 +70,7 @@ export default function AccountLogin() {
           "https://www.googleapis.com/oauth2/v3/userinfo",
           {
             headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-          }
+          },
         );
         const infoData = await userInfo.json();
 
@@ -76,7 +84,7 @@ export default function AccountLogin() {
           infoData.email,
           infoData.name,
           infoData.picture,
-          infoData.sub
+          infoData.sub,
         );
 
         const { ok, data, message, accessToken } = userRes;
@@ -348,7 +356,9 @@ export default function AccountLogin() {
                 id="highContrast"
                 className="bg-accent"
                 checked={userConfig.highContrast}
-                onCheckedChange={(checked) => updateUserConfig({ highContrast: checked })}
+                onCheckedChange={(checked) =>
+                  updateUserConfig({ highContrast: checked })
+                }
               />
             </div>
 

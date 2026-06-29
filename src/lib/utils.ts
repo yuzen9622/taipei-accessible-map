@@ -12,7 +12,6 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-
 export function formatMetroA11y(places: metroA11yData[]) {
   return places.map((place) => {
     const { _id, 經度, 緯度 } = place;
@@ -51,4 +50,3 @@ export function formatBathroom(bathrooms: IBathroom[]) {
     };
   }) as Marker[];
 }
-

@@ -10,8 +10,9 @@ import {
 import { useState } from "react";
 import { useAppTranslation } from "@/i18n/client";
 import useMapStore from "@/stores/useMapStore";
-import { RouteCard } from "../shared/RouteCard";
+import useNavStore from "@/stores/useNavStore";
 import LoadingDrawer from "../shared/LoadingDrawer";
+import { RouteCard } from "../shared/RouteCard";
 import { Button } from "../ui/button";
 import EnvironmentPanel from "./EnvironmentPanel";
 import HazardReportPanel from "./HazardReportPanel";
@@ -36,7 +37,24 @@ export default function RouteContent() {
     setSheetMode("home");
   };
 
-  const handleStartNav = () => {
+  const handleStartNav = async () => {
+    // iOS 13+ requires DeviceOrientation permission to be requested from a user
+    // gesture — this tap is that gesture. Elsewhere no prompt is needed.
+    const DOE = DeviceOrientationEvent as unknown as {
+      requestPermission?: () => Promise<"granted" | "denied">;
+    };
+    if (typeof DOE?.requestPermission === "function") {
+      try {
+        const res = await DOE.requestPermission();
+        useNavStore
+          .getState()
+          .setCompassPermission(res === "granted" ? "granted" : "denied");
+      } catch {
+        useNavStore.getState().setCompassPermission("denied");
+      }
+    } else {
+      useNavStore.getState().setCompassPermission("granted");
+    }
     setIsNavigating(true);
   };
 
@@ -112,7 +130,11 @@ export default function RouteContent() {
       {/* Route Cards */}
       <div className="space-y-3">
         {computeRoutes.map((route, index) => (
-          <RouteCard key={route.routeId} idx={index} route={route} />
+          <RouteCard
+            key={`${index}-${route.routeId ?? ""}`}
+            idx={index}
+            route={route}
+          />
         ))}
       </div>
     </div>

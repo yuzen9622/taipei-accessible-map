@@ -30,7 +30,14 @@ import ParkingPanel from "./ParkingPanel";
 import SavedPlacesPanel from "./SavedPlacesPanel";
 import WelfarePanel from "./WelfarePanel";
 
-type SubPanel = "none" | "environment" | "hazard" | "welfare" | "parking" | "bus" | "saved";
+type SubPanel =
+  | "none"
+  | "environment"
+  | "hazard"
+  | "welfare"
+  | "parking"
+  | "bus"
+  | "saved";
 
 export default function HomeContent() {
   const { t } = useAppTranslation();
@@ -53,7 +60,12 @@ export default function HomeContent() {
   useEffect(() => {
     if (!userLocation) return;
     const controller = new AbortController();
-    getNearbyHazardReports(userLocation.lat, userLocation.lng, 500, controller.signal)
+    getNearbyHazardReports(
+      userLocation.lat,
+      userLocation.lng,
+      500,
+      controller.signal,
+    )
       .then((res) => {
         if (!controller.signal.aborted && res.ok && res.data?.reports)
           setNearbyHazards(res.data.reports);
@@ -66,13 +78,18 @@ export default function HomeContent() {
     (placeDetail: PlaceDetail) => {
       setSearchPlace(placeDetail);
       if (placeDetail.kind === "place") {
-        setInput(placeDetail.place.name || placeDetail.place.display_name || "");
+        setInput(
+          placeDetail.place.name || placeDetail.place.display_name || "",
+        );
         setInfoShow({
           isOpen: true,
           kind: "place",
           place: placeDetail.place,
         });
-        if (map) map.flyTo({ center: [placeDetail.position.lng, placeDetail.position.lat] });
+        if (map)
+          map.flyTo({
+            center: [placeDetail.position.lng, placeDetail.position.lat],
+          });
       } else if (placeDetail.kind === "coordinate") {
         setInput(placeDetail.address || "");
         setInfoShow({
@@ -81,11 +98,14 @@ export default function HomeContent() {
           address: placeDetail.address,
           position: placeDetail.position,
         });
-        if (map) map.flyTo({ center: [placeDetail.position.lng, placeDetail.position.lat] });
+        if (map)
+          map.flyTo({
+            center: [placeDetail.position.lng, placeDetail.position.lat],
+          });
       }
       setSheetMode("place");
     },
-    [setSearchPlace, setInfoShow, map, setSheetMode]
+    [setSearchPlace, setInfoShow, map, setSheetMode],
   );
 
   const a11yChips = [
@@ -94,15 +114,16 @@ export default function HomeContent() {
     { type: A11yEnum.RESTROOM, Icon: DoorOpen, label: t("toilet") },
   ];
 
-  const nearbyPlaces = useMemo(() =>
-    a11yPlaces
-      ?.filter((p) => {
-        if (!userLocation) return false;
-        const dx = p.position.lat - userLocation.lat;
-        const dy = p.position.lng - userLocation.lng;
-        return dx * dx + dy * dy < 0.0004;
-      })
-      .slice(0, 6) ?? [],
+  const nearbyPlaces = useMemo(
+    () =>
+      a11yPlaces
+        ?.filter((p) => {
+          if (!userLocation) return false;
+          const dx = p.position.lat - userLocation.lat;
+          const dy = p.position.lng - userLocation.lng;
+          return dx * dx + dy * dy < 0.0004;
+        })
+        .slice(0, 6) ?? [],
     [a11yPlaces, userLocation],
   );
 
@@ -175,9 +196,10 @@ export default function HomeContent() {
                 type="button"
                 onClick={() => toggleA11yType(chip.type)}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-all
-                  ${active
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-muted/60 text-muted-foreground hover:bg-muted"
+                  ${
+                    active
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "bg-muted/60 text-muted-foreground hover:bg-muted"
                   }`}
               >
                 <chip.Icon className="h-4 w-4" />
@@ -194,46 +216,46 @@ export default function HomeContent() {
           {t("quickActions")}
         </h2>
         <div className="flex gap-2 flex-wrap">
-        <button
-          type="button"
-          onClick={() => setSubPanel("environment")}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium bg-sky-500/10 text-sky-600 dark:text-sky-400 hover:bg-sky-500/20 transition-colors"
-        >
-          <Cloud className="h-4 w-4" />
-          {t("environment")}
-        </button>
-        <button
-          type="button"
-          onClick={() => setSubPanel("hazard")}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors"
-        >
-          <AlertTriangle className="h-4 w-4" />
-          {t("reportHazard")}
-        </button>
-        <button
-          type="button"
-          onClick={() => setSubPanel("welfare")}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition-colors"
-        >
-          <Heart className="h-4 w-4" />
-          {t("welfare")}
-        </button>
-        <button
-          type="button"
-          onClick={() => setSubPanel("parking")}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20 transition-colors"
-        >
-          <CircleParking className="h-4 w-4" />
-          {t("parking")}
-        </button>
-        <button
-          type="button"
-          onClick={() => setSubPanel("bus")}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors"
-        >
-          <Bus className="h-4 w-4" />
-          {t("busInfo")}
-        </button>
+          <button
+            type="button"
+            onClick={() => setSubPanel("environment")}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium bg-sky-500/10 text-sky-600 dark:text-sky-400 hover:bg-sky-500/20 transition-colors"
+          >
+            <Cloud className="h-4 w-4" />
+            {t("environment")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setSubPanel("hazard")}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors"
+          >
+            <AlertTriangle className="h-4 w-4" />
+            {t("reportHazard")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setSubPanel("welfare")}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition-colors"
+          >
+            <Heart className="h-4 w-4" />
+            {t("welfare")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setSubPanel("parking")}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20 transition-colors"
+          >
+            <CircleParking className="h-4 w-4" />
+            {t("parking")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setSubPanel("bus")}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+          >
+            <Bus className="h-4 w-4" />
+            {t("busInfo")}
+          </button>
         </div>
       </div>
 
@@ -253,14 +275,22 @@ export default function HomeContent() {
                 <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium">
-                    {t(hazard.hazardType === "data_error" ? "dataError" : hazard.hazardType)}
+                    {t(
+                      hazard.hazardType === "data_error"
+                        ? "dataError"
+                        : hazard.hazardType,
+                    )}
                   </p>
                   {hazard.description && (
-                    <p className="text-xs text-muted-foreground truncate">{hazard.description}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {hazard.description}
+                    </p>
                   )}
                 </div>
                 <Badge
-                  variant={hazard.status === "verified" ? "default" : "secondary"}
+                  variant={
+                    hazard.status === "verified" ? "default" : "secondary"
+                  }
                   className="text-xs shrink-0"
                 >
                   {hazard.status === "verified" ? t("confirmed") : t("pending")}
@@ -283,7 +313,9 @@ export default function HomeContent() {
               <button
                 key={place.id}
                 type="button"
-                onClick={() => handleFlyToPlace(place.position.lng, place.position.lat)}
+                onClick={() =>
+                  handleFlyToPlace(place.position.lng, place.position.lat)
+                }
                 className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/40 hover:bg-muted/70 transition-colors text-left"
               >
                 <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">

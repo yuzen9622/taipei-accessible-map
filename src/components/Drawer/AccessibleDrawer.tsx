@@ -29,15 +29,26 @@ export default function AccessibleDrawer() {
 
   const filteredPlaces = useMemo(() => {
     if (routeA11y.length > 0) return routeA11y;
-    return a11yPlaces?.filter(
-      (place) =>
-        selectedA11yTypes.has(place.a11yType) &&
-        searchToA11yPlaces(searchTerm, place)
-    ) ?? [];
-  }, [routeA11y, a11yPlaces, selectedA11yTypes, searchTerm, searchToA11yPlaces]);
+    return (
+      a11yPlaces?.filter(
+        (place) =>
+          selectedA11yTypes.has(place.a11yType) &&
+          searchToA11yPlaces(searchTerm, place),
+      ) ?? []
+    );
+  }, [
+    routeA11y,
+    a11yPlaces,
+    selectedA11yTypes,
+    searchTerm,
+    searchToA11yPlaces,
+  ]);
 
   const MAX_VISIBLE = 100;
-  const visiblePlaces = useMemo(() => filteredPlaces.slice(0, MAX_VISIBLE), [filteredPlaces]);
+  const visiblePlaces = useMemo(
+    () => filteredPlaces.slice(0, MAX_VISIBLE),
+    [filteredPlaces],
+  );
 
   const getA11yTypeDescription = (type: A11yEnum) => {
     switch (type) {

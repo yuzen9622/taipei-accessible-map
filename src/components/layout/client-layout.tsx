@@ -43,7 +43,12 @@ export default function ClientLayout({
   return (
     <div className="w-full h-dvh flex flex-col">
       <SkipNavLink />
-      <main id="main-map" className="flex-1 relative" role="main" aria-label="Map">
+      <main
+        id="main-map"
+        className="flex-1 relative"
+        role="main"
+        aria-label="Map"
+      >
         {children}
       </main>
       <BottomSheet />

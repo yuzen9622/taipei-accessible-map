@@ -50,7 +50,10 @@ export default function PlaceContent() {
   const placePosition = useMemo(() => {
     if (!infoShow.kind) return null;
     if (infoShow.kind === "place") {
-      return { lat: parseFloat(infoShow.place.lat), lng: parseFloat(infoShow.place.lon) };
+      return {
+        lat: parseFloat(infoShow.place.lat),
+        lng: parseFloat(infoShow.place.lon),
+      };
     }
     if (infoShow.kind === "coordinate" && infoShow.position) {
       return infoShow.position;
@@ -70,7 +73,9 @@ export default function PlaceContent() {
         }
       })
       .catch(() => {})
-      .finally(() => { if (!controller.signal.aborted) setA11yLoading(false); });
+      .finally(() => {
+        if (!controller.signal.aborted) setA11yLoading(false);
+      });
     return () => controller.abort();
   }, [placePosition]);
 
@@ -111,13 +116,24 @@ export default function PlaceContent() {
       setDestination({ kind: "place", place, position: latLng });
       setDestinationName(place.name || place.display_name || "");
     } else if (infoShow.kind === "coordinate") {
-      const latLng = infoShow.position ?? userLocation ?? { lat: 25.0478, lng: 121.5319 };
-      setDestination({ kind: "coordinate", address: infoShow.address, position: latLng });
+      const latLng = infoShow.position ??
+        userLocation ?? { lat: 25.0478, lng: 121.5319 };
+      setDestination({
+        kind: "coordinate",
+        address: infoShow.address,
+        position: latLng,
+      });
       setDestinationName(infoShow.address || "");
     }
 
     setSheetMode("plan");
-  }, [infoShow, userLocation, setDestination, setDestinationName, setSheetMode]);
+  }, [
+    infoShow,
+    userLocation,
+    setDestination,
+    setDestinationName,
+    setSheetMode,
+  ]);
 
   const handleShare = useCallback(async () => {
     if (!infoShow.kind) return;
@@ -134,16 +150,29 @@ export default function PlaceContent() {
       } else if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(url);
       }
-    } catch { /* user cancelled */ }
+    } catch {
+      /* user cancelled */
+    }
   }, [infoShow]);
 
   const currentPlace: import("@/types").PlaceDetail | null = useMemo(() => {
     if (!infoShow.kind) return null;
     if (infoShow.kind === "place") {
-      return { kind: "place", place: infoShow.place, position: { lat: parseFloat(infoShow.place.lat), lng: parseFloat(infoShow.place.lon) } };
+      return {
+        kind: "place",
+        place: infoShow.place,
+        position: {
+          lat: parseFloat(infoShow.place.lat),
+          lng: parseFloat(infoShow.place.lon),
+        },
+      };
     }
     if (infoShow.kind === "coordinate" && infoShow.position) {
-      return { kind: "coordinate", address: infoShow.address, position: infoShow.position };
+      return {
+        kind: "coordinate",
+        address: infoShow.address,
+        position: infoShow.position,
+      };
     }
     return null;
   }, [infoShow]);
@@ -178,31 +207,55 @@ export default function PlaceContent() {
         available: osmWheelchair === "yes" || osmWheelchair === "limited",
       });
     } else if (isPlace && place) {
-      const tags = (place as Record<string, unknown>).extratags as Record<string, string> | undefined;
-      const wheelchair = tags?.wheelchair || (place as Record<string, unknown>).wheelchair;
+      const tags = (place as Record<string, unknown>).extratags as
+        | Record<string, string>
+        | undefined;
+      const wheelchair =
+        tags?.wheelchair || (place as Record<string, unknown>).wheelchair;
       items.push({
         key: "wheelchair",
         label: t("wheelchairAccess"),
         available: wheelchair === "yes" || wheelchair === "limited",
       });
     } else {
-      items.push({ key: "wheelchair", label: t("wheelchairAccess"), available: false });
+      items.push({
+        key: "wheelchair",
+        label: t("wheelchairAccess"),
+        available: false,
+      });
     }
 
     const facilityCategories = new Set(osmFacilities?.map((f) => f.category));
     const hasOsmElevator = facilityCategories.has("elevator");
-    const hasOsmRamp = facilityCategories.has("ramp") || facilityCategories.has("kerb_cut");
+    const hasOsmRamp =
+      facilityCategories.has("ramp") || facilityCategories.has("kerb_cut");
     const hasOsmToilet = facilityCategories.has("toilet");
     const hasOsmTactile = osmTags?.tactile_paving === "yes";
 
     items.push(
-      { key: "elevator", label: t("hasElevator"), available: hasElevator || hasOsmElevator },
-      { key: "ramp", label: t("hasRamp"), available: hasElevator || hasOsmRamp },
-      { key: "toilet", label: t("hasAccessibleToilet"), available: hasBathroom || hasOsmToilet },
+      {
+        key: "elevator",
+        label: t("hasElevator"),
+        available: hasElevator || hasOsmElevator,
+      },
+      {
+        key: "ramp",
+        label: t("hasRamp"),
+        available: hasElevator || hasOsmRamp,
+      },
+      {
+        key: "toilet",
+        label: t("hasAccessibleToilet"),
+        available: hasBathroom || hasOsmToilet,
+      },
     );
 
     if (hasOsmTactile) {
-      items.push({ key: "tactile", label: t("hasTactilePaving"), available: true });
+      items.push({
+        key: "tactile",
+        label: t("hasTactilePaving"),
+        available: true,
+      });
     }
 
     return items;
@@ -215,12 +268,20 @@ export default function PlaceContent() {
     [map],
   );
 
-  const bathroomsSliced = useMemo(() => nearbyBathrooms.slice(0, 4), [nearbyBathrooms]);
+  const bathroomsSliced = useMemo(
+    () => nearbyBathrooms.slice(0, 4),
+    [nearbyBathrooms],
+  );
   const metroSliced = useMemo(() => nearbyMetro.slice(0, 4), [nearbyMetro]);
 
-  const placeIdForReview = isPlace && place
-    ? (place.osm_id ? `${place.osm_type}_${place.osm_id}` : place.place_id?.toString() || "")
-    : placePosition ? `${placePosition.lat}_${placePosition.lng}` : "";
+  const placeIdForReview =
+    isPlace && place
+      ? place.osm_id
+        ? `${place.osm_type}_${place.osm_id}`
+        : place.place_id?.toString() || ""
+      : placePosition
+        ? `${placePosition.lat}_${placePosition.lng}`
+        : "";
 
   if (!infoShow.kind) {
     return (
@@ -230,9 +291,7 @@ export default function PlaceContent() {
     );
   }
 
-  const name = isPlace
-    ? place!.name || place!.display_name
-    : infoShow.address;
+  const name = isPlace ? place!.name || place!.display_name : infoShow.address;
   const address = isPlace ? place!.display_name : infoShow.address;
   const addressParts = isPlace && place!.address ? place!.address : null;
   const hasA11y = nearbyBathrooms.length > 0 || nearbyMetro.length > 0;
@@ -249,7 +308,9 @@ export default function PlaceContent() {
           <ArrowLeft className="h-4 w-4" />
         </button>
         <div className="flex-1 min-w-0">
-          <h1 className="text-lg font-bold leading-tight line-clamp-2">{name}</h1>
+          <h1 className="text-lg font-bold leading-tight line-clamp-2">
+            {name}
+          </h1>
           {isPlace && place!.name && (
             <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">
               {address}
@@ -271,7 +332,10 @@ export default function PlaceContent() {
             target="_blank"
             rel="noopener noreferrer"
           >
-            <Badge variant="outline" className="rounded-full gap-1 cursor-pointer hover:bg-muted">
+            <Badge
+              variant="outline"
+              className="rounded-full gap-1 cursor-pointer hover:bg-muted"
+            >
               <ExternalLink className="h-3 w-3" />
               {t("viewOnOSM")}
             </Badge>
@@ -281,10 +345,7 @@ export default function PlaceContent() {
 
       {/* Actions */}
       <div className="flex gap-2">
-        <Button
-          onClick={handlePlanRoute}
-          className="flex-1 rounded-xl h-11"
-        >
+        <Button onClick={handlePlanRoute} className="flex-1 rounded-xl h-11">
           <Navigation className="h-4 w-4 mr-1.5" />
           {t("planRoute")}
         </Button>
@@ -294,7 +355,11 @@ export default function PlaceContent() {
           size="icon"
           className="rounded-xl h-11 w-11 shrink-0"
         >
-          {saved ? <BookmarkCheck className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
+          {saved ? (
+            <BookmarkCheck className="h-4 w-4" />
+          ) : (
+            <Bookmark className="h-4 w-4" />
+          )}
         </Button>
         <Button
           onClick={handleShare}
@@ -315,16 +380,30 @@ export default function PlaceContent() {
           </h2>
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
             {addressParts.road && (
-              <div><span className="text-muted-foreground">{t("road")}:</span> {addressParts.road}</div>
+              <div>
+                <span className="text-muted-foreground">{t("road")}:</span>{" "}
+                {addressParts.road}
+              </div>
             )}
             {(addressParts.suburb || addressParts.neighbourhood) && (
-              <div><span className="text-muted-foreground">{t("district")}:</span> {addressParts.suburb || addressParts.neighbourhood}</div>
+              <div>
+                <span className="text-muted-foreground">{t("district")}:</span>{" "}
+                {addressParts.suburb || addressParts.neighbourhood}
+              </div>
             )}
-            {(addressParts.city || addressParts.town || addressParts.county) && (
-              <div><span className="text-muted-foreground">{t("city")}:</span> {addressParts.city || addressParts.town || addressParts.county}</div>
+            {(addressParts.city ||
+              addressParts.town ||
+              addressParts.county) && (
+              <div>
+                <span className="text-muted-foreground">{t("city")}:</span>{" "}
+                {addressParts.city || addressParts.town || addressParts.county}
+              </div>
             )}
             {addressParts.postcode && (
-              <div><span className="text-muted-foreground">{t("postcode")}:</span> {addressParts.postcode}</div>
+              <div>
+                <span className="text-muted-foreground">{t("postcode")}:</span>{" "}
+                {addressParts.postcode}
+              </div>
             )}
           </div>
         </section>
@@ -356,7 +435,9 @@ export default function PlaceContent() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{b.name}</p>
-                  <p className="text-xs text-muted-foreground truncate">{b.address}</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {b.address}
+                  </p>
                 </div>
                 <Badge variant="secondary" className="text-xs shrink-0">
                   {t("accessibleToilet")}
@@ -367,15 +448,21 @@ export default function PlaceContent() {
               <button
                 key={m._id}
                 type="button"
-                onClick={() => handleFlyTo(parseFloat(m.經度), parseFloat(m.緯度))}
+                onClick={() =>
+                  handleFlyTo(parseFloat(m.經度), parseFloat(m.緯度))
+                }
                 className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/40 hover:bg-muted/70 transition-colors text-left"
               >
                 <div className="h-9 w-9 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
                   <ArrowUpDown className="h-4 w-4 text-green-600" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{m["出入口電梯/無障礙坡道名稱"]}</p>
-                  <p className="text-xs text-muted-foreground truncate">{t("elevator")} · {m.出入口編號}</p>
+                  <p className="text-sm font-medium truncate">
+                    {m["出入口電梯/無障礙坡道名稱"]}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {t("elevator")} · {m.出入口編號}
+                  </p>
                 </div>
                 <Badge variant="secondary" className="text-xs shrink-0">
                   {t("elevator")}
@@ -384,7 +471,9 @@ export default function PlaceContent() {
             ))}
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground py-2">{t("noNearbyA11y")}</p>
+          <p className="text-sm text-muted-foreground py-2">
+            {t("noNearbyA11y")}
+          </p>
         )}
       </section>
 
@@ -416,55 +505,77 @@ export default function PlaceContent() {
       </section>
 
       {/* OSM Accessibility Detail */}
-      {osmDetail && (osmDetail.wheelchairDescription || (osmDetail.facilities && osmDetail.facilities.length > 0)) && (
-        <section className="rounded-xl bg-muted/30 p-3 space-y-2">
-          <h2 className="text-sm font-semibold flex items-center gap-1.5">
-            <Accessibility className="h-4 w-4 text-muted-foreground" />
-            {t("osmAccessibilityInfo")}
-          </h2>
-          {osmDetail.wheelchair && (
-            <div className="flex items-center gap-2">
-              <Badge
-                variant={osmDetail.wheelchair === "yes" ? "default" : osmDetail.wheelchair === "limited" ? "secondary" : "outline"}
-                className="rounded-full"
-              >
-                {osmDetail.wheelchair === "yes" ? t("wheelchairYes") : osmDetail.wheelchair === "limited" ? t("wheelchairLimited") : t("wheelchairNo")}
-              </Badge>
-            </div>
-          )}
-          {osmDetail.wheelchairDescription && (
-            <p className="text-sm text-muted-foreground">{osmDetail.wheelchairDescription}</p>
-          )}
-          {osmDetail.facilities && osmDetail.facilities.length > 0 && (
-            <div className="space-y-1.5">
-              <p className="text-xs font-medium text-muted-foreground">{t("osmFacilities")}</p>
-              {osmDetail.facilities.slice(0, 6).map((f) => (
-                <button
-                  key={f.osmId}
-                  type="button"
-                  onClick={() => {
-                    if (f.location) handleFlyTo(f.location.coordinates[0], f.location.coordinates[1], 18);
-                  }}
-                  className="w-full flex items-center gap-2 p-2 rounded-lg bg-muted/40 hover:bg-muted/70 transition-colors text-left text-sm"
+      {osmDetail &&
+        (osmDetail.wheelchairDescription ||
+          (osmDetail.facilities && osmDetail.facilities.length > 0)) && (
+          <section className="rounded-xl bg-muted/30 p-3 space-y-2">
+            <h2 className="text-sm font-semibold flex items-center gap-1.5">
+              <Accessibility className="h-4 w-4 text-muted-foreground" />
+              {t("osmAccessibilityInfo")}
+            </h2>
+            {osmDetail.wheelchair && (
+              <div className="flex items-center gap-2">
+                <Badge
+                  variant={
+                    osmDetail.wheelchair === "yes"
+                      ? "default"
+                      : osmDetail.wheelchair === "limited"
+                        ? "secondary"
+                        : "outline"
+                  }
+                  className="rounded-full"
                 >
-                  <Accessibility className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                  <span className="truncate">{f.name || f.category}</span>
-                  {f.wheelchair && (
-                    <Badge variant="outline" className="ml-auto text-xs shrink-0 rounded-full">
-                      {f.wheelchair}
-                    </Badge>
-                  )}
-                </button>
-              ))}
-            </div>
-          )}
-        </section>
-      )}
+                  {osmDetail.wheelchair === "yes"
+                    ? t("wheelchairYes")
+                    : osmDetail.wheelchair === "limited"
+                      ? t("wheelchairLimited")
+                      : t("wheelchairNo")}
+                </Badge>
+              </div>
+            )}
+            {osmDetail.wheelchairDescription && (
+              <p className="text-sm text-muted-foreground">
+                {osmDetail.wheelchairDescription}
+              </p>
+            )}
+            {osmDetail.facilities && osmDetail.facilities.length > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-xs font-medium text-muted-foreground">
+                  {t("osmFacilities")}
+                </p>
+                {osmDetail.facilities.slice(0, 6).map((f) => (
+                  <button
+                    key={f.osmId}
+                    type="button"
+                    onClick={() => {
+                      if (f.location)
+                        handleFlyTo(
+                          f.location.coordinates[0],
+                          f.location.coordinates[1],
+                          18,
+                        );
+                    }}
+                    className="w-full flex items-center gap-2 p-2 rounded-lg bg-muted/40 hover:bg-muted/70 transition-colors text-left text-sm"
+                  >
+                    <Accessibility className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <span className="truncate">{f.name || f.category}</span>
+                    {f.wheelchair && (
+                      <Badge
+                        variant="outline"
+                        className="ml-auto text-xs shrink-0 rounded-full"
+                      >
+                        {f.wheelchair}
+                      </Badge>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
 
       {/* Reviews */}
-      {placeIdForReview && (
-        <PlaceReviewSection placeId={placeIdForReview} />
-      )}
+      {placeIdForReview && <PlaceReviewSection placeId={placeIdForReview} />}
     </div>
   );
 }

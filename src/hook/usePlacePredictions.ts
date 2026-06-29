@@ -18,7 +18,7 @@ export default function usePlaceSuggestions(input: string) {
       try {
         const lang = userConfig.language === "zh-TW" ? "zh" : "en";
         const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(input)}&countrycodes=tw&limit=5&accept-language=${lang}&addressdetails=1`
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(input)}&countrycodes=tw&limit=5&accept-language=${lang}&addressdetails=1`,
         );
         const data: NominatimPlace[] = await res.json();
         setSuggestions(data);

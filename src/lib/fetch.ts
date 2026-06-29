@@ -24,7 +24,7 @@ export async function fetchRequest<T>(
     requireAuth = false,
     signal,
     ...rest
-  }: RequestOptions<T> = {}
+  }: RequestOptions<T> = {},
 ): Promise<ApiResponse<unknown>> {
   if (requireAuth) {
     const token = await getAccessToken();
@@ -63,7 +63,7 @@ export async function fetchRequest<T>(
 }
 export async function authenticatedRequest<T>(
   url: string,
-  options: Omit<RequestOptions<T>, "requireAuth"> = {}
+  options: Omit<RequestOptions<T>, "requireAuth"> = {},
 ) {
   return fetchRequest(url, { ...options, requireAuth: true });
 }

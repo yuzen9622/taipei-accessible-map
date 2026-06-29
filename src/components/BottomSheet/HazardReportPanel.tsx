@@ -19,15 +19,27 @@ import { Button } from "../ui/button";
 
 const HAZARD_TYPES = [
   { value: "obstacle" as const, Icon: TriangleAlert, color: "text-amber-500" },
-  { value: "construction" as const, Icon: Construction, color: "text-orange-500" },
+  {
+    value: "construction" as const,
+    Icon: Construction,
+    color: "text-orange-500",
+  },
   { value: "data_error" as const, Icon: AlertTriangle, color: "text-red-500" },
 ];
 
-export default function HazardReportPanel({ onClose, hideHeader }: { onClose: () => void; hideHeader?: boolean }) {
+export default function HazardReportPanel({
+  onClose,
+  hideHeader,
+}: {
+  onClose: () => void;
+  hideHeader?: boolean;
+}) {
   const { t } = useAppTranslation();
   const { userLocation } = useMapStore();
 
-  const [hazardType, setHazardType] = useState<"obstacle" | "construction" | "data_error">("obstacle");
+  const [hazardType, setHazardType] = useState<
+    "obstacle" | "construction" | "data_error"
+  >("obstacle");
   const [description, setDescription] = useState("");
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
@@ -95,7 +107,9 @@ export default function HazardReportPanel({ onClose, hideHeader }: { onClose: ()
       {userLocation && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/40 px-3 py-2 rounded-lg">
           <MapPin className="h-3.5 w-3.5 shrink-0" />
-          <span>{userLocation.lat.toFixed(5)}, {userLocation.lng.toFixed(5)}</span>
+          <span>
+            {userLocation.lat.toFixed(5)}, {userLocation.lng.toFixed(5)}
+          </span>
         </div>
       )}
 

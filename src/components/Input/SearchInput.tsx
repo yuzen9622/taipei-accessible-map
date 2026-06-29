@@ -14,13 +14,18 @@ export default function SearchInput() {
     (placeDetail: PlaceDetail) => {
       setSearchPlace(placeDetail);
       if (placeDetail.kind === "place") {
-        setInput(placeDetail.place.name || placeDetail.place.display_name || "");
+        setInput(
+          placeDetail.place.name || placeDetail.place.display_name || "",
+        );
         setInfoShow({
           isOpen: true,
           kind: "place",
           place: placeDetail.place,
         });
-        if (map) map.flyTo({ center: [placeDetail.position.lng, placeDetail.position.lat] });
+        if (map)
+          map.flyTo({
+            center: [placeDetail.position.lng, placeDetail.position.lat],
+          });
       } else if (placeDetail.kind === "coordinate") {
         setInput(placeDetail.address || "");
         setInfoShow({
@@ -28,17 +33,20 @@ export default function SearchInput() {
           kind: "coordinate",
           address: placeDetail.address,
         });
-        if (map) map.flyTo({ center: [placeDetail.position.lng, placeDetail.position.lat] });
+        if (map)
+          map.flyTo({
+            center: [placeDetail.position.lng, placeDetail.position.lat],
+          });
       }
     },
-    [setSearchPlace, setInfoShow, map]
+    [setSearchPlace, setInfoShow, map],
   );
 
   return (
     <div
       className={cn(
         "    relative pointer-events-auto h-fit w-full flex justify-center transition-all duration-300",
-        routeInfoShow && "hidden"
+        routeInfoShow && "hidden",
       )}
     >
       <div className="  w-full mx-auto rounded-3xl shadow-md  ">

@@ -87,8 +87,7 @@ export default function AirQualityWidget() {
   if (!data && !loading) return null;
 
   const config = data ? LEVEL_CONFIG[data.quality] : LEVEL_CONFIG[""];
-  const label =
-    i18n.language === "en" ? config.labelEn : config.label;
+  const label = i18n.language === "en" ? config.labelEn : config.label;
 
   return (
     <div className="absolute top-14 right-3 z-30">
@@ -125,9 +124,7 @@ export default function AirQualityWidget() {
             >
               <span className="w-px h-4 bg-current opacity-20" />
               <Cloud className={`h-3.5 w-3.5 ${config.color} shrink-0`} />
-              <span
-                className={`text-xs ${config.color} whitespace-nowrap`}
-              >
+              <span className={`text-xs ${config.color} whitespace-nowrap`}>
                 {data.description}
               </span>
             </motion.div>

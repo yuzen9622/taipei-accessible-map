@@ -1,20 +1,19 @@
 "use client";
 
-import {
-  Camera,
-  Cloud,
-  Droplets,
-  Thermometer,
-  Wind,
-  X,
-} from "lucide-react";
+import { Camera, Cloud, Droplets, Thermometer, Wind, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAppTranslation } from "@/i18n/client";
 import { getEnvironmentInfo } from "@/lib/api/a11y";
 import useMapStore from "@/stores/useMapStore";
 import type { EnvironmentData } from "@/types/route";
 
-export default function EnvironmentPanel({ onClose, hideHeader }: { onClose: () => void; hideHeader?: boolean }) {
+export default function EnvironmentPanel({
+  onClose,
+  hideHeader,
+}: {
+  onClose: () => void;
+  hideHeader?: boolean;
+}) {
   const { t } = useAppTranslation();
   const { userLocation } = useMapStore();
   const [data, setData] = useState<EnvironmentData | null>(null);
@@ -100,7 +99,9 @@ export default function EnvironmentPanel({ onClose, hideHeader }: { onClose: () 
           </button>
         </div>
       ) : !data ? (
-        <p className="text-sm text-muted-foreground text-center py-6">{t("noData")}</p>
+        <p className="text-sm text-muted-foreground text-center py-6">
+          {t("noData")}
+        </p>
       ) : (
         <div className="space-y-3">
           {/* Weather */}
@@ -114,27 +115,39 @@ export default function EnvironmentPanel({ onClose, hideHeader }: { onClose: () 
                 {data.weather.temperature != null && (
                   <div className="text-center">
                     <Thermometer className="h-5 w-5 mx-auto text-red-400 mb-1" />
-                    <p className="text-lg font-bold">{data.weather.temperature}°</p>
-                    <p className="text-xs text-muted-foreground">{t("temperature")}</p>
+                    <p className="text-lg font-bold">
+                      {data.weather.temperature}°
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("temperature")}
+                    </p>
                   </div>
                 )}
                 {data.weather.precipitationProbability != null && (
                   <div className="text-center">
                     <Droplets className="h-5 w-5 mx-auto text-blue-400 mb-1" />
-                    <p className="text-lg font-bold">{data.weather.precipitationProbability}%</p>
-                    <p className="text-xs text-muted-foreground">{t("precipitation")}</p>
+                    <p className="text-lg font-bold">
+                      {data.weather.precipitationProbability}%
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("precipitation")}
+                    </p>
                   </div>
                 )}
                 {data.weather.windSpeed != null && (
                   <div className="text-center">
                     <Wind className="h-5 w-5 mx-auto text-teal-400 mb-1" />
-                    <p className="text-lg font-bold">{data.weather.windSpeed}</p>
+                    <p className="text-lg font-bold">
+                      {data.weather.windSpeed}
+                    </p>
                     <p className="text-xs text-muted-foreground">{t("wind")}</p>
                   </div>
                 )}
               </div>
               {data.weather.condition && (
-                <p className="text-xs text-center text-muted-foreground">{data.weather.condition}</p>
+                <p className="text-xs text-center text-muted-foreground">
+                  {data.weather.condition}
+                </p>
               )}
             </div>
           )}
@@ -153,29 +166,33 @@ export default function EnvironmentPanel({ onClose, hideHeader }: { onClose: () 
           )}
 
           {/* Cameras */}
-          {data.cameras?.status === "ok" && data.cameras.items && data.cameras.items.length > 0 && (
-            <div className="space-y-2">
-              <h3 className="text-sm font-semibold flex items-center gap-1.5">
-                <Camera className="h-4 w-4" />
-                {t("cameras")}
-              </h3>
+          {data.cameras?.status === "ok" &&
+            data.cameras.items &&
+            data.cameras.items.length > 0 && (
               <div className="space-y-2">
-                {data.cameras.items.slice(0, 3).map((cam, i) => (
-                  <a
-                    key={i}
-                    href={cam.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 p-2 rounded-lg bg-muted/40 hover:bg-muted/60 transition-colors text-sm"
-                  >
-                    <Camera className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    <span className="flex-1 truncate">{cam.name}</span>
-                    <span className="text-xs text-muted-foreground shrink-0">{cam.distance}m</span>
-                  </a>
-                ))}
+                <h3 className="text-sm font-semibold flex items-center gap-1.5">
+                  <Camera className="h-4 w-4" />
+                  {t("cameras")}
+                </h3>
+                <div className="space-y-2">
+                  {data.cameras.items.slice(0, 3).map((cam, i) => (
+                    <a
+                      key={i}
+                      href={cam.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 p-2 rounded-lg bg-muted/40 hover:bg-muted/60 transition-colors text-sm"
+                    >
+                      <Camera className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      <span className="flex-1 truncate">{cam.name}</span>
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {cam.distance}m
+                      </span>
+                    </a>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
         </div>
       )}
     </div>

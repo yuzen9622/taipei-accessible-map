@@ -77,7 +77,13 @@ function ParkingCard({
   );
 }
 
-export default function ParkingPanel({ onClose, hideHeader }: { onClose: () => void; hideHeader?: boolean }) {
+export default function ParkingPanel({
+  onClose,
+  hideHeader,
+}: {
+  onClose: () => void;
+  hideHeader?: boolean;
+}) {
   const { t } = useAppTranslation();
   const { userLocation, map } = useMapStore();
   const [data, setData] = useState<DisabledParking[]>([]);

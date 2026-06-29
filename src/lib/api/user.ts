@@ -12,7 +12,7 @@ export async function getUserInfo(): Promise<
 }
 
 export const updateConfig = async (
-  config: Partial<UserConfig>
+  config: Partial<UserConfig>,
 ): Promise<ApiResponse<{ config: UserConfig }>> => {
   return authenticatedRequest(`${END_POINT}/api/v1/user/config/update`, {
     method: "POST",

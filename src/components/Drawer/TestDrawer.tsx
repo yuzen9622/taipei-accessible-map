@@ -46,7 +46,8 @@ export default function TestDrawer() {
         position: latLng,
       });
     } else if (infoShow.kind === "coordinate") {
-      latLng = infoShow.position ?? userLocation ?? { lat: 25.0478, lng: 121.5319 };
+      latLng = infoShow.position ??
+        userLocation ?? { lat: 25.0478, lng: 121.5319 };
       setDestination({
         kind: "coordinate",
         address: infoShow.address,

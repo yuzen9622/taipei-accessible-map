@@ -7,7 +7,7 @@ export async function login(
   email: string,
   name: string,
   avatar: string,
-  client_id: string
+  client_id: string,
 ) {
   return fetchRequest(`${END_POINT}/api/v1/user/login`, {
     method: "POST",
@@ -23,7 +23,10 @@ export async function refreshToken(): Promise<string | null> {
     if (!response.ok) {
       return null;
     }
-    return (response as unknown as Record<string, unknown>).accessToken as string || null;
+    return (
+      ((response as unknown as Record<string, unknown>)
+        .accessToken as string) || null
+    );
   } catch {
     return null;
   }

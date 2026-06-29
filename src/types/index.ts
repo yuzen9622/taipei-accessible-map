@@ -46,6 +46,17 @@ type Base = {
 
 export type PlaceDetail = (PlaceType | CoordinateType) & Base;
 
+// --- AiResultMarker: AI 工具結果在地圖/聊天卡片上的可點標記 ---
+export type AiResultMarker = {
+  id: string;
+  position: LatLng;
+  title: string;
+  desc?: string;
+  target:
+    | { panel: "place"; place: NominatimPlace }
+    | { panel: "station"; marker: Marker };
+};
+
 // --- InfoShow ---
 export type InfoShow =
   | (PlaceType & { isOpen: boolean })

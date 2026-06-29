@@ -54,21 +54,57 @@ interface RailItem {
 
 const RAIL_ITEMS: RailItem[] = [
   { id: "search", Icon: Search, labelKey: "railSearch", color: "text-primary" },
-  { id: "route", Icon: Navigation, labelKey: "railRoute", color: "text-blue-500" },
-  { id: "a11y", Icon: Accessibility, labelKey: "railA11y", color: "text-emerald-500" },
+  {
+    id: "route",
+    Icon: Navigation,
+    labelKey: "railRoute",
+    color: "text-blue-500",
+  },
+  {
+    id: "a11y",
+    Icon: Accessibility,
+    labelKey: "railA11y",
+    color: "text-emerald-500",
+  },
   { id: "bus", Icon: Bus, labelKey: "railBus", color: "text-emerald-600" },
-  { id: "parking", Icon: CircleParking, labelKey: "railParking", color: "text-indigo-500" },
-  { id: "saved", Icon: Bookmark, labelKey: "savedPlaces", color: "text-amber-500" },
+  {
+    id: "parking",
+    Icon: CircleParking,
+    labelKey: "railParking",
+    color: "text-indigo-500",
+  },
+  {
+    id: "saved",
+    Icon: Bookmark,
+    labelKey: "savedPlaces",
+    color: "text-amber-500",
+  },
 ];
 
 const RAIL_MORE_ITEMS: RailItem[] = [
-  { id: "environment", Icon: Cloud, labelKey: "environment", color: "text-sky-500" },
-  { id: "hazard", Icon: AlertTriangle, labelKey: "reportHazard", color: "text-amber-500" },
+  {
+    id: "environment",
+    Icon: Cloud,
+    labelKey: "environment",
+    color: "text-sky-500",
+  },
+  {
+    id: "hazard",
+    Icon: AlertTriangle,
+    labelKey: "reportHazard",
+    color: "text-amber-500",
+  },
   { id: "welfare", Icon: Heart, labelKey: "welfare", color: "text-rose-500" },
 ];
 
 // --- Mode-driven panels: shown via sheetMode, override rail panels ---
-const MODE_PANELS = new Set(["place", "plan", "route", "navigation", "station"]);
+const MODE_PANELS = new Set([
+  "place",
+  "plan",
+  "route",
+  "navigation",
+  "station",
+]);
 
 export default function BottomSheet() {
   const { t } = useAppTranslation();
@@ -148,7 +184,7 @@ export default function BottomSheet() {
       startHeight.current = sheetHeight;
       (e.target as HTMLElement).setPointerCapture(e.pointerId);
     },
-    [sheetHeight]
+    [sheetHeight],
   );
 
   const handlePointerMove = useCallback(
@@ -156,10 +192,13 @@ export default function BottomSheet() {
       if (!isDragging) return;
       const dy = startY.current - e.clientY;
       const vh = window.innerHeight;
-      const newRatio = Math.max(0.08, Math.min(0.95, startHeight.current + dy / vh));
+      const newRatio = Math.max(
+        0.08,
+        Math.min(0.95, startHeight.current + dy / vh),
+      );
       setSheetHeight(newRatio);
     },
-    [isDragging]
+    [isDragging],
   );
 
   const handlePointerUp = useCallback(() => {
@@ -191,7 +230,17 @@ export default function BottomSheet() {
       }
       setMoreOpen(false);
     },
-    [activeRailPanel, modePanelActive, setActiveRailPanel, setSheetMode, setComputeRoutes, setRouteA11y, setRouteSelect, setInfoShow, setSearchPlace]
+    [
+      activeRailPanel,
+      modePanelActive,
+      setActiveRailPanel,
+      setSheetMode,
+      setComputeRoutes,
+      setRouteA11y,
+      setRouteSelect,
+      setInfoShow,
+      setSearchPlace,
+    ],
   );
 
   const handlePanelClose = useCallback(() => {
@@ -206,7 +255,16 @@ export default function BottomSheet() {
     } else {
       setActiveRailPanel("none");
     }
-  }, [modePanelActive, setSheetMode, setActiveRailPanel, setComputeRoutes, setRouteA11y, setRouteSelect, setInfoShow, setSearchPlace]);
+  }, [
+    modePanelActive,
+    setSheetMode,
+    setActiveRailPanel,
+    setComputeRoutes,
+    setRouteA11y,
+    setRouteSelect,
+    setInfoShow,
+    setSearchPlace,
+  ]);
 
   return (
     <>
@@ -216,7 +274,9 @@ export default function BottomSheet() {
           ref={containerRef}
           className="pointer-events-auto bg-background rounded-t-3xl shadow-2xl border-t border-border/50 flex flex-col overflow-hidden"
           style={{ height: `${sheetHeight * 100}dvh` }}
-          animate={isDragging ? undefined : { height: `${sheetHeight * 100}dvh` }}
+          animate={
+            isDragging ? undefined : { height: `${sheetHeight * 100}dvh` }
+          }
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
         >
           {/* Drag Handle */}
@@ -232,7 +292,8 @@ export default function BottomSheet() {
           {/* Mobile Header */}
           <div className="flex items-center justify-between px-4 pb-2">
             <h1 className="text-base font-bold flex items-center gap-1.5">
-              <Image src="/logo.webp" width={22} height={22} alt="" /> Accessible Taipei
+              <Image src="/logo.webp" width={22} height={22} alt="" />{" "}
+              Accessible Taipei
             </h1>
             <AccountLogin />
           </div>
@@ -257,7 +318,6 @@ export default function BottomSheet() {
 
       {/* ======= Desktop: Dual-layer sidebar ======= */}
       <div className="hidden lg:block fixed inset-0 z-40 pointer-events-none">
-
         {/* --- Layer 1: Icon Rail (always visible unless fully collapsed) --- */}
         <motion.nav
           aria-label={t("quickActions")}
@@ -270,7 +330,12 @@ export default function BottomSheet() {
         >
           {/* Logo */}
           <div className="flex items-center justify-center h-10 w-10 mb-2">
-            <Image src="/logo.webp" width={28} height={28} alt="Accessible Taipei" />
+            <Image
+              src="/logo.webp"
+              width={28}
+              height={28}
+              alt="Accessible Taipei"
+            />
           </div>
 
           {/* Divider */}
@@ -291,10 +356,12 @@ export default function BottomSheet() {
                   "hover:bg-muted focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2",
                   isActive
                     ? "bg-primary/10 shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                    : "text-muted-foreground hover:text-foreground",
                 )}
               >
-                <item.Icon className={cn("h-5 w-5", isActive ? item.color : "")} />
+                <item.Icon
+                  className={cn("h-5 w-5", isActive ? item.color : "")}
+                />
                 <span className="text-[9px] mt-0.5 leading-none font-medium truncate max-w-[48px]">
                   {t(item.labelKey)}
                 </span>
@@ -323,11 +390,13 @@ export default function BottomSheet() {
                 "flex flex-col items-center justify-center w-11 h-11 rounded-xl transition-all",
                 "hover:bg-muted text-muted-foreground hover:text-foreground",
                 "focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2",
-                moreOpen && "bg-muted"
+                moreOpen && "bg-muted",
               )}
             >
               <Menu className="h-5 w-5" />
-              <span className="text-[9px] mt-0.5 leading-none font-medium">{t("railMore")}</span>
+              <span className="text-[9px] mt-0.5 leading-none font-medium">
+                {t("railMore")}
+              </span>
             </button>
             <AnimatePresence>
               {moreOpen && (
@@ -339,7 +408,8 @@ export default function BottomSheet() {
                   className="absolute left-[52px] bottom-0 bg-background/95 backdrop-blur-md rounded-xl shadow-xl border border-border/50 p-1.5 min-w-[140px] z-50"
                 >
                   {RAIL_MORE_ITEMS.map((item) => {
-                    const isActive = !modePanelActive && activeRailPanel === item.id;
+                    const isActive =
+                      !modePanelActive && activeRailPanel === item.id;
                     return (
                       <button
                         key={item.id}
@@ -348,10 +418,14 @@ export default function BottomSheet() {
                         className={cn(
                           "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm transition-colors text-left",
                           "hover:bg-muted focus-visible:outline-2 focus-visible:outline-primary",
-                          isActive ? "bg-primary/10 font-medium" : "text-muted-foreground"
+                          isActive
+                            ? "bg-primary/10 font-medium"
+                            : "text-muted-foreground",
                         )}
                       >
-                        <item.Icon className={cn("h-4 w-4 shrink-0", item.color)} />
+                        <item.Icon
+                          className={cn("h-4 w-4 shrink-0", item.color)}
+                        />
                         {t(item.labelKey)}
                       </button>
                     );
@@ -425,11 +499,7 @@ export default function BottomSheet() {
             "pointer-events-auto fixed top-1/2 -translate-y-1/2 z-50 h-12 w-6 flex items-center justify-center",
             "bg-background border border-border/50 shadow-lg rounded-r-lg border-l-0",
             "hover:bg-muted hover:shadow-xl transition-all duration-300",
-            collapsed
-              ? "left-0"
-              : panelOpen
-                ? "left-[456px]"
-                : "left-[64px]"
+            collapsed ? "left-0" : panelOpen ? "left-[456px]" : "left-[64px]",
           )}
         >
           {collapsed ? (
@@ -440,9 +510,7 @@ export default function BottomSheet() {
         </button>
 
         {/* --- Collapsed: Floating mini search bar --- */}
-        <AnimatePresence>
-          {collapsed && <CollapsedSearch />}
-        </AnimatePresence>
+        <AnimatePresence>{collapsed && <CollapsedSearch />}</AnimatePresence>
       </div>
     </>
   );
@@ -456,24 +524,90 @@ function PanelTitle() {
   const modePanelActive = MODE_PANELS.has(sheetMode);
   if (modePanelActive) {
     switch (sheetMode) {
-      case "place": return <>{t("title")}</>;
-      case "plan": return <><Navigation className="h-4 w-4 text-blue-500" /> {t("planRoute")}</>;
-      case "route": return <><Navigation className="h-4 w-4 text-blue-500" /> {t("route")}</>;
-      case "navigation": return <><Navigation className="h-4 w-4 text-blue-500" /> {t("startNavigation")}</>;
-      case "station": return <><Accessibility className="h-4 w-4 text-emerald-500" /> {t("stationDetail")}</>;
+      case "place":
+        return <>{t("title")}</>;
+      case "plan":
+        return (
+          <>
+            <Navigation className="h-4 w-4 text-blue-500" /> {t("planRoute")}
+          </>
+        );
+      case "route":
+        return (
+          <>
+            <Navigation className="h-4 w-4 text-blue-500" /> {t("route")}
+          </>
+        );
+      case "navigation":
+        return (
+          <>
+            <Navigation className="h-4 w-4 text-blue-500" />{" "}
+            {t("startNavigation")}
+          </>
+        );
+      case "station":
+        return (
+          <>
+            <Accessibility className="h-4 w-4 text-emerald-500" />{" "}
+            {t("stationDetail")}
+          </>
+        );
     }
   }
 
   switch (activeRailPanel) {
-    case "search": return <><Search className="h-4 w-4 text-primary" /> {t("railSearch")}</>;
-    case "a11y": return <><Accessibility className="h-4 w-4 text-emerald-500" /> {t("accessibleTitle")}</>;
-    case "bus": return <><Bus className="h-4 w-4 text-emerald-600" /> {t("busInfo")}</>;
-    case "parking": return <><CircleParking className="h-4 w-4 text-indigo-500" /> {t("parking")}</>;
-    case "saved": return <><Bookmark className="h-4 w-4 text-amber-500" /> {t("savedPlaces")}</>;
-    case "environment": return <><Cloud className="h-4 w-4 text-sky-500" /> {t("environment")}</>;
-    case "hazard": return <><AlertTriangle className="h-4 w-4 text-amber-500" /> {t("reportHazard")}</>;
-    case "welfare": return <><Heart className="h-4 w-4 text-rose-500" /> {t("welfare")}</>;
-    default: return <>{t("title")}</>;
+    case "search":
+      return (
+        <>
+          <Search className="h-4 w-4 text-primary" /> {t("railSearch")}
+        </>
+      );
+    case "a11y":
+      return (
+        <>
+          <Accessibility className="h-4 w-4 text-emerald-500" />{" "}
+          {t("accessibleTitle")}
+        </>
+      );
+    case "bus":
+      return (
+        <>
+          <Bus className="h-4 w-4 text-emerald-600" /> {t("busInfo")}
+        </>
+      );
+    case "parking":
+      return (
+        <>
+          <CircleParking className="h-4 w-4 text-indigo-500" /> {t("parking")}
+        </>
+      );
+    case "saved":
+      return (
+        <>
+          <Bookmark className="h-4 w-4 text-amber-500" /> {t("savedPlaces")}
+        </>
+      );
+    case "environment":
+      return (
+        <>
+          <Cloud className="h-4 w-4 text-sky-500" /> {t("environment")}
+        </>
+      );
+    case "hazard":
+      return (
+        <>
+          <AlertTriangle className="h-4 w-4 text-amber-500" />{" "}
+          {t("reportHazard")}
+        </>
+      );
+    case "welfare":
+      return (
+        <>
+          <Heart className="h-4 w-4 text-rose-500" /> {t("welfare")}
+        </>
+      );
+    default:
+      return <>{t("title")}</>;
   }
 }
 
@@ -484,26 +618,40 @@ function DesktopPanelContent() {
   const modePanelActive = MODE_PANELS.has(sheetMode);
   if (modePanelActive) {
     switch (sheetMode) {
-      case "place": return <PlaceContent />;
-      case "plan": return <RoutePlanContent />;
-      case "route": return <RouteContent />;
-      case "navigation": return <NavigationContent />;
-      case "station": return <StationDetailContent />;
+      case "place":
+        return <PlaceContent />;
+      case "plan":
+        return <RoutePlanContent />;
+      case "route":
+        return <RouteContent />;
+      case "navigation":
+        return <NavigationContent />;
+      case "station":
+        return <StationDetailContent />;
     }
   }
 
   const noop = () => setActiveRailPanel("none");
 
   switch (activeRailPanel) {
-    case "search": return <HomeContent />;
-    case "a11y": return <HomeContent />;
-    case "bus": return <BusPanel onClose={noop} hideHeader />;
-    case "parking": return <ParkingPanel onClose={noop} hideHeader />;
-    case "saved": return <SavedPlacesPanel onClose={noop} hideHeader />;
-    case "environment": return <EnvironmentPanel onClose={noop} hideHeader />;
-    case "hazard": return <HazardReportPanel onClose={noop} hideHeader />;
-    case "welfare": return <WelfarePanel onClose={noop} hideHeader />;
-    default: return <HomeContent />;
+    case "search":
+      return <HomeContent />;
+    case "a11y":
+      return <HomeContent />;
+    case "bus":
+      return <BusPanel onClose={noop} hideHeader />;
+    case "parking":
+      return <ParkingPanel onClose={noop} hideHeader />;
+    case "saved":
+      return <SavedPlacesPanel onClose={noop} hideHeader />;
+    case "environment":
+      return <EnvironmentPanel onClose={noop} hideHeader />;
+    case "hazard":
+      return <HazardReportPanel onClose={noop} hideHeader />;
+    case "welfare":
+      return <WelfarePanel onClose={noop} hideHeader />;
+    default:
+      return <HomeContent />;
   }
 }
 
@@ -532,7 +680,13 @@ function MobileSheetContent() {
 // --- Collapsed mini search (extracted for readability) ---
 function CollapsedSearch() {
   const { t } = useAppTranslation();
-  const { setSearchPlace, setInfoShow, setSheetMode, setSidebarCollapsed, map } = useMapStore();
+  const {
+    setSearchPlace,
+    setInfoShow,
+    setSheetMode,
+    setSidebarCollapsed,
+    map,
+  } = useMapStore();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
 
@@ -541,17 +695,28 @@ function CollapsedSearch() {
       setSearchPlace(placeDetail);
       if (placeDetail.kind === "place") {
         setInfoShow({ isOpen: true, kind: "place", place: placeDetail.place });
-        if (map) map.flyTo({ center: [placeDetail.position.lng, placeDetail.position.lat] });
+        if (map)
+          map.flyTo({
+            center: [placeDetail.position.lng, placeDetail.position.lat],
+          });
       } else if (placeDetail.kind === "coordinate") {
-        setInfoShow({ isOpen: true, kind: "coordinate", address: placeDetail.address, position: placeDetail.position });
-        if (map) map.flyTo({ center: [placeDetail.position.lng, placeDetail.position.lat] });
+        setInfoShow({
+          isOpen: true,
+          kind: "coordinate",
+          address: placeDetail.address,
+          position: placeDetail.position,
+        });
+        if (map)
+          map.flyTo({
+            center: [placeDetail.position.lng, placeDetail.position.lat],
+          });
       }
       setSheetMode("place");
       setSidebarCollapsed(false);
       setOpen(false);
       setInput("");
     },
-    [setSearchPlace, setInfoShow, map, setSheetMode, setSidebarCollapsed]
+    [setSearchPlace, setInfoShow, map, setSheetMode, setSidebarCollapsed],
   );
 
   return (
@@ -576,7 +741,10 @@ function CollapsedSearch() {
           />
           <button
             type="button"
-            onClick={() => { setOpen(false); setInput(""); }}
+            onClick={() => {
+              setOpen(false);
+              setInput("");
+            }}
             className="absolute top-2 right-2 h-7 w-7 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors"
             aria-label={t("close")}
           >
@@ -591,7 +759,9 @@ function CollapsedSearch() {
           aria-label={t("searchPlaceHolder")}
         >
           <Search className="h-4 w-4 text-muted-foreground shrink-0" />
-          <span className="text-sm text-muted-foreground truncate">{t("searchPlaceHolder")}</span>
+          <span className="text-sm text-muted-foreground truncate">
+            {t("searchPlaceHolder")}
+          </span>
         </button>
       )}
     </motion.div>

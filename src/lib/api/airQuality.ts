@@ -4,5 +4,7 @@ import type { ApiResponse } from "@/types/response";
 import type { AirQualityData } from "@/types/route";
 
 export async function getAirQuality(lat: number, lng: number) {
-  return fetchRequest(`${END_POINT}/api/v1/air/air-quality?lat=${lat}&lng=${lng}`) as Promise<ApiResponse<AirQualityData>>;
+  return fetchRequest(
+    `${END_POINT}/api/v1/air/air-quality?lat=${lat}&lng=${lng}`,
+  ) as Promise<ApiResponse<AirQualityData>>;
 }

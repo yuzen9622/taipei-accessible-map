@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
+import PlaceInput from "../shared/PlaceInput";
 
 export default function RoutePlanInput() {
   const {
@@ -14,6 +15,8 @@ export default function RoutePlanInput() {
     destination,
     originName,
     destinationName,
+    setOrigin,
+    setDestination,
     setOriginName,
     setDestinationName,
   } = useMapStore();
@@ -35,7 +38,9 @@ export default function RoutePlanInput() {
 
   useEffect(() => {
     if (destination?.kind === "place") {
-      setDestinationName(destination.place.name || destination.place.display_name || "");
+      setDestinationName(
+        destination.place.name || destination.place.display_name || "",
+      );
     } else if (destination?.kind === "coordinate") {
       setDestinationName(destination.address || "");
     }
@@ -83,7 +88,7 @@ export default function RoutePlanInput() {
   return (
     <Card
       className={cn(
-        "w-full p-2 rounded-2xl transition-all pointer-events-auto gap-2"
+        "w-full p-2 rounded-2xl transition-all pointer-events-auto gap-2",
       )}
     >
       <div className="flex gap-1 mb-2">
@@ -116,7 +121,7 @@ export default function RoutePlanInput() {
               onKeyDown={handleKeyDown}
               placeholder={t(
                 "routeQueryPlaceholder",
-                "例：從台北車站到101怎麼走？"
+                "例：從台北車站到101怎麼走？",
               )}
               className="w-full px-3 py-2 text-sm rounded-3xl border bg-background focus:outline-none focus:ring-2 focus:ring-ring"
               aria-label={t("routeQuery", "路線查詢")}
@@ -138,24 +143,42 @@ export default function RoutePlanInput() {
         </div>
       ) : (
         <div className="flex items-center gap-2">
-          <div className="flex-1 space-y-2">
-            <input
-              type="text"
+          <div className="flex-1 space-y-2 relative z-50">
+            <PlaceInput
               value={originName}
               onChange={(e) => setOriginName(e.target.value)}
-              onKeyDown={handleKeyDown}
               placeholder={t("originPlaceholder", "起點")}
               className="w-full px-3 py-2 text-sm rounded-3xl border bg-background focus:outline-none focus:ring-2 focus:ring-ring"
               aria-label={t("origin", "起點")}
+              hideIcon
+              onPlaceSelect={(place) => {
+                setOrigin(place);
+                if (place.kind === "place") {
+                  setOriginName(
+                    place.place.name || place.place.display_name || "",
+                  );
+                } else if (place.kind === "coordinate") {
+                  setOriginName(place.address || "");
+                }
+              }}
             />
-            <input
-              type="text"
+            <PlaceInput
               value={destinationName}
               onChange={(e) => setDestinationName(e.target.value)}
-              onKeyDown={handleKeyDown}
               placeholder={t("destinationPlaceholder", "終點")}
               className="w-full px-3 py-2 text-sm rounded-3xl border bg-background focus:outline-none focus:ring-2 focus:ring-ring"
               aria-label={t("destination", "終點")}
+              hideIcon
+              onPlaceSelect={(place) => {
+                setDestination(place);
+                if (place.kind === "place") {
+                  setDestinationName(
+                    place.place.name || place.place.display_name || "",
+                  );
+                } else if (place.kind === "coordinate") {
+                  setDestinationName(place.address || "");
+                }
+              }}
             />
           </div>
           <div className="flex flex-col gap-1">

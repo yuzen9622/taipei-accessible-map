@@ -19,7 +19,10 @@ export default function KeyboardShortcuts() {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
-      const isInput = target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable;
+      const isInput =
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable;
       if (isInput) return;
 
       if (e.key === "?" && !e.ctrlKey && !e.metaKey) {
@@ -30,7 +33,7 @@ export default function KeyboardShortcuts() {
         setOpen(false);
       }
     },
-    [open]
+    [open],
   );
 
   useEffect(() => {
