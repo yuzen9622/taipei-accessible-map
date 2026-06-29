@@ -14,7 +14,9 @@ import type { RouteLeg } from "@/types/route";
 import { getLegColor } from "@/types/route";
 import Polyline from "../Polyline";
 
-function polylineToPath(polyline: [number, number][]): { lat: number; lng: number }[] {
+function polylineToPath(
+  polyline: [number, number][],
+): { lat: number; lng: number }[] {
   return polyline.map(([lng, lat]) => ({ lat, lng }));
 }
 
@@ -102,7 +104,7 @@ export default function RouteLine() {
                 {getLegIcon(leg)}
               </div>
             </div>
-          </Marker>
+          </Marker>,
         );
       }
 

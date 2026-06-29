@@ -46,6 +46,13 @@ export default function RoutePlanContent() {
 
   const handleOriginSelect = useCallback(
     (place: PlaceDetail) => {
+      if (place.kind === "coordinate" && place.address === "你的位置") {
+        setOrigin(null);
+        setOriginName("");
+        setOriginInput("");
+        setUseMyLocation(true);
+        return;
+      }
       setOrigin(place);
       const name =
         place.kind === "place"
@@ -55,7 +62,7 @@ export default function RoutePlanContent() {
       setOriginInput(name);
       setUseMyLocation(false);
     },
-    [setOrigin, setOriginName]
+    [setOrigin, setOriginName],
   );
 
   const handleDestSelect = useCallback(
@@ -68,7 +75,7 @@ export default function RoutePlanContent() {
       setDestinationName(name);
       setDestInput(name);
     },
-    [setDestination, setDestinationName]
+    [setDestination, setDestinationName],
   );
 
   const handleUseMyLocation = useCallback(() => {
@@ -84,10 +91,17 @@ export default function RoutePlanContent() {
     const tmpUseMyLoc = useMyLocation;
 
     if (destination) {
-      setOrigin(destination);
-      setOriginName(destinationName);
-      setOriginInput(destinationName);
-      setUseMyLocation(false);
+      if (destination.kind === "coordinate" && destination.address === "你的位置") {
+        setOrigin(null);
+        setOriginName("");
+        setOriginInput("");
+        setUseMyLocation(true);
+      } else {
+        setOrigin(destination);
+        setOriginName(destinationName);
+        setOriginInput(destinationName);
+        setUseMyLocation(false);
+      }
     } else {
       setOrigin(null);
       setOriginName("");
@@ -116,9 +130,7 @@ export default function RoutePlanContent() {
   ]);
 
   const handleStartRoute = useCallback(async () => {
-    const originPos = useMyLocation
-      ? userLocation
-      : origin?.position ?? null;
+    const originPos = useMyLocation ? userLocation : (origin?.position ?? null);
     const destPos = destination?.position ?? null;
 
     if (!originPos || !destPos) return;
@@ -184,14 +196,18 @@ export default function RoutePlanContent() {
                   className="w-full flex items-center gap-2 px-2 py-3 text-sm text-left"
                 >
                   <Navigation className="h-4 w-4 text-emerald-500 shrink-0" />
-                  <span className="text-emerald-600 dark:text-emerald-400 font-medium">{t("myLocation")}</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-medium">
+                    {t("myLocation")}
+                  </span>
                 </button>
               ) : (
                 <PlaceInput
                   hideIcon
                   className="border-none shadow-none text-sm h-11"
                   value={originInput}
-                  onChange={(e) => setOriginInput((e.target as HTMLInputElement).value)}
+                  onChange={(e) =>
+                    setOriginInput((e.target as HTMLInputElement).value)
+                  }
                   placeholder={t("chooseOrigin")}
                   onPlaceSelect={handleOriginSelect}
                 />
@@ -207,7 +223,9 @@ export default function RoutePlanContent() {
                 hideIcon
                 className="border-none shadow-none text-sm h-11"
                 value={destInput}
-                onChange={(e) => setDestInput((e.target as HTMLInputElement).value)}
+                onChange={(e) =>
+                  setDestInput((e.target as HTMLInputElement).value)
+                }
                 placeholder={t("chooseDestination")}
                 onPlaceSelect={handleDestSelect}
               />

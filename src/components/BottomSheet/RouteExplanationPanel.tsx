@@ -1,19 +1,17 @@
 "use client";
 
-import {
-  AlertCircle,
-  Lightbulb,
-  Loader2,
-  Sparkles,
-  X,
-} from "lucide-react";
+import { AlertCircle, Lightbulb, Loader2, Sparkles, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAppTranslation } from "@/i18n/client";
 import { explainRoute } from "@/lib/api/ai";
 import useMapStore from "@/stores/useMapStore";
 import type { RouteExplanation } from "@/types/route";
 
-export default function RouteExplanationPanel({ onClose }: { onClose: () => void }) {
+export default function RouteExplanationPanel({
+  onClose,
+}: {
+  onClose: () => void;
+}) {
   const { t, i18n } = useAppTranslation();
   const { selectRoute } = useMapStore();
   const [explanation, setExplanation] = useState<RouteExplanation | null>(null);
@@ -52,7 +50,9 @@ export default function RouteExplanationPanel({ onClose }: { onClose: () => void
           <span className="text-sm">{t("assistThinking")}</span>
         </div>
       ) : !explanation ? (
-        <p className="text-sm text-muted-foreground text-center py-6">{t("noData")}</p>
+        <p className="text-sm text-muted-foreground text-center py-6">
+          {t("noData")}
+        </p>
       ) : (
         <div className="space-y-3">
           {/* Summary */}
@@ -80,7 +80,9 @@ export default function RouteExplanationPanel({ onClose }: { onClose: () => void
                 {t("warnings")}
               </h3>
               {explanation.warnings.map((w, i) => (
-                <p key={i} className="text-sm text-muted-foreground ml-5.5">{w}</p>
+                <p key={i} className="text-sm text-muted-foreground ml-5.5">
+                  {w}
+                </p>
               ))}
             </div>
           )}
@@ -88,8 +90,12 @@ export default function RouteExplanationPanel({ onClose }: { onClose: () => void
           {/* Alternatives */}
           {explanation.alternatives && (
             <div className="rounded-xl bg-muted/40 p-3">
-              <h3 className="text-sm font-semibold mb-1">{t("alternatives")}</h3>
-              <p className="text-sm text-muted-foreground">{explanation.alternatives}</p>
+              <h3 className="text-sm font-semibold mb-1">
+                {t("alternatives")}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {explanation.alternatives}
+              </p>
             </div>
           )}
         </div>

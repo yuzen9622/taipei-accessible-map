@@ -13,10 +13,7 @@ import { useAppTranslation } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
-import type {
-  AccessibleRoute,
-  RouteLeg,
-} from "@/types/route";
+import type { AccessibleRoute, RouteLeg } from "@/types/route";
 import {
   formatDistance,
   formatDuration,
@@ -54,11 +51,7 @@ function LegIcon({ leg }: { leg: RouteLeg }) {
 function WaitBadge({ leg }: { leg: Exclude<RouteLeg, { type: "WALK" }> }) {
   const text = formatWaitInfo(leg.waitInfo);
   if (!text) return null;
-  return (
-    <span className="text-xs text-muted-foreground">
-      等候 {text}
-    </span>
-  );
+  return <span className="text-xs text-muted-foreground">等候 {text}</span>;
 }
 
 function LegDetail({ leg }: { leg: RouteLeg }) {
@@ -74,10 +67,11 @@ function LegDetail({ leg }: { leg: RouteLeg }) {
           </p>
           {leg.exitInfo && (
             <p className="text-xs text-blue-600 dark:text-blue-400">
-              🛗 {leg.exitInfo.exitName} ({leg.exitInfo.type === "elevator" ? "電梯" : "斜坡"})
+              🛗 {leg.exitInfo.exitName} (
+              {leg.exitInfo.type === "elevator" ? "電梯" : "斜坡"})
             </p>
           )}
-          {leg.a11yFacilities.length > 0 && (
+          {!!leg.a11yFacilities?.length && (
             <p className="text-xs text-blue-600 dark:text-blue-400">
               ♿ 沿途 {leg.a11yFacilities.length} 個無障礙設施
             </p>
@@ -108,7 +102,10 @@ function LegDetail({ leg }: { leg: RouteLeg }) {
           </div>
           {leg.nearestBus && (
             <p className="text-xs text-green-600 dark:text-green-400">
-              🚌 最近公車 {leg.nearestBus.stopsAway != null ? `${leg.nearestBus.stopsAway} 站` : "接近中"}
+              🚌 最近公車{" "}
+              {leg.nearestBus.stopsAway != null
+                ? `${leg.nearestBus.stopsAway} 站`
+                : "接近中"}
             </p>
           )}
         </div>
@@ -138,9 +135,9 @@ function LegDetail({ leg }: { leg: RouteLeg }) {
               {leg.stopsCount} 站 · 約 {formatDuration(leg.rideMinutes)}
             </div>
           </div>
-          {leg.facilityHighlights.length > 0 && (
+          {!!leg.facilityHighlights?.length && (
             <div className="space-y-0.5">
-              {leg.facilityHighlights.map((h, i) => (
+              {leg.facilityHighlights?.map((h, i) => (
                 <p key={i} className="text-xs text-blue-600 dark:text-blue-400">
                   🛗 {h}
                 </p>
@@ -182,9 +179,9 @@ function LegDetail({ leg }: { leg: RouteLeg }) {
               約 {formatDuration(leg.rideMinutes)}
             </div>
           </div>
-          {leg.facilityHighlights.length > 0 && (
+          {!!leg.facilityHighlights?.length && (
             <div className="space-y-0.5">
-              {leg.facilityHighlights.map((h, i) => (
+              {leg.facilityHighlights?.map((h, i) => (
                 <p key={i} className="text-xs text-blue-600 dark:text-blue-400">
                   ♿ {h}
                 </p>
@@ -226,9 +223,9 @@ function LegDetail({ leg }: { leg: RouteLeg }) {
               約 {formatDuration(leg.rideMinutes)}
             </div>
           </div>
-          {leg.facilityHighlights.length > 0 && (
+          {!!leg.facilityHighlights?.length && (
             <div className="space-y-0.5">
-              {leg.facilityHighlights.map((h, i) => (
+              {leg.facilityHighlights?.map((h, i) => (
                 <p key={i} className="text-xs text-blue-600 dark:text-blue-400">
                   ♿ {h}
                 </p>
@@ -249,7 +246,11 @@ export const RouteCard = memo(function RouteCard({
   const { userConfig } = useAuthStore();
   const isSelected = selectRoute?.index === idx;
 
-  const label = route.accessibilityLabel ?? (route.accessibilityScore != null ? scoreToLabel(route.accessibilityScore) : null);
+  const label =
+    route.accessibilityLabel ??
+    (route.accessibilityScore != null
+      ? scoreToLabel(route.accessibilityScore)
+      : null);
 
   const legStepColor = (leg: RouteLeg) => {
     if (leg.type === "WALK") {
@@ -298,9 +299,7 @@ export const RouteCard = memo(function RouteCard({
     <Card className={cn(isSelected && "ring-2 ring-primary")}>
       <CardHeader>
         <CardTitle className="flex justify-between items-center">
-          <h2 className="text-lg font-bold">
-            {route.routeName}
-          </h2>
+          <h2 className="text-lg font-bold">{route.routeName}</h2>
           <div className="flex items-center gap-2 text-muted-foreground">
             <Clock className="h-4 w-4" />
             <span className="font-bold text-sm">
@@ -337,13 +336,22 @@ export const RouteCard = memo(function RouteCard({
 
         {isSelected && route.scoreComponents && (
           <div className="grid grid-cols-3 gap-2 pt-1">
-            {(["facilityScore", "timeScore", "criticalFeatureScore"] as const).map((key) => {
+            {(
+              ["facilityScore", "timeScore", "criticalFeatureScore"] as const
+            ).map((key) => {
               const val = route.scoreComponents![key];
               return (
-                <div key={key} className="text-center p-2 rounded-lg bg-muted/40">
+                <div
+                  key={key}
+                  className="text-center p-2 rounded-lg bg-muted/40"
+                >
                   <p className="text-lg font-bold">{val}</p>
                   <p className="text-xs text-muted-foreground">
-                    {key === "facilityScore" ? t("facilityScore") ?? "設施" : key === "timeScore" ? t("timeScore") ?? "時間" : t("criticalScore") ?? "關鍵"}
+                    {key === "facilityScore"
+                      ? (t("facilityScore") ?? "設施")
+                      : key === "timeScore"
+                        ? (t("timeScore") ?? "時間")
+                        : (t("criticalScore") ?? "關鍵")}
                   </p>
                 </div>
               );
@@ -373,7 +381,7 @@ export const RouteCard = memo(function RouteCard({
                 <div
                   className={cn(
                     "absolute left-3.5 top-11 bottom-0 w-0.5",
-                    leg.type === "WALK" ? "bg-blue-300" : "bg-orange-300"
+                    leg.type === "WALK" ? "bg-blue-300" : "bg-orange-300",
                   )}
                 />
               )}
@@ -382,7 +390,7 @@ export const RouteCard = memo(function RouteCard({
                 <div
                   className={cn(
                     "flex items-center justify-center w-8 h-8 rounded-full border-2",
-                    legStepColor(leg)
+                    legStepColor(leg),
                   )}
                 >
                   <LegIcon leg={leg} />

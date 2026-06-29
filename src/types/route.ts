@@ -10,7 +10,12 @@ export interface GeoPoint {
 export interface SlimOsmA11y {
   osmId: string;
   name?: string;
-  category: "wheelchair_accessible" | "kerb_cut" | "ramp" | "elevator" | "toilet";
+  category:
+    | "wheelchair_accessible"
+    | "kerb_cut"
+    | "ramp"
+    | "elevator"
+    | "toilet";
   wheelchair?: "yes" | "limited" | "no";
   tags?: Record<string, string>;
   location: GeoPoint;
@@ -256,8 +261,23 @@ export interface AgentChatRequest {
 }
 
 // --- Navigation Instructions (from /a11y/route/instructions) ---
-export type NavInstructionType = "turn" | "transit_board" | "transit_alight" | "facility" | "depart" | "arrive";
-export type RelativeDirection = "正前方" | "左前方" | "右前方" | "左側" | "右側" | "左後方" | "右後方" | "正後方" | null;
+export type NavInstructionType =
+  | "turn"
+  | "transit_board"
+  | "transit_alight"
+  | "facility"
+  | "depart"
+  | "arrive";
+export type RelativeDirection =
+  | "正前方"
+  | "左前方"
+  | "右前方"
+  | "左側"
+  | "右側"
+  | "左後方"
+  | "右後方"
+  | "正後方"
+  | null;
 
 export interface NavInstruction {
   text: string;
@@ -426,22 +446,32 @@ export interface RealTimeByFrequency {
 
 export function getA11yLabelColor(label: A11yLabel): string {
   switch (label) {
-    case "excellent": return "#22c55e";
-    case "good": return "#84cc16";
-    case "fair": return "#eab308";
-    case "poor": return "#f97316";
-    case "critical": return "#ef4444";
+    case "excellent":
+      return "#22c55e";
+    case "good":
+      return "#84cc16";
+    case "fair":
+      return "#eab308";
+    case "poor":
+      return "#f97316";
+    case "critical":
+      return "#ef4444";
   }
 }
 
 export function getA11yLabelText(label: A11yLabel, lang: string): string {
   if (lang === "zh-TW") {
     switch (label) {
-      case "excellent": return "極佳";
-      case "good": return "良好";
-      case "fair": return "普通";
-      case "poor": return "較差";
-      case "critical": return "困難";
+      case "excellent":
+        return "極佳";
+      case "good":
+        return "良好";
+      case "fair":
+        return "普通";
+      case "poor":
+        return "較差";
+      case "critical":
+        return "困難";
     }
   }
   return label.charAt(0).toUpperCase() + label.slice(1);
@@ -470,6 +500,7 @@ export function getLegColor(leg: RouteLeg): string {
 }
 
 export function formatDuration(minutes: number): string {
+  if (!Number.isFinite(minutes)) return "";
   const hours = Math.floor(minutes / 60);
   const mins = Math.round(minutes % 60);
   if (hours > 0) return `${hours}h ${mins}min`;
@@ -477,11 +508,15 @@ export function formatDuration(minutes: number): string {
 }
 
 export function formatDistance(meters: number): string {
+  if (!Number.isFinite(meters)) return "";
   if (meters >= 1000) return `${(meters / 1000).toFixed(1)} km`;
   return `${Math.round(meters)} m`;
 }
 
-export function formatWaitInfo(waitInfo: WaitInfo): string | null {
+export function formatWaitInfo(
+  waitInfo: WaitInfo | null | undefined,
+): string | null {
+  if (!waitInfo) return null;
   if (waitInfo.source === "unavailable") return null;
   if (waitInfo.source === "realtime" && typeof waitInfo.time === "number") {
     return `${waitInfo.time} min`;

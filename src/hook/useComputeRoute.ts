@@ -63,9 +63,11 @@ export default function useComputeRoute() {
         if (map && response.data.origin && response.data.destination) {
           const bounds = new LngLatBounds(
             [response.data.origin.lng, response.data.origin.lat],
-            [response.data.destination.lng, response.data.destination.lat]
+            [response.data.destination.lng, response.data.destination.lat],
           );
-          map.fitBounds(bounds, { padding: { top: 50, bottom: 200, left: 50, right: 50 } });
+          map.fitBounds(bounds, {
+            padding: { top: 50, bottom: 200, left: 50, right: 50 },
+          });
         }
         return true;
       } catch (error) {
@@ -84,7 +86,7 @@ export default function useComputeRoute() {
       setRouteSelect,
       setRouteInfoShow,
       userLocation,
-    ]
+    ],
   );
 
   const handleComputeRoute = useCallback(
@@ -95,8 +97,32 @@ export default function useComputeRoute() {
     }): Promise<boolean> => {
       return computeRoute(params);
     },
-    [computeRoute]
+    [computeRoute],
   );
 
-  return { isLoading, handleComputeRoute };
+  const setComputedRouteData = useCallback(
+    (origin: any, destination: any, routes: any[]) => {
+      if (!routes?.length) return;
+      setComputeRoutes(routes);
+      setRouteSelect({ index: 0, route: routes[0] });
+      setRouteInfoShow(true);
+
+      if (map && origin && destination) {
+        try {
+          const bounds = new LngLatBounds(
+            [origin.lng, origin.lat],
+            [destination.lng, destination.lat],
+          );
+          map.fitBounds(bounds, {
+            padding: { top: 50, bottom: 200, left: 50, right: 50 },
+          });
+        } catch (e) {
+          console.error("Failed to fit map bounds", e);
+        }
+      }
+    },
+    [map, setComputeRoutes, setRouteSelect, setRouteInfoShow]
+  );
+
+  return { isLoading, handleComputeRoute, setComputedRouteData };
 }

@@ -8,7 +8,6 @@ function SafeInstruction({
   html: string;
   className?: string;
 }) {
- 
   const clean = DOMPurify.sanitize(html);
 
   return (
