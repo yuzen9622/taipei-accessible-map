@@ -730,7 +730,7 @@ function CollapsedSearch() {
       aria-label={t("searchPlaceHolder")}
     >
       {open ? (
-        <div className="w-[340px] bg-background/95 backdrop-blur-md rounded-2xl shadow-2xl border border-border/50 overflow-visible">
+        <div className="relative w-[340px] bg-background/95 backdrop-blur-md rounded-2xl shadow-2xl border border-border/50 overflow-visible">
           <PlaceInput
             className="border-none"
             value={input}
@@ -745,7 +745,7 @@ function CollapsedSearch() {
               setOpen(false);
               setInput("");
             }}
-            className="absolute top-2 right-2 h-7 w-7 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors"
+            className="absolute top-1/2 -translate-y-1/2 right-2 h-7 w-7 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors"
             aria-label={t("close")}
           >
             <ChevronLeft className="h-3.5 w-3.5" />
