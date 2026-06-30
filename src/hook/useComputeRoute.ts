@@ -27,8 +27,9 @@ export default function useComputeRoute() {
 
       if (!query && !origin && !destination) return false;
 
-      const startLocation = origin || userLocation;
-      const endLocation = destination || userLocation;
+      // 自然語言查詢交給後端從文字解析起終點；只有結構化路徑才以使用者位置補缺。
+      const startLocation = origin || (query ? undefined : userLocation);
+      const endLocation = destination || (query ? undefined : userLocation);
 
       if (!query && (!startLocation || !endLocation)) return false;
 
