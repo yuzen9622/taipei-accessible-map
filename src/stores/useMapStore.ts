@@ -9,7 +9,7 @@ import type {
   PlaceDetail,
 } from "@/types";
 import { A11yEnum } from "@/types/index";
-import type { AccessibleRoute } from "@/types/route";
+import type { AccessibleRoute, LiveBus } from "@/types/route";
 
 export type SheetMode =
   | "home"
@@ -60,6 +60,7 @@ interface MapState {
   activeRailPanel: RailPanel;
   chatOpen: boolean;
   aiResultMarkers: AiResultMarker[];
+  liveBusPositions: LiveBus[];
 }
 
 interface MapAction {
@@ -99,6 +100,7 @@ interface MapAction {
   setActiveRailPanel: (panel: RailPanel) => void;
   setChatOpen: (v: boolean) => void;
   setAiResultMarkers: (markers: AiResultMarker[]) => void;
+  setLiveBusPositions: (positions: LiveBus[]) => void;
 }
 
 type MapStore = MapState & MapAction;
@@ -248,6 +250,8 @@ const useMapStore = create<MapStore>((set, get) => ({
   setChatOpen: (v) => set({ chatOpen: v }),
   aiResultMarkers: [],
   setAiResultMarkers: (markers) => set({ aiResultMarkers: markers }),
+  liveBusPositions: [],
+  setLiveBusPositions: (positions) => set({ liveBusPositions: positions }),
   isNavigating: false,
   setIsNavigating: (v) => {
     const { map, userLocation } = get();
@@ -280,6 +284,7 @@ const useMapStore = create<MapStore>((set, get) => ({
       selectRoute: null,
       computeRoutes: null,
       routeA11y: [],
+      liveBusPositions: [],
       destination: null,
       origin: null,
       originName: "",

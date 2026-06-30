@@ -1,9 +1,6 @@
 import type { ApiResponse } from "@/types/response";
+import type { LiveBusPositionsData } from "@/types/route";
 import type { BusRealtimeNearbyStop, BusSearchResult } from "@/types/transit";
-import type {
-  EstimatedTimeOfArrival,
-  RealTimeByFrequency,
-} from "@/types/route";
 import { END_POINT } from "../config";
 import { fetchRequest } from "../fetch";
 
@@ -92,18 +89,34 @@ export interface BusArrivalItem {
   directionLabel: string;
   estimateMinutes: number | null;
   statusLabel: string;
+  /**
+   * Plate of the vehicle this ETA refers to, when TDX has dispatched one.
+   * Absent until a bus is assigned; the backend strips TDX's "-1" sentinel.
+   */
+  plateNumb?: string;
 }
 
-export async function getBusPositions(routeName: string, direction?: 0 | 1) {
-  const params = new URLSearchParams({ route_name: routeName });
+/**
+ * Live realtime positions of every vehicle running a bus route (optionally
+ * scoped to one direction). The backend normalises raw TDX frames into the
+ * {@link LiveBusPositionsData} shape (camelCase, lat/lng, low-floor flags).
+ *
+ * Pass an AbortSignal so callers polling on an interval can cancel the
+ * in-flight request when the route changes or the component unmounts.
+ */
+export async function getLiveBusPositions(
+  routeName: string,
+  city?: string,
+  direction?: 0 | 1,
+  signal?: AbortSignal,
+) {
+  const params = new URLSearchParams({ routeName });
+  if (city) params.set("city", city);
   if (direction !== undefined) params.set("direction", String(direction));
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10_000);
   const data = (await fetchRequest(
     `${END_POINT}/api/v1/transit/bus/positions?${params}`,
-    { signal: controller.signal },
-  )) as ApiResponse<RealTimeByFrequency[]>;
-  clearTimeout(timeout);
+    { signal },
+  )) as ApiResponse<LiveBusPositionsData>;
   return data;
 }
 

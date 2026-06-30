@@ -64,7 +64,7 @@ export interface BusLeg {
   arrivalStop: string;
   departureStopId?: string;
   arrivalStopId?: string;
-  cityCode?: string;
+  tdxCity?: string;
   departureTime?: string;
   arrivalTime?: string;
   waitInfo: WaitInfo;
@@ -528,4 +528,40 @@ export function formatWaitInfo(
     return `~${waitInfo.time} min`;
   }
   return null;
+}
+
+export interface LiveBus {
+  plateNumb: string;
+  direction: number;
+  directionLabel?: string;
+  lat: number;
+  lng: number;
+  speed: number;
+  statusLabel?: string;
+  gpsTime: string;
+  isLowFloor: string;
+  hasLiftOrRamp: string;
+  vehicleClass: string;
+  routeName?: string;
+  city?: string;
+  waitInfo?: WaitInfo;
+  stopsAway?: number;
+  isTarget?: boolean;
+  estimateTime?: number | null;
+}
+
+export interface LiveBusPositionsData {
+  routeName: string;
+  city: string;
+  count: number;
+  lowFloorCount: number;
+  buses: LiveBus[];
+}
+
+export interface LiveBusPositionsResponse {
+  ok: boolean;
+  status: string;
+  code: number;
+  message: string;
+  data: LiveBusPositionsData;
 }

@@ -21,6 +21,7 @@ import SearchPin from "./shared/SearchPin";
 import AIResultWrapper from "./Wrapper/AIResultWrapper";
 import HazardWrapper from "./Wrapper/HazardWrapper";
 import TransitWrapper from "./Wrapper/TransitWrapper";
+import LiveBusWrapper from "./Wrapper/LiveBusWrapper";
 
 const MAP_STYLES = {
   light: "https://tiles.openfreemap.org/styles/liberty",
@@ -172,6 +173,7 @@ export default function ClientMap() {
         <SearchPin destination={destination} />
       ) : null}
       <TransitWrapper />
+      <LiveBusWrapper />
       <HazardWrapper />
       <AIChatBot />
       <RouteLine />
