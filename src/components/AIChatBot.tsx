@@ -1,17 +1,17 @@
 "use client";
 
 import {
+  Accessibility,
   BotMessageSquare,
-  CheckCircle2,
-  ChevronRight,
+  Bus,
   Loader2,
-  MapPin,
-  Route,
+  Navigation,
   Search,
   SendHorizonal,
   Square,
-  TerminalIcon,
+  SquareParking,
   Thermometer,
+  TriangleAlert,
   Wind,
   XIcon,
 } from "lucide-react";
@@ -21,7 +21,11 @@ import type { ChatBubble, ToolActivity } from "@/hook/useAIChat";
 import useAIChat, { TOOL_LABELS, TOOL_LOADING_TEXT } from "@/hook/useAIChat";
 import useOpenAiResult from "@/hook/useOpenAiResult";
 import { useAppTranslation } from "@/i18n/client";
-import { a11yPlacesToMarkers, googlePlacesToMarkers } from "@/lib/aiResults";
+import {
+  getToolResultGroup,
+  type ToolCardIcon,
+  type ToolResultItem,
+} from "@/lib/toolResultCards";
 import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import MarkdownText from "./shared/MarkdownText";
@@ -32,29 +36,15 @@ import { Card, CardContent, CardFooter, CardHeader } from "./ui/card";
 import { Input } from "./ui/input";
 import { ScrollArea } from "./ui/scroll-area";
 
-const TOOL_ICONS: Record<string, React.ReactNode> = {
-  findGooglePlaces: <Search className="h-4 w-4" />,
-  findA11yPlaces: <MapPin className="h-4 w-4" />,
-  getA11yFacilityDetails: <MapPin className="h-4 w-4" />,
-  planAccessibleRoute: <Route className="h-4 w-4" />,
-  getNavInstructions: <Route className="h-4 w-4" />,
-  getBusRoute: <MapPin className="h-4 w-4" />,
-  getBusRouteDetail: <MapPin className="h-4 w-4" />,
-  getBusArrival: <MapPin className="h-4 w-4" />,
-  getBusTimetable: <MapPin className="h-4 w-4" />,
-  trackBuses: <MapPin className="h-4 w-4" />,
-  getAirQuality: <Wind className="h-4 w-4" />,
-  getEnvironmentInfo: <Thermometer className="h-4 w-4" />,
-  getNearbyHazards: <MapPin className="h-4 w-4" />,
-  findNearbyParking: <MapPin className="h-4 w-4" />,
-  saveMemory: <TerminalIcon className="h-4 w-4" />,
-  deleteMemory: <TerminalIcon className="h-4 w-4" />,
-  searchAccessibilityGuide: <Search className="h-4 w-4" />,
-  plan_route: <Route className="h-4 w-4" />,
-  search_places: <Search className="h-4 w-4" />,
-  get_nearby: <MapPin className="h-4 w-4" />,
-  get_weather: <Thermometer className="h-4 w-4" />,
-  analyze_route: <Route className="h-4 w-4" />,
+const CARD_ICONS: Record<ToolCardIcon, React.ReactNode> = {
+  search: <Search className="h-3.5 w-3.5" />,
+  a11y: <Accessibility className="h-3.5 w-3.5" />,
+  parking: <SquareParking className="h-3.5 w-3.5" />,
+  bus: <Bus className="h-3.5 w-3.5" />,
+  air: <Wind className="h-3.5 w-3.5" />,
+  env: <Thermometer className="h-3.5 w-3.5" />,
+  hazard: <TriangleAlert className="h-3.5 w-3.5" />,
+  nav: <Navigation className="h-3.5 w-3.5" />,
 };
 
 function ThinkingIndicator({ label }: { label: string }) {
@@ -70,17 +60,70 @@ function ThinkingIndicator({ label }: { label: string }) {
   );
 }
 
-function ToolResultCarousel({ activity }: { activity: ToolActivity }) {
-  const { openAiResult } = useOpenAiResult();
+function ToolResultCard({
+  item,
+  onClick,
+}: {
+  item: ToolResultItem;
+  onClick?: () => void;
+}) {
+  const clickable = !!onClick;
+  const className = cn(
+    "shrink-0 snap-start flex flex-col items-start text-left p-3 rounded-xl bg-card border border-border/60 shadow-sm w-[200px] transition-all",
+    clickable &&
+      "cursor-pointer hover:border-primary/40 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
+  );
+  const inner = (
+    <>
+      <div className="w-full flex items-center gap-1.5 mb-1">
+        <span className="flex-1 font-semibold text-[14px] text-foreground leading-tight truncate">
+          {item.title}
+        </span>
+        {item.badge && (
+          <Badge
+            variant="secondary"
+            className="shrink-0 text-[10px] px-1.5 py-0 rounded-full"
+          >
+            {item.badge}
+          </Badge>
+        )}
+      </div>
+      {item.subtitle && (
+        <div className="w-full text-[12px] text-muted-foreground line-clamp-2">
+          {item.subtitle}
+        </div>
+      )}
+    </>
+  );
 
-  const isPlaces = activity.name === "findGooglePlaces";
-  const markers = isPlaces
-    ? googlePlacesToMarkers(activity.result)
-    : activity.name === "findA11yPlaces"
-      ? a11yPlacesToMarkers(activity.result)
-      : [];
+  return clickable ? (
+    <button type="button" onClick={onClick} className={className}>
+      {inner}
+    </button>
+  ) : (
+    <div className={className}>{inner}</div>
+  );
+}
 
-  if (markers.length === 0) return null;
+function ToolResultView({ activity }: { activity: ToolActivity }) {
+  const { openAiResult, flyTo } = useOpenAiResult();
+  const group = getToolResultGroup(activity.name, activity.result);
+  if (!group) return null;
+
+  const handleClick = (item: ToolResultItem) => {
+    if (!item.position) return;
+    if (item.target) {
+      openAiResult({
+        id: item.id,
+        position: item.position,
+        title: item.title,
+        desc: item.subtitle,
+        target: item.target,
+      });
+    } else {
+      flyTo(item.position);
+    }
+  };
 
   return (
     <motion.div
@@ -89,30 +132,21 @@ function ToolResultCarousel({ activity }: { activity: ToolActivity }) {
       className="flex flex-col gap-2 mt-2 w-full"
     >
       <div className="text-xs font-semibold text-muted-foreground px-1 flex items-center gap-1.5">
-        {isPlaces ? (
-          <Search className="h-3.5 w-3.5" />
-        ) : (
-          <MapPin className="h-3.5 w-3.5" />
-        )}
-        {isPlaces ? "周邊地點" : "無障礙設施"} ({markers.length})
+        {CARD_ICONS[group.icon]}
+        {group.heading} ({group.items.length})
       </div>
+      {group.note && (
+        <div className="text-[12px] text-muted-foreground px-1 -mt-1">
+          {group.note}
+        </div>
+      )}
       <div className="flex gap-2.5 overflow-x-auto pb-3 pt-1 px-1 snap-x w-full max-w-[85vw] sm:max-w-[420px] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/40 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent">
-        {markers.map((m) => (
-          <button
-            key={m.id}
-            type="button"
-            onClick={() => openAiResult(m)}
-            className="shrink-0 snap-start flex flex-col items-start text-left p-3 rounded-xl bg-card border border-border/60 shadow-sm w-[200px] cursor-pointer hover:border-primary/40 hover:shadow-md transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-          >
-            <div className="w-full font-semibold text-[14px] text-foreground leading-tight mb-1 truncate">
-              {m.title}
-            </div>
-            {m.desc && (
-              <div className="w-full text-[12px] text-muted-foreground line-clamp-2">
-                {m.desc}
-              </div>
-            )}
-          </button>
+        {group.items.map((item) => (
+          <ToolResultCard
+            key={item.id}
+            item={item}
+            onClick={item.position ? () => handleClick(item) : undefined}
+          />
         ))}
       </div>
     </motion.div>
@@ -122,11 +156,8 @@ function ToolResultCarousel({ activity }: { activity: ToolActivity }) {
 function MessageBubble({ message }: { message: ChatBubble }) {
   const isUser = message.role === "user";
   const activities = message.toolActivities ?? [];
-  const doneActivities = activities.filter(
-    (a) =>
-      a.status === "done" &&
-      (a.name === "findGooglePlaces" || a.name === "findA11yPlaces"),
-  );
+  // 所有已完成的工具都嘗試渲染；ToolResultView 對無法渲染的工具回 null
+  const doneActivities = activities.filter((a) => a.status === "done");
 
   // 載入文字：優先顯示進行中的工具，否則最後一個工具，再否則「思考中」
   // 各工具有專屬文字（TOOL_LOADING_TEXT），找不到才退回通用寫法
@@ -173,7 +204,7 @@ function MessageBubble({ message }: { message: ChatBubble }) {
       {!message.isStreaming && !isUser && doneActivities.length > 0 && (
         <div className="flex flex-col gap-3 w-full mt-1 overflow-hidden">
           {doneActivities.map((activity, idx) => (
-            <ToolResultCarousel
+            <ToolResultView
               key={`${activity.name}-${idx}-done`}
               activity={activity}
             />

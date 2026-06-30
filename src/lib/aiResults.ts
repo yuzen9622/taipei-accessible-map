@@ -32,15 +32,27 @@ export function getLatLng(item: AnyRec | null | undefined): LatLng | null {
     const ln = toNum(lng);
     return la !== null && ln !== null ? { lat: la, lng: ln } : null;
   };
+  // GeoJSON 座標陣列為 [lng, lat]
+  const coords = (c: unknown): LatLng | null =>
+    Array.isArray(c) && c.length >= 2 ? pair(c[1], c[0]) : null;
 
   return (
     pair(item.geometry?.location?.lat, item.geometry?.location?.lng) ??
+    pair(
+      item.geometry?.location?.latitude,
+      item.geometry?.location?.longitude,
+    ) ??
     pair(item.location?.lat, item.location?.lng) ??
+    pair(item.location?.latitude, item.location?.longitude) ??
     pair(item.position?.lat, item.position?.lng) ??
+    pair(item.position?.latitude, item.position?.longitude) ??
     pair(item.lat, item.lng) ??
     pair(item.latitude, item.longitude) ??
     pair(item.lat, item.lon) ??
     pair(item.緯度, item.經度) ??
+    coords(item.location?.coordinates) ??
+    coords(item.geometry?.coordinates) ??
+    coords(item.coordinates) ??
     null
   );
 }

@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import useMapStore from "@/stores/useMapStore";
-import type { AiResultMarker } from "@/types";
+import type { AiResultMarker, LatLng } from "@/types";
 
 /**
  * 開啟 AI 工具結果的詳情：飛到該點、開對應面板、收合聊天視窗。
@@ -47,5 +47,16 @@ export default function useOpenAiResult() {
     ],
   );
 
-  return { openAiResult };
+  // 純粹飛到某個座標並收合聊天（給沒有專屬詳情面板的結果用，例如停車位、公車站）
+  const flyTo = useCallback(
+    (position: LatLng) => {
+      if (map) {
+        map.flyTo({ center: [position.lng, position.lat], zoom: 17 });
+      }
+      setChatOpen(false);
+    },
+    [map, setChatOpen],
+  );
+
+  return { openAiResult, flyTo };
 }
