@@ -36,7 +36,29 @@ export type ToolResultGroup = {
   note?: string;
 };
 
-const MAX_ITEMS = 20;
+const MAX_ITEMS = 30;
+
+// --- 列舉 → 中文標籤（對照 src/types/route.ts 的後端型別） ---
+const A11Y_CATEGORY_LABEL: Record<string, string> = {
+  wheelchair_accessible: "輪椅可通行",
+  kerb_cut: "緣石斜坡",
+  ramp: "無障礙坡道",
+  elevator: "電梯",
+  toilet: "無障礙廁所",
+};
+
+const HAZARD_TYPE_LABEL: Record<string, string> = {
+  obstacle: "障礙物",
+  construction: "施工",
+  data_error: "資料錯誤",
+};
+
+const HAZARD_STATUS_LABEL: Record<string, string> = {
+  pending: "待確認",
+  verified: "已確認",
+  rejected: "已否決",
+  expired: "已過期",
+};
 
 function isOk(res: AnyRec | null | undefined): res is AnyRec {
   if (!res || typeof res !== "object") return false;
@@ -55,6 +77,32 @@ function asArray(v: unknown): AnyRec[] {
   return Array.isArray(v) ? (v as AnyRec[]) : [];
 }
 
+/** 雙語名稱（TDX BilingualName）或純字串都能取出中文 */
+function localName(v: unknown): string | undefined {
+  if (typeof v === "string") return v.trim() || undefined;
+  if (v && typeof v === "object") {
+    const o = v as AnyRec;
+    return str(o.Zh_tw) || str(o.zh_tw) || str(o.En);
+  }
+  return undefined;
+}
+
+function isAffirmative(v: unknown): boolean {
+  return ["1", "true", "是", "y", "yes"].includes(
+    String(v ?? "")
+      .trim()
+      .toLowerCase(),
+  );
+}
+
+/** TDX EstimateTime 為秒，轉成易讀文字 */
+function fmtEtaSeconds(sec: unknown): string | undefined {
+  if (typeof sec !== "number" || !Number.isFinite(sec)) return undefined;
+  if (sec <= 0) return "進站中";
+  if (sec < 60) return "即將進站";
+  return `約 ${Math.round(sec / 60)} 分`;
+}
+
 function markersToItems(markers: AiResultMarker[]): ToolResultItem[] {
   return markers.map((m) => ({
     id: m.id,
@@ -65,7 +113,7 @@ function markersToItems(markers: AiResultMarker[]): ToolResultItem[] {
   }));
 }
 
-/** 把單純的地點陣列（含座標）轉成可點飛行的卡片 */
+/** 把含座標的陣列轉成可點飛行的卡片 */
 function locationItems(
   items: AnyRec[],
   opts: {
@@ -80,10 +128,9 @@ function locationItems(
   items.slice(0, MAX_ITEMS).forEach((it, i) => {
     const position = getLatLng(it);
     if (opts.requirePosition && !position) return;
-    const title = opts.title(it) || "項目";
     out.push({
-      id: `${opts.prefix}_${it.id ?? it._id ?? i}`,
-      title,
+      id: `${opts.prefix}_${it.id ?? it._id ?? it.osmId ?? i}`,
+      title: opts.title(it) || "項目",
       subtitle: opts.subtitle?.(it),
       badge: opts.badge?.(it),
       position,
@@ -117,28 +164,41 @@ export function getToolResultGroup(
         : null;
     }
 
+    // SlimOsmA11y[]: { osmId, name?, category(enum), wheelchair?, location: GeoPoint }
     case "getA11yFacilityDetails": {
       const items = locationItems(asArray(res.facilities), {
         prefix: "a11yfac",
-        title: (f) => str(f.name) || str(f.category) || "無障礙設施",
+        title: (f) =>
+          str(f.name) || A11Y_CATEGORY_LABEL[f.category] || str(f.category),
         subtitle: (f) =>
-          [str(f.category), str(f.wheelchair)].filter(Boolean).join(" · ") ||
-          undefined,
-        requirePosition: false,
+          [
+            A11Y_CATEGORY_LABEL[f.category] || str(f.category),
+            f.wheelchair === "yes"
+              ? "輪椅可通行"
+              : f.wheelchair === "limited"
+                ? "部分無障礙"
+                : undefined,
+          ]
+            .filter(Boolean)
+            .join(" · ") || undefined,
       });
       return items.length
         ? { heading: "無障礙設施詳情", icon: "a11y", items }
         : null;
     }
 
+    // DisabledParking[]: { placeName, quantity, latitude, longitude, city, district, spaceLabel, chargeType }
     case "findNearbyParking": {
       const items = locationItems(asArray(res.parkingSpots), {
         prefix: "parking",
-        title: (p) => str(p.name) || str(p.title) || "身障停車位",
-        subtitle: (p) => str(p.address) || str(p.description),
+        title: (p) => str(p.placeName) || str(p.name) || "身障停車位",
+        subtitle: (p) =>
+          [str(p.district) || str(p.city), str(p.spaceLabel)]
+            .filter(Boolean)
+            .join(" · ") || str(p.chargeType),
         badge: (p) => {
-          const avail = str(p.availableSpaces ?? p.available ?? p.remaining);
-          return avail != null ? `剩 ${avail}` : undefined;
+          const q = str(p.quantity ?? p.availableSpaces);
+          return q != null ? `${q} 位` : undefined;
         },
         requirePosition: true,
       });
@@ -153,13 +213,21 @@ export function getToolResultGroup(
         : null;
     }
 
+    // HazardReport[]: { hazardType, reportedLocation.coordinates, description, status, aiAnalysis.summary }
     case "getNearbyHazards": {
-      const reports = asArray(res.data?.reports ?? res.data ?? res.reports);
+      const reports = asArray(res.data?.reports ?? res.reports ?? res.data);
       const items = locationItems(reports, {
         prefix: "hazard",
         title: (r) =>
-          str(r.type) || str(r.category) || str(r.title) || "路況回報",
-        subtitle: (r) => str(r.description) || str(r.address) || str(r.status),
+          HAZARD_TYPE_LABEL[r.hazardType] ||
+          str(r.hazardType) ||
+          str(r.type) ||
+          "路況回報",
+        subtitle: (r) =>
+          str(r.description) ||
+          str(r.aiAnalysis?.summary) ||
+          HAZARD_STATUS_LABEL[r.status] ||
+          str(r.status),
         requirePosition: true,
       });
       return items.length
@@ -167,17 +235,21 @@ export function getToolResultGroup(
         : null;
     }
 
+    // LiveBus[]: { plateNumb, routeName, directionLabel, lat, lng, isLowFloor, hasLiftOrRamp, statusLabel, stopsAway }
     case "trackBuses": {
       const items = locationItems(asArray(res.buses), {
         prefix: "bus",
-        title: (b) =>
-          str(b.plateNumber) || str(b.plate) || str(b.routeName) || "公車",
+        title: (b) => str(b.plateNumb) || str(b.routeName) || "公車",
         subtitle: (b) =>
-          [str(b.routeName), str(b.direction ?? b.destination)]
+          [
+            str(b.routeName),
+            str(b.directionLabel),
+            b.stopsAway != null ? `還有 ${b.stopsAway} 站` : str(b.statusLabel),
+          ]
             .filter(Boolean)
-            .join(" → ") || undefined,
+            .join(" · ") || undefined,
         badge: (b) =>
-          b.isLowFloor || b.lowFloor || b.busType === "低地板"
+          isAffirmative(b.isLowFloor) || isAffirmative(b.hasLiftOrRamp)
             ? "低地板"
             : undefined,
         requirePosition: true,
@@ -200,31 +272,28 @@ export function getToolResultGroup(
         : null;
     }
 
+    // directions[].stops（TDX 形狀：StopName.Zh_tw、StopPosition、EstimateTime 秒）
     case "getBusRoute":
     case "getBusRouteDetail": {
       const dirs = asArray(res.directions);
       const stops: AnyRec[] = [];
       for (const d of dirs) {
-        for (const s of asArray(d.stops)) {
-          stops.push({ ...s, __dir: d.direction ?? d.destination });
-        }
+        const dirLabel =
+          localName(d.destination ?? d.DestinationStop) || str(d.direction);
+        for (const s of asArray(d.stops)) stops.push({ ...s, __dir: dirLabel });
       }
       const items = locationItems(stops, {
         prefix: "stop",
-        title: (s) => str(s.stopName) || str(s.name) || "站牌",
+        title: (s) =>
+          localName(s.StopName) || str(s.stopName) || str(s.name) || "站牌",
         subtitle: (s) => {
-          const eta = str(
-            s.eta ?? s.estimateTime ?? s.estimatedTime ?? s.arrivalTime,
-          );
-          return (
-            [str(s.__dir), eta != null ? `約 ${eta}` : null]
-              .filter(Boolean)
-              .join(" · ") || undefined
-          );
+          const etaRaw = s.EstimateTime ?? s.estimateTime ?? s.eta;
+          const eta =
+            typeof etaRaw === "number" ? fmtEtaSeconds(etaRaw) : str(etaRaw);
+          return [str(s.__dir), eta].filter(Boolean).join(" · ") || undefined;
         },
-        requirePosition: false,
       });
-      const routeName = str(res.routeName) || str(res.routeNo);
+      const routeName = localName(res.routeName) || str(res.routeNo);
       return items.length
         ? {
             heading: routeName ? `公車 ${routeName} 站牌` : "公車站牌",
@@ -242,16 +311,17 @@ export function getToolResultGroup(
           id: `sched_${i}`,
           title:
             str(s.time) ||
+            str(s.DepartureTime) ||
             str(s.departureTime) ||
-            str(s.firstBusTime) ||
+            str(s.ArrivalTime) ||
             "班次",
           subtitle:
-            [str(s.direction ?? s.destination), str(s.note)]
+            [localName(s.destination ?? s.DestinationStop), str(s.note)]
               .filter(Boolean)
               .join(" · ") || undefined,
         }))
         .filter((it) => it.title !== "班次" || it.subtitle);
-      const routeName = str(res.routeName);
+      const routeName = localName(res.routeName);
       return items.length
         ? {
             heading: routeName ? `公車 ${routeName} 時刻表` : "公車時刻表",
@@ -261,9 +331,10 @@ export function getToolResultGroup(
         : null;
     }
 
+    // getAirQuality 工具：{ pm25, quality, advice, coordinates, city, area }
     case "getAirQuality": {
       const pm25 = str(res.pm25);
-      const quality = str(res.quality);
+      const quality = str(res.quality) || str(res.description);
       const position = getLatLng(res.coordinates ?? res);
       const place = [str(res.city), str(res.area)].filter(Boolean).join(" ");
       if (pm25 == null && quality == null) return null;
@@ -276,66 +347,83 @@ export function getToolResultGroup(
             id: "air_0",
             title:
               pm25 != null ? `PM2.5 ${pm25} μg/m³` : (quality ?? "空氣品質"),
-            subtitle: quality,
+            subtitle: pm25 != null ? quality : undefined,
             position,
           },
         ],
       };
     }
 
+    // EnvironmentData: { weather{temperature,condition,...}, airQuality{description,quality}, cameras{items:[{name,url,distance}]} }
     case "getEnvironmentInfo": {
       const items: ToolResultItem[] = [];
       const w = res.weather as AnyRec | undefined;
-      if (w) {
+      if (w && w.status !== "unavailable") {
         const temp = str(w.temperature ?? w.temp);
-        const desc = str(w.description ?? w.weather ?? w.condition);
+        const desc = str(w.condition ?? w.description ?? w.weather);
         const title =
           [temp != null ? `${temp}°C` : null, desc].filter(Boolean).join(" ") ||
           "天氣";
+        const rain = str(w.precipitationProbability);
         items.push({
           id: "env_weather",
           title,
-          subtitle: str(w.humidity) ? `濕度 ${str(w.humidity)}%` : undefined,
+          subtitle: rain != null ? `降雨機率 ${rain}%` : undefined,
         });
       }
       const aq = res.airQuality as AnyRec | undefined;
-      if (aq) {
+      if (aq && aq.status !== "unavailable") {
         const pm25 = str(aq.pm25);
         items.push({
           id: "env_air",
-          title: pm25 != null ? `PM2.5 ${pm25}` : "空氣品質",
-          subtitle: str(aq.quality),
+          title:
+            pm25 != null
+              ? `PM2.5 ${pm25}`
+              : `空氣品質 ${str(aq.quality) ?? ""}`.trim(),
+          subtitle: str(aq.description),
           position: getLatLng(aq.coordinates ?? aq),
         });
       }
-      items.push(
-        ...locationItems(asArray(res.nearbyCctv), {
-          prefix: "cctv",
-          title: (c) => str(c.name) || str(c.title) || "即時影像",
-          subtitle: (c) => str(c.address) || str(c.road),
-          requirePosition: true,
-        }),
-      );
+      // cameras.items（EnvironmentData）或 nearbyCctv（工具別名）；多半無座標
+      const cams = asArray(res.cameras?.items ?? res.nearbyCctv);
+      cams.slice(0, MAX_ITEMS).forEach((c, i) => {
+        items.push({
+          id: `cctv_${i}`,
+          title: str(c.name) || str(c.title) || "即時影像",
+          subtitle:
+            c.distance != null
+              ? `約 ${Math.round(Number(c.distance))} m`
+              : str(c.address) || str(c.road),
+          position: getLatLng(c),
+        });
+      });
 
       return items.length
         ? { heading: "周邊環境資訊", icon: "env", items }
         : null;
     }
 
+    // NavInstruction[]: { text, type, relativeDirection, distanceM, streetName }（無座標）
     case "getNavInstructions": {
       const instructions = asArray(res.instructions);
       const items: ToolResultItem[] = instructions
         .slice(0, MAX_ITEMS)
-        .map((step, i) => ({
-          id: `nav_${i}`,
-          title:
-            str(step.instruction) ||
-            str(step.text) ||
-            str(step.description) ||
-            `第 ${i + 1} 步`,
-          subtitle: str(step.distance) || str(step.streetName),
-          position: getLatLng(step),
-        }));
+        .map((step, i) => {
+          const dist =
+            typeof step.distanceM === "number" && step.distanceM > 0
+              ? step.distanceM >= 1000
+                ? `${(step.distanceM / 1000).toFixed(1)} km`
+                : `${Math.round(step.distanceM)} m`
+              : undefined;
+          return {
+            id: `nav_${i}`,
+            title: str(step.text) || str(step.instruction) || `第 ${i + 1} 步`,
+            subtitle:
+              [str(step.relativeDirection), str(step.streetName), dist]
+                .filter(Boolean)
+                .join(" · ") || undefined,
+          };
+        });
       const total = str(res.totalSteps);
       return items.length
         ? {

@@ -50,7 +50,11 @@ export function getLatLng(item: AnyRec | null | undefined): LatLng | null {
     pair(item.latitude, item.longitude) ??
     pair(item.lat, item.lon) ??
     pair(item.緯度, item.經度) ??
+    pair(item.PositionLat, item.PositionLon) ??
+    pair(item.StopPosition?.PositionLat, item.StopPosition?.PositionLon) ??
+    pair(item.BusPosition?.PositionLat, item.BusPosition?.PositionLon) ??
     coords(item.location?.coordinates) ??
+    coords(item.reportedLocation?.coordinates) ??
     coords(item.geometry?.coordinates) ??
     coords(item.coordinates) ??
     null
@@ -141,14 +145,20 @@ export function a11yPlacesToMarkers(res: unknown): AiResultMarker[] {
   [...nearbyOsm, ...nearbyParking].forEach((item, i) => {
     const pos = getLatLng(item);
     if (!pos) return;
-    const title: string = item.name || item.tags?.name || "無障礙設施";
+    const title: string =
+      item.name || item.placeName || item.tags?.name || "無障礙設施";
     const marker: Marker = {
-      id: item.id ?? item._id ?? `a_${i}`,
+      id: item.id ?? item._id ?? item.osmId ?? `a_${i}`,
       position: pos,
       type: "pin",
       content: {
         title,
-        desc: item.address || item.type || item.tags?.amenity || "",
+        desc:
+          item.address ||
+          item.spaceLabel ||
+          item.tags?.amenity ||
+          item.type ||
+          "",
       },
       zIndex: 1,
       a11yType: A11yEnum.NONE,

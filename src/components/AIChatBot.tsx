@@ -256,7 +256,7 @@ export default function AIChatBot() {
     <div
       className={cn(
         "fixed flex items-end z-50",
-        "bottom-44 right-3 justify-end",
+        "bottom-48 right-3 justify-end",
         "lg:bottom-[80px] lg:right-auto lg:justify-start",
         sidebarCollapsed
           ? "lg:left-8"
