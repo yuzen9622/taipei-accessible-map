@@ -256,7 +256,7 @@ const useMapStore = create<MapStore>((set, get) => ({
       if (map) {
         map.easeTo({
           pitch: 60,
-          zoom: 17,
+          zoom: 18,
           center: userLocation
             ? [userLocation.lng, userLocation.lat]
             : undefined,

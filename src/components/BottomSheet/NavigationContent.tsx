@@ -23,7 +23,7 @@ import useNavStore from "@/stores/useNavStore";
 import { formatDistance, formatDuration, getLegColor } from "@/types/route";
 import { Button } from "../ui/button";
 
-const NAV_ZOOM = 17;
+const NAV_ZOOM = 20;
 const NAV_PITCH = 60;
 
 export default function NavigationContent() {
