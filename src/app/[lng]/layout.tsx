@@ -23,9 +23,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "無障礙台北 - Accessible Taipei",
+  title: "無障礙智慧地圖 - Accessible Smart Map",
   description:
-    "無障礙台北 - Accessible Taipei 一款專為無障礙設計的地圖，並且支援路線規劃，讓身障人士也能輕鬆找到適合自己的路線。",
+    "無障礙智慧地圖 - Accessible Smart Map 一款專為無障礙設計的地圖，並且支援路線規劃，讓身障人士也能輕鬆找到適合自己的路線。",
   icons: {
     icon: "/logo.ico",
   },

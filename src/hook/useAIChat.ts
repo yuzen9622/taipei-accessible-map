@@ -79,7 +79,7 @@ export default function useAIChat() {
       role: "assistant",
       content: t(
         "assistFirstMessage",
-        "你好！我是無障礙台北的 AI 助理，有什麼我能幫你的嗎？附近無障礙設施或者是問題回饋？請隨時提出！",
+        "你好！我是無障礙智慧地圖的 AI 助理，有什麼我能幫你的嗎？附近無障礙設施或者是問題回饋？請隨時提出！",
       ),
     },
   ]);
@@ -98,7 +98,7 @@ export default function useAIChat() {
   const chatHistory = useRef<ChatMessage[]>([
     {
       role: "system",
-      content: `你是「無障礙台北」的 AI 助理，專門協助使用者查詢無障礙相關資訊、路線規劃、附近設施。請使用${userConfig.language === "en" ? "英文" : "繁體中文"}回答。`,
+      content: `你是「無障礙智慧地圖」的 AI 助理，專門協助使用者查詢無障礙相關資訊、路線規劃、附近設施。請使用${userConfig.language === "en" ? "英文" : "繁體中文"}回答。`,
     },
   ]);
 

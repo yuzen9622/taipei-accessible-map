@@ -303,7 +303,7 @@ export default function BottomSheet() {
           <div className="flex items-center justify-between px-4 pb-2">
             <h1 className="text-base font-bold flex items-center gap-1.5">
               <Image src="/logo.webp" width={22} height={22} alt="" />{" "}
-              Accessible Taipei
+              {t("title")}
             </h1>
             <AccountLogin />
           </div>
@@ -344,7 +344,7 @@ export default function BottomSheet() {
               src="/logo.webp"
               width={28}
               height={28}
-              alt="Accessible Taipei"
+              alt="Accessible Smart Map"
             />
           </div>
 
