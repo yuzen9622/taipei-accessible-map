@@ -83,13 +83,12 @@ export default function NavigationContent() {
   };
 
   const handleRecenter = () => {
-    const map = useMapStore.getState().map;
-    const loc = useMapStore.getState().userLocation;
+    const { map, userLocation: loc, is3D } = useMapStore.getState();
     if (map && loc) {
       map.easeTo({
         center: [loc.lng, loc.lat],
         zoom: NAV_ZOOM,
-        pitch: NAV_PITCH,
+        pitch: is3D ? NAV_PITCH : 0,
         duration: 500,
       });
     }

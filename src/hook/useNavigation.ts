@@ -228,7 +228,7 @@ export default function useNavigation() {
         map.easeTo({
           center: [loc.lng, loc.lat],
           bearing: smoothed != null ? smoothed : map.getBearing(),
-          pitch: NAV_PITCH,
+          pitch: useMapStore.getState().is3D ? NAV_PITCH : 0,
           duration: CAMERA_THROTTLE_MS,
         });
         lastCamTs = now;

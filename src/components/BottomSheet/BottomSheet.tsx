@@ -120,6 +120,8 @@ export default function BottomSheet() {
     setRouteSelect,
     setInfoShow,
     setSearchPlace,
+    isNavigating,
+    setIsNavigating,
     map,
   } = useMapStore();
   const [snap, setSnap] = useState<"peek" | "half" | "full">("half");
@@ -209,6 +211,9 @@ export default function BottomSheet() {
 
   const handleRailClick = useCallback(
     (panel: RailPanel) => {
+      // Leaving the navigation panel must also stop the nav engine, otherwise
+      // the camera keeps chasing the user behind the newly opened panel.
+      if (isNavigating) setIsNavigating(false);
       if (panel === "route") {
         setSheetMode("plan");
         return;
@@ -240,10 +245,13 @@ export default function BottomSheet() {
       setRouteSelect,
       setInfoShow,
       setSearchPlace,
+      isNavigating,
+      setIsNavigating,
     ],
   );
 
   const handlePanelClose = useCallback(() => {
+    if (isNavigating) setIsNavigating(false);
     if (modePanelActive) {
       setSheetMode("home");
       setActiveRailPanel("search");
@@ -264,6 +272,8 @@ export default function BottomSheet() {
     setRouteSelect,
     setInfoShow,
     setSearchPlace,
+    isNavigating,
+    setIsNavigating,
   ]);
 
   return (

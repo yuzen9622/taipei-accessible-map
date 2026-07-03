@@ -56,6 +56,7 @@ interface MapState {
   destinationName: string;
   sheetMode: SheetMode;
   isNavigating: boolean;
+  is3D: boolean;
   sidebarCollapsed: boolean;
   activeRailPanel: RailPanel;
   chatOpen: boolean;
@@ -96,6 +97,7 @@ interface MapAction {
   closeRouteDrawer: () => void;
   setSheetMode: (mode: SheetMode) => void;
   setIsNavigating: (v: boolean) => void;
+  setIs3D: (v: boolean) => void;
   setSidebarCollapsed: (v: boolean) => void;
   setActiveRailPanel: (panel: RailPanel) => void;
   setChatOpen: (v: boolean) => void;
@@ -256,7 +258,7 @@ const useMapStore = create<MapStore>((set, get) => ({
   setIsNavigating: (v) => {
     const { map, userLocation } = get();
     if (v) {
-      set({ isNavigating: true, sheetMode: "navigation" });
+      set({ isNavigating: true, sheetMode: "navigation", is3D: true });
       if (map) {
         map.easeTo({
           pitch: 60,
@@ -268,10 +270,20 @@ const useMapStore = create<MapStore>((set, get) => ({
         });
       }
     } else {
-      set({ isNavigating: false, sheetMode: "route" });
+      set({ isNavigating: false, sheetMode: "route", is3D: false });
       if (map) {
         map.easeTo({ pitch: 0, bearing: 0, duration: 1000 });
       }
+    }
+  },
+  is3D: false,
+  setIs3D: (v) => {
+    set({ is3D: v });
+    const { map, isNavigating } = get();
+    // While navigating the camera loop applies pitch every tick; easing here
+    // would fight it, so only drive the camera directly outside navigation.
+    if (map && !isNavigating) {
+      map.easeTo({ pitch: v ? 60 : 0, duration: 600 });
     }
   },
   closeRouteDrawer: () => {
