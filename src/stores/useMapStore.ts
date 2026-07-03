@@ -280,10 +280,12 @@ const useMapStore = create<MapStore>((set, get) => ({
   setIs3D: (v) => {
     set({ is3D: v });
     const { map, isNavigating } = get();
-    // While navigating the camera loop applies pitch every tick; easing here
-    // would fight it, so only drive the camera directly outside navigation.
+    // While navigating the camera loop applies pitch/bearing every tick;
+    // easing here would fight it, so only drive the camera outside navigation.
+    // 2D means a flat, north-up plane — reset bearing along with pitch.
     if (map && !isNavigating) {
-      map.easeTo({ pitch: v ? 60 : 0, duration: 600 });
+      if (v) map.easeTo({ pitch: 60, duration: 600 });
+      else map.easeTo({ pitch: 0, bearing: 0, duration: 600 });
     }
   },
   closeRouteDrawer: () => {

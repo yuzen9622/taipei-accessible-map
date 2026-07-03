@@ -225,10 +225,13 @@ export default function useNavigation() {
       }
 
       if (loc && now - lastCamTs > CAMERA_THROTTLE_MS) {
+        // 3D: heading-up tilted follow. 2D: flat north-up plane, still
+        // centered on the user.
+        const is3D = useMapStore.getState().is3D;
         map.easeTo({
           center: [loc.lng, loc.lat],
-          bearing: smoothed != null ? smoothed : map.getBearing(),
-          pitch: useMapStore.getState().is3D ? NAV_PITCH : 0,
+          bearing: is3D ? (smoothed != null ? smoothed : map.getBearing()) : 0,
+          pitch: is3D ? NAV_PITCH : 0,
           duration: CAMERA_THROTTLE_MS,
         });
         lastCamTs = now;

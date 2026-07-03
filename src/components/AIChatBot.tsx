@@ -256,8 +256,9 @@ export default function AIChatBot() {
     <div
       className={cn(
         "fixed flex items-end z-50",
-        "bottom-48 right-3 justify-end",
-        "lg:bottom-[80px] lg:right-auto lg:justify-start",
+        // Sits above the 2D/3D + locate button stack (two 44px buttons + gap)
+        "bottom-[232px] right-3 justify-end",
+        "lg:bottom-[124px] lg:right-auto lg:justify-start",
         sidebarCollapsed
           ? "lg:left-8"
           : panelOpen
