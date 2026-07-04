@@ -1,112 +1,38 @@
 "use client";
 
-import {
-  AlertTriangle,
-  CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
-  Footprints,
-  LocateFixed,
-  Navigation,
-  RefreshCw,
-  Square,
-  TramFront,
-  Volume2,
-  VolumeX,
-} from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
-import useComputeRoute from "@/hook/useComputeRoute";
+import { CheckCircle2, Footprints, Square, TramFront } from "lucide-react";
+import { useEffect, useRef } from "react";
 import { useAppTranslation } from "@/i18n/client";
+import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import useNavStore from "@/stores/useNavStore";
-import { formatDistance, formatDuration, getLegColor } from "@/types/route";
+import { formatDistance } from "@/types/route";
 import { Button } from "../ui/button";
 
-const NAV_ZOOM = 20;
-const NAV_PITCH = 60;
-
+/**
+ * Step list shown while navigating (the live banner/ETA moved to the on-map
+ * NavigationHUD). Opened from the HUD's list button; tapping a step manually
+ * overrides the engine's auto-advance.
+ */
 export default function NavigationContent() {
-  const { t, i18n } = useAppTranslation();
-  const { selectRoute, setIsNavigating, destination } = useMapStore();
-  const { handleComputeRoute, isLoading } = useComputeRoute();
+  const { t } = useAppTranslation();
+  const { setIsNavigating } = useMapStore();
 
-  // Runtime nav state lives in useNavStore (written by the engine). Subscribe
-  // with selectors so this panel only re-renders on the slices it shows.
   const instructions = useNavStore((s) => s.instructions);
   const currentStep = useNavStore((s) => s.currentStepIndex);
-  const distanceToNextM = useNavStore((s) => s.distanceToNextM);
-  const isOffRoute = useNavStore((s) => s.isOffRoute);
   const arrived = useNavStore((s) => s.arrived);
   const setStepIndex = useNavStore((s) => s.setStepIndex);
 
-  const route = selectRoute?.route;
-  const currentLeg = route?.legs[0];
+  const currentRef = useRef<HTMLButtonElement | null>(null);
 
-  const [voiceEnabled, setVoiceEnabled] = useState(false);
-  const synthRef = useRef<SpeechSynthesis | null>(null);
-
+  // Keep the active step in view as the engine advances.
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      synthRef.current = window.speechSynthesis;
-    }
+    currentRef.current?.scrollIntoView({
+      block: "nearest",
+      behavior: "smooth",
+    });
   }, []);
 
-  const speak = useCallback(
-    (text: string) => {
-      if (!voiceEnabled || !synthRef.current) return;
-      synthRef.current.cancel();
-      const utter = new SpeechSynthesisUtterance(text);
-      utter.lang = i18n.language === "zh-TW" ? "zh-TW" : "en-US";
-      utter.rate = 0.9;
-      synthRef.current.speak(utter);
-    },
-    [voiceEnabled, i18n.language],
-  );
-
-  // Announce whenever the active step changes (auto-advance or manual).
-  useEffect(() => {
-    const step = instructions[currentStep];
-    if (step) speak(step.text);
-  }, [currentStep, instructions, speak]);
-
-  // Announce arrival once.
-  useEffect(() => {
-    if (arrived) speak(t("arrivedDesc"));
-  }, [arrived, speak, t]);
-
-  const toggleVoice = () => {
-    const next = !voiceEnabled;
-    setVoiceEnabled(next);
-    toast.success(next ? t("voiceNavOn") : t("voiceNavOff"));
-    if (!next && synthRef.current) synthRef.current.cancel();
-  };
-
-  const handleRecenter = () => {
-    const { map, userLocation: loc, is3D } = useMapStore.getState();
-    if (map && loc) {
-      map.easeTo({
-        center: [loc.lng, loc.lat],
-        zoom: NAV_ZOOM,
-        pitch: is3D ? NAV_PITCH : 0,
-        duration: 500,
-      });
-    }
-  };
-
-  const handleRecalculate = () => {
-    if (!destination) {
-      toast.error(t("recalculateFailed"));
-      return;
-    }
-    // Omit origin → useComputeRoute uses the current GPS location as the start.
-    // A new routeId makes the engine reload instructions and resume navigating.
-    handleComputeRoute({ destination: destination.position });
-  };
-
-  const step = instructions[currentStep];
-
-  // --- Arrived ---
   if (arrived) {
     return (
       <div className="space-y-4">
@@ -128,175 +54,73 @@ export default function NavigationContent() {
     );
   }
 
+  if (instructions.length === 0) {
+    return (
+      <p className="text-sm text-muted-foreground text-center py-8">
+        {t("preparingNav")}
+      </p>
+    );
+  }
+
   return (
-    <div className="space-y-3">
-      {/* Voice toggle + step counter + recenter */}
-      <div className="flex items-center justify-between">
-        <button
-          type="button"
-          onClick={toggleVoice}
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-            voiceEnabled
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted/60 text-muted-foreground"
-          }`}
-        >
-          {voiceEnabled ? (
-            <Volume2 className="h-3.5 w-3.5" />
-          ) : (
-            <VolumeX className="h-3.5 w-3.5" />
-          )}
-          {t("voiceNav")}
-        </button>
-        <div className="flex items-center gap-2">
-          {instructions.length > 0 && (
-            <span className="text-xs text-muted-foreground">
-              {t("stepOf", {
-                current: currentStep + 1,
-                total: instructions.length,
-              })}
-            </span>
-          )}
+    <div className="space-y-1.5">
+      {instructions.map((step, i) => {
+        const active = i === currentStep;
+        const passed = i < currentStep;
+        return (
           <button
+            key={`${i}-${step.text}`}
+            ref={active ? currentRef : undefined}
             type="button"
-            onClick={handleRecenter}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-full text-xs font-medium bg-muted/60 text-muted-foreground hover:bg-muted transition-colors"
+            onClick={() => setStepIndex(i)}
+            className={cn(
+              "w-full flex items-start gap-3 p-3 rounded-xl text-left transition-colors",
+              active
+                ? "bg-primary/10 border border-primary/30"
+                : "hover:bg-muted/60 border border-transparent",
+              passed && "opacity-50",
+            )}
           >
-            <LocateFixed className="h-3.5 w-3.5" />
-            {t("recenter")}
-          </button>
-        </div>
-      </div>
-
-      {/* Off-route banner */}
-      {isOffRoute && (
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-          <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-amber-700 dark:text-amber-400">
-              {t("offRoute")}
-            </p>
-          </div>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={isLoading}
-            onClick={handleRecalculate}
-            className="rounded-xl gap-1 shrink-0"
-          >
-            <RefreshCw
-              className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
-            />
-            {t("recalculate")}
-          </Button>
-        </div>
-      )}
-
-      {/* Current instruction */}
-      {step ? (
-        <div className="p-4 rounded-xl bg-primary/5 border border-primary/10">
-          <div className="flex items-start gap-3">
             <div
-              className="h-10 w-10 rounded-full flex items-center justify-center shrink-0 mt-0.5"
-              style={{
-                backgroundColor: `${getLegColor(route?.legs[0] ?? ({ type: "WALK" } as never))}20`,
-              }}
-            >
-              {step.legType === "WALK" ? (
-                <Footprints className="h-5 w-5 text-blue-500" />
-              ) : (
-                <TramFront className="h-5 w-5 text-orange-500" />
+              className={cn(
+                "h-7 w-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold",
+                active
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground",
               )}
+            >
+              {i + 1}
             </div>
             <div className="flex-1 min-w-0">
-              {/* Live remaining distance to this maneuver */}
-              {distanceToNextM != null && (
-                <p className="text-2xl font-bold leading-none mb-1">
-                  {formatDistance(distanceToNextM)}
-                </p>
-              )}
-              <p className="text-sm font-semibold leading-snug">{step.text}</p>
-              <div className="flex items-center gap-2 mt-1 flex-wrap">
-                {step.relativeDirection && (
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
-                    {step.relativeDirection}
-                  </span>
+              <p
+                className={cn(
+                  "text-sm leading-snug",
+                  active ? "font-semibold" : "font-medium",
+                )}
+              >
+                {step.text}
+              </p>
+              <div className="flex items-center gap-2 mt-0.5">
+                {step.legType === "WALK" ? (
+                  <Footprints className="h-3 w-3 text-blue-500" />
+                ) : (
+                  <TramFront className="h-3 w-3 text-orange-500" />
                 )}
                 {step.streetName && (
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-xs text-muted-foreground truncate">
                     {step.streetName}
+                  </span>
+                )}
+                {step.distanceM != null && (
+                  <span className="text-xs text-muted-foreground tabular-nums">
+                    {formatDistance(step.distanceM)}
                   </span>
                 )}
               </div>
             </div>
-          </div>
-        </div>
-      ) : currentLeg ? (
-        // Fallback while instructions are still loading.
-        <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/5 border border-primary/10">
-          <div
-            className="h-10 w-10 rounded-full flex items-center justify-center shrink-0"
-            style={{ backgroundColor: `${getLegColor(currentLeg)}20` }}
-          >
-            {currentLeg.type === "WALK" ? (
-              <Footprints
-                className="h-5 w-5"
-                style={{ color: getLegColor(currentLeg) }}
-              />
-            ) : (
-              <TramFront
-                className="h-5 w-5"
-                style={{ color: getLegColor(currentLeg) }}
-              />
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold">{t("preparingNav")}</p>
-            <p className="text-xs text-muted-foreground">
-              {route ? formatDuration(route.totalMinutes) : ""}
-            </p>
-          </div>
-          <Navigation className="h-5 w-5 text-primary shrink-0" />
-        </div>
-      ) : null}
-
-      {/* Manual step override */}
-      {instructions.length > 1 && (
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={currentStep === 0}
-            onClick={() => setStepIndex(Math.max(0, currentStep - 1))}
-            className="flex-1 rounded-xl gap-1"
-          >
-            <ChevronLeft className="h-4 w-4" />
-            {t("prevStep")}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={currentStep >= instructions.length - 1}
-            onClick={() =>
-              setStepIndex(Math.min(instructions.length - 1, currentStep + 1))
-            }
-            className="flex-1 rounded-xl gap-1"
-          >
-            {t("nextStep")}
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
-
-      {/* End Navigation */}
-      <Button
-        onClick={() => setIsNavigating(false)}
-        variant="destructive"
-        className="w-full rounded-xl h-11 gap-2"
-      >
-        <Square className="h-4 w-4" />
-        {t("endNav")}
-      </Button>
+          </button>
+        );
+      })}
     </div>
   );
 }

@@ -303,5 +303,13 @@
   "resumeFollow": "回到導航",
   "customize": "自訂",
   "done": "完成",
-  "customizeHint": "點選項目以加入或移除快捷功能"
+  "customizeHint": "點選項目以加入或移除快捷功能",
+  "then": "接著",
+  "end": "結束",
+  "stepList": "步驟列表",
+  "minutesLeft": "{{count}} 分",
+  "etaArrive": "預計 {{time}} 抵達",
+  "facilityAhead": "前方 {{distance}} 有無障礙{{name}}可使用",
+  "hazardAhead": "前方 {{distance}} 有{{type}}回報",
+  "viewAlternative": "查看替代路線"
 }

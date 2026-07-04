@@ -23,6 +23,7 @@ import { useAppTranslation } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 import type { RailPanel } from "@/stores/useMapStore";
 import useMapStore from "@/stores/useMapStore";
+import useNavStore from "@/stores/useNavStore";
 import A11yPanel from "./A11yPanel";
 import BusPanel from "./BusPanel";
 import EnvironmentPanel from "./EnvironmentPanel";
@@ -130,9 +131,11 @@ export default function BottomSheet() {
     setSearchPlace,
     isNavigating,
     setIsNavigating,
-    map,
   } = useMapStore();
-  const [snap, setSnap] = useState<"peek" | "half" | "full">("half");
+  const stepListOpen = useNavStore((s) => s.stepListOpen);
+  const setStepListOpen = useNavStore((s) => s.setStepListOpen);
+  // Only the setter is needed — the sheet height drives the layout.
+  const [, setSnap] = useState<"peek" | "half" | "full">("half");
   const [sheetHeight, setSheetHeight] = useState(SNAP_POINTS.half);
   const [isDragging, setIsDragging] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -169,6 +172,14 @@ export default function BottomSheet() {
       setMoreOpen(false);
     }
   }, [modePanelActive]);
+
+  // Opening the step list mid-navigation lifts the mobile sheet to half.
+  useEffect(() => {
+    if (isNavigating && stepListOpen) {
+      setSnap("half");
+      setSheetHeight(SNAP_POINTS.half);
+    }
+  }, [isNavigating, stepListOpen]);
 
   const snapToNearest = useCallback((ratio: number) => {
     const points = [SNAP_POINTS.peek, SNAP_POINTS.half, SNAP_POINTS.full];
@@ -279,7 +290,12 @@ export default function BottomSheet() {
   );
 
   const handlePanelClose = useCallback(() => {
-    if (isNavigating) setIsNavigating(false);
+    // Mid-navigation the panel is just the step list — closing it must not
+    // end navigation.
+    if (isNavigating) {
+      setStepListOpen(false);
+      return;
+    }
     if (modePanelActive) {
       setSheetMode("home");
       setActiveRailPanel("search");
@@ -301,13 +317,22 @@ export default function BottomSheet() {
     setInfoShow,
     setSearchPlace,
     isNavigating,
-    setIsNavigating,
+    setStepListOpen,
   ]);
+
+  // Map-first navigation: the HUD owns the screen; the sheet/panel only
+  // reappears as the step list when requested from the HUD.
+  const navHidesChrome = isNavigating && !stepListOpen;
 
   return (
     <>
       {/* ======= Mobile: Bottom Sheet (unchanged) ======= */}
-      <div className="block lg:hidden fixed inset-x-0 bottom-0 z-40 pointer-events-none">
+      <div
+        className={cn(
+          "block lg:hidden fixed inset-x-0 bottom-0 z-40 pointer-events-none",
+          navHidesChrome && "hidden",
+        )}
+      >
         <motion.div
           ref={containerRef}
           className="pointer-events-auto bg-background rounded-t-3xl shadow-2xl border-t border-border/50 flex flex-col overflow-hidden"
@@ -356,10 +381,14 @@ export default function BottomSheet() {
 
       {/* ======= Desktop: Dual-layer sidebar ======= */}
       <div className="hidden lg:block fixed inset-0 z-40 pointer-events-none">
-        {/* --- Layer 1: Icon Rail (always visible; collapse only hides Layer 2) --- */}
+        {/* --- Layer 1: Icon Rail (always visible; collapse only hides Layer 2,
+             navigation hands the whole screen to the HUD) --- */}
         <nav
           aria-label={t("quickActions")}
-          className="pointer-events-auto fixed left-3 top-3 bottom-3 w-[56px] bg-background/95 backdrop-blur-md rounded-2xl shadow-xl border border-border/50 flex flex-col items-center py-3 gap-1 z-50"
+          className={cn(
+            "pointer-events-auto fixed left-3 top-3 bottom-3 w-[56px] bg-background/95 backdrop-blur-md rounded-2xl shadow-xl border border-border/50 flex flex-col items-center py-3 gap-1 z-50",
+            isNavigating && "hidden",
+          )}
         >
           {/* Logo */}
           <div className="flex items-center justify-center h-10 w-10 mb-2">
@@ -479,12 +508,17 @@ export default function BottomSheet() {
 
         {/* --- Layer 2: Content Panel --- */}
         <AnimatePresence>
-          {!collapsed && panelOpen && (
+          {(isNavigating ? stepListOpen : !collapsed && panelOpen) && (
             <motion.div
               key="desktop-panel"
               role="region"
               aria-label={t("title")}
-              className="pointer-events-auto fixed left-[68px] top-3 bottom-3 w-[380px] bg-background/95 backdrop-blur-md rounded-2xl shadow-2xl border border-border/50 flex flex-col overflow-hidden z-40"
+              className={cn(
+                "pointer-events-auto fixed bottom-3 w-[380px] bg-background/95 backdrop-blur-md rounded-2xl shadow-2xl border border-border/50 flex flex-col overflow-hidden z-40",
+                // The rail is hidden mid-navigation and the HUD banner owns
+                // the top strip, so the step list hugs the left edge below it.
+                isNavigating ? "left-3 top-[140px]" : "left-[68px] top-3",
+              )}
               initial={{ x: -400, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               exit={{ x: -400, opacity: 0 }}
@@ -533,6 +567,7 @@ export default function BottomSheet() {
             "bg-background border border-border/50 shadow-lg rounded-r-lg border-l-0",
             "hover:bg-muted hover:shadow-xl transition-all duration-300",
             !collapsed && panelOpen ? "left-[456px]" : "left-[64px]",
+            isNavigating && "hidden",
           )}
         >
           {collapsed ? (
@@ -572,7 +607,7 @@ function PanelTitle() {
         return (
           <>
             <Navigation className="h-4 w-4 text-blue-500" />{" "}
-            {t("startNavigation")}
+            {t("navInstructions")}
           </>
         );
       case "station":

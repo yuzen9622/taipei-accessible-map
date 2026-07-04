@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, Share2 } from "lucide-react";
+import { Copy, LocateFixed, Share2, Volume2, VolumeX } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -14,6 +14,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useAppTranslation } from "@/i18n/client";
 import useMapStore from "@/stores/useMapStore";
+import useNavStore from "@/stores/useNavStore";
 
 const SOS_HOLD_MS = 3000;
 
@@ -149,21 +150,24 @@ export default function ShareLocation() {
     setOpen(true);
   }, [userLocation, t]);
 
-  if (isNavigating) return null;
-
   return (
     <>
-      {/* Right-edge action stack */}
+      {/* Right-edge action stack. Mid-navigation the share FAB gives way to
+          the HUD's voice + recenter controls; SOS stays reachable. */}
       {/* Mobile sits above the half-open bottom sheet; desktop centers on the map. */}
-      <div className="absolute right-3 top-[38%] lg:top-1/2 -translate-y-1/2 z-20 flex flex-col items-center gap-2 pointer-events-auto">
-        <button
-          type="button"
-          onClick={openShare}
-          aria-label={t("shareLocation")}
-          className="h-11 w-11 rounded-full bg-background/90 backdrop-blur-sm border border-border/50 shadow-lg hover:bg-muted hover:shadow-xl transition-all flex flex-col items-center justify-center text-primary"
-        >
-          <Share2 className="h-5 w-5" />
-        </button>
+      <div className="absolute right-3 top-[38%] lg:top-1/2 -translate-y-1/2 z-30 flex flex-col items-center gap-2 pointer-events-auto">
+        {isNavigating ? (
+          <NavSideControls />
+        ) : (
+          <button
+            type="button"
+            onClick={openShare}
+            aria-label={t("shareLocation")}
+            className="h-11 w-11 rounded-full bg-background/90 backdrop-blur-sm border border-border/50 shadow-lg hover:bg-muted hover:shadow-xl transition-all flex flex-col items-center justify-center text-primary"
+          >
+            <Share2 className="h-5 w-5" />
+          </button>
+        )}
         <motion.button
           type="button"
           aria-label={`SOS ${t("sosHold")}`}
@@ -282,6 +286,63 @@ export default function ShareLocation() {
           </div>
         </DialogContent>
       </Dialog>
+    </>
+  );
+}
+
+// Voice + recenter shortcuts shown in place of the share FAB while navigating.
+function NavSideControls() {
+  const { t } = useAppTranslation();
+  const voiceEnabled = useNavStore((s) => s.voiceEnabled);
+  const setVoiceEnabled = useNavStore((s) => s.setVoiceEnabled);
+  const setFollowPaused = useNavStore((s) => s.setFollowPaused);
+
+  const toggleVoice = () => {
+    const next = !voiceEnabled;
+    setVoiceEnabled(next);
+    toast.success(next ? t("voiceNavOn") : t("voiceNavOff"));
+  };
+
+  const recenter = () => {
+    setFollowPaused(false);
+    const { map, userLocation: loc, is3D } = useMapStore.getState();
+    if (map && loc) {
+      map.easeTo({
+        center: [loc.lng, loc.lat],
+        zoom: 18,
+        pitch: is3D ? 60 : 0,
+        duration: 500,
+      });
+    }
+  };
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={toggleVoice}
+        aria-label={t("voiceNav")}
+        aria-pressed={voiceEnabled}
+        className={`h-11 w-11 rounded-full backdrop-blur-sm border shadow-lg hover:shadow-xl transition-all flex items-center justify-center ${
+          voiceEnabled
+            ? "bg-primary text-primary-foreground border-primary/50"
+            : "bg-background/90 text-muted-foreground border-border/50 hover:bg-muted"
+        }`}
+      >
+        {voiceEnabled ? (
+          <Volume2 className="h-5 w-5" />
+        ) : (
+          <VolumeX className="h-5 w-5" />
+        )}
+      </button>
+      <button
+        type="button"
+        onClick={recenter}
+        aria-label={t("recenter")}
+        className="h-11 w-11 rounded-full bg-background/90 backdrop-blur-sm border border-border/50 shadow-lg hover:bg-muted hover:shadow-xl transition-all flex items-center justify-center text-foreground"
+      >
+        <LocateFixed className="h-5 w-5" />
+      </button>
     </>
   );
 }

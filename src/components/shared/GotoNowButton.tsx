@@ -8,9 +8,18 @@ import { Button } from "../ui/button";
 
 export default function GotoNowButton() {
   const { handlePinClick } = usePin();
-  const { userLocation, sidebarCollapsed, activeRailPanel, is3D, setIs3D } =
-    useMapStore();
+  const {
+    userLocation,
+    sidebarCollapsed,
+    activeRailPanel,
+    is3D,
+    setIs3D,
+    isNavigating,
+  } = useMapStore();
   const panelOpen = activeRailPanel !== "none";
+
+  // The navigation HUD has its own recenter control.
+  if (isNavigating) return null;
 
   return (
     <div

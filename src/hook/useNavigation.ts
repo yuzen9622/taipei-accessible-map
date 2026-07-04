@@ -77,6 +77,9 @@ export default function useNavigation() {
           pathRef.current = cp;
           waypointsRef.current = resolveWaypoints(res.data.instructions, cp);
           useNavStore.getState().setInstructions(res.data.instructions);
+          useNavStore
+            .getState()
+            .setRouteTotalM(cp.cumM[cp.cumM.length - 1] ?? null);
           if (process.env.NODE_ENV !== "production") {
             // Verify polylineIndex → coordinate mapping against real data.
             console.debug(
@@ -136,6 +139,10 @@ export default function useNavigation() {
     nav.setDistanceToNextM(
       target ? Math.max(0, target.alongM - proj.alongM) : null,
     );
+
+    // Whole-route progress for the ETA status bar.
+    const totalM = cp.cumM[cp.cumM.length - 1] ?? 0;
+    nav.setRemainingM(Math.max(0, totalM - proj.alongM));
 
     // Arrival: close to the final maneuver point.
     const finalWp = wps[wps.length - 1];

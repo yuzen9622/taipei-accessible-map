@@ -27,6 +27,14 @@ interface NavState {
   lastManualTs: number;
   /** True after the user drags the map mid-navigation; camera-follow pauses. */
   followPaused: boolean;
+  /** Meters left along the whole route (written by the engine). */
+  remainingM: number | null;
+  /** Total route length in meters (set when instructions load). */
+  routeTotalM: number | null;
+  /** TTS announcements on step changes. */
+  voiceEnabled: boolean;
+  /** Step-list panel visibility while the nav HUD owns the screen. */
+  stepListOpen: boolean;
 }
 
 interface NavAction {
@@ -41,6 +49,10 @@ interface NavAction {
   setArrived: (v: boolean) => void;
   setCompassPermission: (p: CompassPermission) => void;
   setFollowPaused: (v: boolean) => void;
+  setRemainingM: (m: number | null) => void;
+  setRouteTotalM: (m: number | null) => void;
+  setVoiceEnabled: (v: boolean) => void;
+  setStepListOpen: (v: boolean) => void;
   reset: () => void;
 }
 
@@ -58,6 +70,10 @@ const initialState: NavState = {
   compassPermission: "unknown",
   lastManualTs: 0,
   followPaused: false,
+  remainingM: null,
+  routeTotalM: null,
+  voiceEnabled: false,
+  stepListOpen: false,
 };
 
 const useNavStore = create<NavStore>((set) => ({
@@ -80,6 +96,10 @@ const useNavStore = create<NavStore>((set) => ({
   setArrived: (arrived) => set({ arrived }),
   setCompassPermission: (compassPermission) => set({ compassPermission }),
   setFollowPaused: (followPaused) => set({ followPaused }),
+  setRemainingM: (remainingM) => set({ remainingM }),
+  setRouteTotalM: (routeTotalM) => set({ routeTotalM }),
+  setVoiceEnabled: (voiceEnabled) => set({ voiceEnabled }),
+  setStepListOpen: (stepListOpen) => set({ stepListOpen }),
   // Keep the iOS compass-permission grant across navigation sessions.
   reset: () =>
     set((s) => ({ ...initialState, compassPermission: s.compassPermission })),

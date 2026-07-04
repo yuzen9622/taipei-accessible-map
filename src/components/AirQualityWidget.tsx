@@ -115,7 +115,7 @@ function Metric({
 
 export default function AirQualityWidget() {
   const { t, i18n } = useAppTranslation();
-  const { userLocation } = useMapStore();
+  const { userLocation, isNavigating } = useMapStore();
   const [data, setData] = useState<EnvironmentData | null>(null);
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
@@ -141,6 +141,8 @@ export default function AirQualityWidget() {
     return () => clearInterval(interval);
   }, [fetchEnvironment]);
 
+  // The navigation HUD owns the screen while navigating.
+  if (isNavigating) return null;
   if (!data && !loading) return null;
 
   const air = data?.airQuality.status === "ok" ? data.airQuality : null;

@@ -217,7 +217,7 @@ function MessageBubble({ message }: { message: ChatBubble }) {
 
 export default function AIChatBot() {
   const { t } = useAppTranslation();
-  const { sidebarCollapsed, activeRailPanel } = useMapStore();
+  const { sidebarCollapsed, activeRailPanel, isNavigating } = useMapStore();
   const panelOpen = activeRailPanel !== "none";
   const {
     messages,
@@ -251,6 +251,9 @@ export default function AIChatBot() {
       handleSend(input);
     }
   };
+
+  // The navigation HUD owns the screen while navigating.
+  if (isNavigating) return null;
 
   return (
     <div

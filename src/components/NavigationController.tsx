@@ -5,12 +5,12 @@ import { AnimatePresence, motion } from "motion/react";
 import useNavigation from "@/hook/useNavigation";
 import { useAppTranslation } from "@/i18n/client";
 import useNavStore from "@/stores/useNavStore";
+import NavigationHUD from "./Navigation/NavigationHUD";
 
 /**
- * Driver for the turn-by-turn engine. Rendered (by ClientMap) only while
- * navigation is active, so mount = nav start and unmount = nav end. Runs the
- * engine; the only UI it owns is the "resume follow" pill that appears after
- * the user drags the map away mid-navigation.
+ * Driver for the turn-by-turn engine plus the map-first navigation chrome
+ * (instruction banner, ETA bar, proximity pills). Rendered (by ClientMap) only
+ * while navigation is active, so mount = nav start and unmount = nav end.
  */
 export default function NavigationController() {
   useNavigation();
@@ -19,20 +19,23 @@ export default function NavigationController() {
   const setFollowPaused = useNavStore((s) => s.setFollowPaused);
 
   return (
-    <AnimatePresence>
-      {followPaused && (
-        <motion.button
-          type="button"
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 12 }}
-          onClick={() => setFollowPaused(false)}
-          className="absolute left-1/2 -translate-x-1/2 bottom-36 lg:bottom-10 z-40 flex items-center gap-2 px-4 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-semibold shadow-xl hover:shadow-2xl transition-shadow pointer-events-auto"
-        >
-          <LocateFixed className="h-4 w-4" />
-          {t("resumeFollow")}
-        </motion.button>
-      )}
-    </AnimatePresence>
+    <>
+      <NavigationHUD />
+      <AnimatePresence>
+        {followPaused && (
+          <motion.button
+            type="button"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            onClick={() => setFollowPaused(false)}
+            className="absolute left-1/2 -translate-x-1/2 bottom-[92px] z-40 flex items-center gap-2 px-4 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-semibold shadow-xl hover:shadow-2xl transition-shadow pointer-events-auto"
+          >
+            <LocateFixed className="h-4 w-4" />
+            {t("resumeFollow")}
+          </motion.button>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

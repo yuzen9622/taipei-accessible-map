@@ -302,5 +302,13 @@
   "resumeFollow": "Resume navigation",
   "customize": "Customize",
   "done": "Done",
-  "customizeHint": "Tap items to add or remove shortcuts"
+  "customizeHint": "Tap items to add or remove shortcuts",
+  "then": "Then",
+  "end": "End",
+  "stepList": "Steps",
+  "minutesLeft": "{{count}} min",
+  "etaArrive": "Arrive ~{{time}}",
+  "facilityAhead": "Accessible {{name}} {{distance}} ahead",
+  "hazardAhead": "{{type}} reported {{distance}} ahead",
+  "viewAlternative": "View alternate route"
 }
