@@ -1,28 +1,24 @@
 "use client";
 
 import {
-  Accessibility,
   AlertTriangle,
-  ArrowUpDown,
-  ArrowUpRight,
   Bookmark,
   Bus,
+  ChevronDown,
   CircleParking,
   Clock,
   Cloud,
-  DoorOpen,
   Heart,
-  MapPin,
   Navigation,
+  TrainFront,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import PlaceInput from "@/components/shared/PlaceInput";
 import { useAppTranslation } from "@/i18n/client";
-import { getNearbyHazardReports } from "@/lib/api/a11y";
+import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
-import { A11yEnum, type PlaceDetail } from "@/types";
-import type { HazardReport } from "@/types/route";
-import { Badge } from "../ui/badge";
+import type { PlaceDetail } from "@/types";
+import A11yPanel from "./A11yPanel";
 import BusPanel from "./BusPanel";
 import EnvironmentPanel from "./EnvironmentPanel";
 import HazardReportPanel from "./HazardReportPanel";
@@ -32,6 +28,7 @@ import WelfarePanel from "./WelfarePanel";
 
 type SubPanel =
   | "none"
+  | "a11y"
   | "environment"
   | "hazard"
   | "welfare"
@@ -47,32 +44,12 @@ export default function HomeContent() {
     map,
     searchHistory,
     setSheetMode,
-    toggleA11yType,
-    selectedA11yTypes,
-    a11yPlaces,
-    userLocation,
+    setActiveRailPanel,
     savedPlaces,
   } = useMapStore();
   const [input, setInput] = useState("");
   const [subPanel, setSubPanel] = useState<SubPanel>("none");
-  const [nearbyHazards, setNearbyHazards] = useState<HazardReport[]>([]);
-
-  useEffect(() => {
-    if (!userLocation) return;
-    const controller = new AbortController();
-    getNearbyHazardReports(
-      userLocation.lat,
-      userLocation.lng,
-      500,
-      controller.signal,
-    )
-      .then((res) => {
-        if (!controller.signal.aborted && res.ok && res.data?.reports)
-          setNearbyHazards(res.data.reports);
-      })
-      .catch(() => {});
-    return () => controller.abort();
-  }, [userLocation]);
+  const [moreActionsOpen, setMoreActionsOpen] = useState(false);
 
   const handlePlaceChange = useCallback(
     (placeDetail: PlaceDetail) => {
@@ -108,32 +85,16 @@ export default function HomeContent() {
     [setSearchPlace, setInfoShow, map, setSheetMode],
   );
 
-  const a11yChips = [
-    { type: A11yEnum.ELEVATOR, Icon: ArrowUpDown, label: t("elevator") },
-    { type: A11yEnum.RAMP, Icon: Accessibility, label: t("ramp") },
-    { type: A11yEnum.RESTROOM, Icon: DoorOpen, label: t("toilet") },
-  ];
+  // Metro accessibility lives in the dedicated a11y panel: switch the rail
+  // panel on desktop, fall back to an inline sub-panel on mobile.
+  const openA11y = useCallback(() => {
+    setActiveRailPanel("a11y");
+    setSubPanel("a11y");
+  }, [setActiveRailPanel]);
 
-  const nearbyPlaces = useMemo(
-    () =>
-      a11yPlaces
-        ?.filter((p) => {
-          if (!userLocation) return false;
-          const dx = p.position.lat - userLocation.lat;
-          const dy = p.position.lng - userLocation.lng;
-          return dx * dx + dy * dy < 0.0004;
-        })
-        .slice(0, 6) ?? [],
-    [a11yPlaces, userLocation],
-  );
-
-  const handleFlyToPlace = useCallback(
-    (lng: number, lat: number) => {
-      if (map) map.flyTo({ center: [lng, lat], zoom: 17 });
-    },
-    [map],
-  );
-
+  if (subPanel === "a11y") {
+    return <A11yPanel onClose={() => setSubPanel("none")} />;
+  }
   if (subPanel === "environment") {
     return <EnvironmentPanel onClose={() => setSubPanel("none")} />;
   }
@@ -181,36 +142,7 @@ export default function HomeContent() {
         </div>
       </button>
 
-      {/* A11y Quick Chips */}
-      <div className="space-y-2">
-        <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
-          <Accessibility className="h-4 w-4" />
-          {t("accessibleTitle")}
-        </h2>
-        <div className="flex gap-2 flex-wrap">
-          {a11yChips.map((chip) => {
-            const active = selectedA11yTypes.has(chip.type);
-            return (
-              <button
-                key={chip.type}
-                type="button"
-                onClick={() => toggleA11yType(chip.type)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-all
-                  ${
-                    active
-                      ? "bg-primary text-primary-foreground shadow-sm"
-                      : "bg-muted/60 text-muted-foreground hover:bg-muted"
-                  }`}
-              >
-                <chip.Icon className="h-4 w-4" />
-                <span>{chip.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Extra quick actions */}
+      {/* Quick actions: the essentials up front, the rest behind 更多 */}
       <div className="space-y-2">
         <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
           {t("quickActions")}
@@ -218,11 +150,11 @@ export default function HomeContent() {
         <div className="flex gap-2 flex-wrap">
           <button
             type="button"
-            onClick={() => setSubPanel("environment")}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium bg-sky-500/10 text-sky-600 dark:text-sky-400 hover:bg-sky-500/20 transition-colors"
+            onClick={openA11y}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-500/20 transition-colors"
           >
-            <Cloud className="h-4 w-4" />
-            {t("environment")}
+            <TrainFront className="h-4 w-4" />
+            {t("metroA11y")}
           </button>
           <button
             type="button"
@@ -231,14 +163,6 @@ export default function HomeContent() {
           >
             <AlertTriangle className="h-4 w-4" />
             {t("reportHazard")}
-          </button>
-          <button
-            type="button"
-            onClick={() => setSubPanel("welfare")}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition-colors"
-          >
-            <Heart className="h-4 w-4" />
-            {t("welfare")}
           </button>
           <button
             type="button"
@@ -256,85 +180,42 @@ export default function HomeContent() {
             <Bus className="h-4 w-4" />
             {t("busInfo")}
           </button>
+          <button
+            type="button"
+            onClick={() => setMoreActionsOpen(!moreActionsOpen)}
+            aria-expanded={moreActionsOpen}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium bg-muted/60 text-muted-foreground hover:bg-muted transition-colors"
+          >
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 transition-transform",
+                moreActionsOpen && "rotate-180",
+              )}
+            />
+            {t("railMore")}
+          </button>
+          {moreActionsOpen && (
+            <>
+              <button
+                type="button"
+                onClick={() => setSubPanel("environment")}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium bg-sky-500/10 text-sky-600 dark:text-sky-400 hover:bg-sky-500/20 transition-colors"
+              >
+                <Cloud className="h-4 w-4" />
+                {t("environment")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSubPanel("welfare")}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20 transition-colors"
+              >
+                <Heart className="h-4 w-4" />
+                {t("welfare")}
+              </button>
+            </>
+          )}
         </div>
       </div>
-
-      {/* Nearby Hazards */}
-      {nearbyHazards.length > 0 && (
-        <section>
-          <h2 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
-            <AlertTriangle className="h-4 w-4 text-amber-500" />
-            {t("nearbyHazards")}
-          </h2>
-          <div className="space-y-2">
-            {nearbyHazards.slice(0, 3).map((hazard) => (
-              <div
-                key={hazard._id}
-                className="flex items-center gap-3 p-3 rounded-xl bg-amber-500/5 border border-amber-500/10"
-              >
-                <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">
-                    {t(
-                      hazard.hazardType === "data_error"
-                        ? "dataError"
-                        : hazard.hazardType,
-                    )}
-                  </p>
-                  {hazard.description && (
-                    <p className="text-xs text-muted-foreground truncate">
-                      {hazard.description}
-                    </p>
-                  )}
-                </div>
-                <Badge
-                  variant={
-                    hazard.status === "verified" ? "default" : "secondary"
-                  }
-                  className="text-xs shrink-0"
-                >
-                  {hazard.status === "verified" ? t("confirmed") : t("pending")}
-                </Badge>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Nearby A11y Facilities */}
-      {nearbyPlaces.length > 0 && (
-        <section>
-          <h2 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
-            <Accessibility className="h-4 w-4" />
-            {t("nearbyA11y")}
-          </h2>
-          <div className="space-y-2">
-            {nearbyPlaces.map((place) => (
-              <button
-                key={place.id}
-                type="button"
-                onClick={() =>
-                  handleFlyToPlace(place.position.lng, place.position.lat)
-                }
-                className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/40 hover:bg-muted/70 transition-colors text-left"
-              >
-                <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  <MapPin className="h-4 w-4 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">
-                    {place.content?.title || t("a11yDefaultTitle")}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {place.content?.desc || ""}
-                  </p>
-                </div>
-                <ArrowUpRight className="h-4 w-4 text-muted-foreground/50 shrink-0" />
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
 
       {/* Saved Places */}
       {savedPlaces.length > 0 && (

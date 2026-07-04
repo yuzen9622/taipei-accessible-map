@@ -267,5 +267,19 @@
   "railA11y": "無障礙",
   "railBus": "公車",
   "railParking": "停車",
-  "railMore": "更多"
+  "railMore": "更多",
+  "metroA11y": "捷運無障礙",
+  "a11yFilterHint": "選擇要在地圖上顯示的設施",
+  "setCategory": "分類",
+  "savedCategoryAll": "全部",
+  "savedCategoryNone": "移除分類",
+  "savedCategory": {
+    "favorite": "常用",
+    "food": "餐飲",
+    "transport": "交通",
+    "medical": "醫療",
+    "other": "其他"
+  },
+  "notificationUnsupported": "此瀏覽器不支援通知功能",
+  "notificationBlocked": "通知權限已被瀏覽器封鎖，請至瀏覽器設定開啟"
 }

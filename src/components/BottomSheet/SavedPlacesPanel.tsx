@@ -1,19 +1,38 @@
 "use client";
 
-import { Bookmark, MapPin, Navigation, Trash2, X } from "lucide-react";
-import { useCallback } from "react";
+import { Bookmark, MapPin, Navigation, Tag, Trash2, X } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAppTranslation } from "@/i18n/client";
-import useMapStore from "@/stores/useMapStore";
+import { cn } from "@/lib/utils";
+import useMapStore, {
+  placeKey,
+  SAVED_PLACE_CATEGORIES,
+  type SavedPlaceCategory,
+} from "@/stores/useMapStore";
 import type { PlaceDetail } from "@/types";
 
 function SavedPlaceCard({
   item,
+  category,
   onNavigate,
   onRemove,
+  onCategoryChange,
 }: {
   item: PlaceDetail;
+  category: SavedPlaceCategory | undefined;
   onNavigate: (item: PlaceDetail) => void;
   onRemove: (item: PlaceDetail) => void;
+  onCategoryChange: (
+    item: PlaceDetail,
+    category: SavedPlaceCategory | null,
+  ) => void;
 }) {
   const { t } = useAppTranslation();
   const name =
@@ -36,6 +55,48 @@ function SavedPlaceCard({
             </p>
           )}
         </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className={cn(
+                "flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium shrink-0 transition-colors",
+                category
+                  ? "bg-primary/10 text-primary hover:bg-primary/20"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80",
+              )}
+              aria-label={t("setCategory")}
+            >
+              <Tag className="h-3 w-3" />
+              {category ? t(`savedCategory.${category}`) : t("setCategory")}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-[120px]">
+            {SAVED_PLACE_CATEGORIES.map((cat) => (
+              <DropdownMenuItem
+                key={cat}
+                onClick={() => onCategoryChange(item, cat)}
+                className={cn(
+                  "text-sm rounded-md",
+                  category === cat && "bg-primary/10 font-medium",
+                )}
+              >
+                {t(`savedCategory.${cat}`)}
+              </DropdownMenuItem>
+            ))}
+            {category && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => onCategoryChange(item, null)}
+                  className="text-sm rounded-md text-muted-foreground"
+                >
+                  {t("savedCategoryNone")}
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       <div className="flex items-center gap-2 mt-2.5 pl-12">
         <button
@@ -71,12 +132,15 @@ export default function SavedPlacesPanel({
   const { t } = useAppTranslation();
   const {
     savedPlaces,
+    savedPlaceCategories,
+    setSavedPlaceCategory,
     removeSavedPlace,
     map,
     setSearchPlace,
     setInfoShow,
     setSheetMode,
   } = useMapStore();
+  const [filter, setFilter] = useState<SavedPlaceCategory | "all">("all");
 
   const handleNavigate = useCallback(
     (item: PlaceDetail) => {
@@ -113,6 +177,25 @@ export default function SavedPlacesPanel({
     [removeSavedPlace],
   );
 
+  // Only surface filter chips for categories actually in use.
+  const usedCategories = useMemo(
+    () =>
+      SAVED_PLACE_CATEGORIES.filter((cat) =>
+        savedPlaces.some((p) => savedPlaceCategories[placeKey(p)] === cat),
+      ),
+    [savedPlaces, savedPlaceCategories],
+  );
+
+  const filteredPlaces = useMemo(
+    () =>
+      filter === "all"
+        ? savedPlaces
+        : savedPlaces.filter(
+            (p) => savedPlaceCategories[placeKey(p)] === filter,
+          ),
+    [filter, savedPlaces, savedPlaceCategories],
+  );
+
   return (
     <div className="space-y-4">
       {/* Header */}
@@ -140,6 +223,33 @@ export default function SavedPlacesPanel({
         </p>
       )}
 
+      {/* Category filter */}
+      {usedCategories.length > 0 && (
+        <div className="flex gap-1.5 flex-wrap">
+          {(["all", ...usedCategories] as const).map((cat) => {
+            const active = filter === cat;
+            return (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => setFilter(cat)}
+                className={cn(
+                  "px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
+                  active
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted/60 text-muted-foreground hover:bg-muted",
+                )}
+                aria-pressed={active}
+              >
+                {cat === "all"
+                  ? t("savedCategoryAll")
+                  : t(`savedCategory.${cat}`)}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* List */}
       {savedPlaces.length === 0 ? (
         <div className="text-center py-12 space-y-3">
@@ -151,12 +261,14 @@ export default function SavedPlacesPanel({
         </div>
       ) : (
         <div className="space-y-2">
-          {savedPlaces.map((item, idx) => (
+          {filteredPlaces.map((item) => (
             <SavedPlaceCard
-              key={idx}
+              key={placeKey(item)}
               item={item}
+              category={savedPlaceCategories[placeKey(item)]}
               onNavigate={handleNavigate}
               onRemove={handleRemove}
+              onCategoryChange={setSavedPlaceCategory}
             />
           ))}
         </div>

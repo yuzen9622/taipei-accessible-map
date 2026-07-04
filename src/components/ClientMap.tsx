@@ -20,13 +20,45 @@ import GotoNowButton from "./shared/GotoNowButton";
 import SearchPin from "./shared/SearchPin";
 import AIResultWrapper from "./Wrapper/AIResultWrapper";
 import HazardWrapper from "./Wrapper/HazardWrapper";
-import TransitWrapper from "./Wrapper/TransitWrapper";
 import LiveBusWrapper from "./Wrapper/LiveBusWrapper";
+import TransitWrapper from "./Wrapper/TransitWrapper";
 
 const MAP_STYLES = {
   light: "https://tiles.openfreemap.org/styles/liberty",
   dark: "https://tiles.openfreemap.org/styles/dark",
 };
+
+// OpenMapTiles carries name:zh / name:en alongside the default bilingual
+// "{name:latin}\n{name:nonlatin}" label — rewrite symbol layers so labels
+// follow the UI language only.
+function applyMapLanguage(map: maplibregl.Map, language: string) {
+  const textField =
+    language === "zh-TW"
+      ? [
+          "coalesce",
+          ["get", "name:zh-Hant"],
+          ["get", "name:zh"],
+          ["get", "name"],
+        ]
+      : [
+          "coalesce",
+          ["get", "name:en"],
+          ["get", "name:latin"],
+          ["get", "name"],
+        ];
+  const style = map.getStyle();
+  if (!style?.layers) return;
+  for (const layer of style.layers) {
+    if (layer.type !== "symbol") continue;
+    const current = map.getLayoutProperty(layer.id, "text-field");
+    if (!current) continue;
+    // Only touch place-name labels; keep refs, house numbers, shields intact.
+    const serialized = JSON.stringify(current);
+    if (!serialized.includes("name")) continue;
+    if (serialized === JSON.stringify(textField)) continue;
+    map.setLayoutProperty(layer.id, "text-field", textField);
+  }
+}
 
 export default function ClientMap() {
   const {
@@ -47,7 +79,8 @@ export default function ClientMap() {
     setMounted(true);
   }, []);
 
-  const mapStyle = resolvedTheme === "dark" ? MAP_STYLES.dark : MAP_STYLES.light;
+  const mapStyle =
+    resolvedTheme === "dark" ? MAP_STYLES.dark : MAP_STYLES.light;
 
   const pointerDownTime = useRef(0);
   const pointerDownPos = useRef<[number, number]>([0, 0]);
@@ -55,11 +88,29 @@ export default function ClientMap() {
   const handleLoad = useCallback(
     (evt: { target: maplibregl.Map }) => {
       setMap(evt.target);
+      applyMapLanguage(evt.target, i18n.language);
     },
-    [setMap],
+    [setMap, i18n.language],
+  );
+
+  // Re-apply after theme swaps replace the style; the equality guard inside
+  // applyMapLanguage keeps this from looping on its own styledata events.
+  const handleStyleData = useCallback(
+    (evt: { target: maplibregl.Map }) => {
+      applyMapLanguage(evt.target, i18n.language);
+    },
+    [i18n.language],
   );
 
   useEffect(() => {
+    // 開發用：?mockgeo=lat,lng 可模擬 GPS 位置（例如人在海外測試台北的路線）。
+    const mock = new URLSearchParams(window.location.search).get("mockgeo");
+    if (mock) {
+      const [lat, lng] = mock.split(",").map(Number);
+      setUserLocation({ lat, lng });
+      const t = setInterval(() => setUserLocation({ lat, lng }), 2000);
+      return () => clearInterval(t);
+    }
     const watchId = navigator.geolocation.watchPosition(
       (pos) => {
         setUserLocation({
@@ -145,7 +196,8 @@ export default function ClientMap() {
     [i18n.language, setInfoShow, setSearchPlace, setSheetMode, isNavigating],
   );
 
-  if (!mounted) return <div style={{ flex: 1, backgroundColor: "transparent" }} />;
+  if (!mounted)
+    return <div style={{ flex: 1, backgroundColor: "transparent" }} />;
 
   return (
     <Map
@@ -159,6 +211,7 @@ export default function ClientMap() {
       onMouseDown={handleMouseDown}
       onClick={handleClick}
       onLoad={handleLoad}
+      onStyleData={handleStyleData}
       style={{ position: "relative", flex: 1, overflow: "hidden" }}
     >
       <NavigationControl position="top-right" showCompass={false} />

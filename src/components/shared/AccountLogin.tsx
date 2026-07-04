@@ -14,6 +14,7 @@ import {
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -104,16 +105,34 @@ export default function AccountLogin() {
     onError: () => {},
   });
 
-  const handleNotifyChange = (checked: boolean) => {
-    window.Notification.requestPermission((notificationStatus) => {
-      if (notificationStatus === "granted" && checked) {
-        updateUserConfig({ notifications: true });
-      } else if (notificationStatus === "denied") {
-        updateUserConfig({ notifications: false });
-      } else {
-        updateUserConfig({ notifications: checked });
+  const handleNotifyChange = async (checked: boolean) => {
+    // Turning off never needs browser permission.
+    if (!checked) {
+      updateUserConfig({ notifications: false });
+      return;
+    }
+    if (!("Notification" in window)) {
+      updateUserConfig({ notifications: false });
+      toast.error(t("notificationUnsupported"));
+      return;
+    }
+    let permission = Notification.permission;
+    if (permission === "default") {
+      try {
+        permission = await Notification.requestPermission();
+      } catch {
+        // Safari < 16 only supports the callback form.
+        permission = await new Promise<NotificationPermission>((resolve) =>
+          Notification.requestPermission(resolve),
+        );
       }
-    });
+    }
+    if (permission === "granted") {
+      updateUserConfig({ notifications: true });
+    } else {
+      updateUserConfig({ notifications: false });
+      if (permission === "denied") toast.error(t("notificationBlocked"));
+    }
   };
 
   return (
@@ -370,9 +389,8 @@ export default function AccountLogin() {
               <Switch
                 id="notification"
                 className=" bg-accent"
-                defaultChecked={userConfig.notifications}
-                onCheckedChange={handleNotifyChange}
                 checked={userConfig.notifications}
+                onCheckedChange={handleNotifyChange}
               />
             </div>
 

@@ -1,12 +1,12 @@
 "use client";
 
-import { Cloud, Loader2, Wind } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { CloudRain, Leaf, Loader2, Thermometer, Wind, X } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useState } from "react";
 import { useAppTranslation } from "@/i18n/client";
-import { getAirQuality } from "@/lib/api/airQuality";
+import { getEnvironmentInfo } from "@/lib/api/a11y";
 import useMapStore from "@/stores/useMapStore";
-import type { AirQualityData, AirQualityLevel } from "@/types/route";
+import type { AirQualityLevel, EnvironmentData } from "@/types/route";
 
 const LEVEL_CONFIG: Record<
   AirQualityLevel,
@@ -56,18 +56,75 @@ const LEVEL_CONFIG: Record<
   },
 };
 
+// /a11y/environment returns quality as a Chinese label (e.g. "良好") while
+// /air/air-quality uses the enum keys — accept both.
+const QUALITY_ALIASES: Record<string, AirQualityLevel> = {
+  良好: "GOOD",
+  普通: "MODERATE",
+  對敏感族群不健康: "UNHEALTHY_SENSITIVE",
+  敏感族群不健康: "UNHEALTHY_SENSITIVE",
+  不健康: "UNHEALTHY",
+  非常不健康: "VERY_UNHEALTHY",
+  危害: "HAZARDOUS",
+};
+
+function normalizeQuality(quality?: string): AirQualityLevel {
+  if (!quality) return "";
+  if (quality in LEVEL_CONFIG) return quality as AirQualityLevel;
+  return QUALITY_ALIASES[quality] ?? "";
+}
+
+function Metric({
+  Icon,
+  iconClass,
+  label,
+  value,
+  unit,
+  valueClass,
+}: {
+  Icon: React.ComponentType<{ className?: string }>;
+  iconClass: string;
+  label: string;
+  value: string | number;
+  unit?: string;
+  valueClass?: string;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="h-9 w-9 rounded-full bg-muted/60 flex items-center justify-center shrink-0">
+        <Icon className={`h-4.5 w-4.5 ${iconClass}`} />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[11px] leading-tight text-muted-foreground">
+          {label}
+        </p>
+        <p
+          className={`text-base font-bold leading-tight tabular-nums ${valueClass ?? ""}`}
+        >
+          {value}
+          {unit && (
+            <span className="text-[11px] font-medium text-muted-foreground ml-0.5">
+              {unit}
+            </span>
+          )}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function AirQualityWidget() {
   const { t, i18n } = useAppTranslation();
   const { userLocation } = useMapStore();
-  const [data, setData] = useState<AirQualityData | null>(null);
+  const [data, setData] = useState<EnvironmentData | null>(null);
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
-  const fetchAirQuality = useCallback(async () => {
+  const fetchEnvironment = useCallback(async () => {
     if (!userLocation) return;
     setLoading(true);
     try {
-      const res = await getAirQuality(userLocation.lat, userLocation.lng);
+      const res = await getEnvironmentInfo(userLocation.lat, userLocation.lng);
       if (res.ok && res.data) {
         setData(res.data);
       }
@@ -79,18 +136,20 @@ export default function AirQualityWidget() {
   }, [userLocation]);
 
   useEffect(() => {
-    fetchAirQuality();
-    const interval = setInterval(fetchAirQuality, 5 * 60 * 1000);
+    fetchEnvironment();
+    const interval = setInterval(fetchEnvironment, 5 * 60 * 1000);
     return () => clearInterval(interval);
-  }, [fetchAirQuality]);
+  }, [fetchEnvironment]);
 
   if (!data && !loading) return null;
 
-  const config = data ? LEVEL_CONFIG[data.quality] : LEVEL_CONFIG[""];
+  const air = data?.airQuality.status === "ok" ? data.airQuality : null;
+  const weather = data?.weather.status === "ok" ? data.weather : null;
+  const config = LEVEL_CONFIG[normalizeQuality(air?.quality)];
   const label = i18n.language === "en" ? config.labelEn : config.label;
 
   return (
-    <div className="absolute top-14 right-3 z-30">
+    <div className="absolute top-14 right-3 z-30 flex flex-col items-end">
       <motion.button
         layout
         onClick={() => setExpanded(!expanded)}
@@ -103,34 +162,75 @@ export default function AirQualityWidget() {
         `}
         whileTap={{ scale: 0.96 }}
         aria-label={t("airQuality", "空氣品質")}
+        aria-expanded={expanded}
       >
         {loading ? (
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
         ) : (
-          <Wind className={`h-4 w-4 ${config.color}`} />
+          <Leaf className={`h-4 w-4 ${config.color}`} />
         )}
         <span className={`text-xs font-medium ${config.color}`}>
           {loading ? "..." : label}
         </span>
-
-        <AnimatePresence>
-          {expanded && data && (
-            <motion.div
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: "auto", opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="overflow-hidden flex items-center gap-1.5"
-            >
-              <span className="w-px h-4 bg-current opacity-20" />
-              <Cloud className={`h-3.5 w-3.5 ${config.color} shrink-0`} />
-              <span className={`text-xs ${config.color} whitespace-nowrap`}>
-                {data.description}
-              </span>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {!loading && weather?.temperature != null && (
+          <>
+            <span className="w-px h-4 bg-current opacity-20" />
+            <span className={`text-xs font-medium ${config.color}`}>
+              {weather.temperature}°C
+            </span>
+          </>
+        )}
+        {expanded && <X className={`h-3.5 w-3.5 ${config.color} opacity-60`} />}
       </motion.button>
+
+      <AnimatePresence>
+        {expanded && data && (
+          <motion.div
+            initial={{ opacity: 0, y: -6, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.97 }}
+            transition={{ duration: 0.18 }}
+            className="mt-2 w-[168px] bg-background/95 backdrop-blur-md rounded-2xl shadow-xl border border-border/50 p-3.5 space-y-3"
+          >
+            {weather?.windSpeed != null && (
+              <Metric
+                Icon={Wind}
+                iconClass="text-blue-500"
+                label={t("wind")}
+                value={weather.windSpeed}
+                unit="m/s"
+              />
+            )}
+            {weather?.temperature != null && (
+              <Metric
+                Icon={Thermometer}
+                iconClass="text-red-500"
+                label={t("temperature")}
+                value={weather.temperature}
+                unit="°C"
+              />
+            )}
+            {weather?.precipitationProbability != null && (
+              <Metric
+                Icon={CloudRain}
+                iconClass="text-sky-500"
+                label={t("precipitation")}
+                value={weather.precipitationProbability}
+                unit="%"
+              />
+            )}
+            {air && (
+              <Metric
+                Icon={Leaf}
+                iconClass="text-green-600"
+                label={t("airQuality")}
+                value={label}
+                valueClass={config.color}
+              />
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

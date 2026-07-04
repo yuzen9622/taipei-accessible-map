@@ -52,6 +52,7 @@ interface MapState {
   searchHistory: PlaceDetail[];
   savedPlaces: PlaceDetail[];
   savedPlaceKeys: Set<string>;
+  savedPlaceCategories: Record<string, SavedPlaceCategory>;
   originName: string;
   destinationName: string;
   sheetMode: SheetMode;
@@ -91,9 +92,14 @@ interface MapAction {
   setOriginName: (name: string) => void;
   setDestinationName: (name: string) => void;
   initSavedPlaces: (places: PlaceDetail[]) => void;
+  initSavedPlaceCategories: (cats: Record<string, SavedPlaceCategory>) => void;
   addSavedPlace: (place: PlaceDetail) => void;
   removeSavedPlace: (place: PlaceDetail) => void;
   isSavedPlace: (place: PlaceDetail) => boolean;
+  setSavedPlaceCategory: (
+    place: PlaceDetail,
+    category: SavedPlaceCategory | null,
+  ) => void;
   closeRouteDrawer: () => void;
   setSheetMode: (mode: SheetMode) => void;
   setIsNavigating: (v: boolean) => void;
@@ -107,11 +113,20 @@ interface MapAction {
 
 type MapStore = MapState & MapAction;
 
-function placeKey(p: PlaceDetail): string {
+export function placeKey(p: PlaceDetail): string {
   return p.kind === "place"
     ? `p_${p.place.place_id}`
     : `c_${p.position.lat}_${p.position.lng}`;
 }
+
+export const SAVED_PLACE_CATEGORIES = [
+  "favorite",
+  "food",
+  "transport",
+  "medical",
+  "other",
+] as const;
+export type SavedPlaceCategory = (typeof SAVED_PLACE_CATEGORIES)[number];
 
 const useMapStore = create<MapStore>((set, get) => ({
   map: null,
@@ -170,13 +185,19 @@ const useMapStore = create<MapStore>((set, get) => ({
   setA11yPlaces: (places) => set({ a11yPlaces: places }),
   searchHistory: [],
   initSearchHistory: (history) => {
-    const validHistory = history.filter(item => {
-      const name = item.kind === "place" ? item.place.name || item.place.display_name : item.address;
+    const validHistory = history.filter((item) => {
+      const name =
+        item.kind === "place"
+          ? item.place.name || item.place.display_name
+          : item.address;
       return Boolean(name && name.trim());
     });
     const seen = new Set<string>();
-    const dedupedHistory = validHistory.filter(item => {
-      const name = item.kind === "place" ? item.place.name || item.place.display_name : item.address;
+    const dedupedHistory = validHistory.filter((item) => {
+      const name =
+        item.kind === "place"
+          ? item.place.name || item.place.display_name
+          : item.address;
       if (seen.has(name)) return false;
       seen.add(name);
       return true;
@@ -184,11 +205,17 @@ const useMapStore = create<MapStore>((set, get) => ({
     set({ searchHistory: dedupedHistory });
   },
   addSearchHistory: (searchTerm: PlaceDetail) => {
-    const name = searchTerm.kind === "place" ? searchTerm.place.name || searchTerm.place.display_name : searchTerm.address;
+    const name =
+      searchTerm.kind === "place"
+        ? searchTerm.place.name || searchTerm.place.display_name
+        : searchTerm.address;
     if (!name || !name.trim()) return;
     const { searchHistory } = get();
     const deduped = searchHistory.filter((item) => {
-      const itemName = item.kind === "place" ? item.place.name || item.place.display_name : item.address;
+      const itemName =
+        item.kind === "place"
+          ? item.place.name || item.place.display_name
+          : item.address;
       return itemName !== name;
     });
     const newHistory = [searchTerm, ...deduped.slice(0, 9)];
@@ -198,15 +225,35 @@ const useMapStore = create<MapStore>((set, get) => ({
   clearSearchHistory: () => set({ searchHistory: [] }),
   savedPlaces: [],
   savedPlaceKeys: new Set<string>(),
+  savedPlaceCategories: {},
+  initSavedPlaceCategories: (cats) => set({ savedPlaceCategories: cats }),
+  setSavedPlaceCategory: (place, category) => {
+    const { savedPlaceCategories } = get();
+    const key = placeKey(place);
+    const next = { ...savedPlaceCategories };
+    if (category) next[key] = category;
+    else delete next[key];
+    localStorage.setItem("savedPlaceCategories", JSON.stringify(next));
+    set({ savedPlaceCategories: next });
+  },
   initSavedPlaces: (places) => {
-    const validPlaces = places.filter(item => {
-      const name = item.kind === "place" ? item.place.name || item.place.display_name : item.address;
+    const validPlaces = places.filter((item) => {
+      const name =
+        item.kind === "place"
+          ? item.place.name || item.place.display_name
+          : item.address;
       return Boolean(name && name.trim());
     });
-    set({ savedPlaces: validPlaces, savedPlaceKeys: new Set(validPlaces.map(placeKey)) });
+    set({
+      savedPlaces: validPlaces,
+      savedPlaceKeys: new Set(validPlaces.map(placeKey)),
+    });
   },
   addSavedPlace: (place) => {
-    const name = place.kind === "place" ? place.place.name || place.place.display_name : place.address;
+    const name =
+      place.kind === "place"
+        ? place.place.name || place.place.display_name
+        : place.address;
     if (!name || !name.trim()) return;
     const { savedPlaces, savedPlaceKeys } = get();
     const key = placeKey(place);
@@ -218,14 +265,21 @@ const useMapStore = create<MapStore>((set, get) => ({
     set({ savedPlaces: updated, savedPlaceKeys: nextKeys });
   },
   removeSavedPlace: (place) => {
-    const { savedPlaces, savedPlaceKeys } = get();
+    const { savedPlaces, savedPlaceKeys, savedPlaceCategories } = get();
     const key = placeKey(place);
     if (!savedPlaceKeys.has(key)) return;
     const updated = savedPlaces.filter((p) => placeKey(p) !== key);
     const nextKeys = new Set(savedPlaceKeys);
     nextKeys.delete(key);
+    const nextCats = { ...savedPlaceCategories };
+    delete nextCats[key];
     localStorage.setItem("savedPlaces", JSON.stringify(updated));
-    set({ savedPlaces: updated, savedPlaceKeys: nextKeys });
+    localStorage.setItem("savedPlaceCategories", JSON.stringify(nextCats));
+    set({
+      savedPlaces: updated,
+      savedPlaceKeys: nextKeys,
+      savedPlaceCategories: nextCats,
+    });
   },
   isSavedPlace: (place) => {
     return get().savedPlaceKeys.has(placeKey(place));

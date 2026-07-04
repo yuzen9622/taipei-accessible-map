@@ -14,7 +14,8 @@ export default function ClientLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { initSearchHistory, initSavedPlaces } = useMapStore();
+  const { initSearchHistory, initSavedPlaces, initSavedPlaceCategories } =
+    useMapStore();
   const { setSession, setUser, setUserConfig } = useAuthStore();
   const getNewAccessToken = useCallback(async () => {
     const token = await refreshToken();
@@ -38,7 +39,20 @@ export default function ClientLayout({
     if (storedSaved) {
       initSavedPlaces(JSON.parse(storedSaved));
     }
-  }, [initSearchHistory, initSavedPlaces, getNewAccessToken]);
+    const storedCats = localStorage.getItem("savedPlaceCategories");
+    if (storedCats) {
+      try {
+        initSavedPlaceCategories(JSON.parse(storedCats));
+      } catch {
+        // ignore corrupted category cache
+      }
+    }
+  }, [
+    initSearchHistory,
+    initSavedPlaces,
+    initSavedPlaceCategories,
+    getNewAccessToken,
+  ]);
 
   return (
     <div className="w-full h-dvh flex flex-col">

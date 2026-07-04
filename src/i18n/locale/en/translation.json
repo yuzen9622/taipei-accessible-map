@@ -266,5 +266,19 @@
   "railA11y": "A11y",
   "railBus": "Bus",
   "railParking": "Parking",
-  "railMore": "More"
+  "railMore": "More",
+  "metroA11y": "Metro Access",
+  "a11yFilterHint": "Choose facilities to show on the map",
+  "setCategory": "Category",
+  "savedCategoryAll": "All",
+  "savedCategoryNone": "Remove category",
+  "savedCategory": {
+    "favorite": "Frequent",
+    "food": "Food",
+    "transport": "Transit",
+    "medical": "Medical",
+    "other": "Other"
+  },
+  "notificationUnsupported": "Notifications are not supported in this browser",
+  "notificationBlocked": "Notifications are blocked — enable them in your browser settings"
 }

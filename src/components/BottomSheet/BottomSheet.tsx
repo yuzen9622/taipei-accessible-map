@@ -15,16 +15,15 @@ import {
   Search,
   X,
 } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
-import { motion, AnimatePresence } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import AccountLogin from "@/components/shared/AccountLogin";
-import PlaceInput from "@/components/shared/PlaceInput";
 import { useAppTranslation } from "@/i18n/client";
 import { cn } from "@/lib/utils";
-import useMapStore from "@/stores/useMapStore";
 import type { RailPanel } from "@/stores/useMapStore";
-import type { PlaceDetail } from "@/types";
+import useMapStore from "@/stores/useMapStore";
+import A11yPanel from "./A11yPanel";
 import BusPanel from "./BusPanel";
 import EnvironmentPanel from "./EnvironmentPanel";
 import HazardReportPanel from "./HazardReportPanel";
@@ -81,6 +80,8 @@ const RAIL_ITEMS: RailItem[] = [
   },
 ];
 
+// Superset of the quick actions in the search panel, so everything reachable
+// from 快捷功能 is also reachable from 更多.
 const RAIL_MORE_ITEMS: RailItem[] = [
   {
     id: "environment",
@@ -95,6 +96,13 @@ const RAIL_MORE_ITEMS: RailItem[] = [
     color: "text-amber-500",
   },
   { id: "welfare", Icon: Heart, labelKey: "welfare", color: "text-rose-500" },
+  {
+    id: "parking",
+    Icon: CircleParking,
+    labelKey: "railParking",
+    color: "text-indigo-500",
+  },
+  { id: "bus", Icon: Bus, labelKey: "railBus", color: "text-emerald-600" },
 ];
 
 // --- Mode-driven panels: shown via sheetMode, override rail panels ---
@@ -214,6 +222,25 @@ export default function BottomSheet() {
       // Leaving the navigation panel must also stop the nav engine, otherwise
       // the camera keeps chasing the user behind the newly opened panel.
       if (isNavigating) setIsNavigating(false);
+      // Picking anything from the icon rail while collapsed re-opens the panel.
+      if (collapsed) {
+        setCollapsed(false);
+        if (panel === "route") {
+          setSheetMode("plan");
+        } else {
+          if (modePanelActive) {
+            setSheetMode("home");
+            setComputeRoutes(null);
+            setRouteA11y([]);
+            setRouteSelect(null);
+            setInfoShow({ isOpen: false, kind: null });
+            setSearchPlace(null);
+          }
+          setActiveRailPanel(panel);
+        }
+        setMoreOpen(false);
+        return;
+      }
       if (panel === "route") {
         setSheetMode("plan");
         return;
@@ -238,6 +265,8 @@ export default function BottomSheet() {
     [
       activeRailPanel,
       modePanelActive,
+      collapsed,
+      setCollapsed,
       setActiveRailPanel,
       setSheetMode,
       setComputeRoutes,
@@ -328,15 +357,10 @@ export default function BottomSheet() {
 
       {/* ======= Desktop: Dual-layer sidebar ======= */}
       <div className="hidden lg:block fixed inset-0 z-40 pointer-events-none">
-        {/* --- Layer 1: Icon Rail (always visible unless fully collapsed) --- */}
-        <motion.nav
+        {/* --- Layer 1: Icon Rail (always visible; collapse only hides Layer 2) --- */}
+        <nav
           aria-label={t("quickActions")}
           className="pointer-events-auto fixed left-3 top-3 bottom-3 w-[56px] bg-background/95 backdrop-blur-md rounded-2xl shadow-xl border border-border/50 flex flex-col items-center py-3 gap-1 z-50"
-          animate={{
-            x: collapsed ? -70 : 0,
-            opacity: collapsed ? 0 : 1,
-          }}
-          transition={{ type: "spring", stiffness: 300, damping: 30 }}
         >
           {/* Logo */}
           <div className="flex items-center justify-center h-10 w-10 mb-2">
@@ -452,7 +476,7 @@ export default function BottomSheet() {
           <div className="mb-1">
             <AccountLogin />
           </div>
-        </motion.nav>
+        </nav>
 
         {/* --- Layer 2: Content Panel --- */}
         <AnimatePresence>
@@ -500,7 +524,7 @@ export default function BottomSheet() {
           )}
         </AnimatePresence>
 
-        {/* --- Collapse/Expand toggle --- */}
+        {/* --- Collapse/Expand toggle: hides the content panel, icons stay --- */}
         <button
           type="button"
           aria-label={collapsed ? t("expandSidebar") : t("collapseSidebar")}
@@ -509,7 +533,7 @@ export default function BottomSheet() {
             "pointer-events-auto fixed top-1/2 -translate-y-1/2 z-50 h-12 w-6 flex items-center justify-center",
             "bg-background border border-border/50 shadow-lg rounded-r-lg border-l-0",
             "hover:bg-muted hover:shadow-xl transition-all duration-300",
-            collapsed ? "left-0" : panelOpen ? "left-[456px]" : "left-[64px]",
+            !collapsed && panelOpen ? "left-[456px]" : "left-[64px]",
           )}
         >
           {collapsed ? (
@@ -518,9 +542,6 @@ export default function BottomSheet() {
             <ChevronLeft className="h-4 w-4 text-muted-foreground" />
           )}
         </button>
-
-        {/* --- Collapsed: Floating mini search bar --- */}
-        <AnimatePresence>{collapsed && <CollapsedSearch />}</AnimatePresence>
       </div>
     </>
   );
@@ -647,7 +668,7 @@ function DesktopPanelContent() {
     case "search":
       return <HomeContent />;
     case "a11y":
-      return <HomeContent />;
+      return <A11yPanel hideHeader />;
     case "bus":
       return <BusPanel onClose={noop} hideHeader />;
     case "parking":
@@ -670,8 +691,9 @@ function MobileSheetContent() {
   const { sheetMode } = useMapStore();
   switch (sheetMode) {
     case "home":
-    case "a11y":
       return <HomeContent />;
+    case "a11y":
+      return <A11yPanel hideHeader />;
     case "place":
       return <PlaceContent />;
     case "plan":
@@ -685,95 +707,4 @@ function MobileSheetContent() {
     default:
       return <HomeContent />;
   }
-}
-
-// --- Collapsed mini search (extracted for readability) ---
-function CollapsedSearch() {
-  const { t } = useAppTranslation();
-  const {
-    setSearchPlace,
-    setInfoShow,
-    setSheetMode,
-    setSidebarCollapsed,
-    map,
-  } = useMapStore();
-  const [open, setOpen] = useState(false);
-  const [input, setInput] = useState("");
-
-  const handleSelect = useCallback(
-    (placeDetail: PlaceDetail) => {
-      setSearchPlace(placeDetail);
-      if (placeDetail.kind === "place") {
-        setInfoShow({ isOpen: true, kind: "place", place: placeDetail.place });
-        if (map)
-          map.flyTo({
-            center: [placeDetail.position.lng, placeDetail.position.lat],
-          });
-      } else if (placeDetail.kind === "coordinate") {
-        setInfoShow({
-          isOpen: true,
-          kind: "coordinate",
-          address: placeDetail.address,
-          position: placeDetail.position,
-        });
-        if (map)
-          map.flyTo({
-            center: [placeDetail.position.lng, placeDetail.position.lat],
-          });
-      }
-      setSheetMode("place");
-      setSidebarCollapsed(false);
-      setOpen(false);
-      setInput("");
-    },
-    [setSearchPlace, setInfoShow, map, setSheetMode, setSidebarCollapsed],
-  );
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className="pointer-events-auto fixed top-3 left-3 z-50"
-      role="search"
-      aria-label={t("searchPlaceHolder")}
-    >
-      {open ? (
-        <div className="relative w-[340px] bg-background/95 backdrop-blur-md rounded-2xl shadow-2xl border border-border/50 overflow-visible">
-          <PlaceInput
-            className="border-none"
-            value={input}
-            onChange={(e) => setInput((e.target as HTMLInputElement).value)}
-            placeholder={t("searchPlaceHolder")}
-            onPlaceSelect={handleSelect}
-            hideIcon
-          />
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false);
-              setInput("");
-            }}
-            className="absolute top-1/2 -translate-y-1/2 right-2 h-7 w-7 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors"
-            aria-label={t("close")}
-          >
-            <ChevronLeft className="h-3.5 w-3.5" />
-          </button>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="flex items-center gap-2.5 h-11 px-4 bg-background/95 backdrop-blur-md rounded-full shadow-lg border border-border/50 hover:shadow-xl hover:bg-muted/80 transition-all min-w-[200px]"
-          aria-label={t("searchPlaceHolder")}
-        >
-          <Search className="h-4 w-4 text-muted-foreground shrink-0" />
-          <span className="text-sm text-muted-foreground truncate">
-            {t("searchPlaceHolder")}
-          </span>
-        </button>
-      )}
-    </motion.div>
-  );
 }
