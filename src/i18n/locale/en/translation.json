@@ -298,5 +298,9 @@
   "sosHold": "Hold 3s",
   "sosTriggered": "Emergency mode on — choose how to share",
   "shareText": "My current location: {{address}}",
-  "sosShareText": "🚨 SOS! I need help. My location: {{address}}"
+  "sosShareText": "🚨 SOS! I need help. My location: {{address}}",
+  "resumeFollow": "Resume navigation",
+  "customize": "Customize",
+  "done": "Done",
+  "customizeHint": "Tap items to add or remove shortcuts"
 }

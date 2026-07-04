@@ -145,42 +145,46 @@ export default function AirQualityWidget() {
 
   const air = data?.airQuality.status === "ok" ? data.airQuality : null;
   const weather = data?.weather.status === "ok" ? data.weather : null;
+  // No point rendering an "unknown" pill when neither source has data.
+  if (!loading && !air && weather?.temperature == null) return null;
+
   const config = LEVEL_CONFIG[normalizeQuality(air?.quality)];
   const label = i18n.language === "en" ? config.labelEn : config.label;
+  const pillConfig = air ? config : LEVEL_CONFIG[""];
 
   return (
-    <div className="absolute top-14 right-3 z-30 flex flex-col items-end">
+    // top-24 clears the maplibre zoom control that sits in the top-right corner
+    <div className="absolute top-24 right-3 z-30 flex flex-col items-end">
       <motion.button
         layout
         onClick={() => setExpanded(!expanded)}
-        className={`
-          ${config.bg} backdrop-blur-md
-          rounded-2xl shadow-lg border border-white/20 dark:border-white/10
-          px-3 py-2 flex items-center gap-2
-          cursor-pointer select-none
-          transition-colors hover:shadow-xl
-        `}
+        className="bg-background/95 backdrop-blur-md rounded-2xl shadow-lg border border-border/50 px-3 py-2 flex items-center gap-2 cursor-pointer select-none transition-colors hover:shadow-xl"
         whileTap={{ scale: 0.96 }}
         aria-label={t("airQuality", "空氣品質")}
         aria-expanded={expanded}
       >
         {loading ? (
           <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        ) : air ? (
+          <Leaf className={`h-4 w-4 ${pillConfig.color}`} />
         ) : (
-          <Leaf className={`h-4 w-4 ${config.color}`} />
+          <CloudRain className="h-4 w-4 text-sky-500" />
         )}
-        <span className={`text-xs font-medium ${config.color}`}>
-          {loading ? "..." : label}
-        </span>
+        {/* Only claim an air-quality level when we actually have one. */}
+        {(loading || air) && (
+          <span className={`text-xs font-semibold ${pillConfig.color}`}>
+            {loading ? "..." : label}
+          </span>
+        )}
         {!loading && weather?.temperature != null && (
           <>
-            <span className="w-px h-4 bg-current opacity-20" />
-            <span className={`text-xs font-medium ${config.color}`}>
+            {air && <span className="w-px h-4 bg-border" />}
+            <span className="text-xs font-semibold text-foreground">
               {weather.temperature}°C
             </span>
           </>
         )}
-        {expanded && <X className={`h-3.5 w-3.5 ${config.color} opacity-60`} />}
+        {expanded && <X className="h-3.5 w-3.5 text-muted-foreground" />}
       </motion.button>
 
       <AnimatePresence>

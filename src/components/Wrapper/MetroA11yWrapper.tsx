@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { Marker, useMap } from "react-map-gl/maplibre";
 import useSupercluster from "use-supercluster";
-import { useMap, Marker } from "react-map-gl/maplibre";
 import MetroA11yPin from "@/components/MetroA11yPin";
 import { getAllA11yBathrooms, getAllA11yPlaces } from "@/lib/api/a11y";
 import { formatBathroom, formatMetroA11y } from "@/lib/utils";
@@ -52,10 +52,12 @@ export default function AccessibilityPin() {
     };
   }, [map]);
 
+  // Pins appear only for explicitly selected facility types — an unfiltered
+  // map drowning in clusters was unusable (user feedback).
   const filteredPlaces = useMemo(
     () =>
       selectedA11yTypes.size === 0
-        ? (a11yPlaces ?? [])
+        ? []
         : (a11yPlaces?.filter((place) =>
             selectedA11yTypes.has(place.a11yType),
           ) ?? []),

@@ -5,18 +5,23 @@ import {
   AlertTriangle,
   ArrowUpDown,
   ArrowUpRight,
+  CircleParking,
   DoorOpen,
   MapPin,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAppTranslation } from "@/i18n/client";
-import { getNearbyHazardReports } from "@/lib/api/a11y";
+import { getNearbyHazardReports, getNearbyParking } from "@/lib/api/a11y";
 import { haversineMeters } from "@/lib/geo";
 import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import { A11yEnum } from "@/types";
-import { formatDistance, type HazardReport } from "@/types/route";
+import {
+  type DisabledParking,
+  formatDistance,
+  type HazardReport,
+} from "@/types/route";
 import { Badge } from "../ui/badge";
 
 export default function A11yPanel({
@@ -30,6 +35,7 @@ export default function A11yPanel({
   const { map, userLocation, a11yPlaces, selectedA11yTypes, toggleA11yType } =
     useMapStore();
   const [nearbyHazards, setNearbyHazards] = useState<HazardReport[]>([]);
+  const [nearbyParking, setNearbyParking] = useState<DisabledParking[]>([]);
 
   useEffect(() => {
     if (!userLocation) return;
@@ -45,6 +51,12 @@ export default function A11yPanel({
           setNearbyHazards(res.data.reports);
       })
       .catch(() => {});
+    getNearbyParking(userLocation.lat, userLocation.lng)
+      .then((res) => {
+        if (!controller.signal.aborted && res.ok && res.data)
+          setNearbyParking(res.data);
+      })
+      .catch(() => {});
     return () => controller.abort();
   }, [userLocation]);
 
@@ -54,17 +66,33 @@ export default function A11yPanel({
     { type: A11yEnum.RESTROOM, Icon: DoorOpen, label: t("toilet") },
   ];
 
-  const nearbyPlaces = useMemo(() => {
-    if (!userLocation || !a11yPlaces) return [];
-    return a11yPlaces
-      .map((p) => ({
-        place: p,
-        distance: haversineMeters(userLocation, p.position),
-      }))
-      .filter((p) => p.distance < 2000)
+  // Facilities + disabled parking merged into one distance-sorted list.
+  const nearbyItems = useMemo(() => {
+    if (!userLocation) return [];
+    const facilities = (a11yPlaces ?? []).map((p) => ({
+      key: `f_${p.id}`,
+      kind: "facility" as const,
+      title: p.content?.title || t("a11yDefaultTitle"),
+      desc: p.content?.desc || "",
+      position: p.position,
+      distance: haversineMeters(userLocation, p.position),
+    }));
+    const parking = nearbyParking.map((p) => {
+      const position = { lat: p.latitude, lng: p.longitude };
+      return {
+        key: `p_${p._id}`,
+        kind: "parking" as const,
+        title: p.placeName,
+        desc: `${p.district ?? ""} · ${t("spots", { count: p.quantity })}`,
+        position,
+        distance: haversineMeters(userLocation, position),
+      };
+    });
+    return [...facilities, ...parking]
+      .filter((e) => e.distance < 2000)
       .sort((a, b) => a.distance - b.distance)
-      .slice(0, 8);
-  }, [a11yPlaces, userLocation]);
+      .slice(0, 10);
+  }, [a11yPlaces, nearbyParking, userLocation, t]);
 
   const handleFlyToPlace = useCallback(
     (lng: number, lat: number) => {
@@ -129,34 +157,43 @@ export default function A11yPanel({
           <Accessibility className="h-4 w-4" />
           {t("nearbyA11y")}
         </h3>
-        {nearbyPlaces.length === 0 ? (
+        {nearbyItems.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-6">
             {t("noNearbyA11y")}
           </p>
         ) : (
           <div className="space-y-2">
-            {nearbyPlaces.map(({ place, distance }) => (
+            {nearbyItems.map((item) => (
               <button
-                key={place.id}
+                key={item.key}
                 type="button"
                 onClick={() =>
-                  handleFlyToPlace(place.position.lng, place.position.lat)
+                  handleFlyToPlace(item.position.lng, item.position.lat)
                 }
                 className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/40 hover:bg-muted/70 transition-colors text-left"
               >
-                <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  <MapPin className="h-4 w-4 text-primary" />
+                <div
+                  className={cn(
+                    "h-9 w-9 rounded-full flex items-center justify-center shrink-0",
+                    item.kind === "parking"
+                      ? "bg-indigo-500/10"
+                      : "bg-primary/10",
+                  )}
+                >
+                  {item.kind === "parking" ? (
+                    <CircleParking className="h-4 w-4 text-indigo-500" />
+                  ) : (
+                    <MapPin className="h-4 w-4 text-primary" />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">
-                    {place.content?.title || t("a11yDefaultTitle")}
-                  </p>
+                  <p className="text-sm font-medium truncate">{item.title}</p>
                   <p className="text-xs text-muted-foreground truncate">
-                    {place.content?.desc || ""}
+                    {item.desc}
                   </p>
                 </div>
                 <span className="text-xs text-muted-foreground tabular-nums shrink-0">
-                  {formatDistance(distance)}
+                  {formatDistance(item.distance)}
                 </span>
                 <ArrowUpRight className="h-4 w-4 text-muted-foreground/50 shrink-0" />
               </button>

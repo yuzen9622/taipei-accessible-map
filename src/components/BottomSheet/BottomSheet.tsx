@@ -245,10 +245,9 @@ export default function BottomSheet() {
         setSheetMode("plan");
         return;
       }
-      // If clicking the already-active panel, close it
-      if (activeRailPanel === panel && !modePanelActive) {
-        setActiveRailPanel("none");
-      } else {
+      // Re-clicking the active item keeps the panel open — closing on the
+      // second click read as a bug (close lives on the X / collapse toggle).
+      if (activeRailPanel !== panel || modePanelActive) {
         // Reset to home mode if we were in a mode panel
         if (modePanelActive) {
           setSheetMode("home");

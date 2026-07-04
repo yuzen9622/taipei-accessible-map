@@ -25,6 +25,8 @@ interface NavState {
   compassPermission: CompassPermission;
   /** Timestamp of the last manual step change; brief lock against auto-advance. */
   lastManualTs: number;
+  /** True after the user drags the map mid-navigation; camera-follow pauses. */
+  followPaused: boolean;
 }
 
 interface NavAction {
@@ -38,6 +40,7 @@ interface NavAction {
   setIsOffRoute: (v: boolean) => void;
   setArrived: (v: boolean) => void;
   setCompassPermission: (p: CompassPermission) => void;
+  setFollowPaused: (v: boolean) => void;
   reset: () => void;
 }
 
@@ -54,6 +57,7 @@ const initialState: NavState = {
   arrived: false,
   compassPermission: "unknown",
   lastManualTs: 0,
+  followPaused: false,
 };
 
 const useNavStore = create<NavStore>((set) => ({
@@ -75,6 +79,7 @@ const useNavStore = create<NavStore>((set) => ({
   setIsOffRoute: (isOffRoute) => set({ isOffRoute }),
   setArrived: (arrived) => set({ arrived }),
   setCompassPermission: (compassPermission) => set({ compassPermission }),
+  setFollowPaused: (followPaused) => set({ followPaused }),
   // Keep the iOS compass-permission grant across navigation sessions.
   reset: () =>
     set((s) => ({ ...initialState, compassPermission: s.compassPermission })),

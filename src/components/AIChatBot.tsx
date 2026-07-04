@@ -259,18 +259,13 @@ export default function AIChatBot() {
         // Sits above the 2D/3D + locate button stack (two 44px buttons + gap)
         "bottom-[232px] right-3 justify-end",
         "lg:bottom-[124px] lg:right-auto lg:justify-start",
-        sidebarCollapsed
-          ? "lg:left-8"
-          : panelOpen
-            ? "lg:left-[468px]"
-            : "lg:left-[76px]",
+        // The icon rail stays visible when collapsed, so sit to its right.
+        !sidebarCollapsed && panelOpen ? "lg:left-[468px]" : "lg:left-[76px]",
         open && "bottom-2 lg:bottom-2",
         open &&
-          (sidebarCollapsed
-            ? "lg:left-3"
-            : panelOpen
-              ? "lg:left-[453px]"
-              : "lg:left-[68px]"),
+          (!sidebarCollapsed && panelOpen
+            ? "lg:left-[453px]"
+            : "lg:left-[68px]"),
       )}
       style={{ transition: "left 0.3s ease, bottom 0.3s ease" }}
     >

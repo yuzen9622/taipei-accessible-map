@@ -299,5 +299,9 @@
   "sosHold": "長按 3 秒",
   "sosTriggered": "已進入緊急求助模式，請選擇分享方式",
   "shareText": "我目前的位置：{{address}}",
-  "sosShareText": "🚨 緊急求助！我需要協助，我的位置：{{address}}"
+  "sosShareText": "🚨 緊急求助！我需要協助，我的位置：{{address}}",
+  "resumeFollow": "回到導航",
+  "customize": "自訂",
+  "done": "完成",
+  "customizeHint": "點選項目以加入或移除快捷功能"
 }

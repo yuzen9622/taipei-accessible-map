@@ -176,6 +176,17 @@ export default function useNavigation() {
     return () => window.removeEventListener(evt, handler as EventListener);
   }, [compassPermission]);
 
+  // ---- Pause camera-follow when the user drags the map; resume via button ----
+  useEffect(() => {
+    const map = useMapStore.getState().map;
+    if (!map) return;
+    const pause = () => useNavStore.getState().setFollowPaused(true);
+    map.on("dragstart", pause);
+    return () => {
+      map.off("dragstart", pause);
+    };
+  }, []);
+
   // ---- Camera + heading loop: follow user, rotate to heading (throttled) ----
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -223,6 +234,10 @@ export default function useNavigation() {
           lastHeadingTs = now;
         }
       }
+
+      // Let the user inspect the map freely after a drag; the resume
+      // button (NavigationController) re-enables follow.
+      if (useNavStore.getState().followPaused) return;
 
       if (loc && now - lastCamTs > CAMERA_THROTTLE_MS) {
         // 3D: heading-up tilted follow. 2D: flat north-up plane, still

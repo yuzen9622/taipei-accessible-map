@@ -18,11 +18,10 @@ export default function GotoNowButton() {
         "absolute z-20 transition-all duration-300 flex flex-col gap-2",
         "bottom-32 right-3",
         "lg:bottom-5",
-        sidebarCollapsed
-          ? "lg:left-8 lg:right-auto"
-          : panelOpen
-            ? "lg:left-[468px] lg:right-auto"
-            : "lg:left-[76px] lg:right-auto",
+        // The icon rail stays visible when collapsed, so sit to its right.
+        !sidebarCollapsed && panelOpen
+          ? "lg:left-[468px] lg:right-auto"
+          : "lg:left-[76px] lg:right-auto",
       )}
     >
       <Button
