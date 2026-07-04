@@ -280,5 +280,23 @@
     "other": "Other"
   },
   "notificationUnsupported": "Notifications are not supported in this browser",
-  "notificationBlocked": "Notifications are blocked — enable them in your browser settings"
+  "notificationBlocked": "Notifications are blocked — enable them in your browser settings",
+  "shareLocation": "Share Location",
+  "shareLocationTitle": "Share My Location",
+  "shareLocationAt": "Location: {{address}}",
+  "locating": "Locating…",
+  "shareToLine": "Share to LINE",
+  "shareToLineDesc": "Send to friends",
+  "shareToWhatsApp": "Share to WhatsApp",
+  "shareToWhatsAppDesc": "Send to contacts",
+  "copyLink": "Copy Link",
+  "copyLinkDesc": "Paste to view location",
+  "linkCopied": "Location link copied",
+  "copyFailed": "Copy failed — please copy manually",
+  "sosOptional": "Emergency SOS (optional)",
+  "sosOptionalDesc": "Attach my location and send to emergency contacts",
+  "sosHold": "Hold 3s",
+  "sosTriggered": "Emergency mode on — choose how to share",
+  "shareText": "My current location: {{address}}",
+  "sosShareText": "🚨 SOS! I need help. My location: {{address}}"
 }

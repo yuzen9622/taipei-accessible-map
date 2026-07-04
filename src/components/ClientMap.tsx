@@ -16,6 +16,7 @@ import useNavStore from "@/stores/useNavStore";
 import AIChatBot from "./AIChatBot";
 import AirQualityWidget from "./AirQualityWidget";
 import NavigationController from "./NavigationController";
+import ShareLocation from "./ShareLocation";
 import GotoNowButton from "./shared/GotoNowButton";
 import SearchPin from "./shared/SearchPin";
 import AIResultWrapper from "./Wrapper/AIResultWrapper";
@@ -75,6 +76,15 @@ export default function ClientMap() {
   const { i18n } = useAppTranslation();
   const [mounted, setMounted] = useState(false);
 
+  // Shared-location links (?loc=lat,lng) start the camera on the shared point.
+  const [initialCenter] = useState<{ lat: number; lng: number } | null>(() => {
+    if (typeof window === "undefined") return null;
+    const loc = new URLSearchParams(window.location.search).get("loc");
+    if (!loc) return null;
+    const [lat, lng] = loc.split(",").map(Number);
+    return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+  });
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -132,6 +142,40 @@ export default function ClientMap() {
     );
     return () => navigator.geolocation.clearWatch(watchId);
   }, [setUserLocation]);
+
+  // Shared-location links (?loc=lat,lng from the share dialog) land on the
+  // shared point with the place panel open.
+  useEffect(() => {
+    const loc = new URLSearchParams(window.location.search).get("loc");
+    if (!loc) return;
+    const [lat, lng] = loc.split(",").map(Number);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+    const position = { lat, lng };
+    const lang = i18n.language === "zh-TW" ? "zh-TW" : "en";
+    setSheetMode("place");
+    fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=${lang}&zoom=18&addressdetails=1`,
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        const address = data?.display_name ?? `${lat}, ${lng}`;
+        setInfoShow({ isOpen: true, kind: "coordinate", address, position });
+        setSearchPlace({ kind: "coordinate", address, position });
+      })
+      .catch(() => {
+        setInfoShow({
+          isOpen: true,
+          kind: "coordinate",
+          address: `${lat}, ${lng}`,
+          position,
+        });
+        setSearchPlace({
+          kind: "coordinate",
+          address: `${lat}, ${lng}`,
+          position,
+        });
+      });
+  }, [i18n.language, setInfoShow, setSearchPlace, setSheetMode]);
 
   const handleMouseDown = useCallback((e: MapLayerMouseEvent) => {
     pointerDownTime.current = Date.now();
@@ -203,9 +247,9 @@ export default function ClientMap() {
     <Map
       key={i18n.language}
       initialViewState={{
-        longitude: 121.55,
-        latitude: 25.03,
-        zoom: 15,
+        longitude: initialCenter?.lng ?? 121.55,
+        latitude: initialCenter?.lat ?? 25.03,
+        zoom: initialCenter ? 17 : 15,
       }}
       mapStyle={mapStyle}
       onMouseDown={handleMouseDown}
@@ -219,6 +263,7 @@ export default function ClientMap() {
       <AirQualityWidget />
       <AccessibilityPin />
       <GotoNowButton />
+      <ShareLocation />
       <NowPin />
       {searchPlace ? (
         <SearchPin destination={searchPlace} />

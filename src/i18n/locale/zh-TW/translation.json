@@ -281,5 +281,23 @@
     "other": "其他"
   },
   "notificationUnsupported": "此瀏覽器不支援通知功能",
-  "notificationBlocked": "通知權限已被瀏覽器封鎖，請至瀏覽器設定開啟"
+  "notificationBlocked": "通知權限已被瀏覽器封鎖，請至瀏覽器設定開啟",
+  "shareLocation": "分享位置",
+  "shareLocationTitle": "分享此刻位置",
+  "shareLocationAt": "位置：{{address}}",
+  "locating": "定位中…",
+  "shareToLine": "分享至 LINE",
+  "shareToLineDesc": "傳送給好友",
+  "shareToWhatsApp": "分享至 WhatsApp",
+  "shareToWhatsAppDesc": "傳送給聯絡人",
+  "copyLink": "複製連結",
+  "copyLinkDesc": "貼上即可查看位置",
+  "linkCopied": "已複製位置連結",
+  "copyFailed": "複製失敗，請手動複製",
+  "sosOptional": "緊急求助（可選）",
+  "sosOptionalDesc": "附上我的位置，發送給緊急聯絡人",
+  "sosHold": "長按 3 秒",
+  "sosTriggered": "已進入緊急求助模式，請選擇分享方式",
+  "shareText": "我目前的位置：{{address}}",
+  "sosShareText": "🚨 緊急求助！我需要協助，我的位置：{{address}}"
 }
