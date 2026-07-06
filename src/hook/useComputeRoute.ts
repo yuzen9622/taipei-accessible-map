@@ -21,9 +21,10 @@ export default function useComputeRoute() {
     async (params: {
       origin?: LatLng;
       destination?: LatLng;
+      waypoints?: LatLng[];
       query?: string;
     }): Promise<boolean> => {
-      const { origin, destination, query } = params;
+      const { origin, destination, waypoints, query } = params;
 
       if (!query && !origin && !destination) return false;
 
@@ -44,6 +45,9 @@ export default function useComputeRoute() {
             : undefined,
           destination: endLocation
             ? { latitude: endLocation.lat, longitude: endLocation.lng }
+            : undefined,
+          waypoints: waypoints?.length
+            ? waypoints.map((w) => ({ latitude: w.lat, longitude: w.lng }))
             : undefined,
           query: query || undefined,
           userLocation: userLocation
@@ -66,6 +70,9 @@ export default function useComputeRoute() {
             [response.data.origin.lng, response.data.origin.lat],
             [response.data.destination.lng, response.data.destination.lat],
           );
+          for (const w of response.data.waypoints ?? []) {
+            bounds.extend([w.lng, w.lat]);
+          }
           map.fitBounds(bounds, {
             padding: { top: 50, bottom: 200, left: 50, right: 50 },
           });
@@ -94,6 +101,7 @@ export default function useComputeRoute() {
     async (params: {
       origin?: LatLng;
       destination?: LatLng;
+      waypoints?: LatLng[];
       query?: string;
     }): Promise<boolean> => {
       return computeRoute(params);

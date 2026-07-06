@@ -5,15 +5,26 @@ import {
   ArrowUpDown,
   Loader2,
   Navigation,
+  Plus,
   Search,
+  X,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import PlaceInput from "@/components/shared/PlaceInput";
 import useComputeRoute from "@/hook/useComputeRoute";
 import { useAppTranslation } from "@/i18n/client";
 import useMapStore from "@/stores/useMapStore";
 import type { PlaceDetail } from "@/types";
 import { Button } from "../ui/button";
+
+const MAX_WAYPOINTS = 5;
+
+interface WaypointRow {
+  id: number;
+  place: PlaceDetail | null;
+  input: string;
+}
 
 export default function RoutePlanContent() {
   const { t } = useAppTranslation();
@@ -35,6 +46,8 @@ export default function RoutePlanContent() {
   const [originInput, setOriginInput] = useState(originName || "");
   const [destInput, setDestInput] = useState(destinationName || "");
   const [useMyLocation, setUseMyLocation] = useState(!origin);
+  const [waypointRows, setWaypointRows] = useState<WaypointRow[]>([]);
+  const nextWaypointId = useRef(0);
 
   useEffect(() => {
     setOriginInput(originName || "");
@@ -78,6 +91,42 @@ export default function RoutePlanContent() {
     [setDestination, setDestinationName],
   );
 
+  const handleWaypointSelect = useCallback(
+    (index: number, place: PlaceDetail) => {
+      const name =
+        place.kind === "place"
+          ? place.place.name || place.place.display_name || ""
+          : place.address || "";
+      setWaypointRows((rows) =>
+        rows.map((r, i) => (i === index ? { ...r, place, input: name } : r)),
+      );
+    },
+    [],
+  );
+
+  const handleWaypointInputChange = useCallback(
+    (index: number, value: string) => {
+      setWaypointRows((rows) =>
+        rows.map((r, i) =>
+          i === index ? { ...r, place: null, input: value } : r,
+        ),
+      );
+    },
+    [],
+  );
+
+  const handleRemoveWaypoint = useCallback((index: number) => {
+    setWaypointRows((rows) => rows.filter((_, i) => i !== index));
+  }, []);
+
+  const handleAddWaypointRow = useCallback(() => {
+    setWaypointRows((rows) =>
+      rows.length >= MAX_WAYPOINTS
+        ? rows
+        : [...rows, { id: nextWaypointId.current++, place: null, input: "" }],
+    );
+  }, []);
+
   const handleUseMyLocation = useCallback(() => {
     setOrigin(null);
     setOriginName("");
@@ -91,7 +140,10 @@ export default function RoutePlanContent() {
     const tmpUseMyLoc = useMyLocation;
 
     if (destination) {
-      if (destination.kind === "coordinate" && destination.address === "你的位置") {
+      if (
+        destination.kind === "coordinate" &&
+        destination.address === "你的位置"
+      ) {
         setOrigin(null);
         setOriginName("");
         setOriginInput("");
@@ -129,37 +181,77 @@ export default function RoutePlanContent() {
     setDestinationName,
   ]);
 
+  const canStart =
+    (useMyLocation ? !!userLocation : !!origin?.position) &&
+    !!destination?.position;
+
   const handleStartRoute = useCallback(async () => {
+    if (isLoading) return;
+    if (!canStart) {
+      if (!destination?.position) {
+        toast.error(
+          destInput.trim()
+            ? t("selectDestinationFromSuggestions")
+            : t("chooseDestination"),
+        );
+      } else if (useMyLocation && !userLocation) {
+        toast.error(t("enableLocationOrEnterOrigin"));
+      } else if (!useMyLocation && !origin?.position) {
+        toast.error(
+          originInput.trim()
+            ? t("selectOriginFromSuggestions")
+            : t("chooseOrigin"),
+        );
+      }
+      return;
+    }
+
+    const unresolvedWaypoint = waypointRows.find(
+      (r) => r.input.trim() && !r.place,
+    );
+    if (unresolvedWaypoint) {
+      toast.error(t("selectWaypointFromSuggestions"));
+      return;
+    }
+
     const originPos = useMyLocation ? userLocation : (origin?.position ?? null);
     const destPos = destination?.position ?? null;
-
     if (!originPos || !destPos) return;
+
+    const waypoints = waypointRows
+      .map((r) => r.place?.position)
+      .filter((position): position is NonNullable<typeof position> =>
+        Boolean(position),
+      );
 
     const success = await handleComputeRoute({
       origin: originPos,
       destination: destPos,
+      waypoints: waypoints.length ? waypoints : undefined,
     });
     if (success) {
       setSearchPlace(null);
       setSheetMode("route");
     }
   }, [
+    isLoading,
+    canStart,
     useMyLocation,
     userLocation,
     origin,
+    originInput,
     destination,
+    destInput,
+    waypointRows,
     handleComputeRoute,
     setSearchPlace,
     setSheetMode,
+    t,
   ]);
 
   const handleBack = useCallback(() => {
     setSheetMode("home");
   }, [setSheetMode]);
-
-  const canStart =
-    (useMyLocation ? !!userLocation : !!origin?.position) &&
-    !!destination?.position;
 
   return (
     <div className="space-y-4">
@@ -181,6 +273,12 @@ export default function RoutePlanContent() {
           {/* Left: colored dots + line */}
           <div className="flex flex-col items-center py-4 px-3">
             <div className="h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20 shrink-0" />
+            {waypointRows.map((row) => (
+              <Fragment key={row.id}>
+                <div className="flex-1 w-px bg-border my-1 min-h-[20px]" />
+                <div className="h-2.5 w-2.5 rounded-full bg-blue-500 ring-2 ring-blue-500/20 shrink-0" />
+              </Fragment>
+            ))}
             <div className="flex-1 w-px bg-border my-1 min-h-[20px]" />
             <div className="h-3 w-3 rounded-full bg-red-500 ring-2 ring-red-500/20 shrink-0" />
           </div>
@@ -217,6 +315,40 @@ export default function RoutePlanContent() {
             {/* Divider */}
             <div className="border-t border-border/60 mx-1" />
 
+            {/* Waypoint inputs */}
+            {waypointRows.map((row, index) => (
+              <Fragment key={row.id}>
+                <div className="relative overflow-visible flex items-center gap-1">
+                  <div className="flex-1 min-w-0">
+                    <PlaceInput
+                      hideIcon
+                      className="border-none shadow-none text-sm h-11"
+                      value={row.input}
+                      onChange={(e) =>
+                        handleWaypointInputChange(
+                          index,
+                          (e.target as HTMLInputElement).value,
+                        )
+                      }
+                      placeholder={t("chooseWaypoint")}
+                      onPlaceSelect={(place) =>
+                        handleWaypointSelect(index, place)
+                      }
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveWaypoint(index)}
+                    aria-label={t("removeWaypoint")}
+                    className="h-7 w-7 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors shrink-0 mr-1"
+                  >
+                    <X className="h-3.5 w-3.5 text-muted-foreground" />
+                  </button>
+                </div>
+                <div className="border-t border-border/60 mx-1" />
+              </Fragment>
+            ))}
+
             {/* Destination input */}
             <div className="relative overflow-visible">
               <PlaceInput
@@ -245,6 +377,18 @@ export default function RoutePlanContent() {
         </div>
       </div>
 
+      {/* Add waypoint */}
+      {waypointRows.length < MAX_WAYPOINTS && (
+        <button
+          type="button"
+          onClick={handleAddWaypointRow}
+          className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-muted-foreground hover:bg-muted/40 transition-colors w-full"
+        >
+          <Plus className="h-4 w-4" />
+          {t("addWaypoint")}
+        </button>
+      )}
+
       {/* My Location shortcut */}
       {!useMyLocation && (
         <button
@@ -260,8 +404,11 @@ export default function RoutePlanContent() {
       {/* Start Route */}
       <Button
         onClick={handleStartRoute}
-        disabled={isLoading || !canStart}
-        className="w-full rounded-xl h-12 text-base gap-2"
+        disabled={isLoading}
+        aria-disabled={!canStart}
+        className={`w-full rounded-xl h-12 text-base gap-2 ${
+          !canStart ? "opacity-50" : ""
+        }`}
       >
         {isLoading ? (
           <>

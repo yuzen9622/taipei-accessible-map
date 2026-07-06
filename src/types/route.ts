@@ -182,6 +182,7 @@ export interface RouteIntent {
 export interface AccessibleRouteData {
   origin: { lat: number; lng: number };
   destination: { lat: number; lng: number };
+  waypoints?: { lat: number; lng: number }[];
   city: string;
   routes: AccessibleRoute[];
   intent?: RouteIntent;
@@ -191,6 +192,7 @@ export interface AccessibleRouteData {
 export interface AccessibleRouteRequest {
   origin?: string | { latitude: number; longitude: number };
   destination?: string | { latitude: number; longitude: number };
+  waypoints?: (string | { latitude: number; longitude: number })[];
   query?: string;
   userLocation?: { latitude: number; longitude: number };
   mode?: "wheelchair" | "elderly" | "visual_impaired" | "normal";

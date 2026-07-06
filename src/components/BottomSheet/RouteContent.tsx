@@ -83,7 +83,10 @@ export default function RouteContent() {
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
-        <h1 className="text-lg font-bold">{t("route")}</h1>
+        <div className="h-7 w-7 rounded-full bg-emerald-500/10 flex items-center justify-center shrink-0">
+          <Navigation className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+        </div>
+        <h1 className="text-lg font-bold">{t("routeResultsTitle")}</h1>
       </div>
 
       {/* Start Navigation Button */}
