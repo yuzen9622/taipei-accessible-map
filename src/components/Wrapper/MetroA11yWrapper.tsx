@@ -1,13 +1,17 @@
+import { Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Marker, useMap } from "react-map-gl/maplibre";
+import { toast } from "sonner";
 import useSupercluster from "use-supercluster";
 import MetroA11yPin from "@/components/MetroA11yPin";
+import { useAppTranslation } from "@/i18n/client";
 import { getAllA11yBathrooms, getAllA11yPlaces } from "@/lib/api/a11y";
 import { formatBathroom, formatMetroA11y } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import type { IBathroom, Marker as MarkerType, metroA11yData } from "@/types";
 
 export default function AccessibilityPin() {
+  const { t } = useAppTranslation();
   const { selectedA11yTypes, a11yPlaces, setA11yPlaces, routeA11y } =
     useMapStore();
   const { current: map } = useMap();
@@ -15,9 +19,11 @@ export default function AccessibilityPin() {
     null,
   );
   const [zoom, setZoom] = useState<number>(15);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const controller = new AbortController();
+    setIsLoading(true);
     Promise.all([getAllA11yPlaces(), getAllA11yBathrooms()])
       .then(([placesRes, bathroomRes]) => {
         if (controller.signal.aborted) return;
@@ -28,9 +34,15 @@ export default function AccessibilityPin() {
           ...formatBathroom(bathrooms),
         ]);
       })
-      .catch(() => {});
+      .catch(() => {
+        if (controller.signal.aborted) return;
+        toast.error(t("a11yLoadFailed"));
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setIsLoading(false);
+      });
     return () => controller.abort();
-  }, [setA11yPlaces]);
+  }, [setA11yPlaces, t]);
 
   const updateBounds = () => {
     if (!map) return;
@@ -64,6 +76,16 @@ export default function AccessibilityPin() {
     [selectedA11yTypes, a11yPlaces],
   );
 
+  // Toggling a filter with zero matching results used to render nothing with
+  // no explanation ("looked broken"); confirm the empty result explicitly.
+  useEffect(() => {
+    if (isLoading) return;
+    if (selectedA11yTypes.size === 0) return;
+    if (filteredPlaces.length === 0) {
+      toast(t("noNearbyA11y"));
+    }
+  }, [selectedA11yTypes, isLoading, filteredPlaces.length, t]);
+
   const points = useMemo(() => {
     return filteredPlaces.map((place) => ({
       type: "Feature" as const,
@@ -84,6 +106,12 @@ export default function AccessibilityPin() {
 
   return (
     <>
+      {isLoading && selectedA11yTypes.size > 0 && (
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 rounded-full bg-background/90 backdrop-blur-sm border border-border/50 px-3 py-1.5 text-xs shadow-lg">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          {t("loadingA11yData")}
+        </div>
+      )}
       {clusters.map((cluster) => {
         const [longitude, latitude] = cluster.geometry.coordinates;
         const properties = cluster.properties as any;

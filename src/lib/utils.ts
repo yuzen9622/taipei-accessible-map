@@ -14,18 +14,20 @@ export function cn(...inputs: ClassValue[]) {
 
 export function formatMetroA11y(places: metroA11yData[]) {
   return places.map((place) => {
-    const { _id, 經度, 緯度 } = place;
-    const a11yType = place["出入口電梯/無障礙坡道名稱"].includes("電梯")
-      ? A11yEnum.ELEVATOR
-      : A11yEnum.RAMP;
+    const { _id, osmId, 經度, 緯度 } = place;
+    const name = place["出入口電梯/無障礙坡道名稱"] ?? "";
+    const a11yType = name.includes("電梯") ? A11yEnum.ELEVATOR : A11yEnum.RAMP;
 
     return {
-      id: _id,
-      position: { lat: parseFloat(緯度), lng: parseFloat(經度) },
+      id: _id ?? osmId,
+      position: {
+        lat: parseFloat(String(緯度)),
+        lng: parseFloat(String(經度)),
+      },
       type: "pin",
       content: {
-        title: place["出入口電梯/無障礙坡道名稱"],
-        desc: place["出入口編號"],
+        title: name,
+        desc: place.出入口編號 ?? "",
       },
       zIndex: 1,
       a11yType,

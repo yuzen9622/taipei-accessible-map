@@ -16,8 +16,8 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { getNearbyRouteA11yPlaces, getOsmPlaceDetail } from "@/lib/api/a11y";
 import { useAppTranslation } from "@/i18n/client";
+import { getNearbyRouteA11yPlaces, getOsmPlaceDetail } from "@/lib/api/a11y";
 import { getPlaceTypeLabel } from "@/lib/placeTypes";
 import useMapStore from "@/stores/useMapStore";
 import type { IBathroom, metroA11yData } from "@/types";
@@ -308,6 +308,10 @@ export default function PlaceContent() {
           <ArrowLeft className="h-4 w-4" />
         </button>
         <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-1.5 text-xs font-medium text-sky-600 dark:text-sky-400 mb-0.5">
+            <MapPin className="h-3.5 w-3.5" />
+            {t("placeInfoLabel")}
+          </div>
           <h1 className="text-lg font-bold leading-tight line-clamp-2">
             {name}
           </h1>
@@ -449,7 +453,10 @@ export default function PlaceContent() {
                 key={m._id}
                 type="button"
                 onClick={() =>
-                  handleFlyTo(parseFloat(m.經度), parseFloat(m.緯度))
+                  handleFlyTo(
+                    parseFloat(String(m.經度)),
+                    parseFloat(String(m.緯度)),
+                  )
                 }
                 className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/40 hover:bg-muted/70 transition-colors text-left"
               >
@@ -575,7 +582,9 @@ export default function PlaceContent() {
         )}
 
       {/* Reviews */}
-      {placeIdForReview && <PlaceReviewSection placeId={placeIdForReview} />}
+      {placeIdForReview && (
+        <PlaceReviewSection osmId={placeIdForReview} placeType="osm" />
+      )}
     </div>
   );
 }

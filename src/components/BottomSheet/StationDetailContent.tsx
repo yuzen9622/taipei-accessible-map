@@ -115,8 +115,8 @@ export default function StationDetailContent() {
                             if (map)
                               map.flyTo({
                                 center: [
-                                  parseFloat(m.經度),
-                                  parseFloat(m.緯度),
+                                  parseFloat(String(m.經度)),
+                                  parseFloat(String(m.緯度)),
                                 ],
                                 zoom: 18,
                               });

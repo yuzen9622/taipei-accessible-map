@@ -64,13 +64,15 @@ export type InfoShow =
   | { isOpen: boolean; kind: null };
 
 export type metroA11yData = {
-  _id: string;
-  項次: number;
-  _importdata: { date: string; timezone: string; timezone_type: number };
-  出入口編號: string;
+  _id?: string;
+  osmId?: string;
+  source?: "metro" | "osm";
+  項次: number | string;
+  _importdata?: { date: string; timezone: string; timezone_type: number };
+  出入口編號?: string;
   "出入口電梯/無障礙坡道名稱": string;
-  經度: string;
-  緯度: string;
+  經度: number | string;
+  緯度: number | string;
 };
 
 export type metroA11yAPI = {
