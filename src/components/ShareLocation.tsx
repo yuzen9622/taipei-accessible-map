@@ -1,17 +1,17 @@
 "use client";
 
-import { Copy, LocateFixed, Share2, Volume2, VolumeX } from "lucide-react";
+import { LocateFixed, Share2, Volume2, VolumeX } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import SosDialog from "@/components/Sos/SosDialog";
+import ShareTargets from "@/components/shared/ShareTargets";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
 import { useAppTranslation } from "@/i18n/client";
 import useMapStore from "@/stores/useMapStore";
 import useNavStore from "@/stores/useNavStore";
@@ -20,19 +20,16 @@ const SOS_HOLD_MS = 3000;
 
 /**
  * Share / emergency-report controls (per the reference mockup):
- * a share FAB + an SOS hold-to-trigger button on the map's right edge,
- * opening a "share my location" dialog with LINE / WhatsApp / copy-link
- * targets and an optional emergency mode.
- *
- * NOTE: sending to saved emergency contacts requires backend support
- * (contact storage + server-side dispatch); until then emergency mode
- * only switches the share message to an SOS text.
+ * a share FAB opening a plain "share my location" dialog, plus an SOS
+ * hold-to-trigger button that opens the fully separate SosDialog flow.
+ * The two no longer share any UI — emergency mode was removed from the
+ * plain share dialog per QA feedback.
  */
 export default function ShareLocation() {
   const { t, i18n } = useAppTranslation();
   const { userLocation, isNavigating } = useMapStore();
   const [open, setOpen] = useState(false);
-  const [emergency, setEmergency] = useState(false);
+  const [sosOpen, setSosOpen] = useState(false);
   const [address, setAddress] = useState<string | null>(null);
 
   // --- SOS hold-to-trigger state ---
@@ -52,14 +49,12 @@ export default function ShareLocation() {
       const left = SOS_HOLD_MS - (Date.now() - startedAt);
       if (left <= 0) {
         clearHold();
-        setEmergency(true);
-        setOpen(true);
-        toast.warning(t("sosTriggered"));
+        setSosOpen(true);
       } else {
         setHoldRemaining(Math.ceil(left / 1000));
       }
     }, 100);
-  }, [clearHold, t]);
+  }, [clearHold]);
 
   useEffect(() => clearHold, [clearHold]);
 
@@ -99,54 +94,15 @@ export default function ShareLocation() {
     ? `${window.location.origin}/${i18n.language}?loc=${userLocation.lat.toFixed(6)},${userLocation.lng.toFixed(6)}`
     : "";
 
-  const shareText = emergency
-    ? t("sosShareText", { address: address ?? t("myLocation") })
-    : t("shareText", { address: address ?? t("myLocation") });
+  const shareText = t("shareText", { address: address ?? t("myLocation") });
 
   const fullMessage = `${shareText} ${shareUrl}`;
-
-  const handleLine = useCallback(() => {
-    window.open(
-      `https://line.me/R/share?text=${encodeURIComponent(fullMessage)}`,
-      "_blank",
-      "noopener",
-    );
-  }, [fullMessage]);
-
-  const handleWhatsApp = useCallback(() => {
-    window.open(
-      `https://wa.me/?text=${encodeURIComponent(fullMessage)}`,
-      "_blank",
-      "noopener",
-    );
-  }, [fullMessage]);
-
-  const handleCopy = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(fullMessage);
-      toast.success(t("linkCopied"));
-    } catch {
-      // Clipboard API needs focus + secure context; fall back to execCommand
-      // for in-app browsers (e.g. LINE) and older engines.
-      const textarea = document.createElement("textarea");
-      textarea.value = fullMessage;
-      textarea.style.position = "fixed";
-      textarea.style.opacity = "0";
-      document.body.appendChild(textarea);
-      textarea.select();
-      const copied = document.execCommand("copy");
-      textarea.remove();
-      if (copied) toast.success(t("linkCopied"));
-      else toast.error(t("copyFailed"));
-    }
-  }, [fullMessage, t]);
 
   const openShare = useCallback(() => {
     if (!userLocation) {
       toast.error(t("noLocation"));
       return;
     }
-    setEmergency(false);
     setOpen(true);
   }, [userLocation, t]);
 
@@ -222,70 +178,13 @@ export default function ShareLocation() {
             </p>
           </DialogHeader>
 
-          <div className="grid grid-cols-3 gap-3 mt-2">
-            <button
-              type="button"
-              onClick={handleLine}
-              className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border/60 hover:bg-muted/60 hover:shadow-sm transition-all"
-            >
-              <Image src="/line-icon.svg" alt="LINE" width={28} height={28} />
-              <span className="text-sm font-semibold">{t("shareToLine")}</span>
-              <span className="text-[11px] text-muted-foreground">
-                {t("shareToLineDesc")}
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={handleWhatsApp}
-              className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border/60 hover:bg-muted/60 hover:shadow-sm transition-all"
-            >
-              <Image
-                src="/whatsapp-icon.svg"
-                alt="WhatsApp"
-                width={28}
-                height={28}
-              />
-              <span className="text-sm font-semibold">
-                {t("shareToWhatsApp")}
-              </span>
-              <span className="text-[11px] text-muted-foreground">
-                {t("shareToWhatsAppDesc")}
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={handleCopy}
-              className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border/60 hover:bg-muted/60 hover:shadow-sm transition-all"
-            >
-              <span className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
-                <Copy className="h-4 w-4 text-primary" />
-              </span>
-              <span className="text-sm font-semibold">{t("copyLink")}</span>
-              <span className="text-[11px] text-muted-foreground">
-                {t("copyLinkDesc")}
-              </span>
-            </button>
-          </div>
-
-          {/* Emergency mode */}
-          <div className="flex items-center gap-3 mt-2 pt-4 border-t border-border/40">
-            <span className="h-8 w-8 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center shrink-0">
-              SOS
-            </span>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold">{t("sosOptional")}</p>
-              <p className="text-xs text-muted-foreground">
-                {t("sosOptionalDesc")}
-              </p>
-            </div>
-            <Switch
-              checked={emergency}
-              onCheckedChange={setEmergency}
-              aria-label={t("sosOptional")}
-            />
+          <div className="mt-2">
+            <ShareTargets message={fullMessage} />
           </div>
         </DialogContent>
       </Dialog>
+
+      <SosDialog open={sosOpen} onOpenChange={setSosOpen} />
     </>
   );
 }

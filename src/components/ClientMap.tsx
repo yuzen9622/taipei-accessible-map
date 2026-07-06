@@ -63,8 +63,10 @@ function applyMapLanguage(map: maplibregl.Map, language: string) {
 
 export default function ClientMap() {
   const {
+    map,
     setMap,
     setInfoShow,
+    userLocation,
     setUserLocation,
     setSearchPlace,
     searchPlace,
@@ -142,6 +144,22 @@ export default function ClientMap() {
     );
     return () => navigator.geolocation.clearWatch(watchId);
   }, [setUserLocation]);
+
+  // Cold-load with no share link: recenter the camera on the user's first GPS
+  // fix instead of leaving it on the hardcoded Taipei fallback. Fires once so
+  // it never fights subsequent manual panning.
+  const hasAutoLocatedRef = useRef(false);
+  useEffect(() => {
+    if (initialCenter) return;
+    if (hasAutoLocatedRef.current) return;
+    if (!map || !userLocation) return;
+    hasAutoLocatedRef.current = true;
+    map.flyTo({
+      center: [userLocation.lng, userLocation.lat],
+      zoom: 17,
+      duration: 1000,
+    });
+  }, [map, userLocation, initialCenter]);
 
   // Shared-location links (?loc=lat,lng from the share dialog) land on the
   // shared point with the place panel open.
