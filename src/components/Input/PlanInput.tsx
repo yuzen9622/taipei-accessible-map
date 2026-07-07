@@ -1,5 +1,16 @@
 "use client";
-import { ArrowDownUpIcon, Loader2, Search } from "lucide-react";
+import {
+  ArrowDownUpIcon,
+  Loader2,
+  Search,
+  Bus,
+  Car,
+  Footprints,
+  Bike,
+  Accessibility,
+  EyeOff,
+  User,
+} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import useComputeRoute from "@/hook/useComputeRoute";
 import { useAppTranslation } from "@/i18n/client";
@@ -26,6 +37,8 @@ export default function RoutePlanInput() {
 
   const [queryInput, setQueryInput] = useState("");
   const [mode, setMode] = useState<"structured" | "natural">("natural");
+  const [travelMode, setTravelMode] = useState<"transit" | "drive" | "motorcycle" | "walk">("transit");
+  const [a11yMode, setA11yMode] = useState<"normal" | "wheelchair" | "elderly" | "visual_impaired">("normal");
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -49,16 +62,18 @@ export default function RoutePlanInput() {
   const handleNaturalQuery = useCallback(async () => {
     const q = queryInput.trim();
     if (!q) return;
-    await handleComputeRoute({ query: q });
-  }, [queryInput, handleComputeRoute]);
+    await handleComputeRoute({ query: q, mode: a11yMode, travelMode });
+  }, [queryInput, handleComputeRoute, a11yMode, travelMode]);
 
   const handleStructuredRoute = useCallback(async () => {
     if (!origin?.position && !destination?.position) return;
     await handleComputeRoute({
       origin: origin?.position,
       destination: destination?.position,
+      mode: a11yMode,
+      travelMode,
     });
-  }, [origin, destination, handleComputeRoute]);
+  }, [origin, destination, handleComputeRoute, a11yMode, travelMode]);
 
   const handleSwitch = () => {
     const prevOriginName = originName;
@@ -70,6 +85,8 @@ export default function RoutePlanInput() {
       handleComputeRoute({
         origin: destination.position,
         destination: origin.position,
+        mode: a11yMode,
+        travelMode,
       });
     }
   };
@@ -108,6 +125,58 @@ export default function RoutePlanInput() {
         >
           {t("manualInput", "手動輸入")}
         </Button>
+      </div>
+
+      <div className="flex flex-col gap-2 mb-3">
+        {/* Transportation Mode */}
+        <div className="flex gap-1 bg-muted/30 p-1 rounded-2xl w-fit">
+          {[
+            { id: "transit", icon: Bus, label: t("transit", "大眾運輸") },
+            { id: "drive", icon: Car, label: t("drive", "開車") },
+            { id: "motorcycle", icon: Bike, label: t("motorcycle", "機車") },
+            { id: "walk", icon: Footprints, label: t("walk", "步行") },
+          ].map((tm) => (
+            <Button
+              key={tm.id}
+              variant={travelMode === tm.id ? "default" : "ghost"}
+              size="sm"
+              className={cn(
+                "h-8 px-3 rounded-xl text-xs flex gap-1.5 transition-all",
+                travelMode === tm.id ? "shadow-sm" : "text-muted-foreground hover:bg-muted/80"
+              )}
+              onClick={() => setTravelMode(tm.id as any)}
+              aria-label={tm.label}
+            >
+              <tm.icon className="h-4 w-4" />
+              <span className="hidden sm:inline">{tm.label}</span>
+            </Button>
+          ))}
+        </div>
+
+        {/* Accessibility Mode */}
+        <div className="flex gap-1 bg-muted/30 p-1 rounded-2xl w-fit">
+          {[
+            { id: "normal", icon: User, label: t("normalMode", "一般") },
+            { id: "wheelchair", icon: Accessibility, label: t("wheelchairMode", "輪椅") },
+            { id: "elderly", icon: User, label: t("elderlyMode", "長者") },
+            { id: "visual_impaired", icon: EyeOff, label: t("visualImpairedMode", "視障") },
+          ].map((am) => (
+            <Button
+              key={am.id}
+              variant={a11yMode === am.id ? "default" : "ghost"}
+              size="sm"
+              className={cn(
+                "h-8 px-3 rounded-xl text-xs flex gap-1.5 transition-all",
+                a11yMode === am.id ? "shadow-sm" : "text-muted-foreground hover:bg-muted/80"
+              )}
+              onClick={() => setA11yMode(am.id as any)}
+              aria-label={am.label}
+            >
+              <am.icon className="h-4 w-4" />
+              <span className="hidden sm:inline">{am.label}</span>
+            </Button>
+          ))}
+        </div>
       </div>
 
       {mode === "natural" ? (

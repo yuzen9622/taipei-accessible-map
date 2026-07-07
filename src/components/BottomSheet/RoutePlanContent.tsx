@@ -8,12 +8,20 @@ import {
   Plus,
   Search,
   X,
+  Bus,
+  Car,
+  Footprints,
+  Bike,
+  Accessibility,
+  EyeOff,
+  User,
 } from "lucide-react";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import PlaceInput from "@/components/shared/PlaceInput";
 import useComputeRoute from "@/hook/useComputeRoute";
 import { useAppTranslation } from "@/i18n/client";
+import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import type { PlaceDetail } from "@/types";
 import { Button } from "../ui/button";
@@ -46,6 +54,8 @@ export default function RoutePlanContent() {
   const [originInput, setOriginInput] = useState(originName || "");
   const [destInput, setDestInput] = useState(destinationName || "");
   const [useMyLocation, setUseMyLocation] = useState(!origin);
+  const [travelMode, setTravelMode] = useState<"transit" | "drive" | "motorcycle" | "walk">("transit");
+  const [a11yMode, setA11yMode] = useState<"normal" | "wheelchair" | "elderly" | "visual_impaired">("normal");
   const [waypointRows, setWaypointRows] = useState<WaypointRow[]>([]);
   const nextWaypointId = useRef(0);
 
@@ -228,6 +238,8 @@ export default function RoutePlanContent() {
       origin: originPos,
       destination: destPos,
       waypoints: waypoints.length ? waypoints : undefined,
+      mode: a11yMode,
+      travelMode,
     });
     if (success) {
       setSearchPlace(null);
@@ -400,6 +412,63 @@ export default function RoutePlanContent() {
           {t("useMyLocationAsOrigin")}
         </button>
       )}
+
+      {/* Modes Selection */}
+      <div className="flex flex-col gap-3 py-2">
+        <div className="flex flex-col gap-2">
+          <span className="text-sm font-medium text-muted-foreground ml-1">交通工具</span>
+          <div className="flex gap-1 bg-muted/30 p-1 rounded-2xl w-full overflow-x-auto no-scrollbar">
+            {[
+              { id: "transit", icon: Bus, label: t("transit", "大眾運輸") },
+              { id: "drive", icon: Car, label: t("drive", "開車") },
+              { id: "motorcycle", icon: Bike, label: t("motorcycle", "機車") },
+              { id: "walk", icon: Footprints, label: t("walk", "步行") },
+            ].map((tm) => (
+              <Button
+                key={tm.id}
+                variant={travelMode === tm.id ? "default" : "ghost"}
+                size="sm"
+                className={cn(
+                  "flex-1 h-10 px-3 rounded-xl text-xs flex flex-col items-center justify-center gap-1 transition-all",
+                  travelMode === tm.id ? "shadow-sm" : "text-muted-foreground hover:bg-muted/80"
+                )}
+                onClick={() => setTravelMode(tm.id as any)}
+                aria-label={tm.label}
+              >
+                <tm.icon className="h-4 w-4" />
+                <span className="text-[10px] sm:text-xs">{tm.label}</span>
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <span className="text-sm font-medium text-muted-foreground ml-1">無障礙模式</span>
+          <div className="flex gap-1 bg-muted/30 p-1 rounded-2xl w-full overflow-x-auto no-scrollbar">
+            {[
+              { id: "normal", icon: User, label: t("normalMode", "一般") },
+              { id: "wheelchair", icon: Accessibility, label: t("wheelchairMode", "輪椅") },
+              { id: "elderly", icon: User, label: t("elderlyMode", "長者") },
+              { id: "visual_impaired", icon: EyeOff, label: t("visualImpairedMode", "視障") },
+            ].map((am) => (
+              <Button
+                key={am.id}
+                variant={a11yMode === am.id ? "default" : "ghost"}
+                size="sm"
+                className={cn(
+                  "flex-1 h-10 px-3 rounded-xl text-xs flex flex-col items-center justify-center gap-1 transition-all",
+                  a11yMode === am.id ? "shadow-sm" : "text-muted-foreground hover:bg-muted/80"
+                )}
+                onClick={() => setA11yMode(am.id as any)}
+                aria-label={am.label}
+              >
+                <am.icon className="h-4 w-4" />
+                <span className="text-[10px] sm:text-xs">{am.label}</span>
+              </Button>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {/* Start Route */}
       <Button

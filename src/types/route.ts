@@ -196,6 +196,7 @@ export interface AccessibleRouteRequest {
   query?: string;
   userLocation?: { latitude: number; longitude: number };
   mode?: "wheelchair" | "elderly" | "visual_impaired" | "normal";
+  travelMode?: "transit" | "drive" | "motorcycle" | "walk";
   maxTransfers?: number;
   departureTime?: string;
   format?: "standard" | "compact";

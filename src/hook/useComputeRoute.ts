@@ -23,8 +23,10 @@ export default function useComputeRoute() {
       destination?: LatLng;
       waypoints?: LatLng[];
       query?: string;
+      mode?: "wheelchair" | "elderly" | "visual_impaired" | "normal";
+      travelMode?: "transit" | "drive" | "motorcycle" | "walk";
     }): Promise<boolean> => {
-      const { origin, destination, waypoints, query } = params;
+      const { origin, destination, waypoints, query, mode, travelMode } = params;
 
       if (!query && !origin && !destination) return false;
 
@@ -50,6 +52,8 @@ export default function useComputeRoute() {
             ? waypoints.map((w) => ({ latitude: w.lat, longitude: w.lng }))
             : undefined,
           query: query || undefined,
+          mode,
+          travelMode,
           userLocation: userLocation
             ? { latitude: userLocation.lat, longitude: userLocation.lng }
             : undefined,
@@ -103,6 +107,8 @@ export default function useComputeRoute() {
       destination?: LatLng;
       waypoints?: LatLng[];
       query?: string;
+      mode?: "wheelchair" | "elderly" | "visual_impaired" | "normal";
+      travelMode?: "transit" | "drive" | "motorcycle" | "walk";
     }): Promise<boolean> => {
       return computeRoute(params);
     },
