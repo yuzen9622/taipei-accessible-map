@@ -15,6 +15,18 @@ export async function getAccessToken() {
   return useAuthStore.getState().session?.accessToken;
 }
 
+export class ApiError extends Error {
+  code: number;
+  reason?: string;
+
+  constructor(message: string, code: number, reason?: string) {
+    super(message);
+    this.name = "ApiError";
+    this.code = code;
+    this.reason = reason;
+  }
+}
+
 export async function fetchRequest<T>(
   url: string,
   {
@@ -28,7 +40,7 @@ export async function fetchRequest<T>(
 ): Promise<ApiResponse<unknown>> {
   if (requireAuth) {
     const token = await getAccessToken();
-    headers["Authorization"] = `Bearer ${token}`;
+    headers.Authorization = `Bearer ${token}`;
   }
   const options: RequestInit = {
     method,
@@ -46,7 +58,11 @@ export async function fetchRequest<T>(
   const response = await fetch(url, options);
   const data = (await response.json()) as ApiResponse<unknown>;
   if (!data.ok && data.code !== 401) {
-    throw new Error(data.message || "Fetch error");
+    throw new ApiError(
+      data.message || "Fetch error",
+      data.code,
+      (data.data as { reason?: string } | undefined)?.reason,
+    );
   }
   if (data.code === 401 && requireAuth) {
     const newAccessToken = await refreshToken();
