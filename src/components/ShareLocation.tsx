@@ -111,7 +111,7 @@ export default function ShareLocation() {
       {/* Right-edge action stack. Mid-navigation the share FAB gives way to
           the HUD's voice + recenter controls; SOS stays reachable. */}
       {/* Mobile sits above the half-open bottom sheet; desktop centers on the map. */}
-      <div className="absolute right-3 top-[38%] lg:top-1/2 -translate-y-1/2 z-30 flex flex-col items-center gap-2 pointer-events-auto">
+      <div className="absolute right-3 top-[38%] -translate-y-1/2 lg:top-auto lg:bottom-3 lg:translate-y-0 z-30 flex flex-col items-center gap-2 pointer-events-auto">
         {isNavigating ? (
           <NavSideControls />
         ) : (

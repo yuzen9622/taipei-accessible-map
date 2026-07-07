@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useCallback } from "react";
 import { toast } from "sonner";
 import { useAppTranslation } from "@/i18n/client";
+import { copyToClipboard } from "@/lib/clipboard";
 
 // Shared LINE / WhatsApp / copy-link grid used by both the plain share
 // dialog and the SOS "active" screen's manual-dispatch fallback.
@@ -28,23 +29,9 @@ export default function ShareTargets({ message }: { message: string }) {
   }, [message]);
 
   const handleCopy = useCallback(async () => {
-    try {
-      await navigator.clipboard.writeText(message);
-      toast.success(t("linkCopied"));
-    } catch {
-      // Clipboard API needs focus + secure context; fall back to execCommand
-      // for in-app browsers (e.g. LINE) and older engines.
-      const textarea = document.createElement("textarea");
-      textarea.value = message;
-      textarea.style.position = "fixed";
-      textarea.style.opacity = "0";
-      document.body.appendChild(textarea);
-      textarea.select();
-      const copied = document.execCommand("copy");
-      textarea.remove();
-      if (copied) toast.success(t("linkCopied"));
-      else toast.error(t("copyFailed"));
-    }
+    const copied = await copyToClipboard(message);
+    if (copied) toast.success(t("linkCopied"));
+    else toast.error(t("copyFailed"));
   }, [message, t]);
 
   return (
