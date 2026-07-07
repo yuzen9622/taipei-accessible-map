@@ -25,6 +25,8 @@ export const TOOL_LABELS: Record<string, string> = {
   findGooglePlaces: "搜尋周邊地點",
   findA11yPlaces: "查詢無障礙設施",
   getA11yFacilityDetails: "查詢無障礙設施詳情",
+  findCampusAccessibility: "查詢校園無障礙",
+  getCampusAccessibilityDetails: "查詢校區設施詳情",
   planAccessibleRoute: "規劃無障礙路線",
   getNavInstructions: "產生導航指引",
   getBusRoute: "查詢公車路線",
@@ -32,6 +34,7 @@ export const TOOL_LABELS: Record<string, string> = {
   getBusArrival: "查詢公車預估到站時間",
   getBusTimetable: "查詢公車時刻表",
   trackBuses: "追蹤公車即時動態",
+  findNearbyBusStops: "查詢附近公車站牌",
   getAirQuality: "查詢空氣品質",
   getEnvironmentInfo: "查詢周邊環境資訊",
   getNearbyHazards: "查詢附近障礙物",
@@ -39,11 +42,7 @@ export const TOOL_LABELS: Record<string, string> = {
   saveMemory: "記錄偏好設定",
   deleteMemory: "刪除偏好設定",
   searchAccessibilityGuide: "查詢無障礙指南",
-  plan_route: "規劃路線",
-  search_places: "搜尋地點",
-  get_nearby: "查詢附近設施",
-  get_weather: "查詢天氣",
-  analyze_route: "分析路線",
+  webSearch: "網路搜尋",
 };
 
 /**
@@ -54,6 +53,8 @@ export const TOOL_LOADING_TEXT: Record<string, string> = {
   findGooglePlaces: "正在搜尋周邊地點…",
   findA11yPlaces: "正在查詢周邊無障礙設施…",
   getA11yFacilityDetails: "正在查詢無障礙設施詳情…",
+  findCampusAccessibility: "正在查詢校園無障礙資訊…",
+  getCampusAccessibilityDetails: "正在查詢校區設施詳情…",
   planAccessibleRoute: "正在為你規劃無障礙路線…",
   getNavInstructions: "正在產生導航指引…",
   getBusRoute: "正在查詢公車路線…",
@@ -61,6 +62,7 @@ export const TOOL_LOADING_TEXT: Record<string, string> = {
   getBusArrival: "正在查詢公車到站時間…",
   getBusTimetable: "正在查詢公車時刻表…",
   trackBuses: "正在追蹤公車即時動態…",
+  findNearbyBusStops: "正在查詢附近公車站牌…",
   getAirQuality: "正在查詢空氣品質…",
   getEnvironmentInfo: "正在查詢周邊環境資訊…",
   getNearbyHazards: "正在查詢附近路況與障礙物…",
@@ -68,6 +70,7 @@ export const TOOL_LOADING_TEXT: Record<string, string> = {
   saveMemory: "正在記住你的偏好…",
   deleteMemory: "正在刪除記憶…",
   searchAccessibilityGuide: "正在查詢無障礙指南…",
+  webSearch: "正在搜尋網路資訊…",
 };
 
 export default function useAIChat() {
