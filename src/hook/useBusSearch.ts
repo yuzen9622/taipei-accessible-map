@@ -1,11 +1,13 @@
-import { useState, useEffect } from "react";
-import { searchBusRoutes } from "@/lib/api/transit";
-import type { BusSearchResult } from "@/types/transit";
+import { useEffect, useState } from "react";
+import { searchBusRoutes, searchBusStops } from "@/lib/api/transit";
+import type { BusSearchResult, BusStopSearchResult } from "@/types/transit";
 
 export type BusSearchMode = "route" | "stop";
 
 export default function useBusSearch(keyword: string, mode: BusSearchMode) {
-  const [results, setResults] = useState<BusSearchResult[]>([]);
+  const [results, setResults] = useState<
+    (BusSearchResult | BusStopSearchResult)[]
+  >([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,9 +33,13 @@ export default function useBusSearch(keyword: string, mode: BusSearchMode) {
             setError((res as { message?: string }).message || "No data");
           }
         } else {
-          // Placeholder for stop search until API is ready
-          // We return empty for now, or you could hit a mock API
-          setResults([]);
+          const res = await searchBusStops(keyword.trim());
+          if (res.ok && res.data?.stops) {
+            setResults(res.data.stops);
+          } else {
+            setResults([]);
+            setError((res as { message?: string }).message || "No data");
+          }
         }
       } catch (err) {
         setResults([]);

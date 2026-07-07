@@ -1,6 +1,10 @@
 import type { ApiResponse } from "@/types/response";
 import type { LiveBusPositionsData } from "@/types/route";
-import type { BusRealtimeNearbyStop, BusSearchResult } from "@/types/transit";
+import type {
+  BusRealtimeNearbyStop,
+  BusSearchResult,
+  BusStopSearchResult,
+} from "@/types/transit";
 import { END_POINT } from "../config";
 import { fetchRequest } from "../fetch";
 
@@ -138,6 +142,17 @@ export async function searchBusRoutes(keyword: string) {
     `${END_POINT}/api/v1/transit/bus/search-routes?keyword=${encodeURIComponent(keyword)}`,
     { signal: controller.signal },
   )) as ApiResponse<{ routes: BusSearchResult[] }>;
+  clearTimeout(timeout);
+  return data;
+}
+
+export async function searchBusStops(keyword: string) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
+  const data = (await fetchRequest(
+    `${END_POINT}/api/v1/transit/bus/search-stops?keyword=${encodeURIComponent(keyword)}`,
+    { signal: controller.signal },
+  )) as ApiResponse<{ stops: BusStopSearchResult[] }>;
   clearTimeout(timeout);
   return data;
 }

@@ -22,6 +22,14 @@ export type BusSearchResult = {
   destination: string;
 };
 
+export type BusStopSearchResult = {
+  stopUid: string;
+  stopName: string;
+  city: string;
+  coordinates: [number, number]; // [lng, lat]
+  routes: string[];
+};
+
 export type BusRealtimeNearbyStop = {
   PlateNumb: string;
   StopUID: string;

@@ -1,16 +1,16 @@
 "use client";
 
-import { Bus, ChevronLeft, Loader2, Search, X } from "lucide-react";
-import { useCallback, useState, useMemo, useRef, useEffect } from "react";
+import { Bus, ChevronLeft, Loader2, MapPin, Search, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import useBusSearch, { type BusSearchMode } from "@/hook/useBusSearch";
 import { useAppTranslation } from "@/i18n/client";
 import {
   getBusRouteDetail,
   type RouteDetailDirection,
   type RouteDetailStop,
 } from "@/lib/api/transit";
+import type { BusSearchResult, BusStopSearchResult } from "@/types/transit";
 import { Badge } from "../ui/badge";
-import useBusSearch, { type BusSearchMode } from "@/hook/useBusSearch";
-import type { BusSearchResult } from "@/types/transit";
 import { Command, CommandGroup, CommandItem, CommandList } from "../ui/command";
 
 const CityNameMap: Record<string, string> = {
@@ -84,9 +84,18 @@ export default function BusPanel({
 
   const { results, loading: searchLoading } = useBusSearch(keyword, mode);
 
+  const routeResults = useMemo(
+    () => (mode === "route" ? (results as BusSearchResult[]) : []),
+    [results, mode],
+  );
+  const stopResults = useMemo(
+    () => (mode === "stop" ? (results as BusStopSearchResult[]) : []),
+    [results, mode],
+  );
+
   const groupedResults = useMemo(() => {
-    if (mode !== "route" || !results.length) return {};
-    return results.reduce(
+    if (!routeResults.length) return {};
+    return routeResults.reduce(
       (acc, curr) => {
         const city = CityNameMap[curr.city] || curr.city;
         if (!acc[city]) acc[city] = [];
@@ -95,9 +104,25 @@ export default function BusPanel({
       },
       {} as Record<string, BusSearchResult[]>,
     );
-  }, [results, mode]);
+  }, [routeResults]);
+
+  const groupedStops = useMemo(() => {
+    if (!stopResults.length) return {};
+    return stopResults.reduce(
+      (acc, curr) => {
+        const city = CityNameMap[curr.city] || curr.city;
+        if (!acc[city]) acc[city] = [];
+        acc[city].push(curr);
+        return acc;
+      },
+      {} as Record<string, BusStopSearchResult[]>,
+    );
+  }, [stopResults]);
 
   const [selectedRoute, setSelectedRoute] = useState<BusSearchResult | null>(
+    null,
+  );
+  const [selectedStop, setSelectedStop] = useState<BusStopSearchResult | null>(
     null,
   );
   const [direction, setDirection] = useState<0 | 1 | null>(null);
@@ -184,9 +209,46 @@ export default function BusPanel({
     }, 100);
   };
 
+  const handleStopSelect = (stop: BusStopSearchResult) => {
+    setSelectedStop(stop);
+    setOpen(false);
+    setKeyword("");
+  };
+
+  const backToSearch = () => {
+    setSelectedStop(null);
+    setTimeout(() => {
+      inputRef.current?.focus();
+      setOpen(true);
+    }, 100);
+  };
+
+  // Open the existing route-detail flow from a stop's route list. We only have
+  // the route name + city here (no departure/destination), so synthesize a
+  // BusSearchResult; the direction labels fall back to route-detail terminals.
+  const handleStopRouteSelect = (routeName: string, city: string) => {
+    setSelectedStop(null);
+    setSelectedRoute({ routeName, city, departure: "", destination: "" });
+    setDirection(null);
+    setRouteDetails([]);
+    setError(null);
+    setCountdown(REFRESH_INTERVAL);
+  };
+
   const currentDirectionDetails = routeDetails.find(
     (d) => d.direction === direction,
   );
+
+  // Prefer the route's own departure/destination (present for route-mode entry);
+  // fall back to the terminal stop of each direction for stop-mode entry.
+  const destinationLabel =
+    selectedRoute?.destination ||
+    routeDetails.find((d) => d.direction === 0)?.stops.at(-1)?.name ||
+    "去程";
+  const departureLabel =
+    selectedRoute?.departure ||
+    routeDetails.find((d) => d.direction === 1)?.stops.at(-1)?.name ||
+    "返程";
 
   return (
     <div className="flex flex-col h-full space-y-4">
@@ -243,7 +305,7 @@ export default function BusPanel({
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  往 {selectedRoute.destination}
+                  往 {destinationLabel}
                 </button>
                 <button
                   type="button"
@@ -256,7 +318,7 @@ export default function BusPanel({
                       : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  往 {selectedRoute.departure}
+                  往 {departureLabel}
                 </button>
               </div>
 
@@ -298,6 +360,56 @@ export default function BusPanel({
               ))}
             </div>
           ) : null}
+        </div>
+      ) : selectedStop ? (
+        <div className="flex flex-col flex-1 min-h-0 space-y-4 animate-in fade-in slide-in-from-right-4">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={backToSearch}
+              className="h-8 w-8 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <div className="flex items-center gap-2 min-w-0">
+              <MapPin className="h-4.5 w-4.5 text-emerald-500 shrink-0" />
+              <div className="min-w-0">
+                <h3 className="font-bold text-lg leading-tight truncate">
+                  {selectedStop.stopName}
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {CityNameMap[selectedStop.city] || selectedStop.city}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {selectedStop.routes.length === 0 ? (
+            <div className="text-center py-8 space-y-2">
+              <Bus className="h-8 w-8 mx-auto text-muted-foreground/40" />
+              <p className="text-sm text-muted-foreground">此站牌無經過路線</p>
+            </div>
+          ) : (
+            <div className="flex-1 min-h-0 overflow-y-auto pr-2 pb-4 space-y-3">
+              <p className="text-xs text-muted-foreground px-1">
+                經過此站牌的路線
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {selectedStop.routes.map((routeName) => (
+                  <button
+                    key={routeName}
+                    type="button"
+                    onClick={() =>
+                      handleStopRouteSelect(routeName, selectedStop.city)
+                    }
+                    className="px-3 py-1.5 rounded-lg bg-muted/50 border border-border/30 text-sm font-semibold hover:bg-muted transition-colors"
+                  >
+                    {routeName}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className="space-y-4">
@@ -382,11 +494,38 @@ export default function BusPanel({
                           找不到相關路線
                         </div>
                       ) : null
-                    ) : (
+                    ) : Object.keys(groupedStops).length > 0 ? (
+                      Object.entries(groupedStops).map(([city, stops]) => (
+                        <CommandGroup
+                          key={city}
+                          heading={city}
+                          className="px-1"
+                        >
+                          {stops.map((s) => (
+                            <CommandItem
+                              key={s.stopUid}
+                              value={`${s.stopUid}-${s.stopName}`}
+                              onSelect={() => handleStopSelect(s)}
+                              className="flex flex-col items-start px-3 py-2 cursor-pointer"
+                            >
+                              <span className="font-semibold text-sm">
+                                {s.stopName}
+                              </span>
+                              <span className="text-xs text-muted-foreground truncate max-w-full">
+                                {s.routes.length > 0
+                                  ? s.routes.slice(0, 8).join(" · ") +
+                                    (s.routes.length > 8 ? " …" : "")
+                                  : "無經過路線"}
+                              </span>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      ))
+                    ) : !searchLoading ? (
                       <div className="p-4 text-center text-sm text-muted-foreground">
-                        站牌搜尋功能建置中...
+                        找不到相關站牌
                       </div>
-                    )}
+                    ) : null}
                   </CommandList>
                 </Command>
               </div>
