@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useAppTranslation } from "@/i18n/client";
 import { getRouteInstructions } from "@/lib/api/a11y";
 import {
+  bearingDeg,
   buildCumulativePath,
   type CumulativePath,
   haversineMeters,
@@ -15,6 +16,7 @@ import {
 } from "@/lib/geo";
 import useMapStore from "@/stores/useMapStore";
 import useNavStore, { type HeadingSource } from "@/stores/useNavStore";
+import type { LatLng } from "@/types";
 
 // Tuning constants for the turn-by-turn engine.
 const ARRIVE_THRESHOLD_M = 18; // pass within this of a maneuver → advance step
@@ -26,7 +28,22 @@ const CAMERA_THROTTLE_MS = 350;
 const HEADING_WRITE_MS = 200;
 const COMPASS_FRESH_MS = 1500;
 const NAV_PITCH = 60;
+const NAV_ZOOM = 17.5;
 const SMOOTH_FACTOR = 0.25;
+const INTRO_EASE_MS = 1200; // nav-start camera animation
+const PREVIEW_EASE_MS = 800; // step-preview camera animation
+const FOLLOW_GPS_MAX_M = 500; // beyond this from the route, GPS stops driving the camera
+
+/** GPS may anchor the camera only when the fix is reasonably close to the route. */
+function gpsNearRoute(loc: LatLng | null, cp: CumulativePath | null): boolean {
+  if (!loc || !cp || cp.path.length === 0) return false;
+  return projectToPath(loc, cp.path, cp.cumM).perpDistM <= FOLLOW_GPS_MAX_M;
+}
+
+/** Camera pitch for the user's 3D/2D view choice. */
+function navPitch(): number {
+  return useNavStore.getState().viewMode === "2d" ? 0 : NAV_PITCH;
+}
 
 /** True on iOS 13+, where DeviceOrientation needs an explicit permission grant. */
 function compassNeedsPermission(): boolean {
@@ -53,14 +70,40 @@ export default function useNavigation() {
   const userLocation = useMapStore((s) => s.userLocation);
   const compassPermission = useNavStore((s) => s.compassPermission);
 
+  const currentStepIndex = useNavStore((s) => s.currentStepIndex);
+  const instructions = useNavStore((s) => s.instructions);
+
   const pathRef = useRef<CumulativePath | null>(null);
   const waypointsRef = useRef<Waypoint[]>([]);
   const offHitsRef = useRef(0);
+  // While the intro animation runs, the follow/preview cameras stay hands-off.
+  const introUntilRef = useRef(0);
 
   // Heading working state (kept in refs; written to the store throttled).
   const compassRef = useRef<number | null>(null);
   const compassTsRef = useRef(0);
   const smoothRef = useRef<number | null>(null);
+
+  // ---- Nav-start camera: anchor on the user only when they're near the
+  // route; otherwise frame the route start so the map never flies off to a
+  // distant GPS fix (e.g. previewing a Taipei route from another city). ----
+  useEffect(() => {
+    if (!route) return;
+    const { map, userLocation } = useMapStore.getState();
+    const cp = buildCumulativePath(route.legs);
+    pathRef.current = cp;
+    const anchor = gpsNearRoute(userLocation, cp)
+      ? userLocation
+      : (cp.path[0] ?? userLocation);
+    if (!map || !anchor) return;
+    introUntilRef.current = Date.now() + INTRO_EASE_MS;
+    map.easeTo({
+      center: [anchor.lng, anchor.lat],
+      zoom: NAV_ZOOM,
+      pitch: navPitch(),
+      duration: INTRO_EASE_MS,
+    });
+  }, [route]);
 
   // ---- Load instructions when navigation starts (passthrough legs only) ----
   useEffect(() => {
@@ -109,6 +152,11 @@ export default function useNavigation() {
     const nav = useNavStore.getState();
     const proj = projectToPath(userLocation, cp.path, cp.cumM);
 
+    // A fix far from the route can't drive progress — its projection is
+    // meaningless (it would auto-advance to whatever segment is "nearest").
+    // Leave the prev/next buttons in control instead.
+    if (proj.perpDistM > FOLLOW_GPS_MAX_M) return;
+
     // Off-route: require a few consecutive far samples before flagging.
     if (proj.perpDistM > OFF_ROUTE_M) {
       offHitsRef.current += 1;
@@ -153,6 +201,40 @@ export default function useNavigation() {
       if (!nav.arrived) nav.setArrived(true);
     }
   }, [userLocation]);
+
+  // ---- Step-preview camera: when GPS can't anchor the camera (missing or
+  // far from the route), track the active maneuver instead so prev/next and
+  // auto-advance pan the map along the route like a route preview. ----
+  useEffect(() => {
+    if (instructions.length === 0) return;
+    const wp = waypointsRef.current[currentStepIndex];
+    useNavStore.getState().setStepCoord(wp?.coord ?? null);
+    if (!wp?.coord) return;
+    const { map, userLocation } = useMapStore.getState();
+    if (!map) return;
+    if (gpsNearRoute(userLocation, pathRef.current)) return; // GPS follow owns the camera
+    // The intro already frames the route start; skip the duplicate first ease.
+    if (currentStepIndex === 0 && Date.now() < introUntilRef.current) return;
+    const next = waypointsRef.current[currentStepIndex + 1];
+    map.easeTo({
+      center: [wp.coord.lng, wp.coord.lat],
+      zoom: NAV_ZOOM,
+      pitch: navPitch(),
+      bearing: next?.coord ? bearingDeg(wp.coord, next.coord) : map.getBearing(),
+      duration: PREVIEW_EASE_MS,
+    });
+  }, [currentStepIndex, instructions]);
+
+  // ---- 3D/2D toggle: re-pitch the camera in place when the mode changes ----
+  const viewMode = useNavStore((s) => s.viewMode);
+  useEffect(() => {
+    // The mount run (and StrictMode's re-run) lands inside the intro window —
+    // skipping it keeps this effect from cancelling the intro animation.
+    if (Date.now() < introUntilRef.current) return;
+    const map = useMapStore.getState().map;
+    if (!map) return;
+    map.easeTo({ pitch: viewMode === "2d" ? 0 : NAV_PITCH, duration: 500 });
+  }, [viewMode]);
 
   // ---- Compass listener (re-attaches when iOS permission flips to granted) ----
   useEffect(() => {

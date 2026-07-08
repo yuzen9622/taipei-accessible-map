@@ -1,9 +1,11 @@
 "use client";
 import { create } from "zustand";
+import type { LatLng } from "@/types";
 import type { NavInstruction } from "@/types/route";
 
 export type HeadingSource = "compass" | "gps" | null;
 export type CompassPermission = "unknown" | "granted" | "denied";
+export type NavViewMode = "3d" | "2d";
 
 /**
  * High-frequency turn-by-turn runtime state, kept OUT of useMapStore on
@@ -102,7 +104,10 @@ const useNavStore = create<NavStore>((set) => ({
   setStepListOpen: (stepListOpen) => set({ stepListOpen }),
   // Keep the iOS compass-permission grant across navigation sessions.
   reset: () =>
-    set((s) => ({ ...initialState, compassPermission: s.compassPermission })),
+    set((s) => ({
+      ...initialState,
+      compassPermission: s.compassPermission,
+    })),
 }));
 
 export default useNavStore;

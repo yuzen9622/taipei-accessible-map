@@ -123,6 +123,8 @@
   "prevStep": "上一步",
   "stepOf": "第 {{current}} 步 / 共 {{total}} 步",
   "recenter": "重新置中",
+  "toggleViewMode": "切換 2D/3D 視角",
+  "navigating": "導航中",
   "offRoute": "已偏離路線",
   "recalculate": "重新規劃",
   "recalculateFailed": "無法重新規劃路線",

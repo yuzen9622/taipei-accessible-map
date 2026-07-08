@@ -1,5 +1,6 @@
 "use client";
 import type maplibregl from "maplibre-gl";
+import { LngLatBounds } from "maplibre-gl";
 import { create } from "zustand";
 import type {
   AiResultMarker,
@@ -310,7 +311,7 @@ const useMapStore = create<MapStore>((set, get) => ({
   setLiveBusPositions: (positions) => set({ liveBusPositions: positions }),
   isNavigating: false,
   setIsNavigating: (v) => {
-    const { map, userLocation } = get();
+    const { map } = get();
     if (v) {
       set({ isNavigating: true, sheetMode: "navigation", is3D: true });
       if (map) {
@@ -326,7 +327,22 @@ const useMapStore = create<MapStore>((set, get) => ({
     } else {
       set({ isNavigating: false, sheetMode: "route", is3D: false });
       if (map) {
-        map.easeTo({ pitch: 0, bearing: 0, duration: 1000 });
+        // Back to a flat route overview, like ending nav in mainstream apps.
+        const legs = get().selectRoute?.route.legs ?? [];
+        const bounds = new LngLatBounds();
+        for (const leg of legs) {
+          for (const [lng, lat] of leg.polyline ?? []) bounds.extend([lng, lat]);
+        }
+        if (bounds.isEmpty()) {
+          map.easeTo({ pitch: 0, bearing: 0, duration: 1000 });
+        } else {
+          map.fitBounds(bounds, {
+            pitch: 0,
+            bearing: 0,
+            duration: 1000,
+            padding: { top: 50, bottom: 200, left: 50, right: 50 },
+          });
+        }
       }
     }
   },
