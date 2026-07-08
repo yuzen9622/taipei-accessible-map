@@ -55,12 +55,6 @@ interface RailItem {
 const RAIL_ITEMS: RailItem[] = [
   { id: "search", Icon: Search, labelKey: "railSearch", color: "text-primary" },
   {
-    id: "route",
-    Icon: Navigation,
-    labelKey: "railRoute",
-    color: "text-blue-500",
-  },
-  {
     id: "a11y",
     Icon: Accessibility,
     labelKey: "railA11y",
@@ -79,31 +73,30 @@ const RAIL_ITEMS: RailItem[] = [
     labelKey: "savedPlaces",
     color: "text-amber-500",
   },
-];
-
-// Superset of the quick actions in the search panel, so everything reachable
-// from 快捷功能 is also reachable from 更多.
-const RAIL_MORE_ITEMS: RailItem[] = [
-  {
-    id: "environment",
-    Icon: Cloud,
-    labelKey: "environment",
-    color: "text-sky-500",
-  },
   {
     id: "hazard",
     Icon: AlertTriangle,
     labelKey: "reportHazard",
     color: "text-amber-500",
   },
-  { id: "welfare", Icon: Heart, labelKey: "welfare", color: "text-rose-500" },
+];
+
+// Superset of the quick actions in the search panel, so everything reachable
+// from 快捷功能 is also reachable from 更多.
+const RAIL_MORE_ITEMS: RailItem[] = [
   {
-    id: "parking",
-    Icon: CircleParking,
-    labelKey: "railParking",
-    color: "text-indigo-500",
+    id: "route",
+    Icon: Navigation,
+    labelKey: "railRoute",
+    color: "text-blue-500",
   },
-  { id: "bus", Icon: Bus, labelKey: "railBus", color: "text-emerald-600" },
+  {
+    id: "environment",
+    Icon: Cloud,
+    labelKey: "environment",
+    color: "text-sky-500",
+  },
+  { id: "welfare", Icon: Heart, labelKey: "welfare", color: "text-rose-500" },
 ];
 
 // --- Mode-driven panels: shown via sheetMode, override rail panels ---

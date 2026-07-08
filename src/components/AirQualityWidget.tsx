@@ -1,8 +1,16 @@
 "use client";
 
-import { CloudRain, Leaf, Loader2, Thermometer, Wind, X } from "lucide-react";
+import {
+  CloudRain,
+  Leaf,
+  Loader2,
+  RefreshCw,
+  Thermometer,
+  Wind,
+  X,
+} from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppTranslation } from "@/i18n/client";
 import { getEnvironmentInfo } from "@/lib/api/a11y";
 import useMapStore from "@/stores/useMapStore";
@@ -120,11 +128,14 @@ export default function AirQualityWidget() {
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
+  const hasFetchedRef = useRef(false);
+
   const fetchEnvironment = useCallback(async () => {
-    if (!userLocation) return;
+    const loc = useMapStore.getState().userLocation;
+    if (!loc) return;
     setLoading(true);
     try {
-      const res = await getEnvironmentInfo(userLocation.lat, userLocation.lng);
+      const res = await getEnvironmentInfo(loc.lat, loc.lng);
       if (res.ok && res.data) {
         setData(res.data);
       }
@@ -133,13 +144,14 @@ export default function AirQualityWidget() {
     } finally {
       setLoading(false);
     }
-  }, [userLocation]);
+  }, []);
 
+  // Fetch once when user location first becomes available.
   useEffect(() => {
+    if (hasFetchedRef.current || !userLocation) return;
+    hasFetchedRef.current = true;
     fetchEnvironment();
-    const interval = setInterval(fetchEnvironment, 5 * 60 * 1000);
-    return () => clearInterval(interval);
-  }, [fetchEnvironment]);
+  }, [userLocation, fetchEnvironment]);
 
   // The navigation HUD owns the screen while navigating.
   if (isNavigating) return null;
@@ -198,6 +210,22 @@ export default function AirQualityWidget() {
             transition={{ duration: 0.18 }}
             className="mt-2 w-[168px] bg-background/95 backdrop-blur-md rounded-2xl shadow-xl border border-border/50 p-3.5 space-y-3"
           >
+            <div className="flex items-center justify-end -mt-1 -mr-1">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  fetchEnvironment();
+                }}
+                disabled={loading}
+                className="h-6 w-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                aria-label={t("refresh", "重新整理")}
+              >
+                <RefreshCw
+                  className={`h-3 w-3 ${loading ? "animate-spin" : ""}`}
+                />
+              </button>
+            </div>
             {weather?.windSpeed != null && (
               <Metric
                 Icon={Wind}
