@@ -37,6 +37,10 @@ interface NavState {
   voiceEnabled: boolean;
   /** Step-list panel visibility while the nav HUD owns the screen. */
   stepListOpen: boolean;
+  /** 2D or 3D view mode during navigation. */
+  viewMode: NavViewMode;
+  /** The upcoming step coordinate for preview camera moves. */
+  stepCoord: LatLng | null;
 }
 
 interface NavAction {
@@ -55,6 +59,8 @@ interface NavAction {
   setRouteTotalM: (m: number | null) => void;
   setVoiceEnabled: (v: boolean) => void;
   setStepListOpen: (v: boolean) => void;
+  setViewMode: (v: NavViewMode) => void;
+  setStepCoord: (c: LatLng | null) => void;
   reset: () => void;
 }
 
@@ -76,6 +82,8 @@ const initialState: NavState = {
   routeTotalM: null,
   voiceEnabled: false,
   stepListOpen: false,
+  viewMode: "3d",
+  stepCoord: null,
 };
 
 const useNavStore = create<NavStore>((set) => ({
@@ -102,6 +110,8 @@ const useNavStore = create<NavStore>((set) => ({
   setRouteTotalM: (routeTotalM) => set({ routeTotalM }),
   setVoiceEnabled: (voiceEnabled) => set({ voiceEnabled }),
   setStepListOpen: (stepListOpen) => set({ stepListOpen }),
+  setViewMode: (viewMode) => set({ viewMode }),
+  setStepCoord: (stepCoord) => set({ stepCoord }),
   // Keep the iOS compass-permission grant across navigation sessions.
   reset: () =>
     set((s) => ({

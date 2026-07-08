@@ -16,7 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import Image from "next/image";
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import AccountLogin from "@/components/shared/AccountLogin";
 import { useAppTranslation } from "@/i18n/client";
@@ -355,7 +355,7 @@ export default function BottomSheet() {
           {/* Mobile Header */}
           <div className="flex items-center justify-between px-4 pb-2">
             <h1 className="text-base font-bold flex items-center gap-1.5">
-              <Image src="/logo.webp" width={22} height={22} alt="" />{" "}
+              <Accessibility className="h-5 w-5 text-primary" />
               {t("title")}
             </h1>
             <AccountLogin />
@@ -391,13 +391,13 @@ export default function BottomSheet() {
           )}
         >
           {/* Logo */}
-          <div className="flex items-center justify-center h-10 w-10 mb-2">
-            <Image
-              src="/logo.webp"
-              width={28}
-              height={28}
-              alt="Accessible Smart Map"
-            />
+          <div className="flex flex-col items-center justify-center h-12 w-12 mb-1">
+            <Accessibility className="h-6 w-6 text-primary" />
+            <span className="text-[6px] font-bold leading-tight text-center text-foreground/80 mt-0.5">
+              無障礙
+              <br />
+              智慧導航
+            </span>
           </div>
 
           {/* Divider */}

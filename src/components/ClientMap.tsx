@@ -115,7 +115,6 @@ export default function ClientMap() {
   );
 
   useEffect(() => {
-    // 開發用：?mockgeo=lat,lng 可模擬 GPS 位置（例如人在海外測試台北的路線）。
     const mock = new URLSearchParams(window.location.search).get("mockgeo");
     if (mock) {
       const [lat, lng] = mock.split(",").map(Number);
@@ -123,20 +122,28 @@ export default function ClientMap() {
       const t = setInterval(() => setUserLocation({ lat, lng }), 2000);
       return () => clearInterval(t);
     }
+
+    const onPos = (pos: GeolocationPosition) => {
+      setUserLocation({
+        lat: pos.coords.latitude,
+        lng: pos.coords.longitude,
+      });
+      const h = pos.coords.heading;
+      useNavStore
+        .getState()
+        .setGpsHeading(typeof h === "number" && !Number.isNaN(h) ? h : null);
+    };
+
+    // Fast coarse fix so the map centers on the user immediately, then
+    // watchPosition upgrades to high-accuracy tracking.
+    navigator.geolocation.getCurrentPosition(onPos, () => {}, {
+      enableHighAccuracy: false,
+      maximumAge: 60_000,
+      timeout: 5_000,
+    });
+
     const watchId = navigator.geolocation.watchPosition(
-      (pos) => {
-        setUserLocation({
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-        });
-        // Capture GPS course-over-ground as a heading fallback (null when
-        // stationary). Pushed via getState() so this high-frequency value does
-        // not re-render the whole map through useMapStore.
-        const h = pos.coords.heading;
-        useNavStore
-          .getState()
-          .setGpsHeading(typeof h === "number" && !Number.isNaN(h) ? h : null);
-      },
+      onPos,
       () => {
         toast.error("無法取得目前位置");
       },

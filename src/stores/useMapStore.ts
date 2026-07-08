@@ -311,15 +311,15 @@ const useMapStore = create<MapStore>((set, get) => ({
   setLiveBusPositions: (positions) => set({ liveBusPositions: positions }),
   isNavigating: false,
   setIsNavigating: (v) => {
-    const { map } = get();
+    const { map, userLocation: loc } = get();
     if (v) {
       set({ isNavigating: true, sheetMode: "navigation", is3D: true });
       if (map) {
         map.easeTo({
           pitch: 60,
           zoom: 18,
-          center: userLocation
-            ? [userLocation.lng, userLocation.lat]
+          center: loc
+            ? [loc.lng, loc.lat]
             : undefined,
           duration: 1000,
         });
