@@ -1,7 +1,15 @@
 "use client";
 
-import { Camera, Cloud, Droplets, Thermometer, Wind, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import {
+  Camera,
+  Cloud,
+  Droplets,
+  RefreshCw,
+  Thermometer,
+  Wind,
+  X,
+} from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useAppTranslation } from "@/i18n/client";
 import { getEnvironmentInfo } from "@/lib/api/a11y";
 import useMapStore from "@/stores/useMapStore";
@@ -15,13 +23,15 @@ export default function EnvironmentPanel({
   hideHeader?: boolean;
 }) {
   const { t } = useAppTranslation();
-  const { userLocation } = useMapStore();
+  const userLocation = useMapStore((s) => s.userLocation);
   const [data, setData] = useState<EnvironmentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const hasFetchedRef = useRef(false);
 
-  useEffect(() => {
-    if (!userLocation) {
+  const fetchEnvironment = useCallback(async () => {
+    const loc = useMapStore.getState().userLocation;
+    if (!loc) {
       setLoading(false);
       setError(t("noLocation"));
       return;
@@ -34,23 +44,27 @@ export default function EnvironmentPanel({
       setError(t("requestTimeout"));
     }, 10000);
 
-    getEnvironmentInfo(userLocation.lat, userLocation.lng)
-      .then((res) => {
-        clearTimeout(timeout);
-        if (res.ok && res.data) {
-          setData(res.data);
-        } else {
-          setError(t("noData"));
-        }
-      })
-      .catch(() => {
-        clearTimeout(timeout);
-        setError(t("networkError"));
-      })
-      .finally(() => setLoading(false));
+    try {
+      const res = await getEnvironmentInfo(loc.lat, loc.lng);
+      clearTimeout(timeout);
+      if (res.ok && res.data) {
+        setData(res.data);
+      } else {
+        setError(t("noData"));
+      }
+    } catch {
+      clearTimeout(timeout);
+      setError(t("networkError"));
+    } finally {
+      setLoading(false);
+    }
+  }, [t]);
 
-    return () => clearTimeout(timeout);
-  }, [userLocation, t]);
+  useEffect(() => {
+    if (hasFetchedRef.current || !userLocation) return;
+    hasFetchedRef.current = true;
+    fetchEnvironment();
+  }, [userLocation, fetchEnvironment]);
 
   return (
     <div className="space-y-4">
@@ -60,13 +74,26 @@ export default function EnvironmentPanel({
             <Cloud className="h-4.5 w-4.5 text-sky-500" />
             {t("environment")}
           </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="h-7 w-7 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted"
-          >
-            <X className="h-3.5 w-3.5" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={fetchEnvironment}
+              disabled={loading}
+              className="h-7 w-7 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted"
+              aria-label={t("refresh", "重新整理")}
+            >
+              <RefreshCw
+                className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`}
+              />
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="h-7 w-7 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
       )}
 
@@ -80,19 +107,7 @@ export default function EnvironmentPanel({
           <p className="text-sm text-muted-foreground">{error}</p>
           <button
             type="button"
-            onClick={() => {
-              setLoading(true);
-              setError(null);
-              if (userLocation) {
-                getEnvironmentInfo(userLocation.lat, userLocation.lng)
-                  .then((res) => {
-                    if (res.ok && res.data) setData(res.data);
-                    else setError(t("noData"));
-                  })
-                  .catch(() => setError(t("networkError")))
-                  .finally(() => setLoading(false));
-              }
-            }}
+            onClick={fetchEnvironment}
             className="text-xs text-primary hover:underline"
           >
             {t("retry")}

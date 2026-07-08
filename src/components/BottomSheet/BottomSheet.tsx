@@ -384,13 +384,8 @@ export default function BottomSheet() {
           )}
         >
           {/* Logo */}
-          <div className="flex flex-col items-center justify-center h-12 w-12 mb-1">
-            <Accessibility className="h-6 w-6 text-primary" />
-            <span className="text-[6px] font-bold leading-tight text-center text-foreground/80 mt-0.5">
-              無障礙
-              <br />
-              智慧導航
-            </span>
+          <div className="flex items-center justify-center h-12 w-12 mb-1">
+            <Accessibility className="h-7 w-7 text-primary" />
           </div>
 
           {/* Divider */}

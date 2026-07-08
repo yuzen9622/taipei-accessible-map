@@ -79,12 +79,23 @@ export default function ClientMap() {
   const [mounted, setMounted] = useState(false);
 
   // Shared-location links (?loc=lat,lng) start the camera on the shared point.
+  // Falls back to the last-known GPS position cached in localStorage so the map
+  // opens near the user instead of the hardcoded Taipei center.
   const [initialCenter] = useState<{ lat: number; lng: number } | null>(() => {
     if (typeof window === "undefined") return null;
     const loc = new URLSearchParams(window.location.search).get("loc");
-    if (!loc) return null;
-    const [lat, lng] = loc.split(",").map(Number);
-    return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+    if (loc) {
+      const [lat, lng] = loc.split(",").map(Number);
+      if (Number.isFinite(lat) && Number.isFinite(lng)) return { lat, lng };
+    }
+    try {
+      const cached = localStorage.getItem("lastUserLocation");
+      if (cached) {
+        const { lat, lng } = JSON.parse(cached);
+        if (Number.isFinite(lat) && Number.isFinite(lng)) return { lat, lng };
+      }
+    } catch {}
+    return null;
   });
 
   useEffect(() => {
@@ -118,16 +129,24 @@ export default function ClientMap() {
     const mock = new URLSearchParams(window.location.search).get("mockgeo");
     if (mock) {
       const [lat, lng] = mock.split(",").map(Number);
-      setUserLocation({ lat, lng });
-      const t = setInterval(() => setUserLocation({ lat, lng }), 2000);
+      const loc = { lat, lng };
+      setUserLocation(loc);
+      try {
+        localStorage.setItem("lastUserLocation", JSON.stringify(loc));
+      } catch {}
+      const t = setInterval(() => setUserLocation(loc), 2000);
       return () => clearInterval(t);
     }
 
     const onPos = (pos: GeolocationPosition) => {
-      setUserLocation({
+      const loc = {
         lat: pos.coords.latitude,
         lng: pos.coords.longitude,
-      });
+      };
+      setUserLocation(loc);
+      try {
+        localStorage.setItem("lastUserLocation", JSON.stringify(loc));
+      } catch {}
       const h = pos.coords.heading;
       useNavStore
         .getState()
