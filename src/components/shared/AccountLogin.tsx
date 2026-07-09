@@ -434,8 +434,8 @@ export default function AccountLogin() {
               </div>
             </aside>
 
-            <div className="min-w-0 min-h-0 overflow-y-auto">
-              <div className="border-b border-border/60 px-5 py-5 md:px-7">
+            <div className="flex min-w-0 min-h-0 flex-col">
+              <div className="shrink-0 border-b border-border/60 px-5 py-5 md:px-7">
                 <DialogHeader className="space-y-1">
                   <DialogTitle className="text-xl font-semibold">
                     {activeSettingsSection.title}
@@ -443,147 +443,151 @@ export default function AccountLogin() {
                 </DialogHeader>
               </div>
 
-              <div className="space-y-4 px-5 py-5 md:px-7">
-                {settingsTab === "general" && (
-                  <div className="rounded-2xl border border-border/60 bg-background p-4 space-y-4">
-                    <div className="flex justify-between items-center gap-4">
-                      <span className="text-sm font-medium text-foreground">
-                        {t("darkMode")}
-                      </span>
-                      <ThemeSwitcher
-                        value={userConfig.darkMode}
-                        onChange={(changeTheme) => {
-                          updateUserConfig({ darkMode: changeTheme });
-                        }}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
+              <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 md:px-7">
+                <div className="space-y-4">
+                  {settingsTab === "general" && (
+                    <div className="rounded-2xl border border-border/60 bg-background p-4 space-y-4">
                       <div className="flex justify-between items-center gap-4">
-                        <span className="text-sm font-medium text-foreground flex items-center gap-1">
-                          <Contrast className="h-4 w-4" /> {t("highContrast")}
+                        <span className="text-sm font-medium text-foreground">
+                          {t("darkMode")}
                         </span>
-                        <Switch
-                          id="highContrast"
-                          className="bg-accent"
-                          checked={userConfig.highContrast}
-                          onCheckedChange={(checked) =>
-                            updateUserConfig({ highContrast: checked })
-                          }
+                        <ThemeSwitcher
+                          value={userConfig.darkMode}
+                          onChange={(changeTheme) => {
+                            updateUserConfig({ darkMode: changeTheme });
+                          }}
                         />
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        {t("settingsHighContrastLocalHint")}
-                      </p>
-                    </div>
 
-                    <div className="flex justify-between items-center gap-4">
-                      <span className="text-sm font-medium text-foreground">
-                        {t("notification")}
-                      </span>
-                      <Switch
-                        id="notification"
-                        className=" bg-accent"
-                        checked={userConfig.notifications}
-                        onCheckedChange={handleNotifyChange}
-                      />
-                    </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center gap-4">
+                          <span className="text-sm font-medium text-foreground flex items-center gap-1">
+                            <Contrast className="h-4 w-4" /> {t("highContrast")}
+                          </span>
+                          <Switch
+                            id="highContrast"
+                            className="bg-accent"
+                            checked={userConfig.highContrast}
+                            onCheckedChange={(checked) =>
+                              updateUserConfig({ highContrast: checked })
+                            }
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {t("settingsHighContrastLocalHint")}
+                        </p>
+                      </div>
 
-                    <div className="flex justify-between gap-4">
-                      <span className="text-sm font-medium text-foreground flex items-center gap-1">
-                        <Globe className="h-4 w-4" /> {t("language")}
-                      </span>
-                      <Select
-                        value={userConfig.language}
-                        onValueChange={(key) =>
-                          updateUserConfig({
-                            language: key as LanguageEnum,
-                          })
-                        }
+                      <div className="flex justify-between items-center gap-4">
+                        <span className="text-sm font-medium text-foreground">
+                          {t("notification")}
+                        </span>
+                        <Switch
+                          id="notification"
+                          className=" bg-accent"
+                          checked={userConfig.notifications}
+                          onCheckedChange={handleNotifyChange}
+                        />
+                      </div>
+
+                      <div className="flex justify-between gap-4">
+                        <span className="text-sm font-medium text-foreground flex items-center gap-1">
+                          <Globe className="h-4 w-4" /> {t("language")}
+                        </span>
+                        <Select
+                          value={userConfig.language}
+                          onValueChange={(key) =>
+                            updateUserConfig({
+                              language: key as LanguageEnum,
+                            })
+                          }
+                        >
+                          <SelectTrigger>
+                            {LanguageConfig[userConfig.language].label}
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.entries(LanguageConfig).map(
+                              ([key, config]) => (
+                                <SelectItem key={key} value={key}>
+                                  {config.label}
+                                </SelectItem>
+                              ),
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="flex justify-between gap-4">
+                        <span className="text-sm font-medium text-foreground flex items-center gap-1">
+                          <Type className="h-4 w-4" /> {t("fontSize")}
+                        </span>
+                        <Select
+                          onValueChange={(v) =>
+                            updateUserConfig({
+                              fontSize: v as FontSizeEnum,
+                            })
+                          }
+                          value={userConfig.fontSize}
+                        >
+                          <SelectTrigger className="text-sm">
+                            {fontSizeConfig[userConfig.fontSize].label}
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.entries(fontSizeConfig).map(
+                              ([key, config]) => (
+                                <SelectItem key={key} value={key}>
+                                  {config.label}
+                                </SelectItem>
+                              ),
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  )}
+
+                  {settingsTab === "safety" && (
+                    <div className="rounded-2xl border border-border/60 bg-background p-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold">
+                          {t("settingsEmergencyTitle")}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {t("settingsEmergencyDesc")}
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          setOpenDialog(null);
+                          setContactsDialogOpen(true);
+                        }}
+                        disabled={!user}
                       >
-                        <SelectTrigger>
-                          {LanguageConfig[userConfig.language].label}
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.entries(LanguageConfig).map(
-                            ([key, config]) => (
-                              <SelectItem key={key} value={key}>
-                                {config.label}
-                              </SelectItem>
-                            ),
-                          )}
-                        </SelectContent>
-                      </Select>
+                        <Shield className="h-4 w-4" />
+                        {t("settingsEmergencyAction")}
+                      </Button>
                     </div>
-
-                    <div className="flex justify-between gap-4">
-                      <span className="text-sm font-medium text-foreground flex items-center gap-1">
-                        <Type className="h-4 w-4" /> {t("fontSize")}
-                      </span>
-                      <Select
-                        onValueChange={(v) =>
-                          updateUserConfig({
-                            fontSize: v as FontSizeEnum,
-                          })
-                        }
-                        value={userConfig.fontSize}
-                      >
-                        <SelectTrigger className="text-sm">
-                          {fontSizeConfig[userConfig.fontSize].label}
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.entries(fontSizeConfig).map(
-                            ([key, config]) => (
-                              <SelectItem key={key} value={key}>
-                                {config.label}
-                              </SelectItem>
-                            ),
-                          )}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                )}
-
-                {settingsTab === "safety" && (
-                  <div className="rounded-2xl border border-border/60 bg-background p-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="space-y-1">
-                      <p className="text-sm font-semibold">
-                        {t("settingsEmergencyTitle")}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {t("settingsEmergencyDesc")}
-                      </p>
-                    </div>
-                    <Button
-                      type="button"
-                      onClick={() => {
-                        setOpenDialog(null);
-                        setContactsDialogOpen(true);
-                      }}
-                      disabled={!user}
-                    >
-                      <Shield className="h-4 w-4" />
-                      {t("settingsEmergencyAction")}
-                    </Button>
-                  </div>
-                )}
-                {settingsTab === "safety" && !user && (
-                  <p className="text-sm text-muted-foreground">{t("login")}</p>
-                )}
-                {settingsTab === "memory" && (
-                  <AIMemoryPanel
-                    active={
-                      openDialog === "settings" && settingsTab === "memory"
-                    }
-                    loggedIn={Boolean(user)}
-                  />
-                )}
-                {settingsTab === "data" && (
-                  <DataManagementPanel
-                    onOpenSavedPlaces={openSavedPlacesManager}
-                  />
-                )}
+                  )}
+                  {settingsTab === "safety" && !user && (
+                    <p className="text-sm text-muted-foreground">
+                      {t("login")}
+                    </p>
+                  )}
+                  {settingsTab === "memory" && (
+                    <AIMemoryPanel
+                      active={
+                        openDialog === "settings" && settingsTab === "memory"
+                      }
+                      loggedIn={Boolean(user)}
+                    />
+                  )}
+                  {settingsTab === "data" && (
+                    <DataManagementPanel
+                      onOpenSavedPlaces={openSavedPlacesManager}
+                    />
+                  )}
+                </div>
               </div>
             </div>
           </div>

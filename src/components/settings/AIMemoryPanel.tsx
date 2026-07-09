@@ -189,7 +189,7 @@ export default function AIMemoryPanel({
   }
 
   return (
-    <div className="space-y-4 overflow-auto">
+    <div className="flex min-h-0 flex-col gap-4">
       <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 space-y-3">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
@@ -211,7 +211,7 @@ export default function AIMemoryPanel({
         </div>
       </div>
 
-      <div className="rounded-2xl border border-border/60 bg-background p-4 space-y-3">
+      <div className="flex min-h-0 flex-col gap-3 rounded-2xl border border-border/60 bg-background p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-semibold">{t("aiMemoryListTitle")}</p>
@@ -249,7 +249,7 @@ export default function AIMemoryPanel({
             {t("aiMemoryEmpty")}
           </div>
         ) : (
-          <ScrollArea className="max-h-72 pr-3">
+          <ScrollArea className="min-h-0 max-h-[min(46vh,420px)] pr-3">
             <div className="space-y-2.5">
               {memories.map((memory) => (
                 <div
