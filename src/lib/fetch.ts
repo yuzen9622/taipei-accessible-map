@@ -57,7 +57,8 @@ export async function fetchRequest<T>(
   }
   const response = await fetch(url, options);
   const data = (await response.json()) as ApiResponse<unknown>;
-  if (!data.ok && data.code !== 401) {
+  const isSuccess = data.ok === true || data.success === true;
+  if (!isSuccess && data.code !== 401) {
     throw new ApiError(
       data.message || "Fetch error",
       data.code,
