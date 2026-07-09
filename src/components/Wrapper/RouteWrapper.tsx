@@ -1,13 +1,14 @@
-import { Marker } from "react-map-gl/maplibre";
 import {
+  Bike,
   BusIcon,
+  Car,
   Footprints,
   TrainFrontIcon,
   TrainFrontTunnelIcon,
   TramFront,
 } from "lucide-react";
-
 import { type JSX, useMemo } from "react";
+import { Marker } from "react-map-gl/maplibre";
 
 import useMapStore from "@/stores/useMapStore";
 import type { RouteLeg } from "@/types/route";
@@ -33,6 +34,10 @@ function getLegIcon(leg: RouteLeg) {
       return <TrainFrontTunnelIcon className="h-4 w-4" style={{ color }} />;
     case "TRA":
       return <TrainFrontIcon className="h-4 w-4" style={{ color }} />;
+    case "DRIVE":
+      return <Car className="h-4 w-4" style={{ color }} />;
+    case "MOTORCYCLE":
+      return <Bike className="h-4 w-4" style={{ color }} />;
   }
 }
 
@@ -85,13 +90,21 @@ export default function RouteLine() {
       if (!leg.polyline?.length) return null;
 
       const path = polylineToPath(leg.polyline);
+      const legKey = [
+        leg.type,
+        path[0]?.lng,
+        path[0]?.lat,
+        path[path.length - 1]?.lng,
+        path[path.length - 1]?.lat,
+        path.length,
+      ].join("-");
       const color = getLegColor(leg);
       const isWalking = leg.type === "WALK";
 
       if (lastLegType !== null && lastLegType !== leg.type && path[0]) {
         markers.push(
           <Marker
-            key={`marker-${index}`}
+            key={`marker-${legKey}`}
             longitude={path[0].lng}
             latitude={path[0].lat}
             anchor="center"
@@ -113,7 +126,7 @@ export default function RouteLine() {
       if (isWalking) {
         return (
           <Polyline
-            key={`leg-${index}`}
+            key={`leg-${legKey}`}
             id={`route-leg-${index}`}
             path={path}
             strokeColor={color}
@@ -126,7 +139,7 @@ export default function RouteLine() {
 
       return (
         <Polyline
-          key={`leg-${index}`}
+          key={`leg-${legKey}`}
           id={`route-leg-${index}`}
           path={path}
           strokeColor={color}
