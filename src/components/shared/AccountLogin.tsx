@@ -396,17 +396,14 @@ export default function AccountLogin() {
         open={openDialog === "settings"}
         onOpenChange={() => setOpenDialog(null)}
       >
-        <DialogContent className="max-w-5xl w-[min(96vw,1080px)] h-[min(88vh,760px)] rounded-2xl p-0 overflow-hidden">
-          <div className="grid h-full grid-cols-[88px_minmax(0,1fr)] bg-background md:grid-cols-[20%_minmax(0,1fr)]">
+        <DialogContent className="w-[min(97vw,1280px)] max-w-[min(97vw,1280px)] h-[min(92vh,840px)] rounded-2xl p-0 overflow-hidden sm:max-w-[min(97vw,1280px)]">
+          <div className="grid h-full grid-cols-[88px_minmax(0,1fr)] bg-background md:grid-cols-[30%_minmax(0,1fr)]">
             <aside className="border-r border-border/60 bg-muted/35">
               <div className="flex h-full flex-col">
                 <div className="border-b border-border/60 px-3 py-4 md:px-4 md:py-5">
                   <div className="space-y-1">
                     <p className="hidden text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground md:block">
                       {t("settingTitle")}
-                    </p>
-                    <p className="hidden text-sm text-muted-foreground md:block">
-                      {t("settingDesc")}
                     </p>
                   </div>
                 </div>
@@ -437,15 +434,12 @@ export default function AccountLogin() {
               </div>
             </aside>
 
-            <div className="min-w-0 overflow-y-auto">
+            <div className="min-w-0 min-h-0 overflow-y-auto">
               <div className="border-b border-border/60 px-5 py-5 md:px-7">
                 <DialogHeader className="space-y-1">
                   <DialogTitle className="text-xl font-semibold">
                     {activeSettingsSection.title}
                   </DialogTitle>
-                  <DialogDescription className="text-sm text-muted-foreground">
-                    {activeSettingsSection.desc}
-                  </DialogDescription>
                 </DialogHeader>
               </div>
 

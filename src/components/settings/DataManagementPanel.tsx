@@ -10,6 +10,7 @@ import {
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAppTranslation } from "@/i18n/client";
 import useMapStore from "@/stores/useMapStore";
 
@@ -124,59 +125,61 @@ export default function DataManagementPanel({
         <p className="text-xs text-muted-foreground">{t("settingsDataDesc")}</p>
       </div>
 
-      <div className="space-y-3">
-        {dataItems.map(
-          ({
-            key,
-            icon: Icon,
-            title,
-            desc,
-            count,
-            actionLabel,
-            disabled,
-            onClick,
-          }) => (
-            <div
-              key={key}
-              className="rounded-2xl border border-border/60 bg-background p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <Icon className="h-4 w-4 text-primary" />
-                  <p className="text-sm font-semibold">{title}</p>
-                  <CountBadge value={count} />
-                </div>
-                <p className="text-xs text-muted-foreground">{desc}</p>
-              </div>
-              <Button
-                type="button"
-                variant="outline"
-                className="sm:shrink-0"
-                onClick={onClick}
-                disabled={disabled}
+      <ScrollArea className="max-h-[min(56vh,520px)] pr-3">
+        <div className="space-y-3">
+          {dataItems.map(
+            ({
+              key,
+              icon: Icon,
+              title,
+              desc,
+              count,
+              actionLabel,
+              disabled,
+              onClick,
+            }) => (
+              <div
+                key={key}
+                className="rounded-2xl border border-border/60 bg-background p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"
               >
-                <Trash2 className="h-4 w-4" />
-                {actionLabel}
-              </Button>
-            </div>
-          ),
-        )}
-      </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Icon className="h-4 w-4 text-primary" />
+                    <p className="text-sm font-semibold">{title}</p>
+                    <CountBadge value={count} />
+                  </div>
+                  <p className="text-xs text-muted-foreground">{desc}</p>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="sm:shrink-0"
+                  onClick={onClick}
+                  disabled={disabled}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {actionLabel}
+                </Button>
+              </div>
+            ),
+          )}
 
-      <div className="rounded-2xl border border-border/60 bg-background p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="space-y-1">
-          <p className="text-sm font-semibold">
-            {t("settingsDataSavedPlacesManagerTitle")}
-          </p>
-          <p className="text-xs text-muted-foreground">
-            {t("settingsDataSavedPlacesManagerDesc")}
-          </p>
+          <div className="rounded-2xl border border-border/60 bg-background p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-semibold">
+                {t("settingsDataSavedPlacesManagerTitle")}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {t("settingsDataSavedPlacesManagerDesc")}
+              </p>
+            </div>
+            <Button type="button" onClick={onOpenSavedPlaces}>
+              <Bookmark className="h-4 w-4" />
+              {t("settingsDataOpenSavedPlaces")}
+            </Button>
+          </div>
         </div>
-        <Button type="button" onClick={onOpenSavedPlaces}>
-          <Bookmark className="h-4 w-4" />
-          {t("settingsDataOpenSavedPlaces")}
-        </Button>
-      </div>
+      </ScrollArea>
     </div>
   );
 }
