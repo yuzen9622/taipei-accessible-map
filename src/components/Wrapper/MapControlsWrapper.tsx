@@ -474,7 +474,7 @@ export default function MapControlsWrapper() {
           className={cn(
             "absolute right-3 pointer-events-auto flex flex-col gap-2 items-end z-30",
             getBottomOffset(sheetMode, isNavigating),
-            "lg:bottom-5 lg:flex-row lg:items-center",
+            "lg:bottom-8 lg:flex-row lg:items-center",
           )}
           style={{ transition: "bottom 0.3s ease" }}
         >
