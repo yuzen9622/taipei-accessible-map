@@ -84,7 +84,7 @@ export default function AIMemoryPanel({
 }) {
   const { t, i18n } = useAppTranslation();
   const [memories, setMemories] = useState<UserMemory[]>([]);
-  const [memoryEnabled, setMemoryEnabled] = useState(true);
+  const [memoryEnabled, setMemoryEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [formSaving, setFormSaving] = useState(false);
@@ -201,6 +201,13 @@ export default function AIMemoryPanel({
     return (
       <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-5 text-sm text-muted-foreground">
         {t("aiMemoryLoginHint")}
+      </div>
+    );
+  }
+  if (!loaded) {
+    return (
+      <div className="py-8 flex justify-center">
+        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
       </div>
     );
   }
