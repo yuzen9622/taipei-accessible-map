@@ -14,6 +14,7 @@ import RouteLine from "@/components/Wrapper/RouteWrapper";
 import { useAppTranslation } from "@/i18n/client";
 import useMapStore from "@/stores/useMapStore";
 import useNavStore from "@/stores/useNavStore";
+import type { NominatimPlace } from "@/types";
 import AIChatBot from "./AIChatBot";
 import NavigationController from "./NavigationController";
 import SearchPin from "./shared/SearchPin";
@@ -28,6 +29,21 @@ const MAP_STYLES = {
   light: "https://tiles.openfreemap.org/styles/liberty",
   dark: "https://tiles.openfreemap.org/styles/dark",
 };
+
+function toNominatimOsmId(value: string | null) {
+  if (!value) return null;
+  const [type, id] = value.split("_");
+  if (!id || !/^\d+$/.test(id)) return null;
+  const prefix =
+    type === "node" || type === "n"
+      ? "N"
+      : type === "way" || type === "w"
+        ? "W"
+        : type === "relation" || type === "r"
+          ? "R"
+          : null;
+  return prefix ? `${prefix}${id}` : null;
+}
 
 // OpenMapTiles carries name:zh / name:en alongside the default bilingual
 // "{name:latin}\n{name:nonlatin}" label — rewrite symbol layers so labels
@@ -178,7 +194,10 @@ export default function ClientMap() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const hasSpecialParam =
-      params.has("sessionId") || params.has("liff.state") || params.has("sos");
+      params.has("sessionId") ||
+      params.has("liff.state") ||
+      params.has("sos") ||
+      params.has("place");
     if (hasSpecialParam) return;
 
     if (initialCenter) return;
@@ -196,6 +215,7 @@ export default function ClientMap() {
   // shared point with the place panel open.
   useEffect(() => {
     const loc = new URLSearchParams(window.location.search).get("loc");
+
     if (!loc) return;
     const [lat, lng] = loc.split(",").map(Number);
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
@@ -225,6 +245,47 @@ export default function ClientMap() {
         });
       });
   }, [i18n.language, setInfoShow, setSearchPlace, setSheetMode]);
+
+  // Shared-place links (?place=node_123 / way_123 / relation_123 from the
+  // place share dialog) resolve the OSM object and open it as a place panel.
+  useEffect(() => {
+    const placeParam = new URLSearchParams(window.location.search).get("place");
+    const osmId = toNominatimOsmId(placeParam);
+
+    if (!osmId) return;
+
+    const lang = i18n.language === "zh-TW" ? "zh-TW" : "en";
+    const controller = new AbortController();
+
+    setSheetMode("place");
+    fetch(
+      `https://nominatim.openstreetmap.org/lookup?format=json&osm_ids=${osmId}&accept-language=${lang}&addressdetails=1`,
+      { signal: controller.signal },
+    )
+      .then((res) => res.json())
+      .then((data: NominatimPlace[]) => {
+        const place = data[0];
+        if (!place) return;
+
+        const lat = parseFloat(place.lat);
+        const lng = parseFloat(place.lon);
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+        const position = { lat, lng };
+        setInfoShow({ isOpen: true, kind: "place", place });
+        setSearchPlace({ kind: "place", place, position });
+        map?.flyTo({
+          center: [lng, lat],
+          zoom: 18,
+          duration: 1000,
+        });
+      })
+      .catch((error) => {
+        if (error?.name === "AbortError") return;
+      });
+
+    return () => controller.abort();
+  }, [i18n.language, map, setInfoShow, setSearchPlace, setSheetMode]);
 
   const handleMouseDown = useCallback((e: MapLayerMouseEvent) => {
     pointerDownTime.current = Date.now();

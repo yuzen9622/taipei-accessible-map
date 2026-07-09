@@ -137,11 +137,11 @@ export default function PlaceContent() {
 
   const handleShare = useCallback(async () => {
     if (!infoShow.kind) return;
-    let url = "https://www.openstreetmap.org";
+    let url = process.env.NEXT_PUBLIC_URL ?? window.location.origin;
     if (infoShow.kind === "place") {
       const place = infoShow.place;
       if (place.osm_id && place.osm_type) {
-        url = `https://www.openstreetmap.org/${place.osm_type}/${place.osm_id}`;
+        url += `?place=${place.osm_type}_${place.osm_id}`;
       }
     }
     try {

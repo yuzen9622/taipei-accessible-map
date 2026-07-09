@@ -399,15 +399,15 @@ export default function AccountLogin() {
         <DialogContent className="w-[min(97vw,768px)] max-w-[min(97vw,768px)] h-[min(92vh,840px)] rounded-2xl p-0 overflow-hidden sm:max-w-[min(97vw,1280px)]">
           <div className="grid h-full grid-cols-[88px_minmax(0,1fr)] bg-background md:grid-cols-[30%_minmax(0,1fr)]">
             <aside className="border-r border-border/60 bg-muted/35">
-              <div className="flex h-full flex-col">
-                <div className="border-b border-border/60 px-3 py-4 md:px-4 md:py-5">
+              <div className="flex h-full flex-col ">
+                <div className="border-b border-border/60 px-3 py-4 md:px-4 md:py-5 hidden md:block">
                   <div className="space-y-1">
-                    <p className="hidden text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground md:block">
+                    <p className="text-lg font-medium uppercase tracking-[0.18em] text-muted-foreground ">
                       {t("settingTitle")}
                     </p>
                   </div>
                 </div>
-                <nav className="flex-1 space-y-1.5 px-2 py-3 md:px-3 md:py-4">
+                <nav className=" space-y-1.5 px-2 py-3 md:px-3 md:py-4">
                   {settingsSections.map((section) => {
                     const Icon = section.icon;
                     const active = settingsTab === section.key;
@@ -416,7 +416,7 @@ export default function AccountLogin() {
                         key={section.key}
                         type="button"
                         onClick={() => setSettingsTab(section.key)}
-                        className={`flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left text-sm transition-colors ${
+                        className={`flex w-full items-center justify-center gap-3 rounded-xl  px-3 py-3 text-left text-sm transition-colors ${
                           active
                             ? "bg-background text-foreground shadow-sm ring-1 ring-border/70"
                             : "text-muted-foreground hover:bg-background/60 hover:text-foreground"
