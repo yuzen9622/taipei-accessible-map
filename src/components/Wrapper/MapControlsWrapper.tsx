@@ -318,203 +318,242 @@ export default function MapControlsWrapper() {
 
   return (
     <>
-      <div
-        className={cn(
-          "fixed z-30 transition-all duration-300 pointer-events-none flex flex-col gap-2 items-end",
-          // Mobile: bottom-right above bottomsheet
-          "right-3",
-          getBottomOffset(sheetMode, isNavigating),
-          // Desktop: bottom-left next to sidebar/rail (if not navigating)
-          !isNavigating &&
-            (!sidebarCollapsed && panelOpen
-              ? "lg:left-[468px] lg:right-auto lg:bottom-5"
-              : "lg:left-[76px] lg:right-auto lg:bottom-5"),
-        )}
-        style={{ transition: "left 0.3s ease, bottom 0.3s ease" }}
-      >
-        <div className="flex flex-col gap-2 pointer-events-auto items-end lg:items-start">
-          {/* 1. Environment Widget */}
-          {showAirPill && (
-            <div className="relative flex flex-col items-end lg:items-start">
-              <motion.button
-                layout
-                onClick={() => setEnvExpanded(!envExpanded)}
-                className="bg-background/95 backdrop-blur-md rounded-full shadow-lg border border-border/50 px-3 py-2 flex items-center gap-2 cursor-pointer select-none transition-colors hover:shadow-xl h-11"
-                whileTap={{ scale: 0.96 }}
-                aria-label={t("airQuality", "空氣品質")}
-                aria-expanded={envExpanded}
-              >
-                {envLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                ) : air ? (
-                  <Leaf className={`h-4 w-4 ${pillConfig.color}`} />
-                ) : (
-                  <CloudRain className="h-4 w-4 text-sky-500" />
-                )}
-                {(envLoading || air) && (
-                  <span className={`text-xs font-semibold ${pillConfig.color}`}>
-                    {envLoading ? "..." : envLabel}
+      <div className="fixed inset-0 pointer-events-none z-30">
+        {/* 1. Top-Right Container: Environment Info Badge */}
+        {showAirPill && (
+          <div className="absolute top-24 right-3 pointer-events-auto z-30 flex flex-col items-end">
+            <motion.button
+              layout
+              onClick={() => setEnvExpanded(!envExpanded)}
+              className="bg-background/95 backdrop-blur-md rounded-full shadow-lg border border-border/50 px-3 py-2 flex items-center gap-2 cursor-pointer select-none transition-colors hover:shadow-xl h-11"
+              whileTap={{ scale: 0.96 }}
+              aria-label={t("airQuality", "空氣品質")}
+              aria-expanded={envExpanded}
+            >
+              {envLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              ) : air ? (
+                <Leaf className={`h-4 w-4 ${pillConfig.color}`} />
+              ) : (
+                <CloudRain className="h-4 w-4 text-sky-500" />
+              )}
+              {(envLoading || air) && (
+                <span className={`text-xs font-semibold ${pillConfig.color}`}>
+                  {envLoading ? "..." : envLabel}
+                </span>
+              )}
+              {!envLoading && weather?.temperature != null && (
+                <>
+                  {air && <span className="w-px h-4 bg-border" />}
+                  <span className="text-xs font-semibold text-foreground">
+                    {weather.temperature}°C
                   </span>
-                )}
-                {!envLoading && weather?.temperature != null && (
-                  <>
-                    {air && <span className="w-px h-4 bg-border" />}
-                    <span className="text-xs font-semibold text-foreground">
-                      {weather.temperature}°C
-                    </span>
-                  </>
-                )}
-                {envExpanded && (
-                  <X className="h-3.5 w-3.5 text-muted-foreground" />
-                )}
-              </motion.button>
+                </>
+              )}
+              {envExpanded && (
+                <X className="h-3.5 w-3.5 text-muted-foreground" />
+              )}
+            </motion.button>
 
-              <AnimatePresence>
-                {envExpanded && envData && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -6, scale: 0.97 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -6, scale: 0.97 }}
-                    transition={{ duration: 0.18 }}
-                    className={cn(
-                      "absolute bg-background/95 backdrop-blur-md rounded-2xl shadow-xl border border-border/50 p-3.5 space-y-3 w-[168px] z-50",
-                      "right-0 top-12", // mobile pops left
-                      "lg:left-0 lg:right-auto lg:top-12", // desktop pops right
-                    )}
-                  >
-                    <div className="flex items-center justify-end -mt-1 -mr-1">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          fetchEnvironment();
-                        }}
-                        disabled={envLoading}
-                        className="h-6 w-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
-                        aria-label={t("refresh", "重新整理")}
-                      >
-                        <RefreshCw
-                          className={`h-3 w-3 ${envLoading ? "animate-spin" : ""}`}
-                        />
-                      </button>
-                    </div>
-                    {weather?.windSpeed != null && (
-                      <Metric
-                        Icon={Wind}
-                        iconClass="text-blue-500"
-                        label={t("wind")}
-                        value={weather.windSpeed}
-                        unit="m/s"
+            <AnimatePresence>
+              {envExpanded && envData && (
+                <motion.div
+                  initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                  transition={{ duration: 0.18 }}
+                  className="absolute right-0 top-12 bg-background/95 backdrop-blur-md rounded-2xl shadow-xl border border-border/50 p-3.5 space-y-3 w-[168px] z-50"
+                >
+                  <div className="flex items-center justify-end -mt-1 -mr-1">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        fetchEnvironment();
+                      }}
+                      disabled={envLoading}
+                      className="h-6 w-6 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors"
+                      aria-label={t("refresh", "重新整理")}
+                    >
+                      <RefreshCw
+                        className={`h-3 w-3 ${envLoading ? "animate-spin" : ""}`}
                       />
-                    )}
-                    {weather?.temperature != null && (
-                      <Metric
-                        Icon={Thermometer}
-                        iconClass="text-red-500"
-                        label={t("temperature")}
-                        value={weather.temperature}
-                        unit="°C"
-                      />
-                    )}
-                    {weather?.precipitationProbability != null && (
-                      <Metric
-                        Icon={CloudRain}
-                        iconClass="text-sky-500"
-                        label={t("precipitation")}
-                        value={weather.precipitationProbability}
-                        unit="%"
-                      />
-                    )}
-                    {air && (
-                      <Metric
-                        Icon={Leaf}
-                        iconClass="text-green-600"
-                        label={t("airQuality")}
-                        value={envLabel}
-                        valueClass={envConfig.color}
-                      />
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
+                    </button>
+                  </div>
+                  {weather?.windSpeed != null && (
+                    <Metric
+                      Icon={Wind}
+                      iconClass="text-blue-500"
+                      label={t("wind")}
+                      value={weather.windSpeed}
+                      unit="m/s"
+                    />
+                  )}
+                  {weather?.temperature != null && (
+                    <Metric
+                      Icon={Thermometer}
+                      iconClass="text-red-500"
+                      label={t("temperature")}
+                      value={weather.temperature}
+                      unit="°C"
+                    />
+                  )}
+                  {weather?.precipitationProbability != null && (
+                    <Metric
+                      Icon={CloudRain}
+                      iconClass="text-sky-500"
+                      label={t("precipitation")}
+                      value={weather.precipitationProbability}
+                      unit="%"
+                    />
+                  )}
+                  {air && (
+                    <Metric
+                      Icon={Leaf}
+                      iconClass="text-green-600"
+                      label={t("airQuality")}
+                      value={envLabel}
+                      valueClass={envConfig.color}
+                    />
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+
+        {/* 2. Bottom-Left Container: 3D/2D, Locate, AI Assistant vertical stack (Desktop Only) */}
+        {!isNavigating && (
+          <div
+            className={cn(
+              "absolute bottom-5 pointer-events-auto hidden lg:flex flex-col gap-2 z-30",
+              !sidebarCollapsed && panelOpen ? "left-[468px]" : "left-[76px]",
+            )}
+            style={{ transition: "left 0.3s ease" }}
+          >
+            {/* 3D/2D Toggle */}
+            <Button
+              aria-label={is3D ? "切換為 2D 視角" : "切換為 3D 視角"}
+              aria-pressed={is3D}
+              variant="secondary"
+              size="icon"
+              onClick={() => setIs3D(!is3D)}
+              className="rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all text-xs font-bold text-foreground"
+            >
+              {is3D ? "2D" : "3D"}
+            </Button>
+
+            {/* Recenter (My Location) Button */}
+            <Button
+              aria-label="回到目前位置"
+              variant="secondary"
+              size="icon"
+              onClick={() => handlePinClick(userLocation)}
+              className="rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all"
+            >
+              <Navigation className="h-5 w-5 text-foreground" />
+            </Button>
+
+            {/* AI ChatBot FAB */}
+            {!chatOpen && (
+              <Button
+                onClick={() => setChatOpen(true)}
+                variant="default"
+                size="icon"
+                className="rounded-full h-11 w-11 shadow-lg bg-primary hover:shadow-xl transition-all text-primary-foreground"
+                aria-label={t("chatbot.open", "開啟聊天助理")}
+              >
+                <BotMessageSquare className="h-6 w-6" />
+              </Button>
+            )}
+          </div>
+        )}
+
+        {/* 3. Bottom-Right Container: SOS & Share (Desktop side-by-side; Mobile full stack above bottomsheet) */}
+        <div
+          className={cn(
+            "absolute right-3 pointer-events-auto flex flex-col gap-2 items-end z-30",
+            getBottomOffset(sheetMode, isNavigating),
+            "lg:bottom-5 lg:flex-row lg:items-center",
           )}
-
-          {/* Controls button group */}
-          <div className="flex flex-col lg:flex-row gap-2">
-            {isNavigating ? (
-              // Navigation Mode Controls
-              <>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="icon"
-                  onClick={toggleVoice}
-                  aria-label={t("voiceNav")}
-                  aria-pressed={voiceEnabled}
-                  className={cn(
-                    "rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:shadow-xl transition-all",
-                    voiceEnabled
-                      ? "bg-primary text-primary-foreground border-primary/50"
-                      : "text-muted-foreground hover:bg-muted",
-                  )}
-                >
-                  {voiceEnabled ? (
-                    <Volume2 className="h-5 w-5" />
+          style={{ transition: "bottom 0.3s ease" }}
+        >
+          {isNavigating ? (
+            // Navigation Mode Controls
+            <div className="flex flex-col lg:flex-row gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                size="icon"
+                onClick={toggleVoice}
+                aria-label={t("voiceNav")}
+                aria-pressed={voiceEnabled}
+                className={cn(
+                  "rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:shadow-xl transition-all",
+                  voiceEnabled
+                    ? "bg-primary text-primary-foreground border-primary/50"
+                    : "text-muted-foreground hover:bg-muted",
+                )}
+              >
+                {voiceEnabled ? (
+                  <Volume2 className="h-5 w-5" />
+                ) : (
+                  <VolumeX className="h-5 w-5" />
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="icon"
+                onClick={recenterNav}
+                aria-label={t("recenter")}
+                className="rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all text-foreground"
+              >
+                <LocateFixed className="h-5 w-5" />
+              </Button>
+              {/* SOS hold button during navigation */}
+              <motion.button
+                type="button"
+                aria-label={`SOS ${t("sosHold")}`}
+                onPointerDown={startHold}
+                onPointerUp={clearHold}
+                onPointerLeave={clearHold}
+                onPointerCancel={clearHold}
+                onContextMenu={(e) => e.preventDefault()}
+                animate={holdRemaining != null ? { scale: 1.15 } : { scale: 1 }}
+                className="h-11 w-11 rounded-full bg-red-500 text-white shadow-lg hover:bg-red-600 hover:shadow-xl transition-colors flex flex-col items-center justify-center select-none touch-none shrink-0"
+              >
+                <AnimatePresence mode="wait" initial={false}>
+                  {holdRemaining != null ? (
+                    <motion.span
+                      key="count"
+                      initial={{ opacity: 0, scale: 0.6 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="text-sm font-black tabular-nums"
+                    >
+                      {holdRemaining}
+                    </motion.span>
                   ) : (
-                    <VolumeX className="h-5 w-5" />
+                    <motion.span
+                      key="label"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      className="flex flex-col items-center leading-none"
+                    >
+                      <span className="text-xs font-black">SOS</span>
+                    </motion.span>
                   )}
-                </Button>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="icon"
-                  onClick={recenterNav}
-                  aria-label={t("recenter")}
-                  className="rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all text-foreground"
-                >
-                  <LocateFixed className="h-5 w-5" />
-                </Button>
-              </>
-            ) : (
-              // Standard Map Mode Controls
-              <>
-                {/* 2. Share Location button */}
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="icon"
-                  onClick={openShare}
-                  aria-label={t("shareLocation")}
-                  className="rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all text-primary"
-                >
-                  <Share2 className="h-5 w-5" />
-                </Button>
-
-                {/* 3. 3D/2D Toggle */}
-                <Button
-                  aria-label={is3D ? "切換為 2D 視角" : "切換為 3D 視角"}
-                  aria-pressed={is3D}
-                  variant="secondary"
-                  size="icon"
-                  onClick={() => setIs3D(!is3D)}
-                  className="rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all text-xs font-bold text-foreground"
-                >
-                  {is3D ? "2D" : "3D"}
-                </Button>
-
-                {/* 4. Recenter (My Location) Button */}
-                <Button
-                  aria-label="回到目前位置"
-                  variant="secondary"
-                  size="icon"
-                  onClick={() => handlePinClick(userLocation)}
-                  className="rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all"
-                >
-                  <Navigation className="h-5 w-5 text-foreground" />
-                </Button>
-
-                {/* 5. AI ChatBot FAB */}
+                </AnimatePresence>
+              </motion.button>
+            </div>
+          ) : (
+            // Standard Map Mode Controls
+            <>
+              {/* On Mobile: Stack AI Assistant, Locate, and 3D/2D toggle above Share & SOS */}
+              <div className="flex flex-col lg:hidden gap-2">
+                {/* AI ChatBot FAB (Mobile) */}
                 {!chatOpen && (
                   <Button
                     onClick={() => setChatOpen(true)}
@@ -526,46 +565,84 @@ export default function MapControlsWrapper() {
                     <BotMessageSquare className="h-6 w-6" />
                   </Button>
                 )}
-              </>
-            )}
+                {/* Recenter Button (Mobile) */}
+                <Button
+                  aria-label="回到目前位置"
+                  variant="secondary"
+                  size="icon"
+                  onClick={() => handlePinClick(userLocation)}
+                  className="rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all"
+                >
+                  <Navigation className="h-5 w-5 text-foreground" />
+                </Button>
+                {/* 3D/2D Toggle (Mobile) */}
+                <Button
+                  aria-label={is3D ? "切換為 2D 視角" : "切換為 3D 視角"}
+                  aria-pressed={is3D}
+                  variant="secondary"
+                  size="icon"
+                  onClick={() => setIs3D(!is3D)}
+                  className="rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all text-xs font-bold text-foreground"
+                >
+                  {is3D ? "2D" : "3D"}
+                </Button>
+              </div>
 
-            {/* 6. SOS Hold-to-Trigger Button */}
-            <motion.button
-              type="button"
-              aria-label={`SOS ${t("sosHold")}`}
-              onPointerDown={startHold}
-              onPointerUp={clearHold}
-              onPointerLeave={clearHold}
-              onPointerCancel={clearHold}
-              onContextMenu={(e) => e.preventDefault()}
-              animate={holdRemaining != null ? { scale: 1.15 } : { scale: 1 }}
-              className="h-11 w-11 lg:h-11 lg:w-11 rounded-full bg-red-500 text-white shadow-lg hover:bg-red-600 hover:shadow-xl transition-colors flex flex-col items-center justify-center select-none touch-none shrink-0"
-            >
-              <AnimatePresence mode="wait" initial={false}>
-                {holdRemaining != null ? (
-                  <motion.span
-                    key="count"
-                    initial={{ opacity: 0, scale: 0.6 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="text-sm font-black tabular-nums"
-                  >
-                    {holdRemaining}
-                  </motion.span>
-                ) : (
-                  <motion.span
-                    key="label"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="flex flex-col items-center leading-none"
-                  >
-                    <span className="text-xs font-black">SOS</span>
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </motion.button>
-          </div>
+              {/* Share & SOS Group (Desktop side-by-side, Mobile bottom of stack) */}
+              <div className="flex flex-col lg:flex-row gap-2">
+                {/* Share Location Button */}
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="icon"
+                  onClick={openShare}
+                  aria-label={t("shareLocation")}
+                  className="rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all text-primary"
+                >
+                  <Share2 className="h-5 w-5" />
+                </Button>
+
+                {/* SOS Hold-to-Trigger Button */}
+                <motion.button
+                  type="button"
+                  aria-label={`SOS ${t("sosHold")}`}
+                  onPointerDown={startHold}
+                  onPointerUp={clearHold}
+                  onPointerLeave={clearHold}
+                  onPointerCancel={clearHold}
+                  onContextMenu={(e) => e.preventDefault()}
+                  animate={
+                    holdRemaining != null ? { scale: 1.15 } : { scale: 1 }
+                  }
+                  className="h-11 w-11 rounded-full bg-red-500 text-white shadow-lg hover:bg-red-600 hover:shadow-xl transition-colors flex flex-col items-center justify-center select-none touch-none shrink-0"
+                >
+                  <AnimatePresence mode="wait" initial={false}>
+                    {holdRemaining != null ? (
+                      <motion.span
+                        key="count"
+                        initial={{ opacity: 0, scale: 0.6 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="text-sm font-black tabular-nums"
+                      >
+                        {holdRemaining}
+                      </motion.span>
+                    ) : (
+                      <motion.span
+                        key="label"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="flex flex-col items-center leading-none"
+                      >
+                        <span className="text-xs font-black">SOS</span>
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </motion.button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
