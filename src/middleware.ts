@@ -2,7 +2,10 @@ import { type NextRequest, NextResponse } from "next/server";
 import { fallbackLng, languages } from "@/i18n/setting";
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|assets|favicon.ico|sw.js).*)"],
+  matcher: [
+    "/",
+    "/((?!api|_next/static|_next/image|assets|favicon.ico|sw.js).*)",
+  ],
 };
 
 export function middleware(req: NextRequest) {
@@ -17,7 +20,9 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
   // 路徑已經帶語系前綴就 pass
-  if (languages.some((l: string) => path.startsWith(`/${l}`))) {
+  if (
+    languages.some((l: string) => path === `/${l}` || path.startsWith(`/${l}/`))
+  ) {
     return NextResponse.next();
   }
 
