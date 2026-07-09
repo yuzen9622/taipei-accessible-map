@@ -50,12 +50,29 @@ const CATEGORY_OPTIONS: MemoryCategory[] = [
   "context",
 ];
 const SENSITIVITY_OPTIONS: MemorySensitivity[] = ["low", "medium", "high"];
+const MEMORY_SOURCE_OPTIONS: UserMemory["source"][] = [
+  "explicit_user",
+  "agent_suggested",
+  "distilled",
+];
 
 function formatDateLabel(value: string | null, locale: string) {
   if (!value) return null;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
   return date.toLocaleString(locale);
+}
+
+function isMemorySensitivity(
+  value: UserMemory["sensitivity"] | undefined,
+): value is MemorySensitivity {
+  return Boolean(value && SENSITIVITY_OPTIONS.includes(value));
+}
+
+function isMemorySource(
+  value: UserMemory["source"] | undefined,
+): value is UserMemory["source"] {
+  return Boolean(value && MEMORY_SOURCE_OPTIONS.includes(value));
 }
 
 export default function AIMemoryPanel({
@@ -249,15 +266,17 @@ export default function AIMemoryPanel({
             {t("aiMemoryEmpty")}
           </div>
         ) : (
-          <ScrollArea className="min-h-0 max-h-[min(46vh,420px)] pr-3">
-            <div className="space-y-2.5">
+          <ScrollArea className="min-h-0 w-full max-w-full max-h-[min(46vh,420px)] pr-3">
+            <div className="w-full min-w-0 space-y-2.5">
               {memories.map((memory) => (
                 <div
                   key={memory.id}
-                  className="rounded-xl border border-border/60 bg-muted/20 p-3 space-y-2"
+                  className="w-full min-w-0 rounded-xl border border-border/60 bg-muted/20 p-3 space-y-2"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <p className="text-sm leading-6">{memory.content}</p>
+                  <div className="flex min-w-0 items-start justify-between gap-3">
+                    <p className="min-w-0 flex-1 break-words text-sm leading-6">
+                      {memory.content}
+                    </p>
                     <Button
                       type="button"
                       variant="ghost"
@@ -269,24 +288,37 @@ export default function AIMemoryPanel({
                       {t("edit")}
                     </Button>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="secondary">
+                  <div className="flex min-w-0 flex-wrap gap-2">
+                    <Badge
+                      variant="secondary"
+                      className="max-w-full whitespace-normal break-words text-left"
+                    >
                       {t(`memoryCategory.${memory.category}`)}
                     </Badge>
-                    <Badge variant="outline">
-                      {t(`memorySensitivity.${memory.sensitivity}`)}
+                    <Badge
+                      variant="outline"
+                      className="max-w-full whitespace-normal break-words text-left"
+                    >
+                      {isMemorySensitivity(memory.sensitivity)
+                        ? t(`memorySensitivity.${memory.sensitivity}`)
+                        : t("unknown")}
                     </Badge>
-                    <Badge variant="outline">
-                      {t(`memorySource.${memory.source}`)}
+                    <Badge
+                      variant="outline"
+                      className="max-w-full whitespace-normal break-words text-left"
+                    >
+                      {isMemorySource(memory.source)
+                        ? t(`memorySource.${memory.source}`)
+                        : t("unknown")}
                     </Badge>
                   </div>
-                  <div className="grid gap-1 text-xs text-muted-foreground sm:grid-cols-2">
-                    <p>
+                  <div className="grid min-w-0 gap-1 text-xs text-muted-foreground sm:grid-cols-2">
+                    <p className="min-w-0 break-words">
                       {t("updatedAtLabel")}{" "}
                       {formatDateLabel(memory.updatedAt, i18n.language) ??
                         t("unknown")}
                     </p>
-                    <p>
+                    <p className="min-w-0 break-words">
                       {t("expiresAtLabel")}{" "}
                       {formatDateLabel(memory.expiresAt, i18n.language) ??
                         t("aiMemoryNoExpiry")}
