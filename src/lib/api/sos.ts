@@ -64,9 +64,9 @@ export async function resolveSosSession(sessionId: string) {
 
 // No auth — public tracking page. Callers distinguish 404/410 via
 // `err instanceof ApiError && err.code` (see src/lib/fetch.ts).
-export async function getPublicSosSession(shareToken: string) {
+export async function getPublicSosSession(sessionId: string) {
   const response = await fetchRequest(
-    `${SOS_BASE}/${encodeURIComponent(shareToken)}/public`,
+    `${SOS_BASE}/${encodeURIComponent(sessionId)}/public`,
     { method: "GET" },
   );
   return response as ApiResponse<SosPublicSession>;

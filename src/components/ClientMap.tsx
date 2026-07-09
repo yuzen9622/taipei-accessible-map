@@ -4,11 +4,12 @@ import type maplibregl from "maplibre-gl";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { MapLayerMouseEvent } from "react-map-gl/maplibre";
-import Map, { NavigationControl } from "react-map-gl/maplibre";
+import MapView, { NavigationControl } from "react-map-gl/maplibre";
 import { toast } from "sonner";
 import NowPin from "@/components/shared/NowPin";
 import MapWrapper from "@/components/Wrapper/MapWrapper";
 import AccessibilityPin from "@/components/Wrapper/MetroA11yWrapper";
+import RoutePreviewHydrator from "@/components/Wrapper/RoutePreviewHydrator";
 import RouteLine from "@/components/Wrapper/RouteWrapper";
 import { useAppTranslation } from "@/i18n/client";
 import useMapStore from "@/stores/useMapStore";
@@ -22,6 +23,7 @@ import SearchPin from "./shared/SearchPin";
 import AIResultWrapper from "./Wrapper/AIResultWrapper";
 import HazardWrapper from "./Wrapper/HazardWrapper";
 import LiveBusWrapper from "./Wrapper/LiveBusWrapper";
+import SosTrackerWrapper from "./Wrapper/SosTrackerWrapper";
 import TransitWrapper from "./Wrapper/TransitWrapper";
 
 const MAP_STYLES = {
@@ -250,7 +252,7 @@ export default function ClientMap() {
         );
         const data = await res.json();
 
-        if (data && data.place_id && data.name) {
+        if (data?.place_id && data.name) {
           const position = { lat, lng };
           setInfoShow({
             isOpen: true,
@@ -262,7 +264,7 @@ export default function ClientMap() {
             place: data,
             position,
           });
-        } else if (data && data.place_id) {
+        } else if (data?.place_id) {
           const position = { lat, lng };
           setInfoShow({
             isOpen: true,
@@ -288,7 +290,7 @@ export default function ClientMap() {
     return <div style={{ flex: 1, backgroundColor: "transparent" }} />;
 
   return (
-    <Map
+    <MapView
       key={i18n.language}
       initialViewState={{
         longitude: initialCenter?.lng ?? 121.55,
@@ -319,8 +321,10 @@ export default function ClientMap() {
       <HazardWrapper />
       <AIChatBot />
       <RouteLine />
+      <SosTrackerWrapper />
+      <RoutePreviewHydrator />
       <AIResultWrapper />
       {isNavigating && <NavigationController />}
-    </Map>
+    </MapView>
   );
 }

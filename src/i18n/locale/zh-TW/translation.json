@@ -446,5 +446,13 @@
   "etaArrive": "預計 {{time}} 抵達",
   "facilityAhead": "前方 {{distance}} 有無障礙{{name}}可使用",
   "hazardAhead": "前方 {{distance}} 有{{type}}回報",
-  "viewAlternative": "查看替代路線"
+  "viewAlternative": "查看替代路線",
+  "sosTrackingTitle": "即時求助追蹤",
+  "sosTrackingActive": "正在即時追蹤求助者位置",
+  "sosTrackingResolved": "該求助事件已解除",
+  "sosTrackingNotFound": "找不到此求助紀錄",
+  "sosTrackingExpired": "此求助連結已失效",
+  "sosTrackingError": "載入追蹤資訊時發生錯誤",
+  "sosTrackingLocate": "定位求助者",
+  "sosTrackingLastUpdate": "位置更新時間：{{time}}"
 }

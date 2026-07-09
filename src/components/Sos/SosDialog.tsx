@@ -74,7 +74,6 @@ export default function SosDialog({
   // real contact list, location-update polling, and the shareable tracking
   // link — see src/lib/api/sos.ts).
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [shareToken, setShareToken] = useState<string | null>(null);
   const [notifiedCount, setNotifiedCount] = useState<number | null>(null);
   const [creatingSession, setCreatingSession] = useState(false);
   const [boundContacts, setBoundContacts] = useState<EmergencyContact[]>([]);
@@ -93,7 +92,6 @@ export default function SosDialog({
     setStep("select-type");
     setSelectedType(null);
     setSessionId(null);
-    setShareToken(null);
     setNotifiedCount(null);
     setBoundContacts([]);
     onOpenChange(false);
@@ -126,7 +124,6 @@ export default function SosDialog({
       }
       if (response.data) {
         setSessionId(response.data.sessionId);
-        setShareToken(response.data.shareToken);
         setNotifiedCount(response.data.notifiedCount);
       }
     } catch (err) {
@@ -238,8 +235,8 @@ export default function SosDialog({
     return () => controller.abort();
   }, [step, userLocation, i18n.language]);
 
-  const shareUrl = shareToken
-    ? `${window.location.origin}/${i18n.language}/sos/${shareToken}`
+  const shareUrl = sessionId
+    ? `${window.location.origin}/${i18n.language}?sos=${sessionId}`
     : "";
   const sosMessage = `${t("sosShareText", { address: address ?? t("myLocation") })} ${shareUrl}`;
   const boundContactNames = boundContacts

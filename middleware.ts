@@ -7,6 +7,7 @@ export const config = {
 
 export function middleware(req: NextRequest) {
   const path = req.nextUrl.pathname;
+
   if (
     path.includes(".") ||
     path.startsWith("/_next") ||
@@ -22,5 +23,6 @@ export function middleware(req: NextRequest) {
 
   // 否則導向 fallback 或從 userConfig/header 取語言
   const lng = fallbackLng;
-  return NextResponse.redirect(new URL(`/${lng}`, req.url));
+  const redirectUrl = new URL(`/${lng}${req.nextUrl.search}`, req.url);
+  return NextResponse.redirect(redirectUrl);
 }

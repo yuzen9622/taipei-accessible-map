@@ -445,5 +445,13 @@
   "etaArrive": "Arrive ~{{time}}",
   "facilityAhead": "Accessible {{name}} {{distance}} ahead",
   "hazardAhead": "{{type}} reported {{distance}} ahead",
-  "viewAlternative": "View alternate route"
+  "viewAlternative": "View alternate route",
+  "sosTrackingTitle": "SOS Live Tracking",
+  "sosTrackingActive": "Tracking requester's live location",
+  "sosTrackingResolved": "This emergency request has been resolved",
+  "sosTrackingNotFound": "SOS session not found",
+  "sosTrackingExpired": "This tracking link has expired",
+  "sosTrackingError": "Error loading tracking information",
+  "sosTrackingLocate": "Center on requester",
+  "sosTrackingLastUpdate": "Updated at: {{time}}"
 }
