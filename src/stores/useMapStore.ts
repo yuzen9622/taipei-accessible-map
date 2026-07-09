@@ -96,6 +96,7 @@ interface MapAction {
   initSavedPlaceCategories: (cats: Record<string, SavedPlaceCategory>) => void;
   addSavedPlace: (place: PlaceDetail) => void;
   removeSavedPlace: (place: PlaceDetail) => void;
+  clearSavedPlaces: () => void;
   isSavedPlace: (place: PlaceDetail) => boolean;
   setSavedPlaceCategory: (
     place: PlaceDetail,
@@ -191,7 +192,7 @@ const useMapStore = create<MapStore>((set, get) => ({
         item.kind === "place"
           ? item.place.name || item.place.display_name
           : item.address;
-      return Boolean(name && name.trim());
+      return Boolean(name?.trim());
     });
     const seen = new Set<string>();
     const dedupedHistory = validHistory.filter((item) => {
@@ -223,7 +224,14 @@ const useMapStore = create<MapStore>((set, get) => ({
     localStorage.setItem("searchHistory", JSON.stringify(newHistory));
     set({ searchHistory: newHistory });
   },
-  clearSearchHistory: () => set({ searchHistory: [] }),
+  clearSearchHistory: () => {
+    try {
+      localStorage.removeItem("searchHistory");
+    } catch {
+      // ignore localStorage failures
+    }
+    set({ searchHistory: [] });
+  },
   savedPlaces: [],
   savedPlaceKeys: new Set<string>(),
   savedPlaceCategories: {},
@@ -243,7 +251,7 @@ const useMapStore = create<MapStore>((set, get) => ({
         item.kind === "place"
           ? item.place.name || item.place.display_name
           : item.address;
-      return Boolean(name && name.trim());
+      return Boolean(name?.trim());
     });
     set({
       savedPlaces: validPlaces,
@@ -282,6 +290,19 @@ const useMapStore = create<MapStore>((set, get) => ({
       savedPlaceCategories: nextCats,
     });
   },
+  clearSavedPlaces: () => {
+    try {
+      localStorage.removeItem("savedPlaces");
+      localStorage.removeItem("savedPlaceCategories");
+    } catch {
+      // ignore localStorage failures
+    }
+    set({
+      savedPlaces: [],
+      savedPlaceKeys: new Set<string>(),
+      savedPlaceCategories: {},
+    });
+  },
   isSavedPlace: (place) => {
     return get().savedPlaceKeys.has(placeKey(place));
   },
@@ -318,9 +339,7 @@ const useMapStore = create<MapStore>((set, get) => ({
         map.easeTo({
           pitch: 60,
           zoom: 18,
-          center: loc
-            ? [loc.lng, loc.lat]
-            : undefined,
+          center: loc ? [loc.lng, loc.lat] : undefined,
           duration: 1000,
         });
       }
@@ -331,7 +350,8 @@ const useMapStore = create<MapStore>((set, get) => ({
         const legs = get().selectRoute?.route.legs ?? [];
         const bounds = new LngLatBounds();
         for (const leg of legs) {
-          for (const [lng, lat] of leg.polyline ?? []) bounds.extend([lng, lat]);
+          for (const [lng, lat] of leg.polyline ?? [])
+            bounds.extend([lng, lat]);
         }
         if (bounds.isEmpty()) {
           map.easeTo({ pitch: 0, bearing: 0, duration: 1000 });
