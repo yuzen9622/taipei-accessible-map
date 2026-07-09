@@ -178,6 +178,11 @@ export default function ClientMap() {
   // it never fights subsequent manual panning.
   const hasAutoLocatedRef = useRef(false);
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const hasSpecialParam =
+      params.has("sessionId") || params.has("liff.state") || params.has("sos");
+    if (hasSpecialParam) return;
+
     if (initialCenter) return;
     if (hasAutoLocatedRef.current) return;
     if (!map || !userLocation) return;

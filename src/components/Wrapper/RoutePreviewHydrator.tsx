@@ -2,12 +2,13 @@
 
 import { LngLatBounds } from "maplibre-gl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getLineRoutePreview } from "@/lib/api/line";
-import { ApiError } from "@/lib/fetch";
 import { adaptRoutePreviewRoutes } from "@/lib/routePreviewAdapter";
 import useMapStore from "@/stores/useMapStore";
 import type { PlaceDetail } from "@/types";
+import type { RoutePreviewPageData } from "@/types/line";
+import type { AccessibleRoute } from "@/types/route";
 
 function coordinatePlace(label: string, lat?: number, lng?: number) {
   if (lat == null || lng == null) return null;
@@ -18,7 +19,9 @@ function coordinatePlace(label: string, lat?: number, lng?: number) {
   } satisfies PlaceDetail;
 }
 
-function getSessionId(searchParams: ReturnType<typeof useSearchParams>): string | null {
+function getSessionId(
+  searchParams: ReturnType<typeof useSearchParams>,
+): string | null {
   const direct = searchParams.get("sessionId");
   if (direct) return direct;
 
@@ -48,7 +51,7 @@ export default function RoutePreviewHydrator() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
-  const hydratedSessionRef = useRef<string | null>(null);
+
   const {
     map,
     setComputeRoutes,
@@ -62,12 +65,24 @@ export default function RoutePreviewHydrator() {
     setDestinationName,
   } = useMapStore();
 
+  const [sessionData, setSessionData] = useState<RoutePreviewPageData | null>(
+    null,
+  );
+  const [selectedRouteData, setSelectedRouteData] =
+    useState<AccessibleRoute | null>(null);
+  const [hasCentered, setHasCentered] = useState(false);
+
+  // We track the last fetched sessionId to prevent duplicate fetching
+  const fetchedSessionIdRef = useRef<string | null>(null);
+
+  const sessionId = getSessionId(searchParams);
+
+  // 1. Fetching Effect
   useEffect(() => {
-    const sessionId = getSessionId(searchParams);
-    if (!sessionId || hydratedSessionRef.current === sessionId) return;
+    if (!sessionId || fetchedSessionIdRef.current === sessionId) return;
 
     let cancelled = false;
-    hydratedSessionRef.current = sessionId;
+    fetchedSessionIdRef.current = sessionId;
 
     const clearQuery = () => {
       router.replace(pathname, { scroll: false });
@@ -77,7 +92,10 @@ export default function RoutePreviewHydrator() {
       try {
         const response = await getLineRoutePreview(sessionId);
         if (cancelled || !response.data?.routes?.length) {
-          if (!cancelled) clearQuery();
+          if (!cancelled) {
+            fetchedSessionIdRef.current = null;
+            clearQuery();
+          }
           return;
         }
 
@@ -85,10 +103,17 @@ export default function RoutePreviewHydrator() {
         const routes = adaptRoutePreviewRoutes(preview.routes);
         const selectedRoute = routes[0];
         if (!selectedRoute) {
+          fetchedSessionIdRef.current = null;
           clearQuery();
           return;
         }
 
+        // Save locally to trigger camera centering and UI updates
+        setSessionData(preview);
+        setSelectedRouteData(selectedRoute);
+        setHasCentered(false);
+
+        // Update global store
         setComputeRoutes(routes);
         setRouteSelect({ index: 0, route: selectedRoute });
         setRouteInfoShow(true);
@@ -111,29 +136,10 @@ export default function RoutePreviewHydrator() {
           ),
         );
 
-        if (map) {
-          const bounds = new LngLatBounds();
-          if (preview.origin.lat != null && preview.origin.lng != null) {
-            bounds.extend([preview.origin.lng, preview.origin.lat]);
-          }
-          bounds.extend([preview.destination.lng, preview.destination.lat]);
-          for (const leg of selectedRoute.legs) {
-            for (const [lng, lat] of leg.polyline ?? []) {
-              bounds.extend([lng, lat]);
-            }
-          }
-          if (!bounds.isEmpty()) {
-            map.fitBounds(bounds, {
-              padding: { top: 80, bottom: 220, left: 60, right: 60 },
-              maxZoom: 17,
-            });
-          }
-        }
-      } catch (err) {
-        if (err instanceof ApiError && (err.code === 404 || err.code === 410)) {
-          clearQuery();
-          return;
-        }
+        // Clear query string from URL since we have successfully loaded the route
+        clearQuery();
+      } catch (_err) {
+        fetchedSessionIdRef.current = null;
         clearQuery();
       }
     };
@@ -142,12 +148,14 @@ export default function RoutePreviewHydrator() {
 
     return () => {
       cancelled = true;
+      if (fetchedSessionIdRef.current === sessionId) {
+        fetchedSessionIdRef.current = null;
+      }
     };
   }, [
-    map,
+    sessionId,
     pathname,
     router,
-    searchParams,
     setActiveRailPanel,
     setComputeRoutes,
     setDestination,
@@ -158,6 +166,29 @@ export default function RoutePreviewHydrator() {
     setRouteSelect,
     setSheetMode,
   ]);
+
+  // 2. Camera Centering Effect - Runs as soon as map becomes ready and we have route data
+  useEffect(() => {
+    if (!map || !sessionData || !selectedRouteData || hasCentered) return;
+
+    const bounds = new LngLatBounds();
+    if (sessionData.origin.lat != null && sessionData.origin.lng != null) {
+      bounds.extend([sessionData.origin.lng, sessionData.origin.lat]);
+    }
+    bounds.extend([sessionData.destination.lng, sessionData.destination.lat]);
+    for (const leg of selectedRouteData.legs) {
+      for (const [lng, lat] of leg.polyline ?? []) {
+        bounds.extend([lng, lat]);
+      }
+    }
+    if (!bounds.isEmpty()) {
+      map.fitBounds(bounds, {
+        padding: { top: 80, bottom: 220, left: 60, right: 60 },
+        maxZoom: 17,
+      });
+      setHasCentered(true);
+    }
+  }, [map, sessionData, selectedRouteData, hasCentered]);
 
   return null;
 }
