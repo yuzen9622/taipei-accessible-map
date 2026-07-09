@@ -4,15 +4,23 @@ import {
   Brain,
   Loader2,
   PencilLine,
+  Plus,
   RefreshCw,
   Save,
   Sparkles,
-  X,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
@@ -68,6 +76,7 @@ export default function AIMemoryPanel({
   const [category, setCategory] = useState<MemoryCategory>("preference");
   const [sensitivity, setSensitivity] = useState<MemorySensitivity>("medium");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
 
   const resetForm = () => {
     setContent("");
@@ -142,6 +151,7 @@ export default function AIMemoryPanel({
         }
         toast.success(t("aiMemoryCreated"));
       }
+      setFormOpen(false);
       resetForm();
     } catch (err) {
       toast.error((err as Error).message);
@@ -155,6 +165,19 @@ export default function AIMemoryPanel({
     setContent(memory.content);
     setCategory(memory.category);
     setSensitivity(memory.sensitivity);
+    setFormOpen(true);
+  };
+
+  const startCreating = () => {
+    resetForm();
+    setFormOpen(true);
+  };
+
+  const handleFormOpenChange = (open: boolean) => {
+    setFormOpen(open);
+    if (!open && !formSaving) {
+      resetForm();
+    }
   };
 
   if (!loggedIn) {
@@ -166,7 +189,7 @@ export default function AIMemoryPanel({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 overflow-auto">
       <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 space-y-3">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
@@ -189,114 +212,32 @@ export default function AIMemoryPanel({
       </div>
 
       <div className="rounded-2xl border border-border/60 bg-background p-4 space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold">
-              {editingId ? t("aiMemoryEditTitle") : t("aiMemoryCreateTitle")}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {t("aiMemoryFormHint")}
-            </p>
-          </div>
-          {editingId && (
-            <Button variant="ghost" size="sm" onClick={resetForm}>
-              <X className="h-4 w-4" />
-              {t("cancel")}
-            </Button>
-          )}
-        </div>
-
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          maxLength={240}
-          rows={4}
-          placeholder={t("aiMemoryPlaceholder")}
-          className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
-        />
-        <div className="flex justify-end text-xs text-muted-foreground">
-          {content.trim().length}/240
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <p className="text-xs font-medium text-muted-foreground">
-              {t("aiMemoryCategory")}
-            </p>
-            <Select
-              value={category}
-              onValueChange={(value) => setCategory(value as MemoryCategory)}
-            >
-              <SelectTrigger>{t(`memoryCategory.${category}`)}</SelectTrigger>
-              <SelectContent>
-                {CATEGORY_OPTIONS.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {t(`memoryCategory.${option}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1.5">
-            <p className="text-xs font-medium text-muted-foreground">
-              {t("aiMemorySensitivity")}
-            </p>
-            <Select
-              value={sensitivity}
-              onValueChange={(value) =>
-                setSensitivity(value as MemorySensitivity)
-              }
-            >
-              <SelectTrigger>
-                {t(`memorySensitivity.${sensitivity}`)}
-              </SelectTrigger>
-              <SelectContent>
-                {SENSITIVITY_OPTIONS.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {t(`memorySensitivity.${option}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => void loadMemories()}
-            disabled={loading}
-          >
-            <RefreshCw className="h-4 w-4" />
-            {t("refresh")}
-          </Button>
-          <Button
-            type="button"
-            onClick={handleSubmit}
-            disabled={formSaving || !content.trim()}
-          >
-            {formSaving ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4" />
-            )}
-            {editingId ? t("saveChanges") : t("aiMemoryCreateAction")}
-          </Button>
-        </div>
-      </div>
-
-      <div className="rounded-2xl border border-border/60 bg-background p-4 space-y-3">
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-semibold">{t("aiMemoryListTitle")}</p>
             <p className="text-xs text-muted-foreground">
               {t("aiMemoryListDesc", { count: memories.length })}
             </p>
           </div>
-          {loading && (
-            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-          )}
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void loadMemories()}
+              disabled={loading}
+            >
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
+              {t("refresh")}
+            </Button>
+            <Button type="button" onClick={startCreating}>
+              <Plus className="h-4 w-4" />
+              {t("aiMemoryCreateAction")}
+            </Button>
+          </div>
         </div>
 
         {loading && !loaded ? (
@@ -357,6 +298,103 @@ export default function AIMemoryPanel({
           </ScrollArea>
         )}
       </div>
+
+      <Dialog open={formOpen} onOpenChange={handleFormOpenChange}>
+        <DialogContent className="w-[min(92vw,520px)] rounded-2xl p-5 sm:p-6">
+          <DialogHeader>
+            <DialogTitle>
+              {editingId ? t("aiMemoryEditTitle") : t("aiMemoryCreateTitle")}
+            </DialogTitle>
+            <DialogDescription>{t("aiMemoryFormHint")}</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                maxLength={240}
+                rows={5}
+                placeholder={t("aiMemoryPlaceholder")}
+                className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
+              />
+              <div className="flex justify-end text-xs text-muted-foreground">
+                {content.trim().length}/240
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <p className="text-xs font-medium text-muted-foreground">
+                  {t("aiMemoryCategory")}
+                </p>
+                <Select
+                  value={category}
+                  onValueChange={(value) =>
+                    setCategory(value as MemoryCategory)
+                  }
+                >
+                  <SelectTrigger>
+                    {t(`memoryCategory.${category}`)}
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CATEGORY_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {t(`memoryCategory.${option}`)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <p className="text-xs font-medium text-muted-foreground">
+                  {t("aiMemorySensitivity")}
+                </p>
+                <Select
+                  value={sensitivity}
+                  onValueChange={(value) =>
+                    setSensitivity(value as MemorySensitivity)
+                  }
+                >
+                  <SelectTrigger>
+                    {t(`memorySensitivity.${sensitivity}`)}
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SENSITIVITY_OPTIONS.map((option) => (
+                      <SelectItem key={option} value={option}>
+                        {t(`memorySensitivity.${option}`)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleFormOpenChange(false)}
+              disabled={formSaving}
+            >
+              {t("cancel")}
+            </Button>
+            <Button
+              type="button"
+              onClick={handleSubmit}
+              disabled={formSaving || !content.trim()}
+            >
+              {formSaving ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4" />
+              )}
+              {editingId ? t("saveChanges") : t("aiMemoryCreateAction")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
