@@ -1,6 +1,7 @@
-import maplibregl from "maplibre-gl";
 import {
+  Bike,
   BusIcon,
+  Car,
   Clock,
   Footprints,
   ShieldCheck,
@@ -8,6 +9,7 @@ import {
   TrainFrontTunnelIcon,
   TramFront,
 } from "lucide-react";
+import maplibregl from "maplibre-gl";
 import { memo, useMemo } from "react";
 import { useAppTranslation } from "@/i18n/client";
 import { cn } from "@/lib/utils";
@@ -45,10 +47,14 @@ function LegIcon({ leg }: { leg: RouteLeg }) {
       return <TrainFrontTunnelIcon className="h-4 w-4" style={{ color }} />;
     case "TRA":
       return <TrainFrontIcon className="h-4 w-4" style={{ color }} />;
+    case "DRIVE":
+      return <Car className="h-4 w-4" style={{ color }} />;
+    case "MOTORCYCLE":
+      return <Bike className="h-4 w-4" style={{ color }} />;
   }
 }
 
-function WaitBadge({ leg }: { leg: Exclude<RouteLeg, { type: "WALK" }> }) {
+function WaitBadge({ leg }: { leg: Extract<RouteLeg, { waitInfo: unknown }> }) {
   const text = formatWaitInfo(leg.waitInfo);
   if (!text) return null;
   return <span className="text-xs text-muted-foreground">等候 {text}</span>;
@@ -137,8 +143,8 @@ function LegDetail({ leg }: { leg: RouteLeg }) {
           </div>
           {!!leg.facilityHighlights?.length && (
             <div className="space-y-0.5">
-              {leg.facilityHighlights?.map((h, i) => (
-                <p key={i} className="text-xs text-blue-600 dark:text-blue-400">
+              {leg.facilityHighlights?.map((h) => (
+                <p key={h} className="text-xs text-blue-600 dark:text-blue-400">
                   🛗 {h}
                 </p>
               ))}
@@ -181,8 +187,8 @@ function LegDetail({ leg }: { leg: RouteLeg }) {
           </div>
           {!!leg.facilityHighlights?.length && (
             <div className="space-y-0.5">
-              {leg.facilityHighlights?.map((h, i) => (
-                <p key={i} className="text-xs text-blue-600 dark:text-blue-400">
+              {leg.facilityHighlights?.map((h) => (
+                <p key={h} className="text-xs text-blue-600 dark:text-blue-400">
                   ♿ {h}
                 </p>
               ))}
@@ -225,13 +231,29 @@ function LegDetail({ leg }: { leg: RouteLeg }) {
           </div>
           {!!leg.facilityHighlights?.length && (
             <div className="space-y-0.5">
-              {leg.facilityHighlights?.map((h, i) => (
-                <p key={i} className="text-xs text-blue-600 dark:text-blue-400">
+              {leg.facilityHighlights?.map((h) => (
+                <p key={h} className="text-xs text-blue-600 dark:text-blue-400">
                   ♿ {h}
                 </p>
               ))}
             </div>
           )}
+        </div>
+      );
+    case "DRIVE":
+    case "MOTORCYCLE":
+      return (
+        <div className="space-y-1">
+          <p className="text-sm font-medium">
+            {leg.label ?? (leg.type === "DRIVE" ? "開車" : "機車")}{" "}
+            {formatDistance(leg.distanceM)}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            約 {formatDuration(leg.durationMinutes)}
+          </p>
+          <p className="text-xs text-muted-foreground">
+            {[leg.from, leg.to].filter(Boolean).join(" → ")}
+          </p>
         </div>
       );
   }
@@ -272,7 +294,11 @@ export const RouteCard = memo(function RouteCard({
             return `高鐵${l.trainNo}`;
           case "TRA":
             return `${l.trainTypeName}${l.trainNo}`;
+          case "DRIVE":
+          case "MOTORCYCLE":
+            return l.label ?? (l.type === "DRIVE" ? "開車" : "機車");
         }
+        return "";
       });
     return types.join(" → ");
   }, [route.legs]);
@@ -339,7 +365,7 @@ export const RouteCard = memo(function RouteCard({
             {(
               ["facilityScore", "timeScore", "criticalFeatureScore"] as const
             ).map((key) => {
-              const val = route.scoreComponents![key];
+              const val = route.scoreComponents?.[key];
               return (
                 <div
                   key={key}

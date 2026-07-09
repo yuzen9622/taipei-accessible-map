@@ -140,7 +140,25 @@ export interface TraLeg {
   a11yRefs?: string[];
 }
 
-export type RouteLeg = WalkLeg | BusLeg | MetroLeg | ThsrLeg | TraLeg;
+export interface DriveLeg {
+  type: "DRIVE" | "MOTORCYCLE";
+  label?: string;
+  from: string;
+  to: string;
+  distanceM: number;
+  durationMinutes: number;
+  departureTime?: string | null;
+  arrivalTime?: string | null;
+  polyline: [number, number][];
+}
+
+export type RouteLeg =
+  | WalkLeg
+  | BusLeg
+  | MetroLeg
+  | ThsrLeg
+  | TraLeg
+  | DriveLeg;
 
 // --- Score components ---
 export interface ScoreComponents {
@@ -289,7 +307,7 @@ export interface NavInstruction {
   relativeDirection: RelativeDirection;
   distanceM: number | null;
   streetName: string | null;
-  legType: "WALK" | "BUS" | "METRO" | "THSR" | "TRA";
+  legType: "WALK" | "BUS" | "METRO" | "THSR" | "TRA" | "DRIVE" | "MOTORCYCLE";
   polylineIndex: number | null;
 }
 
@@ -494,6 +512,8 @@ const LEG_COLORS: Record<string, string> = {
   METRO: "#FF6B35",
   THSR: "#f97316",
   TRA: "#003366",
+  DRIVE: "#475569",
+  MOTORCYCLE: "#dc2626",
 };
 
 export function getLegColor(leg: RouteLeg): string {
