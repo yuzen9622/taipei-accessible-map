@@ -31,6 +31,19 @@ function writeStoredHighContrast(value: boolean) {
   }
 }
 
+function readStoredDarkMode(): "light" | "dark" | "system" {
+  if (typeof window === "undefined") return "system";
+  try {
+    const val = localStorage.getItem("theme");
+    if (val === "light" || val === "dark" || val === "system") {
+      return val;
+    }
+    return "system";
+  } catch {
+    return "system";
+  }
+}
+
 interface AuthState {
   user: UserDTO | null;
   userConfig: UserConfig;
@@ -50,7 +63,7 @@ const useAuthStore = create<AuthStore>((set, get) => ({
   user: null,
   userConfig: {
     themeColor: ColorEnum.Default,
-    darkMode: "system",
+    darkMode: readStoredDarkMode(),
     fontSize: FontSizeEnum.Medium,
     notifications: false,
     highContrast: readStoredHighContrast(),
