@@ -15,14 +15,12 @@ import { useAppTranslation } from "@/i18n/client";
 import useMapStore from "@/stores/useMapStore";
 import useNavStore from "@/stores/useNavStore";
 import AIChatBot from "./AIChatBot";
-import AirQualityWidget from "./AirQualityWidget";
 import NavigationController from "./NavigationController";
-import ShareLocation from "./ShareLocation";
-import GotoNowButton from "./shared/GotoNowButton";
 import SearchPin from "./shared/SearchPin";
 import AIResultWrapper from "./Wrapper/AIResultWrapper";
 import HazardWrapper from "./Wrapper/HazardWrapper";
 import LiveBusWrapper from "./Wrapper/LiveBusWrapper";
+import MapControlsWrapper from "./Wrapper/MapControlsWrapper";
 import SosTrackerWrapper from "./Wrapper/SosTrackerWrapper";
 import TransitWrapper from "./Wrapper/TransitWrapper";
 
@@ -311,11 +309,9 @@ export default function ClientMap() {
     >
       <NavigationControl position="top-right" showCompass={false} />
       <MapWrapper />
-      <AirQualityWidget />
       <AccessibilityPin />
-      <GotoNowButton />
-      <ShareLocation />
       <NowPin />
+      <MapControlsWrapper />
       {searchPlace ? (
         <SearchPin destination={searchPlace} />
       ) : destination ? (
