@@ -396,7 +396,7 @@ export default function AccountLogin() {
         open={openDialog === "settings"}
         onOpenChange={() => setOpenDialog(null)}
       >
-        <DialogContent className="w-[min(97vw,1280px)] max-w-[min(97vw,1280px)] h-[min(92vh,840px)] rounded-2xl p-0 overflow-hidden sm:max-w-[min(97vw,1280px)]">
+        <DialogContent className="w-[min(97vw,768px)] max-w-[min(97vw,768px)] h-[min(92vh,840px)] rounded-2xl p-0 overflow-hidden sm:max-w-[min(97vw,1280px)]">
           <div className="grid h-full grid-cols-[88px_minmax(0,1fr)] bg-background md:grid-cols-[30%_minmax(0,1fr)]">
             <aside className="border-r border-border/60 bg-muted/35">
               <div className="flex h-full flex-col">
