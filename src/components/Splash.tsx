@@ -1,5 +1,5 @@
 "use client";
-import { motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Image from "next/image";
 import { useAppTranslation } from "@/i18n/client";
 
@@ -9,36 +9,51 @@ type SplashProps = {
 
 export default function Splash({ show = true }: SplashProps) {
   const { t } = useAppTranslation("translation");
-  if (!show) return null;
-  const MotionImage = motion.create(Image);
+  const reduceMotion = useReducedMotion();
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center  bg-background">
-      <div className="flex  items-center gap-6">
-        {/* Logo + 脈動光暈 */}
-
-        <MotionImage
-          initial={{ x: -100 }}
-          animate={{ x: 0 }}
-          transition={{ ease: [], delay: 0.5, duration: 0.5 }}
-          src="/logo.webp"
-          alt={"無障礙智慧地圖"}
-          width={100}
-          className=" absolute inset-1/2 -translate-x-1/2 -translate-y-1/2 z-50 "
-          height={100}
-          draggable={false}
-        />
-
-        {/* 標題 */}
-        <motion.h1
-          initial={{ opacity: 1, x: 100 }}
-          animate={{ opacity: 0, x: 0 }}
-          transition={{ delay: 0.5, duration: 0.5, ease: [] }}
-          className="text-4xl   font-bold z-0"
+    <AnimatePresence>
+      {show && (
+        <motion.div
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="pointer-events-none fixed inset-0 z-[9999] flex items-center justify-center bg-background"
+          aria-hidden="true"
         >
-          <span>{t("title")}</span>
-        </motion.h1>
-      </div>
-    </div>
+          <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={
+                reduceMotion ? { opacity: 1 } : { opacity: 1, scale: [0.8, 1] }
+              }
+              transition={{ duration: 0.5, ease: "easeOut" }}
+            >
+              <Image
+                src="/logo.webp"
+                alt={t("title")}
+                width={100}
+                height={100}
+                draggable={false}
+                priority
+              />
+            </motion.div>
+            <div className="overflow-hidden">
+              <motion.h1
+                initial={{ opacity: 0 }}
+                animate={
+                  reduceMotion
+                    ? { opacity: 1 }
+                    : { opacity: 1, x: ["-100%", "0%"] }
+                }
+                transition={{ delay: 0.4, duration: 0.5, ease: "easeOut" }}
+                className="text-[36px] leading-[40px] font-bold whitespace-nowrap"
+              >
+                {t("title")}
+              </motion.h1>
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

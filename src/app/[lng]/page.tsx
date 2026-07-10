@@ -12,7 +12,7 @@ export default function Home() {
 
   useEffect(() => {
     // 1) 直接延遲關閉
-    const id = window.setTimeout(() => setShowSplash(false), 1500);
+    const id = window.setTimeout(() => setShowSplash(false), 2000);
     return () => window.clearTimeout(id);
   }, []);
   return (
