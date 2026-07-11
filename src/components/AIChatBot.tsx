@@ -5,6 +5,7 @@ import {
   BotMessageSquare,
   Bus,
   Loader2,
+  Mic,
   Navigation,
   Search,
   SendHorizonal,
@@ -17,6 +18,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { Fragment, useEffect, useRef } from "react";
+import { toast } from "sonner";
 import type { ChatBubble, ToolActivity } from "@/hook/useAIChat";
 import useAIChat, { TOOL_LABELS, TOOL_LOADING_TEXT } from "@/hook/useAIChat";
 import useOpenAiResult from "@/hook/useOpenAiResult";
@@ -27,7 +29,9 @@ import {
   type ToolResultItem,
 } from "@/lib/toolResultCards";
 import { cn } from "@/lib/utils";
+import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
+import useVoiceStore from "@/stores/useVoiceStore";
 import MarkdownText from "./shared/MarkdownText";
 import { Avatar } from "./ui/avatar";
 import { Badge } from "./ui/badge";
@@ -35,6 +39,8 @@ import { Button } from "./ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "./ui/card";
 import { Input } from "./ui/input";
 import { ScrollArea } from "./ui/scroll-area";
+import { isVoiceSessionActive } from "./Voice/VoiceFloatingIndicator";
+import VoiceModeView from "./Voice/VoiceModeView";
 
 const CARD_ICONS: Record<ToolCardIcon, React.ReactNode> = {
   search: <Search className="h-3.5 w-3.5" />,
@@ -232,6 +238,22 @@ export default function AIChatBot() {
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const voiceStatus = useVoiceStore((s) => s.status);
+  const voiceViewMode = useVoiceStore((s) => s.viewMode);
+  const setVoiceViewMode = useVoiceStore((s) => s.setViewMode);
+  const startVoiceSession = useVoiceStore((s) => s.startSession);
+  const voiceSessionActive = isVoiceSessionActive(voiceStatus.status);
+  const showVoiceMode = voiceSessionActive && voiceViewMode === "panel";
+
+  const handleMicClick = () => {
+    if (!useAuthStore.getState().user) {
+      toast.error(t("chatbot.voice.loginRequired", "請先登入才能使用語音對話"));
+      return;
+    }
+    setVoiceViewMode("panel");
+    startVoiceSession();
+  };
+
   const recommendations = [
     t("chatbot.recommendation1", "附近無障礙設施"),
     t("chatbot.recommendation2", "目前位置到最近車站"),
@@ -298,67 +320,86 @@ export default function AIChatBot() {
               </Button>
             </CardHeader>
 
-            <ScrollArea className="flex-1 overflow-auto pt-1">
-              <CardContent className="min-h-full space-y-3" ref={scrollRef}>
-                {messages.map((m, i) => (
-                  <Fragment key={i}>
-                    <MessageBubble message={m} />
-                  </Fragment>
-                ))}
-                {isLoading &&
-                  messages[messages.length - 1]?.role !== "assistant" && (
-                    <ThinkingIndicator label="思考中…" />
-                  )}
-              </CardContent>
-            </ScrollArea>
+            {showVoiceMode ? (
+              <VoiceModeView />
+            ) : (
+              <>
+                <ScrollArea className="flex-1 overflow-auto pt-1">
+                  <CardContent className="min-h-full space-y-3" ref={scrollRef}>
+                    {messages.map((m, i) => (
+                      <Fragment key={i}>
+                        <MessageBubble message={m} />
+                      </Fragment>
+                    ))}
+                    {isLoading &&
+                      messages[messages.length - 1]?.role !== "assistant" && (
+                        <ThinkingIndicator label="思考中…" />
+                      )}
+                  </CardContent>
+                </ScrollArea>
 
-            <div className="sticky bg-gradient-to-t from-card to-transparent bottom-0 py-2">
-              <div className="flex gap-2 px-4 overflow-x-auto justify-center">
-                {recommendations.map((rec) => (
-                  <Badge
-                    onClick={() => handleSend(rec)}
-                    key={rec}
-                    className="px-3 py-1.5 rounded-full cursor-pointer whitespace-nowrap text-xs transition-colors hover:bg-primary/80"
-                    asChild
-                  >
-                    <button type="button">{rec}</button>
-                  </Badge>
-                ))}
-              </div>
-            </div>
+                <div className="sticky bg-gradient-to-t from-card to-transparent bottom-0 py-2">
+                  <div className="flex gap-2 px-4 overflow-x-auto justify-center">
+                    {recommendations.map((rec) => (
+                      <Badge
+                        onClick={() => handleSend(rec)}
+                        key={rec}
+                        className="px-3 py-1.5 rounded-full cursor-pointer whitespace-nowrap text-xs transition-colors hover:bg-primary/80"
+                        asChild
+                      >
+                        <button type="button">{rec}</button>
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
 
-            <CardFooter className="p-3 border-t bg-card flex flex-col gap-2">
-              <div className="flex w-full items-center gap-2">
-                <Input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyPress}
-                  placeholder={t("chatbot.placeholder", "輸入問題...")}
-                  className="flex-1"
-                  disabled={isLoading}
-                />
-                {isLoading ? (
-                  <Button
-                    onClick={stopStreaming}
-                    size="icon"
-                    variant="outline"
-                    className="shrink-0"
-                  >
-                    <Square className="h-3.5 w-3.5" />
-                  </Button>
-                ) : (
-                  <Button
-                    onClick={() => handleSend(input)}
-                    size="icon"
-                    disabled={!input.trim()}
-                    className="shrink-0"
-                  >
-                    <SendHorizonal className="h-4 w-4" />
-                    <span className="sr-only">{t("chatbot.send", "傳送")}</span>
-                  </Button>
-                )}
-              </div>
-            </CardFooter>
+                <CardFooter className="p-3 border-t bg-card flex flex-col gap-2">
+                  <div className="flex w-full items-center gap-2">
+                    <Input
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={handleKeyPress}
+                      placeholder={t("chatbot.placeholder", "輸入問題...")}
+                      className="flex-1"
+                      disabled={isLoading}
+                    />
+                    <Button
+                      onClick={handleMicClick}
+                      type="button"
+                      size="icon"
+                      variant={voiceSessionActive ? "default" : "outline"}
+                      aria-pressed={voiceSessionActive}
+                      aria-label={t("chatbot.voice.micLabel", "語音對話")}
+                      className="shrink-0"
+                    >
+                      <Mic className="h-4 w-4" />
+                    </Button>
+                    {isLoading ? (
+                      <Button
+                        onClick={stopStreaming}
+                        size="icon"
+                        variant="outline"
+                        className="shrink-0"
+                      >
+                        <Square className="h-3.5 w-3.5" />
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={() => handleSend(input)}
+                        size="icon"
+                        disabled={!input.trim()}
+                        className="shrink-0"
+                      >
+                        <SendHorizonal className="h-4 w-4" />
+                        <span className="sr-only">
+                          {t("chatbot.send", "傳送")}
+                        </span>
+                      </Button>
+                    )}
+                  </div>
+                </CardFooter>
+              </>
+            )}
           </Card>
         </motion.div>
       </AnimatePresence>

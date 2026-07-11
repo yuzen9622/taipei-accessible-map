@@ -17,6 +17,36 @@
   "assistDesc": "Powered by Gemini AI, providing real-time Q&A services for accessibility-related topics.",
   "assistFirstMessage": "Hello! I'm the Accessible Smart Map AI Assistant. How can I help you? Looking for nearby accessible facilities or have some feedback? Feel free to ask!",
   "assistThinking": "AI Assistant is thinking",
+  "chatbot": {
+    "voice": {
+      "micLabel": "Voice conversation",
+      "loginRequired": "Please log in to use voice conversation",
+      "statusIdle": "Voice standing by",
+      "statusConnecting": "Connecting…",
+      "statusReady": "Connected",
+      "statusListening": "Listening…",
+      "statusModelSpeaking": "Responding…",
+      "statusReconnecting": "Connection lost, reconnecting",
+      "statusPlaybackBlocked": "Playback paused",
+      "statusNeedsLogin": "Please log in again",
+      "statusEnded": "Conversation ended",
+      "errorConflict": "Voice is already open on another device",
+      "errorSessionEnded": "Session timed out, please start again",
+      "errorServer": "Voice is temporarily unavailable",
+      "errorMic": "Microphone unavailable",
+      "errorGeneric": "Something went wrong, please try again",
+      "resumePlayback": "Tap to resume playback",
+      "endSession": "End voice conversation",
+      "backToText": "Back to text",
+      "pillExpand": "Expand voice conversation",
+      "toolQuerying": "Looking up…",
+      "toolDone": "Done",
+      "transcriptUser": "You",
+      "transcriptModel": "Assistant",
+      "listeningHint": "Start speaking",
+      "connectingHint": "Connecting, please wait…"
+    }
+  },
   "helpDescription": {
     "overview": "Welcome to our map app! We aim to provide comprehensive place information services. Across Taiwan you can use this app for general navigation. We are piloting an \"Accessible Friendly Map\" program in Taipei City first and will gradually expand to more cities in the future.",
     "features": {

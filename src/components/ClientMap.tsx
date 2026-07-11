@@ -18,6 +18,7 @@ import type { NominatimPlace } from "@/types";
 import AIChatBot from "./AIChatBot";
 import NavigationController from "./NavigationController";
 import SearchPin from "./shared/SearchPin";
+import VoiceSessionHost from "./Voice/VoiceSessionHost";
 import AIResultWrapper from "./Wrapper/AIResultWrapper";
 import HazardWrapper from "./Wrapper/HazardWrapper";
 import LiveBusWrapper from "./Wrapper/LiveBusWrapper";
@@ -382,6 +383,7 @@ export default function ClientMap() {
       <LiveBusWrapper />
       <HazardWrapper />
       <AIChatBot />
+      <VoiceSessionHost />
       <RouteLine />
       <SosTrackerWrapper />
       <RoutePreviewHydrator />
