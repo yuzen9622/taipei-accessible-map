@@ -38,7 +38,7 @@ function adaptPreviewLeg(leg: RoutePreviewLeg): RouteLeg {
   const label = fallbackLabel(leg);
   const from = leg.from ?? "";
   const to = leg.to ?? "";
-  const durationMinutes = leg.durationMinutes ?? 0;
+  const durationMinutes = leg.durationMinutes ?? leg.durationMin ?? 0;
   const distanceM = leg.distanceM ?? 0;
   const polyline = leg.polyline ?? [];
   const waitInfo = { time: null, source: "unavailable" as const };

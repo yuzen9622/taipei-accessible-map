@@ -28,6 +28,7 @@ export interface RoutePreviewLeg {
   from?: string;
   to?: string;
   durationMinutes?: number;
+  durationMin?: number;
   distanceM?: number;
   departureTime?: string | null;
   arrivalTime?: string | null;
