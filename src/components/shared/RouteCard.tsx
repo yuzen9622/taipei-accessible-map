@@ -34,6 +34,61 @@ type RouteCardProps = {
   idx: number;
 };
 
+const getPointLabel = (
+  point: unknown,
+  isOriginFallback = false,
+  isDestFallback = false,
+): string => {
+  if (!point) return "";
+  if (typeof point === "string") return point;
+  if (typeof point === "object" && point !== null) {
+    const p = point as Record<string, unknown>;
+    const label = p.name || p.address || p.label;
+    if (typeof label === "string" && label.trim() !== "") return label;
+
+    const lat = Number(p.lat ?? p.latitude);
+    const lng = Number(p.lng ?? p.longitude);
+
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      const state = useMapStore.getState();
+
+      if (state.origin?.position) {
+        const dist = Math.hypot(
+          state.origin.position.lat - lat,
+          state.origin.position.lng - lng,
+        );
+        if (dist < 0.001) {
+          return state.originName || "起點";
+        }
+      } else if (state.userLocation) {
+        const dist = Math.hypot(
+          state.userLocation.lat - lat,
+          state.userLocation.lng - lng,
+        );
+        if (dist < 0.001) {
+          return state.originName || "你的位置";
+        }
+      }
+
+      if (state.destination?.position) {
+        const dist = Math.hypot(
+          state.destination.position.lat - lat,
+          state.destination.position.lng - lng,
+        );
+        if (dist < 0.001) {
+          return state.destinationName || "終點";
+        }
+      }
+
+      if (isOriginFallback && state.originName) return state.originName;
+      if (isDestFallback && state.destinationName) return state.destinationName;
+
+      return `${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    }
+  }
+  return String(point);
+};
+
 function LegIcon({ leg }: { leg: RouteLeg }) {
   const color = getLegColor(leg);
   switch (leg.type) {
@@ -60,7 +115,15 @@ function WaitBadge({ leg }: { leg: Extract<RouteLeg, { waitInfo: unknown }> }) {
   return <span className="text-xs text-muted-foreground">等候 {text}</span>;
 }
 
-function LegDetail({ leg }: { leg: RouteLeg }) {
+function LegDetail({
+  leg,
+  isFirst,
+  isLast,
+}: {
+  leg: RouteLeg;
+  isFirst: boolean;
+  isLast: boolean;
+}) {
   switch (leg.type) {
     case "WALK":
       return (
@@ -252,7 +315,12 @@ function LegDetail({ leg }: { leg: RouteLeg }) {
             約 {formatDuration(leg.durationMinutes)}
           </p>
           <p className="text-xs text-muted-foreground">
-            {[leg.from, leg.to].filter(Boolean).join(" → ")}
+            {[
+              getPointLabel(leg.from, isFirst, false),
+              getPointLabel(leg.to, false, isLast),
+            ]
+              .filter(Boolean)
+              .join(" → ")}
           </p>
         </div>
       );
@@ -424,7 +492,11 @@ export const RouteCard = memo(function RouteCard({
               </div>
 
               <div className="pb-4 ml-4">
-                <LegDetail leg={leg} />
+                <LegDetail
+                  leg={leg}
+                  isFirst={index === 0}
+                  isLast={index === route.legs.length - 1}
+                />
               </div>
             </div>
           ))}
