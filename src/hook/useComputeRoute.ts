@@ -26,7 +26,8 @@ export default function useComputeRoute() {
       mode?: "wheelchair" | "elderly" | "visual_impaired" | "normal";
       travelMode?: "transit" | "drive" | "motorcycle" | "walk";
     }): Promise<boolean> => {
-      const { origin, destination, waypoints, query, mode, travelMode } = params;
+      const { origin, destination, waypoints, query, mode, travelMode } =
+        params;
 
       if (!query && !origin && !destination) return false;
 
@@ -69,17 +70,60 @@ export default function useComputeRoute() {
         setComputeRoutes(routes);
         setRouteSelect({ index: 0, route: routes[0] });
 
-        if (map && response.data.origin && response.data.destination) {
-          const bounds = new LngLatBounds(
-            [response.data.origin.lng, response.data.origin.lat],
-            [response.data.destination.lng, response.data.destination.lat],
-          );
-          for (const w of response.data.waypoints ?? []) {
-            bounds.extend([w.lng, w.lat]);
+        if (map) {
+          const bounds = new LngLatBounds();
+
+          if (routes.length > 0) {
+            for (const leg of routes[0].legs) {
+              if (leg.polyline?.length) {
+                for (const [lng, lat] of leg.polyline) {
+                  bounds.extend([lng, lat]);
+                }
+              }
+            }
           }
-          map.fitBounds(bounds, {
-            padding: { top: 50, bottom: 200, left: 50, right: 50 },
-          });
+
+          if (
+            bounds.isEmpty() &&
+            response.data.origin &&
+            response.data.destination
+          ) {
+            const oLat =
+              response.data.origin.lat ??
+              (response.data.origin as any).latitude;
+            const oLng =
+              response.data.origin.lng ??
+              (response.data.origin as any).longitude;
+            const dLat =
+              response.data.destination.lat ??
+              (response.data.destination as any).latitude;
+            const dLng =
+              response.data.destination.lng ??
+              (response.data.destination as any).longitude;
+            if (
+              Number.isFinite(oLat) &&
+              Number.isFinite(oLng) &&
+              Number.isFinite(dLat) &&
+              Number.isFinite(dLng)
+            ) {
+              bounds.extend([oLng, oLat]);
+              bounds.extend([dLng, dLat]);
+            }
+          }
+
+          for (const w of response.data.waypoints ?? []) {
+            const wLat = w.lat ?? (w as any).latitude;
+            const wLng = w.lng ?? (w as any).longitude;
+            if (Number.isFinite(wLat) && Number.isFinite(wLng)) {
+              bounds.extend([wLng, wLat]);
+            }
+          }
+
+          if (!bounds.isEmpty()) {
+            map.fitBounds(bounds, {
+              padding: { top: 50, bottom: 200, left: 50, right: 50 },
+            });
+          }
         }
         return true;
       } catch (error) {
@@ -122,21 +166,45 @@ export default function useComputeRoute() {
       setRouteSelect({ index: 0, route: routes[0] });
       setRouteInfoShow(true);
 
-      if (map && origin && destination) {
+      if (map) {
         try {
-          const bounds = new LngLatBounds(
-            [origin.lng, origin.lat],
-            [destination.lng, destination.lat],
-          );
-          map.fitBounds(bounds, {
-            padding: { top: 50, bottom: 200, left: 50, right: 50 },
-          });
+          const bounds = new LngLatBounds();
+
+          for (const leg of routes[0].legs) {
+            if (leg.polyline?.length) {
+              for (const [lng, lat] of leg.polyline) {
+                bounds.extend([lng, lat]);
+              }
+            }
+          }
+
+          if (bounds.isEmpty() && origin && destination) {
+            const oLat = origin.lat ?? origin.latitude;
+            const oLng = origin.lng ?? origin.longitude;
+            const dLat = destination.lat ?? destination.latitude;
+            const dLng = destination.lng ?? destination.longitude;
+            if (
+              Number.isFinite(oLat) &&
+              Number.isFinite(oLng) &&
+              Number.isFinite(dLat) &&
+              Number.isFinite(dLng)
+            ) {
+              bounds.extend([oLng, oLat]);
+              bounds.extend([dLng, dLat]);
+            }
+          }
+
+          if (!bounds.isEmpty()) {
+            map.fitBounds(bounds, {
+              padding: { top: 50, bottom: 200, left: 50, right: 50 },
+            });
+          }
         } catch (e) {
           console.error("Failed to fit map bounds", e);
         }
       }
     },
-    [map, setComputeRoutes, setRouteSelect, setRouteInfoShow]
+    [map, setComputeRoutes, setRouteSelect, setRouteInfoShow],
   );
 
   return { isLoading, handleComputeRoute, setComputedRouteData };
