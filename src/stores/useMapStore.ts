@@ -142,8 +142,14 @@ const useMapStore = create<MapStore>((set, get) => ({
   routeInfoShow: false,
   setRouteInfoShow: (show) => set({ routeInfoShow: show }),
   infoShow: { isOpen: false, kind: null },
-  setInfoShow: (infoShow) =>
-    set({ infoShow: { ...get().infoShow, ...infoShow } as InfoShow }),
+  setInfoShow: (infoShow) => {
+    const nextInfoShow = { ...get().infoShow, ...infoShow } as InfoShow;
+    const update: Partial<MapStore> = { infoShow: nextInfoShow };
+    if (nextInfoShow.isOpen) {
+      update.sidebarCollapsed = false;
+    }
+    set(update);
+  },
   selectA11yPlace: null,
   setSelectA11yPlace: (place) => {
     if (place?.id === get().selectA11yPlace?.id) {
@@ -319,11 +325,23 @@ const useMapStore = create<MapStore>((set, get) => ({
   destinationName: "",
   setDestinationName: (name) => set({ destinationName: name }),
   sheetMode: "home",
-  setSheetMode: (mode) => set({ sheetMode: mode }),
+  setSheetMode: (mode) => {
+    const update: Partial<MapStore> = { sheetMode: mode };
+    if (mode !== "home" && mode !== "navigation") {
+      update.sidebarCollapsed = false;
+    }
+    set(update);
+  },
   sidebarCollapsed: false,
   setSidebarCollapsed: (v) => set({ sidebarCollapsed: v }),
   activeRailPanel: "search" as RailPanel,
-  setActiveRailPanel: (panel) => set({ activeRailPanel: panel }),
+  setActiveRailPanel: (panel) => {
+    const update: Partial<MapStore> = { activeRailPanel: panel };
+    if (panel !== "none") {
+      update.sidebarCollapsed = false;
+    }
+    set(update);
+  },
   chatOpen: false,
   setChatOpen: (v) => set({ chatOpen: v }),
   aiResultMarkers: [],

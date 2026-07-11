@@ -554,24 +554,25 @@ export default function BottomSheet() {
         </AnimatePresence>
 
         {/* --- Collapse/Expand toggle: hides the content panel, icons stay --- */}
-        <button
-          type="button"
-          aria-label={collapsed ? t("expandSidebar") : t("collapseSidebar")}
-          onClick={() => setCollapsed(!collapsed)}
-          className={cn(
-            "pointer-events-auto fixed top-1/2 -translate-y-1/2 z-50 h-12 w-6 flex items-center justify-center",
-            "bg-background border border-border/50 shadow-lg rounded-r-lg border-l-0",
-            "hover:bg-muted hover:shadow-xl transition-all duration-300",
-            !collapsed && panelOpen ? "left-[456px]" : "left-[64px]",
-            isNavigating && "hidden",
-          )}
-        >
-          {collapsed ? (
-            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          ) : (
-            <ChevronLeft className="h-4 w-4 text-muted-foreground" />
-          )}
-        </button>
+        {panelOpen && !isNavigating && (
+          <button
+            type="button"
+            aria-label={collapsed ? t("expandSidebar") : t("collapseSidebar")}
+            onClick={() => setCollapsed(!collapsed)}
+            className={cn(
+              "pointer-events-auto fixed top-1/2 -translate-y-1/2 z-50 h-12 w-6 flex items-center justify-center",
+              "bg-background border border-border/50 shadow-lg rounded-r-lg border-l-0",
+              "hover:bg-muted hover:shadow-xl transition-all duration-300",
+              !collapsed ? "left-[456px]" : "left-[64px]",
+            )}
+          >
+            {collapsed ? (
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            ) : (
+              <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+            )}
+          </button>
+        )}
       </div>
     </>
   );

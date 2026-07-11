@@ -24,7 +24,9 @@ export default function RouteContent() {
   const { t } = useAppTranslation();
   const {
     computeRoutes,
-    closeRouteDrawer,
+    setComputeRoutes,
+    setRouteSelect,
+    setRouteInfoShow,
     setSheetMode,
     selectRoute,
     setIsNavigating,
@@ -33,8 +35,10 @@ export default function RouteContent() {
   const [panel, setPanel] = useState<Panel>("none");
 
   const handleBack = () => {
-    closeRouteDrawer();
-    setSheetMode("home");
+    setComputeRoutes(null);
+    setRouteSelect(null);
+    setRouteInfoShow(false);
+    setSheetMode("plan");
   };
 
   const handleStartNav = async () => {

@@ -2,9 +2,9 @@ import useMapStore from "@/stores/useMapStore";
 import RoutePlanInput from "../Input/PlanInput";
 
 export default function MapWrapper() {
-  const { selectRoute } = useMapStore();
+  const { selectRoute, isNavigating } = useMapStore();
 
-  if (!selectRoute) return null;
+  if (!selectRoute || isNavigating) return null;
 
   return (
     <div className="fixed inset-x-2 top-5 z-30 flex justify-center pointer-events-none">
