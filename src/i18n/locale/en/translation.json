@@ -49,6 +49,14 @@
   },
   "helpDescription": {
     "overview": "Welcome to our map app! We aim to provide comprehensive place information services. Across Taiwan you can use this app for general navigation. We are piloting an \"Accessible Friendly Map\" program in Taipei City first and will gradually expand to more cities in the future.",
+    "tabs": {
+      "features": "Features",
+      "taipei": "Taipei",
+      "feedback": "Feedback",
+      "faq": "FAQ",
+      "repository": "Source Code",
+      "feedbackExamples": "Report Examples"
+    },
     "features": {
       "general": {
         "title": "1. General features across Taiwan: basic search and navigation\nIn all cities you can use the following basic features:",

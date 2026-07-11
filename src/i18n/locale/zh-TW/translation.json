@@ -11,6 +11,14 @@
   "help": "使用說明",
   "helpDescription": {
     "overview": "歡迎使用我們的地圖 App！我們致力於提供全面的地點資訊服務。\n在全台各地，您都可以使用本 App 作為一般的導航工具；同時，我們正在台北市優先試行「無障礙友善地圖」計畫，未來將逐步擴展到更多城市。",
+    "tabs": {
+      "features": "通用功能",
+      "taipei": "台北專區",
+      "feedback": "回饋",
+      "faq": "FAQ",
+      "repository": "原始碼",
+      "feedbackExamples": "回報範例"
+    },
     "features": {
       "general": {
         "title": "1. 全台通用功能：基本搜尋與導航\n在所有城市，您都可以使用以下基本功能：",

@@ -16,12 +16,12 @@ import {
   User,
 } from "lucide-react";
 import Image from "next/image";
-import Link from "next/link";
 import { useState } from "react";
 import { toast } from "sonner";
 import EmergencyContactsDialog from "@/components/Sos/EmergencyContactsDialog";
 import AIMemoryPanel from "@/components/settings/AIMemoryPanel";
 import DataManagementPanel from "@/components/settings/DataManagementPanel";
+import HelpDialog from "@/components/shared/HelpDialog";
 import {
   Dialog,
   DialogContent,
@@ -73,9 +73,6 @@ export default function AccountLogin() {
     logout,
   } = useAuthStore();
   const { setActiveRailPanel, setSheetMode } = useMapStore();
-  const features = t("helpDescription.features.general.features", {
-    returnObjects: true,
-  }) as string[];
   const settingsSections = [
     {
       key: "general" as const,
@@ -262,135 +259,11 @@ export default function AccountLogin() {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* 設定 Dialog */}
-      <Dialog
+      {/* 使用說明 Dialog */}
+      <HelpDialog
         open={openDialog === "help"}
         onOpenChange={() => setOpenDialog(null)}
-      >
-        <DialogContent className="max-w-lg w-11/12 rounded-lg p-6 max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-semibold">
-              {t("help")}
-            </DialogTitle>
-          </DialogHeader>
-          <div className=" text-muted-foreground space-y-4 mt-4 [&>h2]:text-lg [&>h2]:font-semibold [&>h2]:mt-4 [&>h2]:mb-2 [&>h2]:text-primary [&>ul]:list-disc [&>ul]:pl-6 ">
-            <h1 className="  whitespace-pre-line">
-              {t("helpDescription.overview")}
-            </h1>
-            <h2>{t("helpDescription.features.general.title")}</h2>
-            <ul itemType="circle">
-              {features.map((feature: string) => (
-                <li key={feature} className="whitespace-pre-line">
-                  {feature}
-                </li>
-              ))}
-            </ul>
-            <h2>{t("helpDescription.features.taipei.title")}</h2>
-            <p>{t("helpDescription.features.taipei.features.filter")}</p>
-            <p>{t("helpDescription.features.taipei.note")}</p>
-            <ul>
-              {(
-                t("helpDescription.features.taipei.icons", {
-                  returnObjects: true,
-                }) as string[]
-              ).map((icon: string) => (
-                <li key={icon} className="whitespace-pre-line">
-                  {icon}
-                </li>
-              ))}
-            </ul>
-            <h2>{t("helpDescription.feedback.title")}</h2>
-            <ul>
-              {(
-                t("helpDescription.feedback.steps", {
-                  returnObjects: true,
-                }) as string[]
-              ).map((step) => (
-                <li key={step} className="whitespace-pre-line">
-                  {step}
-                </li>
-              ))}
-            </ul>
-            <ul>
-              {(
-                t("helpDescription.feedback.examples", {
-                  returnObjects: true,
-                }) as string[]
-              ).map((step) => (
-                <li key={step} className="whitespace-pre-line">
-                  {step}
-                </li>
-              ))}
-            </ul>
-            <h2>{t("helpDescription.faq.title")}</h2>
-            <ul className="space-y-4">
-              {(
-                t("helpDescription.faq.items", {
-                  returnObjects: true,
-                }) as { question: string; answer: string }[]
-              ).map((item) => (
-                <li
-                  key={item.question}
-                  className="whitespace-pre-line space-y-2"
-                >
-                  <h2 className="font-bold  text-primary">{item.question}</h2>
-                  <p>{item.answer}</p>
-                </li>
-              ))}
-            </ul>
-            <h2>Repository：</h2>
-            <Link
-              href="https://github.com/yuzen9622/taipei-accessible-map"
-              className="underline"
-              target="_BLANK"
-            >
-              https://github.com/yuzen9622/taipei-accessible-map
-            </Link>
-            <h2>{t("data")}</h2>
-            <div className="grid gap-4">
-              <Link
-                href="https://tdx.transportdata.tw "
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Image
-                  src={"https://tdx.transportdata.tw/images/tdxlogo.png"}
-                  alt={t("tdx")}
-                  className=" dark:bg-primary bg-primary-foreground p-1 rounded-md"
-                  width={200}
-                  height={100}
-                />
-              </Link>
-              <Link
-                href="https://data.moenv.gov.tw/"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Image
-                  src={"/epa-logo.svg"}
-                  alt={t("moe")}
-                  width={200}
-                  height={100}
-                  className=" bg-primary dark:bg-primary-foreground p-1 rounded-md"
-                />
-              </Link>
-              <Link
-                href="https://data.gov.tw/"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Image
-                  src={"/gov-open-data.svg"}
-                  alt={t("gov")}
-                  className=" dark:bg-primary bg-primary-foreground p-1 rounded-md"
-                  width={200}
-                  height={100}
-                />
-              </Link>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      />
 
       <Dialog
         open={openDialog === "settings"}
