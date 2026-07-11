@@ -417,6 +417,8 @@
   "notificationBlocked": "通知權限已被瀏覽器封鎖，請至瀏覽器設定開啟",
   "shareLocation": "分享位置",
   "moreControls": "更多控制項",
+  "switchTo3D": "切換為 3D 視角",
+  "switchTo2D": "切換為 2D 視角",
   "shareLocationTitle": "分享此刻位置",
   "shareLocationAt": "位置：{{address}}",
   "locating": "定位中…",

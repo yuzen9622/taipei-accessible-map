@@ -177,6 +177,7 @@ export default function MapControlsWrapper() {
   const panelOpen = activeRailPanel !== "none";
   const isDesktop = useIsDesktop();
   const [moreControlsOpen, setMoreControlsOpen] = useState(false);
+  const moreToggleRef = useRef<HTMLButtonElement>(null);
 
   // --- Environment widget state ---
   const [envData, setEnvData] = useState<EnvironmentData | null>(null);
@@ -559,67 +560,36 @@ export default function MapControlsWrapper() {
             <>
               {/* On Mobile: only Locate stays always visible next to SOS; Chat,
                   3D and Share collapse behind a "more" toggle so the right
-                  edge never stacks more than 3 icons tall at once. */}
+                  edge never stacks more than 3 icons tall at once.
+                  flex-col-reverse keeps the visual stack (expanded group on
+                  top) while the DOM/tab order follows the disclosure pattern:
+                  recenter → toggle → expanded content. */}
               <div
-                className="flex flex-col lg:hidden gap-2 items-end"
+                className="flex flex-col-reverse lg:hidden gap-2 items-end"
                 aria-hidden={isDesktop}
                 inert={isDesktop}
               >
-                {moreControlsOpen && (
-                  <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
-                    {/* Share Location Button (Mobile) */}
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="icon"
-                      onClick={() => {
-                        openShare();
-                        setMoreControlsOpen(false);
-                      }}
-                      aria-label={t("shareLocation")}
-                      className="rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all text-primary"
-                    >
-                      <Share2 className="h-5 w-5" />
-                    </Button>
-
-                    {/* 3D/2D Toggle (Mobile) */}
-                    <Button
-                      aria-label={is3D ? "切換為 2D 視角" : "切換為 3D 視角"}
-                      aria-pressed={is3D}
-                      variant="secondary"
-                      size="icon"
-                      onClick={() => setIs3D(!is3D)}
-                      className="rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all text-xs font-bold text-foreground"
-                    >
-                      {is3D ? "2D" : "3D"}
-                    </Button>
-
-                    {/* AI ChatBot FAB (Mobile) */}
-                    {!chatOpen && (
-                      <Button
-                        onClick={() => {
-                          setChatOpen(true);
-                          setMoreControlsOpen(false);
-                        }}
-                        variant="default"
-                        size="icon"
-                        className="rounded-full h-11 w-11 shadow-lg bg-primary hover:shadow-xl transition-all text-primary-foreground"
-                        aria-label={t("chatbot.open", "開啟聊天助理")}
-                      >
-                        <BotMessageSquare className="h-6 w-6" />
-                      </Button>
-                    )}
-                  </div>
-                )}
+                {/* Recenter Button (Mobile, always visible) */}
+                <Button
+                  aria-label={t("recenter")}
+                  variant="secondary"
+                  size="icon"
+                  onClick={() => handlePinClick(userLocation)}
+                  className="rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all"
+                >
+                  <Navigation className="h-5 w-5 text-foreground" />
+                </Button>
 
                 {/* More controls toggle (Mobile) */}
                 <Button
+                  ref={moreToggleRef}
                   type="button"
                   variant="secondary"
                   size="icon"
                   onClick={() => setMoreControlsOpen((v) => !v)}
                   aria-label={t("moreControls", "更多控制項")}
                   aria-expanded={moreControlsOpen}
+                  aria-controls="mobile-more-controls"
                   className="rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all text-foreground"
                 >
                   <motion.span
@@ -631,16 +601,69 @@ export default function MapControlsWrapper() {
                   </motion.span>
                 </Button>
 
-                {/* Recenter Button (Mobile, always visible) */}
-                <Button
-                  aria-label="回到目前位置"
-                  variant="secondary"
-                  size="icon"
-                  onClick={() => handlePinClick(userLocation)}
-                  className="rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all"
-                >
-                  <Navigation className="h-5 w-5 text-foreground" />
-                </Button>
+                {moreControlsOpen && (
+                  <div
+                    id="mobile-more-controls"
+                    className="flex flex-col-reverse gap-2 animate-in fade-in slide-in-from-bottom-2 duration-200"
+                  >
+                    {/* AI ChatBot FAB (Mobile) */}
+                    {!chatOpen && (
+                      <Button
+                        onClick={() => {
+                          // Park focus on the toggle before the panel swaps in,
+                          // so keyboard focus never sits inside unmounted DOM.
+                          moreToggleRef.current?.focus();
+                          setChatOpen(true);
+                          setMoreControlsOpen(false);
+                        }}
+                        variant="default"
+                        size="icon"
+                        className="rounded-full h-11 w-11 shadow-lg bg-primary hover:shadow-xl transition-all text-primary-foreground"
+                        aria-label={t("chatbot.open", "開啟聊天助理")}
+                      >
+                        <BotMessageSquare className="h-6 w-6" />
+                      </Button>
+                    )}
+
+                    {/* 3D/2D Toggle (Mobile) */}
+                    <Button
+                      aria-label={is3D ? t("switchTo2D") : t("switchTo3D")}
+                      aria-pressed={is3D}
+                      variant="secondary"
+                      size="icon"
+                      onClick={() => setIs3D(!is3D)}
+                      className="rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all text-xs font-bold text-foreground"
+                    >
+                      {is3D ? "2D" : "3D"}
+                    </Button>
+
+                    {/* Share Location Button (Mobile) */}
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="icon"
+                      onClick={() => {
+                        if (!userLocation) {
+                          // openShare only toasts in this case — keep the
+                          // group open so the user can retry without
+                          // re-expanding.
+                          openShare();
+                          return;
+                        }
+                        // Focus the toggle first so the share dialog records
+                        // it as the previously-focused element and restores
+                        // focus there on close (this button unmounts).
+                        moreToggleRef.current?.focus();
+                        openShare();
+                        setMoreControlsOpen(false);
+                      }}
+                      aria-label={t("shareLocation")}
+                      className="rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all text-primary"
+                    >
+                      <Share2 className="h-5 w-5" />
+                    </Button>
+                  </div>
+                )}
               </div>
 
               {/* Share & SOS Group (Desktop side-by-side; mobile only shows SOS,

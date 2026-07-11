@@ -416,6 +416,8 @@
   "notificationBlocked": "Notifications are blocked — enable them in your browser settings",
   "shareLocation": "Share Location",
   "moreControls": "More Controls",
+  "switchTo3D": "Switch to 3D view",
+  "switchTo2D": "Switch to 2D view",
   "shareLocationTitle": "Share My Location",
   "shareLocationAt": "Location: {{address}}",
   "locating": "Locating…",
