@@ -19,6 +19,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { toast } from "sonner";
 import EmergencyContactsDialog from "@/components/Sos/EmergencyContactsDialog";
+import EmergencyContactsManager from "@/components/Sos/EmergencyContactsManager";
 import AIMemoryPanel from "@/components/settings/AIMemoryPanel";
 import DataManagementPanel from "@/components/settings/DataManagementPanel";
 import HelpDialog from "@/components/shared/HelpDialog";
@@ -270,9 +271,9 @@ export default function AccountLogin() {
         onOpenChange={() => setOpenDialog(null)}
       >
         <DialogContent className="w-[min(97vw,768px)] max-w-[min(97vw,768px)] h-[min(92vh,840px)] rounded-2xl p-0 overflow-hidden sm:max-w-[min(97vw,1280px)]">
-          <div className="grid h-full grid-cols-[88px_minmax(0,1fr)] bg-background md:grid-cols-[30%_minmax(0,1fr)]">
-            <aside className="border-r border-border/60 bg-muted/35">
-              <div className="flex h-full flex-col ">
+          <div className="grid h-full grid-cols-1 grid-rows-[auto_minmax(0,1fr)] bg-background md:grid-cols-[30%_minmax(0,1fr)] md:grid-rows-none">
+            <aside className="border-b md:border-b-0 md:border-r border-border/60 bg-muted/35 shrink-0">
+              <div className="flex flex-row md:flex-col w-full">
                 <div className="border-b border-border/60 px-3 py-4 md:px-4 md:py-5 hidden md:block">
                   <div className="space-y-1">
                     <p className="text-lg font-medium uppercase tracking-[0.18em] text-muted-foreground ">
@@ -280,7 +281,7 @@ export default function AccountLogin() {
                     </p>
                   </div>
                 </div>
-                <nav className=" space-y-1.5 px-2 py-3 md:px-3 md:py-4">
+                <nav className="flex flex-row md:flex-col w-full overflow-x-auto gap-1.5 px-4 py-3 md:px-3 md:py-4 md:space-y-1.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden shrink-0">
                   {settingsSections.map((section) => {
                     const Icon = section.icon;
                     const active = settingsTab === section.key;
@@ -289,7 +290,7 @@ export default function AccountLogin() {
                         key={section.key}
                         type="button"
                         onClick={() => setSettingsTab(section.key)}
-                        className={`flex w-full items-center justify-center gap-3 rounded-xl  px-3 py-3 text-left text-sm transition-colors ${
+                        className={`flex w-auto md:w-full items-center justify-start gap-2.5 rounded-xl px-3.5 py-2.5 md:px-3 md:py-3 text-left text-sm transition-colors shrink-0 ${
                           active
                             ? "bg-background text-foreground shadow-sm ring-1 ring-border/70"
                             : "text-muted-foreground hover:bg-background/60 hover:text-foreground"
@@ -297,7 +298,7 @@ export default function AccountLogin() {
                         aria-pressed={active}
                       >
                         <Icon className="h-4 w-4 shrink-0" />
-                        <span className="hidden truncate font-medium md:inline">
+                        <span className="font-medium truncate">
                           {section.label}
                         </span>
                       </button>
@@ -419,27 +420,9 @@ export default function AccountLogin() {
                     </div>
                   )}
 
-                  {settingsTab === "safety" && (
-                    <div className="rounded-2xl border border-border/60 bg-background p-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="space-y-1">
-                        <p className="text-sm font-semibold">
-                          {t("settingsEmergencyTitle")}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {t("settingsEmergencyDesc")}
-                        </p>
-                      </div>
-                      <Button
-                        type="button"
-                        onClick={() => {
-                          setOpenDialog(null);
-                          setContactsDialogOpen(true);
-                        }}
-                        disabled={!user}
-                      >
-                        <Shield className="h-4 w-4" />
-                        {t("settingsEmergencyAction")}
-                      </Button>
+                  {settingsTab === "safety" && user && (
+                    <div className="rounded-2xl border border-border/60 bg-background p-5 space-y-4">
+                      <EmergencyContactsManager />
                     </div>
                   )}
                   {settingsTab === "safety" && !user && (
