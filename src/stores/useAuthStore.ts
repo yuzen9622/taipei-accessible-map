@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import { logout } from "@/lib/api/auth";
+import { configureAuthState } from "@/lib/authRefresh";
+import { revokeSession } from "@/lib/authTransport";
 import { updateConfig } from "@/lib/api/user";
 import { ColorEnum, FontSizeEnum, LanguageEnum } from "@/lib/config";
 import type { UserConfig, UserDTO } from "@/types/user";
@@ -99,10 +100,28 @@ const useAuthStore = create<AuthStore>((set, get) => ({
     }
     set((state) => ({ userConfig: { ...state.userConfig, ...config } }));
   },
-  logout: async () => {
-    await logout();
+  logout: () => {
+    // Synchronous 3-step logout (plan §4 useAuthStore.ts row): capture the
+    // still-valid token first, clear state synchronously (so `session`
+    // becomes an immediately observable logout intent), then fire the
+    // revoke request with the captured token — never through fetchRequest,
+    // so it can never enter the 401-refresh path.
+    const token = get().session?.accessToken;
     set({ user: null, session: null });
+    if (token) {
+      revokeSession(token).catch((error) => {
+        console.error("[useAuthStore] revokeSession failed", error);
+      });
+    }
   },
 }));
+
+// Register this store as the auth-state port for the shared single-flight
+// refresh coordinator (plan §4 authRefresh.ts row) right after creation.
+configureAuthState({
+  getSession: () => useAuthStore.getState().session,
+  setSession: (session) => useAuthStore.getState().setSession(session),
+  setUser: (user) => useAuthStore.getState().setUser(user),
+});
 
 export default useAuthStore;
