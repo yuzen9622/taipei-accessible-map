@@ -415,6 +415,7 @@
   "notificationUnsupported": "Notifications are not supported in this browser",
   "notificationBlocked": "Notifications are blocked — enable them in your browser settings",
   "shareLocation": "Share Location",
+  "moreControls": "More Controls",
   "shareLocationTitle": "Share My Location",
   "shareLocationAt": "Location: {{address}}",
   "locating": "Locating…",

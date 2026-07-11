@@ -416,6 +416,7 @@
   "notificationUnsupported": "此瀏覽器不支援通知功能",
   "notificationBlocked": "通知權限已被瀏覽器封鎖，請至瀏覽器設定開啟",
   "shareLocation": "分享位置",
+  "moreControls": "更多控制項",
   "shareLocationTitle": "分享此刻位置",
   "shareLocationAt": "位置：{{address}}",
   "locating": "定位中…",

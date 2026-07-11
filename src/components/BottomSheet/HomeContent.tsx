@@ -297,44 +297,13 @@ export default function HomeContent() {
             </div>
           </>
         ) : (
-          <div className="flex gap-2 flex-wrap">
-            {QUICK_ACTION_DEFS.filter((d) => enabledActions.includes(d.id)).map(
-              (def) => (
-                <button
-                  key={def.id}
-                  type="button"
-                  onClick={() =>
-                    def.id === "metro" ? openA11y() : setSubPanel(def.id)
-                  }
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-semibold transition-colors",
-                    def.className,
-                  )}
-                >
-                  <def.Icon className="h-4 w-4" />
-                  {t(def.labelKey)}
-                </button>
-              ),
-            )}
-            {enabledActions.length < QUICK_ACTION_DEFS.length && (
-              <button
-                type="button"
-                onClick={() => setMoreActionsOpen(!moreActionsOpen)}
-                aria-expanded={moreActionsOpen}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-semibold bg-muted/60 text-muted-foreground hover:bg-muted transition-colors"
-              >
-                <ChevronDown
-                  className={cn(
-                    "h-4 w-4 transition-transform",
-                    moreActionsOpen && "rotate-180",
-                  )}
-                />
-                {t("railMore")}
-              </button>
-            )}
-            {moreActionsOpen &&
-              QUICK_ACTION_DEFS.filter(
-                (d) => !enabledActions.includes(d.id),
+          <div className="space-y-2">
+            {/* Horizontal scroll strip: keeps the row to a single line on
+                narrow screens instead of wrapping/overlapping neighbouring
+                content, with snap points for a clean swipe stop. */}
+            <div className="flex gap-2 overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-4 px-4 pb-0.5">
+              {QUICK_ACTION_DEFS.filter((d) =>
+                enabledActions.includes(d.id),
               ).map((def) => (
                 <button
                   key={def.id}
@@ -343,7 +312,7 @@ export default function HomeContent() {
                     def.id === "metro" ? openA11y() : setSubPanel(def.id)
                   }
                   className={cn(
-                    "flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-semibold transition-colors",
+                    "flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-semibold transition-colors shrink-0 snap-start",
                     def.className,
                   )}
                 >
@@ -351,6 +320,48 @@ export default function HomeContent() {
                   {t(def.labelKey)}
                 </button>
               ))}
+              {enabledActions.length < QUICK_ACTION_DEFS.length && (
+                <button
+                  type="button"
+                  onClick={() => setMoreActionsOpen(!moreActionsOpen)}
+                  aria-expanded={moreActionsOpen}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-semibold bg-muted/60 text-muted-foreground hover:bg-muted transition-colors shrink-0 snap-start"
+                >
+                  <ChevronDown
+                    className={cn(
+                      "h-4 w-4 transition-transform",
+                      moreActionsOpen && "rotate-180",
+                    )}
+                  />
+                  {t("railMore")}
+                </button>
+              )}
+            </div>
+
+            {/* Expanded extras: wrap freely below so they stay visible
+                without requiring another scroll discovery. */}
+            {moreActionsOpen && (
+              <div className="flex gap-2 flex-wrap">
+                {QUICK_ACTION_DEFS.filter(
+                  (d) => !enabledActions.includes(d.id),
+                ).map((def) => (
+                  <button
+                    key={def.id}
+                    type="button"
+                    onClick={() =>
+                      def.id === "metro" ? openA11y() : setSubPanel(def.id)
+                    }
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-semibold transition-colors",
+                      def.className,
+                    )}
+                  >
+                    <def.Icon className="h-4 w-4" />
+                    {t(def.labelKey)}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>

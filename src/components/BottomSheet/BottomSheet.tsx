@@ -19,6 +19,7 @@ import { AnimatePresence, motion } from "motion/react";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import AccountLogin from "@/components/shared/AccountLogin";
+import useIsDesktop from "@/hook/useIsDesktop";
 import { useAppTranslation } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 import type { RailPanel } from "@/stores/useMapStore";
@@ -125,6 +126,7 @@ export default function BottomSheet() {
     isNavigating,
     setIsNavigating,
   } = useMapStore();
+  const isDesktop = useIsDesktop();
   const stepListOpen = useNavStore((s) => s.stepListOpen);
   const setStepListOpen = useNavStore((s) => s.setStepListOpen);
   // Only the setter is needed — the sheet height drives the layout.
@@ -325,6 +327,8 @@ export default function BottomSheet() {
           "block lg:hidden fixed inset-x-0 bottom-0 z-40 pointer-events-none",
           navHidesChrome && "hidden",
         )}
+        aria-hidden={isDesktop}
+        inert={isDesktop}
       >
         <motion.div
           ref={containerRef}
@@ -373,7 +377,11 @@ export default function BottomSheet() {
       </div>
 
       {/* ======= Desktop: Dual-layer sidebar ======= */}
-      <div className="hidden lg:block fixed inset-0 z-40 pointer-events-none">
+      <div
+        className="hidden lg:block fixed inset-0 z-40 pointer-events-none"
+        aria-hidden={!isDesktop}
+        inert={!isDesktop}
+      >
         {/* --- Layer 1: Icon Rail (always visible; collapse only hides Layer 2,
              navigation hands the whole screen to the HUD) --- */}
         <nav

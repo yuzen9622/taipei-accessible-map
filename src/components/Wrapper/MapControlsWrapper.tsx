@@ -7,6 +7,7 @@ import {
   Loader2,
   LocateFixed,
   Navigation,
+  Plus,
   RefreshCw,
   Share2,
   Thermometer,
@@ -27,6 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import useIsDesktop from "@/hook/useIsDesktop";
 import usePin from "@/hook/usePin";
 import { useAppTranslation } from "@/i18n/client";
 import { getEnvironmentInfo } from "@/lib/api/a11y";
@@ -173,6 +175,8 @@ export default function MapControlsWrapper() {
   } = useMapStore();
 
   const panelOpen = activeRailPanel !== "none";
+  const isDesktop = useIsDesktop();
+  const [moreControlsOpen, setMoreControlsOpen] = useState(false);
 
   // --- Environment widget state ---
   const [envData, setEnvData] = useState<EnvironmentData | null>(null);
@@ -430,6 +434,8 @@ export default function MapControlsWrapper() {
               !sidebarCollapsed && panelOpen ? "left-[468px]" : "left-[76px]",
             )}
             style={{ transition: "left 0.3s ease" }}
+            aria-hidden={!isDesktop}
+            inert={!isDesktop}
           >
             {/* 3D/2D Toggle */}
             <Button
@@ -551,21 +557,81 @@ export default function MapControlsWrapper() {
           ) : (
             // Standard Map Mode Controls
             <>
-              {/* On Mobile: Stack AI Assistant, Locate, and 3D/2D toggle above Share & SOS */}
-              <div className="flex flex-col lg:hidden gap-2">
-                {/* AI ChatBot FAB (Mobile) */}
-                {!chatOpen && (
-                  <Button
-                    onClick={() => setChatOpen(true)}
-                    variant="default"
-                    size="icon"
-                    className="rounded-full h-11 w-11 shadow-lg bg-primary hover:shadow-xl transition-all text-primary-foreground"
-                    aria-label={t("chatbot.open", "開啟聊天助理")}
-                  >
-                    <BotMessageSquare className="h-6 w-6" />
-                  </Button>
+              {/* On Mobile: only Locate stays always visible next to SOS; Chat,
+                  3D and Share collapse behind a "more" toggle so the right
+                  edge never stacks more than 3 icons tall at once. */}
+              <div
+                className="flex flex-col lg:hidden gap-2 items-end"
+                aria-hidden={isDesktop}
+                inert={isDesktop}
+              >
+                {moreControlsOpen && (
+                  <div className="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                    {/* Share Location Button (Mobile) */}
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="icon"
+                      onClick={() => {
+                        openShare();
+                        setMoreControlsOpen(false);
+                      }}
+                      aria-label={t("shareLocation")}
+                      className="rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all text-primary"
+                    >
+                      <Share2 className="h-5 w-5" />
+                    </Button>
+
+                    {/* 3D/2D Toggle (Mobile) */}
+                    <Button
+                      aria-label={is3D ? "切換為 2D 視角" : "切換為 3D 視角"}
+                      aria-pressed={is3D}
+                      variant="secondary"
+                      size="icon"
+                      onClick={() => setIs3D(!is3D)}
+                      className="rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all text-xs font-bold text-foreground"
+                    >
+                      {is3D ? "2D" : "3D"}
+                    </Button>
+
+                    {/* AI ChatBot FAB (Mobile) */}
+                    {!chatOpen && (
+                      <Button
+                        onClick={() => {
+                          setChatOpen(true);
+                          setMoreControlsOpen(false);
+                        }}
+                        variant="default"
+                        size="icon"
+                        className="rounded-full h-11 w-11 shadow-lg bg-primary hover:shadow-xl transition-all text-primary-foreground"
+                        aria-label={t("chatbot.open", "開啟聊天助理")}
+                      >
+                        <BotMessageSquare className="h-6 w-6" />
+                      </Button>
+                    )}
+                  </div>
                 )}
-                {/* Recenter Button (Mobile) */}
+
+                {/* More controls toggle (Mobile) */}
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="icon"
+                  onClick={() => setMoreControlsOpen((v) => !v)}
+                  aria-label={t("moreControls", "更多控制項")}
+                  aria-expanded={moreControlsOpen}
+                  className="rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all text-foreground"
+                >
+                  <motion.span
+                    animate={{ rotate: moreControlsOpen ? 135 : 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex"
+                  >
+                    <Plus className="h-5 w-5" />
+                  </motion.span>
+                </Button>
+
+                {/* Recenter Button (Mobile, always visible) */}
                 <Button
                   aria-label="回到目前位置"
                   variant="secondary"
@@ -575,29 +641,21 @@ export default function MapControlsWrapper() {
                 >
                   <Navigation className="h-5 w-5 text-foreground" />
                 </Button>
-                {/* 3D/2D Toggle (Mobile) */}
-                <Button
-                  aria-label={is3D ? "切換為 2D 視角" : "切換為 3D 視角"}
-                  aria-pressed={is3D}
-                  variant="secondary"
-                  size="icon"
-                  onClick={() => setIs3D(!is3D)}
-                  className="rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all text-xs font-bold text-foreground"
-                >
-                  {is3D ? "2D" : "3D"}
-                </Button>
               </div>
 
-              {/* Share & SOS Group (Desktop side-by-side, Mobile bottom of stack) */}
+              {/* Share & SOS Group (Desktop side-by-side; mobile only shows SOS,
+                  Share moved into the collapsible group above) */}
               <div className="flex flex-col lg:flex-row gap-2">
-                {/* Share Location Button */}
+                {/* Share Location Button (Desktop only) */}
                 <Button
                   type="button"
                   variant="secondary"
                   size="icon"
                   onClick={openShare}
                   aria-label={t("shareLocation")}
-                  className="rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all text-primary"
+                  aria-hidden={!isDesktop}
+                  inert={!isDesktop}
+                  className="hidden lg:inline-flex rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all text-primary"
                 >
                   <Share2 className="h-5 w-5" />
                 </Button>
