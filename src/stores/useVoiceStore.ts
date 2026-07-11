@@ -23,6 +23,19 @@ export type VoiceViewMode = "panel" | "pill";
  */
 export interface VoiceTranscriptEntry extends VoiceTranscript {
   id: number;
+  /**
+   * Lossless raw concatenation of every fragment merged into this entry
+   * (plan `a1e4a3b4026e7400` rev5 §3.1). The UI never reads this — it only
+   * renders `text` — but it is kept here so the store's entry shape
+   * structurally matches `AggEntry`.
+   */
+  raw: string;
+  /**
+   * Whether this bubble is frozen (plan `a1e4a3b4026e7400` §3.1): a sealed
+   * entry never receives another same-role fragment merge — the next
+   * fragment for that role starts a new entry instead.
+   */
+  sealed: boolean;
 }
 
 interface VoiceSessionActions {
@@ -36,6 +49,13 @@ interface VoiceState {
   transcripts: VoiceTranscriptEntry[];
   activeTool: VoiceToolEvent | null;
   viewMode: VoiceViewMode;
+  /**
+   * Live microphone RMS level in [0, 1], written at capture-frame rate by
+   * `voiceSessionBindings.wrapCaptureFrame` (plan `a1e4a3b4026e7400` §3.2).
+   * Read only by the small recording-dot components via a `micLevel`
+   * selector, so this does not trigger the hook/Host mirroring re-renders.
+   */
+  micLevel: number;
 }
 
 interface VoiceActions {
@@ -43,6 +63,7 @@ interface VoiceActions {
   setTranscripts: (transcripts: VoiceTranscriptEntry[]) => void;
   setActiveTool: (tool: VoiceToolEvent | null) => void;
   setViewMode: (mode: VoiceViewMode) => void;
+  setMicLevel: (level: number) => void;
   /**
    * Bound exactly once, by the always-mounted `VoiceSessionHost`, to the
    * real controller-backed functions returned by `useVoiceSession` (plan
@@ -67,10 +88,12 @@ const useVoiceStore = create<VoiceStore>((set) => ({
   transcripts: [],
   activeTool: null,
   viewMode: "panel",
+  micLevel: 0,
   setStatus: (status) => set({ status }),
   setTranscripts: (transcripts) => set({ transcripts }),
   setActiveTool: (activeTool) => set({ activeTool }),
   setViewMode: (viewMode) => set({ viewMode }),
+  setMicLevel: (micLevel) => set({ micLevel }),
   bindSessionActions: (actions) =>
     set({
       startSession: actions.start,

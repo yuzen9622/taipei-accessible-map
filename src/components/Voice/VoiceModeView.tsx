@@ -3,8 +3,10 @@
 import { Keyboard, Loader2, X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import useReducedMotion from "@/hook/useReducedMotion";
 import { useAppTranslation } from "@/i18n/client";
 import { cn } from "@/lib/utils";
+import { recordingDotPresentation } from "@/lib/voice/audioLevel";
 import useVoiceStore from "@/stores/useVoiceStore";
 import {
   getVoiceStatusLabel,
@@ -25,9 +27,11 @@ export default function VoiceModeView() {
   const status = useVoiceStore((s) => s.status);
   const transcripts = useVoiceStore((s) => s.transcripts);
   const activeTool = useVoiceStore((s) => s.activeTool);
+  const micLevel = useVoiceStore((s) => s.micLevel);
   const endSession = useVoiceStore((s) => s.endSession);
   const resumePlayback = useVoiceStore((s) => s.resumePlayback);
   const setViewMode = useVoiceStore((s) => s.setViewMode);
+  const reducedMotion = useReducedMotion();
 
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -40,19 +44,18 @@ export default function VoiceModeView() {
   const label = getVoiceStatusLabel(status, t);
   const active = isVoiceSessionActive(status.status);
   const listening = status.status === "listening" || status.status === "ready";
+  const dot = recordingDotPresentation(micLevel, status.status, reducedMotion);
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       <div className="flex items-center gap-2 px-4 py-2 border-b bg-muted/40 text-xs shrink-0">
         <span className="relative flex h-2.5 w-2.5 shrink-0">
-          {active && (
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
-          )}
           <span
             className={cn(
-              "relative inline-flex h-2.5 w-2.5 rounded-full",
+              "relative inline-flex h-2.5 w-2.5 rounded-full transition-transform duration-100",
               active ? "bg-red-500" : "bg-muted-foreground",
             )}
+            style={{ transform: `scale(${dot.scale})` }}
           />
         </span>
         <span className="font-medium text-foreground">{label}</span>

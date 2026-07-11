@@ -2,8 +2,10 @@
 
 import { Mic, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import useReducedMotion from "@/hook/useReducedMotion";
 import { useAppTranslation } from "@/i18n/client";
 import { cn } from "@/lib/utils";
+import { recordingDotPresentation } from "@/lib/voice/audioLevel";
 import type { VoiceStatus, VoiceStatusName } from "@/lib/voice/voiceSession";
 import useMapStore from "@/stores/useMapStore";
 import useVoiceStore, { type VoiceViewMode } from "@/stores/useVoiceStore";
@@ -93,17 +95,20 @@ export default function VoiceFloatingIndicator() {
   const { t } = useAppTranslation();
   const status = useVoiceStore((s) => s.status);
   const viewMode = useVoiceStore((s) => s.viewMode);
+  const micLevel = useVoiceStore((s) => s.micLevel);
   const setViewMode = useVoiceStore((s) => s.setViewMode);
   const setStatus = useVoiceStore((s) => s.setStatus);
   const endSession = useVoiceStore((s) => s.endSession);
   const chatOpen = useMapStore((s) => s.chatOpen);
   const setChatOpen = useMapStore((s) => s.setChatOpen);
+  const reducedMotion = useReducedMotion();
 
   if (!shouldShowVoicePill(status.status, chatOpen, viewMode)) return null;
 
   const isTerminal =
     status.status === "needs-login" || status.status === "error";
   const label = getVoiceStatusLabel(status, t);
+  const dot = recordingDotPresentation(micLevel, status.status, reducedMotion);
 
   const handleExpand = () => {
     setViewMode("panel");
@@ -138,14 +143,12 @@ export default function VoiceFloatingIndicator() {
           aria-label={t("chatbot.voice.pillExpand", "展開語音對話")}
         >
           <span className="relative flex h-2.5 w-2.5 shrink-0">
-            {!isTerminal && (
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75" />
-            )}
             <span
               className={cn(
-                "relative inline-flex h-2.5 w-2.5 rounded-full",
+                "relative inline-flex h-2.5 w-2.5 rounded-full transition-transform duration-100",
                 isTerminal ? "bg-muted-foreground" : "bg-red-500",
               )}
+              style={{ transform: `scale(${dot.scale})` }}
             />
           </span>
           <Mic className="h-3.5 w-3.5 shrink-0" />

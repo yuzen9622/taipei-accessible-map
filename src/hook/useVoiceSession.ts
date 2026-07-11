@@ -11,9 +11,12 @@ import {
   type VoiceStatus,
   type VoiceToolEvent,
 } from "@/lib/voice/voiceSession";
+import { createVoiceBindings } from "@/lib/voice/voiceSessionBindings";
 import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
-import type { VoiceTranscriptEntry } from "@/stores/useVoiceStore";
+import useVoiceStore, {
+  type VoiceTranscriptEntry,
+} from "@/stores/useVoiceStore";
 
 /**
  * Derive the voice WS URL from `END_POINT` (plan §3/§8). Every existing
@@ -87,7 +90,6 @@ export default function useVoiceSession(): UseVoiceSessionResult {
   const [status, setStatusState] = useState<VoiceStatus>({ status: "idle" });
   const [transcripts, setTranscripts] = useState<VoiceTranscriptEntry[]>([]);
   const [activeTool, setActiveTool] = useState<VoiceToolEvent | null>(null);
-  const nextTranscriptId = useRef(0);
 
   // Read inside the auth subscription below without re-subscribing on
   // every status change.
@@ -98,6 +100,26 @@ export default function useVoiceSession(): UseVoiceSessionResult {
   // store on every change while the session is active (plan §5.8 rev13).
   const identityAtStartRef = useRef<string | null>(null);
 
+  // Plan §3.3 (rev3): all transcript aggregation, turn-boundary sealing and
+  // mic-level zeroing wiring lives in this pure module, constructed once so
+  // React re-renders never replace its aggregator/prev-status state.
+  const bindingsRef = useRef<ReturnType<typeof createVoiceBindings> | null>(
+    null,
+  );
+  if (!bindingsRef.current) {
+    bindingsRef.current = createVoiceBindings({
+      publishTranscripts: (entries) =>
+        setTranscripts(entries as VoiceTranscriptEntry[]),
+      publishStatus: (next) => {
+        statusRef.current = next;
+        setStatusState(next);
+      },
+      publishTool: (event) => setActiveTool(event),
+      setMicLevel: (level) => useVoiceStore.getState().setMicLevel(level),
+    });
+  }
+  const bindings = bindingsRef.current;
+
   const controllerRef = useRef<VoiceSessionController | null>(null);
   if (!controllerRef.current) {
     controllerRef.current = new VoiceSessionController({
@@ -107,18 +129,12 @@ export default function useVoiceSession(): UseVoiceSessionResult {
       getToken: () => useAuthStore.getState().session?.accessToken,
       getAuthIdentity: () => useAuthStore.getState().user?._id ?? null,
       getUserLocation,
-      createCapture: (onFrame) => createCapture(onFrame),
+      createCapture: (onFrame) =>
+        createCapture(bindings.wrapCaptureFrame(onFrame)),
       createPlayback: () => createPlayback(),
-      onStatusChange: (next) => {
-        statusRef.current = next;
-        setStatusState(next);
-      },
-      onTranscript: (transcript) =>
-        setTranscripts((prev) => [
-          ...prev,
-          { ...transcript, id: nextTranscriptId.current++ },
-        ]),
-      onToolEvent: (event) => setActiveTool(event),
+      onStatusChange: bindings.onStatusChange,
+      onTranscript: bindings.onTranscript,
+      onToolEvent: bindings.onToolEvent,
     });
   }
 
@@ -142,17 +158,21 @@ export default function useVoiceSession(): UseVoiceSessionResult {
   }, []);
 
   // Unmount cleanup (plan §4 useVoiceSession row): cancels timers, closes
-  // the socket, and releases audio resources via controller.end().
+  // the socket, and releases audio resources via controller.end(); also
+  // zeroes the store's micLevel via bindings.dispose() (§3.3).
   useEffect(() => {
-    return () => controllerRef.current?.end();
-  }, []);
+    return () => {
+      controllerRef.current?.end();
+      bindings.dispose();
+    };
+  }, [bindings]);
 
   const startSession = useCallback(() => {
     identityAtStartRef.current = useAuthStore.getState().user?._id ?? null;
-    setTranscripts([]);
+    bindings.reset();
     setActiveTool(null);
     controllerRef.current?.start();
-  }, []);
+  }, [bindings]);
 
   const endSession = useCallback(() => {
     controllerRef.current?.end();
