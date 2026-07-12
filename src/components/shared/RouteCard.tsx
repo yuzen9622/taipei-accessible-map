@@ -576,11 +576,7 @@ export const RouteCard = memo(function RouteCard({
           ))}
         </div>
 
-        {route.attribution && (
-          <p className="text-[10px] text-muted-foreground italic text-right mt-1">
-            {route.attribution}
-          </p>
-        )}
+       
 
         <div className="flex justify-end pt-4 border-t">
           <Button
