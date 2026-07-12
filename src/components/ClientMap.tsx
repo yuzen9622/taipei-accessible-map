@@ -12,6 +12,7 @@ import AccessibilityPin from "@/components/Wrapper/MetroA11yWrapper";
 import RoutePreviewHydrator from "@/components/Wrapper/RoutePreviewHydrator";
 import RouteLine from "@/components/Wrapper/RouteWrapper";
 import { useAppTranslation } from "@/i18n/client";
+import { formatNominatimPlace } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import useNavStore from "@/stores/useNavStore";
 import type { NominatimPlace } from "@/types";
@@ -228,7 +229,8 @@ export default function ClientMap() {
     )
       .then((res) => res.json())
       .then((data) => {
-        const address = data?.display_name ?? `${lat}, ${lng}`;
+        const formatted = formatNominatimPlace(data, i18n.language);
+        const address = formatted?.display_name ?? `${lat}, ${lng}`;
         setInfoShow({ isOpen: true, kind: "coordinate", address, position });
         setSearchPlace({ kind: "coordinate", address, position });
       })
@@ -265,7 +267,7 @@ export default function ClientMap() {
     )
       .then((res) => res.json())
       .then((data: NominatimPlace[]) => {
-        const place = data[0];
+        const place = formatNominatimPlace(data[0], i18n.language);
         if (!place) return;
 
         const lat = parseFloat(place.lat);
@@ -316,29 +318,18 @@ export default function ClientMap() {
           `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=${lang}&zoom=18&addressdetails=1`,
         );
         const data = await res.json();
+        const formatted = formatNominatimPlace(data, i18n.language);
 
-        if (data?.place_id && data.name) {
+        if (formatted?.place_id) {
           const position = { lat, lng };
           setInfoShow({
             isOpen: true,
-            place: data,
+            place: formatted,
             kind: "place",
           });
           setSearchPlace({
             kind: "place",
-            place: data,
-            position,
-          });
-        } else if (data?.place_id) {
-          const position = { lat, lng };
-          setInfoShow({
-            isOpen: true,
-            place: data,
-            kind: "place",
-          });
-          setSearchPlace({
-            kind: "place",
-            place: data,
+            place: formatted,
             position,
           });
         } else {

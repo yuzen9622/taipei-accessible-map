@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { formatNominatimPlace } from "@/lib/utils";
 import useAuthStore from "@/stores/useAuthStore";
 import type { NominatimPlace } from "@/types";
 
@@ -21,7 +22,10 @@ export default function usePlaceSuggestions(input: string) {
           `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(input)}&countrycodes=tw&limit=5&accept-language=${lang}&addressdetails=1`,
         );
         const data: NominatimPlace[] = await res.json();
-        setSuggestions(data);
+        const formatted = data.map((item) =>
+          formatNominatimPlace(item, userConfig.language),
+        );
+        setSuggestions(formatted);
       } catch {
         setSuggestions([]);
       }
@@ -29,6 +33,7 @@ export default function usePlaceSuggestions(input: string) {
     }, 500);
     return () => clearTimeout(handler);
   }, [input, userConfig.language]);
+
 
   return { suggestions, loading };
 }

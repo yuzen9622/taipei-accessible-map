@@ -1,12 +1,30 @@
 "use client";
-import { Navigation, LoaderCircle } from "lucide-react";
+import {
+  Navigation,
+  LoaderCircle,
+  MapPin,
+  Train,
+  Bus,
+  Building,
+  Utensils,
+  Store,
+  Milestone,
+  Building2,
+  TreePine,
+  Coffee,
+  Hospital,
+  School,
+  Sparkles,
+  Bath,
+  Bike,
+} from "lucide-react";
 import Image from "next/image";
 import type { InputHTMLAttributes } from "react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import usePlacePredictions from "@/hook/usePlacePredictions";
 import { useAppTranslation } from "@/i18n/client";
-import { cn } from "@/lib/utils";
+import { cn, formatNominatimPlace } from "@/lib/utils";
 import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
 import type { NominatimPlace, PlaceDetail } from "@/types";
@@ -18,6 +36,66 @@ type InputProps = InputHTMLAttributes<HTMLInputElement> & {
   onPlaceSelect: (places: PlaceDetail) => void;
   hideIcon?: boolean;
 };
+
+function getPlaceIcon(category?: string, type?: string) {
+  // 1. Check specific type first
+  if (type) {
+    if (type === "train_station" || type === "station" || type === "subway" || type === "subway_entrance" || type === "tram_stop") {
+      return Train;
+    }
+    if (type === "bus_stop" || type === "bus_station" || type === "bus") {
+      return Bus;
+    }
+    if (type === "bicycle_rental" || type === "share_bicycle") {
+      return Bike;
+    }
+    if (type === "restaurant" || type === "food_court" || type === "fast_food") {
+      return Utensils;
+    }
+    if (type === "cafe" || type === "pub" || type === "bar") {
+      return Coffee;
+    }
+    if (type === "supermarket" || type === "convenience" || type === "mall" || type === "department_store" || type === "shop") {
+      return Store;
+    }
+    if (type === "hospital" || type === "clinic" || type === "doctors" || type === "pharmacy") {
+      return Hospital;
+    }
+    if (type === "school" || type === "university" || type === "college" || type === "kindergarten") {
+      return School;
+    }
+    if (type === "park" || type === "garden" || type === "nature_reserve" || type === "recreation_ground") {
+      return TreePine;
+    }
+    if (type === "toilets" || type === "shower") {
+      return Bath;
+    }
+  }
+
+  // 2. Fallback to category (class)
+  if (category) {
+    switch (category) {
+      case "railway":
+        return Train;
+      case "highway":
+        if (type === "bus_stop" || type === "bus_station") return Bus;
+        return Milestone;
+      case "amenity":
+        return Building;
+      case "shop":
+        return Store;
+      case "tourism":
+      case "leisure":
+        return Sparkles;
+      case "building":
+        return Building2;
+      default:
+        return MapPin;
+    }
+  }
+
+  return MapPin;
+}
 
 function PlaceInput({
   onPlaceSelect,
@@ -45,7 +123,7 @@ function PlaceInput({
         );
         const data: NominatimPlace[] = await res.json();
         if (data.length === 0) return null;
-        const place = data[0];
+        const place = formatNominatimPlace(data[0], userConfig.language);
         const position = {
           lat: parseFloat(place.lat),
           lng: parseFloat(place.lon),
@@ -169,6 +247,7 @@ function PlaceInput({
                 {searchHistory.map((history, idx) => {
                   if (history.kind === "place") {
                     const { place } = history;
+                    const Icon = getPlaceIcon(place.class || place.category, place.type);
                     return (
                       <CommandItem
                         itemType="button"
@@ -176,14 +255,19 @@ function PlaceInput({
                           handleHistoryClick(history);
                         }}
                         key={`${place.place_id}-${idx}`}
-                        className=" flex justify-between rounded-3xl items-center"
+                        className="flex items-start gap-3 rounded-3xl p-2 cursor-pointer transition-colors"
                       >
-                        <span className=" p-1 text-start">
-                          <p>{place.name || place.display_name}</p>
-                          <p className=" text-sm  text-muted-foreground/70">
+                        <div className="mt-1 h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                          <Icon className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1 min-w-0 text-start">
+                          <p className="font-medium text-foreground truncate">
+                            {place.name || place.display_name}
+                          </p>
+                          <p className="text-xs text-muted-foreground/70 truncate">
                             {place.display_name}
                           </p>
-                        </span>
+                        </div>
                       </CommandItem>
                     );
                   }
@@ -194,6 +278,7 @@ function PlaceInput({
             {value !== "" && open && (
               <CommandGroup heading={t("searchResults")}>
                 {suggestions.map((suggestion) => {
+                  const Icon = getPlaceIcon(suggestion.class || suggestion.category, suggestion.type);
                   return (
                     <CommandItem
                       itemType="button"
@@ -201,12 +286,19 @@ function PlaceInput({
                         handlePlaceClick(suggestion);
                       }}
                       key={suggestion.place_id}
-                      className="block rounded-3xl"
+                      className="flex items-start gap-3 rounded-3xl p-2 cursor-pointer transition-colors"
                     >
-                      <p>{suggestion.name || suggestion.display_name}</p>
-                      <p className=" text-sm  text-muted-foreground/70">
-                        {suggestion.display_name}
-                      </p>
+                      <div className="mt-1 h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <Icon className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="flex-1 min-w-0 text-start">
+                        <p className="font-medium text-foreground truncate">
+                          {suggestion.name || suggestion.display_name}
+                        </p>
+                        <p className="text-xs text-muted-foreground/70 truncate">
+                          {suggestion.display_name}
+                        </p>
+                      </div>
                     </CommandItem>
                   );
                 })}

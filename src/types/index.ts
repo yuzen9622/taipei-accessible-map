@@ -10,6 +10,7 @@ export type NominatimPlace = {
   name?: string;
   type?: string;
   category?: string;
+  class?: string;
   address?: Record<string, string>;
 };
 

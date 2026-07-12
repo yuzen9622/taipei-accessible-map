@@ -30,6 +30,7 @@ import {
 } from "@/lib/api/sos";
 import { ApiError } from "@/lib/fetch";
 import useMapStore from "@/stores/useMapStore";
+import { formatNominatimPlace } from "@/lib/utils";
 import type { EmergencyContact } from "@/types/sos";
 
 const SOS_COUNTDOWN_MS = 5000;
@@ -230,7 +231,10 @@ export default function SosDialog({
       { signal: controller.signal },
     )
       .then((res) => res.json())
-      .then((data) => setAddress(data?.display_name ?? null))
+      .then((data) => {
+        const formatted = formatNominatimPlace(data, i18n.language);
+        setAddress(formatted?.display_name ?? null);
+      })
       .catch(() => {});
     return () => controller.abort();
   }, [step, userLocation, i18n.language]);

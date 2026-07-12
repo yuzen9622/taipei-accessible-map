@@ -32,7 +32,7 @@ import useIsDesktop from "@/hook/useIsDesktop";
 import usePin from "@/hook/usePin";
 import { useAppTranslation } from "@/i18n/client";
 import { getEnvironmentInfo } from "@/lib/api/a11y";
-import { cn } from "@/lib/utils";
+import { cn, formatNominatimPlace } from "@/lib/utils";
 import useMapStore, { type SheetMode } from "@/stores/useMapStore";
 import useNavStore from "@/stores/useNavStore";
 import type { AirQualityLevel, EnvironmentData } from "@/types/route";
@@ -247,7 +247,8 @@ export default function MapControlsWrapper() {
     )
       .then((res) => res.json())
       .then((data) => {
-        const a = data?.address;
+        const formatted = formatNominatimPlace(data, i18n.language);
+        const a = formatted?.address;
         if (!a) return;
         const composed = [
           a.city || a.county || "",
@@ -261,7 +262,7 @@ export default function MapControlsWrapper() {
             ? i18n.language === "zh-TW"
               ? `${composed}附近`
               : `near ${composed}`
-            : data.display_name,
+            : formatted.display_name,
         );
       })
       .catch(() => {});
