@@ -6,9 +6,11 @@ import useBusSearch, { type BusSearchMode } from "@/hook/useBusSearch";
 import { useAppTranslation } from "@/i18n/client";
 import {
   getBusRouteDetail,
+  getNearbyBusStops,
   type RouteDetailDirection,
   type RouteDetailStop,
 } from "@/lib/api/transit";
+import useMapStore from "@/stores/useMapStore";
 import type { BusSearchResult, BusStopSearchResult } from "@/types/transit";
 import { Badge } from "../ui/badge";
 import { Command, CommandGroup, CommandItem, CommandList } from "../ui/command";
@@ -36,6 +38,7 @@ const CityNameMap: Record<string, string> = {
   KinmenCounty: "金門縣",
   PenghuCounty: "澎湖縣",
   LienchiangCounty: "連江縣",
+  InterCity: "公路公車",
 };
 
 function RouteStopCard({ stop }: { stop: RouteDetailStop }) {
@@ -81,6 +84,53 @@ export default function BusPanel({
   const [keyword, setKeyword] = useState("");
   const [open, setOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const userLocation = useMapStore((state) => state.userLocation);
+  const [nearbyStops, setNearbyStops] = useState<
+    (BusStopSearchResult & { distance?: number })[]
+  >([]);
+  const [nearbyLoading, setNearbyLoading] = useState(false);
+  const [nearbyError, setNearbyError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const fetchNearby = async () => {
+      if (!userLocation) return;
+      setNearbyLoading(true);
+      setNearbyError(null);
+      try {
+        const res = await getNearbyBusStops(userLocation.lat, userLocation.lng);
+        if (active) {
+          if (res.ok && res.data?.stops) {
+            setNearbyStops(res.data.stops);
+          } else {
+            setNearbyError("無法載入附近站牌");
+          }
+        }
+      } catch {
+        if (active) {
+          setNearbyError("載入附近站牌時發生錯誤");
+        }
+      } finally {
+        if (active) {
+          setNearbyLoading(false);
+        }
+      }
+    };
+
+    if (!userLocation) {
+      setNearbyStops([]);
+      setNearbyError(null);
+      return;
+    }
+
+    // fetch nearby stops when location is available and no query is active
+    fetchNearby();
+
+    return () => {
+      active = false;
+    };
+  }, [userLocation]);
 
   const { results, loading: searchLoading } = useBusSearch(keyword, mode);
 
@@ -273,6 +323,7 @@ export default function BusPanel({
         <div className="flex flex-col flex-1 min-h-0 space-y-4 animate-in fade-in slide-in-from-right-4">
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={resetSelection}
               className="h-8 w-8 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted"
             >
@@ -412,9 +463,10 @@ export default function BusPanel({
           )}
         </div>
       ) : (
-        <div className="space-y-4">
-          <div className="flex rounded-lg bg-muted/60 border border-border/30 p-0.5 text-xs">
+        <div className="flex flex-col flex-1 min-h-0 space-y-4">
+          <div className="flex rounded-lg bg-muted/60 border border-border/30 p-0.5 text-xs shrink-0">
             <button
+              type="button"
               onClick={() => setMode("route")}
               className={`flex-1 py-1.5 rounded-md transition-colors ${
                 mode === "route"
@@ -425,6 +477,7 @@ export default function BusPanel({
               找路線
             </button>
             <button
+              type="button"
               onClick={() => setMode("stop")}
               className={`flex-1 py-1.5 rounded-md transition-colors ${
                 mode === "stop"
@@ -436,7 +489,7 @@ export default function BusPanel({
             </button>
           </div>
 
-          <div className="relative">
+          <div className="relative shrink-0">
             <div className="relative flex items-center">
               <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
               <input
@@ -531,6 +584,65 @@ export default function BusPanel({
               </div>
             )}
           </div>
+
+          {!keyword.trim() && (
+            <div className="flex-1 min-h-0 overflow-y-auto pr-1 pb-4 space-y-3">
+              <div className="flex items-center justify-between px-1">
+                <span className="text-xs font-semibold text-muted-foreground">
+                  附近站牌
+                </span>
+                {nearbyLoading && (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                )}
+              </div>
+
+              {!userLocation ? (
+                <div className="text-center py-8 border border-dashed border-border/40 rounded-xl bg-muted/20">
+                  <MapPin className="h-5 w-5 mx-auto text-muted-foreground/40 mb-1" />
+                  <p className="text-xs text-muted-foreground">
+                    開啟定位服務，以顯示最近的站牌資訊
+                  </p>
+                </div>
+              ) : nearbyLoading && nearbyStops.length === 0 ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-emerald-500" />
+                </div>
+              ) : nearbyError ? (
+                <p className="text-xs text-red-500 px-1">{nearbyError}</p>
+              ) : nearbyStops.length === 0 ? (
+                <p className="text-xs text-muted-foreground px-1">
+                  周邊 500 公尺內無公車站牌
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {nearbyStops.map((stop) => (
+                    <button
+                      key={stop.stopUid}
+                      type="button"
+                      onClick={() => handleStopSelect(stop)}
+                      className="w-full text-left p-3 rounded-xl bg-muted/40 border border-border/30 hover:bg-muted/70 transition-all flex justify-between items-center group"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold truncate group-hover:text-emerald-600 transition-colors">
+                          {stop.stopName}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                          {stop.routes.slice(0, 5).join(" · ")}
+                          {stop.routes.length > 5 &&
+                            ` +${stop.routes.length - 5}條路線`}
+                        </p>
+                      </div>
+                      {stop.distance !== undefined && (
+                        <span className="text-xs font-medium text-emerald-600 bg-emerald-500/10 px-2 py-1 rounded-md shrink-0 ml-2">
+                          {stop.distance}m
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -181,3 +181,14 @@ export async function getBusRouteDetail(routeName: string, city: string) {
   clearTimeout(timeout);
   return data;
 }
+
+export async function getNearbyBusStops(lat: number, lng: number) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10_000);
+  const data = (await fetchRequest(
+    `${END_POINT}/api/v1/transit/bus/nearby-stops?lat=${lat}&lng=${lng}`,
+    { signal: controller.signal },
+  )) as ApiResponse<{ stops: (BusStopSearchResult & { distance?: number })[] }>;
+  clearTimeout(timeout);
+  return data;
+}
