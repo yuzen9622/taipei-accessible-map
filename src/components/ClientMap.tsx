@@ -126,12 +126,31 @@ export default function ClientMap() {
   const pointerDownTime = useRef(0);
   const pointerDownPos = useRef<[number, number]>([0, 0]);
 
+  // The OpenFreeMap sprite lacks some POI icons (gate, bollard, …); register
+  // a transparent 1×1 stand-in so MapLibre stops warning on every tile
+  // render. Attached from onStyleData because styleimagemissing already fires
+  // during the initial style/tile parse, before the load event.
+  const spriteFixMapRef = useRef<maplibregl.Map | null>(null);
+  const attachSpriteFallback = useCallback((target: maplibregl.Map) => {
+    if (spriteFixMapRef.current === target) return;
+    spriteFixMapRef.current = target;
+    target.on("styleimagemissing", (e) => {
+      if (target.hasImage(e.id)) return;
+      target.addImage(e.id, {
+        width: 1,
+        height: 1,
+        data: new Uint8Array(4),
+      });
+    });
+  }, []);
+
   const handleLoad = useCallback(
     (evt: { target: maplibregl.Map }) => {
       setMap(evt.target);
       applyMapLanguage(evt.target, i18n.language);
+      attachSpriteFallback(evt.target);
     },
-    [setMap, i18n.language],
+    [setMap, i18n.language, attachSpriteFallback],
   );
 
   // Re-apply after theme swaps replace the style; the equality guard inside
@@ -139,8 +158,9 @@ export default function ClientMap() {
   const handleStyleData = useCallback(
     (evt: { target: maplibregl.Map }) => {
       applyMapLanguage(evt.target, i18n.language);
+      attachSpriteFallback(evt.target);
     },
-    [i18n.language],
+    [i18n.language, attachSpriteFallback],
   );
 
   useEffect(() => {

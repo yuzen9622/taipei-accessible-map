@@ -427,9 +427,9 @@ export default function PlaceContent() {
           </div>
         ) : hasA11y ? (
           <div className="space-y-2">
-            {bathroomsSliced.map((b) => (
+            {bathroomsSliced.map((b, i) => (
               <button
-                key={b._id}
+                key={`bathroom-${b._id ?? i}`}
                 type="button"
                 onClick={() => handleFlyTo(b.longitude, b.latitude)}
                 className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/40 hover:bg-muted/70 transition-colors text-left"
@@ -448,9 +448,9 @@ export default function PlaceContent() {
                 </Badge>
               </button>
             ))}
-            {metroSliced.map((m) => (
+            {metroSliced.map((m, i) => (
               <button
-                key={m._id}
+                key={`metro-${m._id ?? i}`}
                 type="button"
                 onClick={() =>
                   handleFlyTo(
@@ -550,9 +550,9 @@ export default function PlaceContent() {
                 <p className="text-xs font-medium text-muted-foreground">
                   {t("osmFacilities")}
                 </p>
-                {osmDetail.facilities.slice(0, 6).map((f) => (
+                {osmDetail.facilities.slice(0, 6).map((f, i) => (
                   <button
-                    key={f.osmId}
+                    key={f.osmId ? `facility-${f.osmId}` : `facility-idx-${i}`}
                     type="button"
                     onClick={() => {
                       if (f.location)
