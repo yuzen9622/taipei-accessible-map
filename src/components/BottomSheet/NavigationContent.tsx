@@ -1,7 +1,13 @@
 "use client";
 
-import { CheckCircle2, Footprints, Square, TramFront } from "lucide-react";
-import { useEffect, useRef } from "react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Footprints,
+  Square,
+  TramFront,
+} from "lucide-react";
+import { useEffect, useMemo, useRef } from "react";
 import { useAppTranslation } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
@@ -22,8 +28,24 @@ export default function NavigationContent() {
   const currentStep = useNavStore((s) => s.currentStepIndex);
   const arrived = useNavStore((s) => s.arrived);
   const setStepIndex = useNavStore((s) => s.setStepIndex);
+  const warnings = useNavStore((s) => s.warnings);
 
   const currentRef = useRef<HTMLButtonElement | null>(null);
+
+  const activeNavWarnings = useMemo(() => {
+    const list: string[] = [];
+    if (!warnings) return list;
+    const walkStepsUnavailable =
+      warnings.includes("WALK_STEPS_UNAVAILABLE") ||
+      warnings.includes("ORS_STEPS_UNAVAILABLE");
+    if (walkStepsUnavailable) {
+      list.push(t("walkStepsUnavailable"));
+    }
+    if (warnings.includes("ROAD_STEPS_UNAVAILABLE")) {
+      list.push(t("roadStepsUnavailable"));
+    }
+    return list;
+  }, [warnings, t]);
 
   // Keep the active step in view as the engine advances.
   useEffect(() => {
@@ -63,64 +85,80 @@ export default function NavigationContent() {
   }
 
   return (
-    <div className="space-y-1.5">
-      {instructions.map((step, i) => {
-        const active = i === currentStep;
-        const passed = i < currentStep;
-        return (
-          <button
-            key={`${i}-${step.text}`}
-            ref={active ? currentRef : undefined}
-            type="button"
-            onClick={() => setStepIndex(i)}
-            className={cn(
-              "w-full flex items-start gap-3 p-3 rounded-xl text-left transition-colors",
-              active
-                ? "bg-primary/10 border border-primary/30"
-                : "hover:bg-muted/60 border border-transparent",
-              passed && "opacity-50",
-            )}
-          >
+    <div className="space-y-3">
+      {activeNavWarnings.length > 0 && (
+        <div className="space-y-1.5">
+          {activeNavWarnings.map((wMsg) => (
             <div
+              key={wMsg}
+              className="flex items-center gap-2.5 p-3 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-xs font-semibold"
+            >
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              <span>{wMsg}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="space-y-1.5">
+        {instructions.map((step, i) => {
+          const active = i === currentStep;
+          const passed = i < currentStep;
+          return (
+            <button
+              key={`${i}-${step.text}`}
+              ref={active ? currentRef : undefined}
+              type="button"
+              onClick={() => setStepIndex(i)}
               className={cn(
-                "h-7 w-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold",
+                "w-full flex items-start gap-3 p-3 rounded-xl text-left transition-colors",
                 active
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground",
+                  ? "bg-primary/10 border border-primary/30"
+                  : "hover:bg-muted/60 border border-transparent",
+                passed && "opacity-50",
               )}
             >
-              {i + 1}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p
+              <div
                 className={cn(
-                  "text-sm leading-snug",
-                  active ? "font-semibold" : "font-medium",
+                  "h-7 w-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold",
+                  active
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground",
                 )}
               >
-                {step.text}
-              </p>
-              <div className="flex items-center gap-2 mt-0.5">
-                {step.legType === "WALK" ? (
-                  <Footprints className="h-3 w-3 text-blue-500" />
-                ) : (
-                  <TramFront className="h-3 w-3 text-orange-500" />
-                )}
-                {step.streetName && (
-                  <span className="text-xs text-muted-foreground truncate">
-                    {step.streetName}
-                  </span>
-                )}
-                {step.distanceM != null && (
-                  <span className="text-xs text-muted-foreground tabular-nums">
-                    {formatDistance(step.distanceM)}
-                  </span>
-                )}
+                {i + 1}
               </div>
-            </div>
-          </button>
-        );
-      })}
+              <div className="flex-1 min-w-0">
+                <p
+                  className={cn(
+                    "text-sm leading-snug",
+                    active ? "font-semibold" : "font-medium",
+                  )}
+                >
+                  {step.text}
+                </p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  {step.legType === "WALK" ? (
+                    <Footprints className="h-3 w-3 text-blue-500" />
+                  ) : (
+                    <TramFront className="h-3 w-3 text-orange-500" />
+                  )}
+                  {step.streetName && (
+                    <span className="text-xs text-muted-foreground truncate">
+                      {step.streetName}
+                    </span>
+                  )}
+                  {step.distanceM != null && (
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {formatDistance(step.distanceM)}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

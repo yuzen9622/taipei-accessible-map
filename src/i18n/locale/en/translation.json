@@ -374,6 +374,8 @@
   "navInstructions": "Turn-by-Turn Navigation",
   "initialBearing": "Initial Bearing",
   "navWarnings": "Warnings",
+  "walkStepsUnavailable": "Detailed walking directions are unavailable",
+  "roadStepsUnavailable": "Detailed road directions are unavailable",
   "stepProgress": "Step {{current}} of {{total}}",
   "depart": "Depart",
   "arrive": "Arrive",

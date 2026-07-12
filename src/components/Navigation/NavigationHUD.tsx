@@ -106,8 +106,24 @@ export default function NavigationHUD() {
   const voiceEnabled = useNavStore((s) => s.voiceEnabled);
   const stepListOpen = useNavStore((s) => s.stepListOpen);
   const setStepListOpen = useNavStore((s) => s.setStepListOpen);
+  const warnings = useNavStore((s) => s.warnings);
 
   const route = selectRoute?.route;
+
+  const activeNavWarnings = useMemo(() => {
+    const list: string[] = [];
+    if (!warnings) return list;
+    const walkStepsUnavailable =
+      warnings.includes("WALK_STEPS_UNAVAILABLE") ||
+      warnings.includes("ORS_STEPS_UNAVAILABLE");
+    if (walkStepsUnavailable) {
+      list.push(t("walkStepsUnavailable"));
+    }
+    if (warnings.includes("ROAD_STEPS_UNAVAILABLE")) {
+      list.push(t("roadStepsUnavailable"));
+    }
+    return list;
+  }, [warnings, t]);
   const step = instructions[currentStep];
   const nextStep = instructions[currentStep + 1];
   const StepIcon = stepIcon(step);
@@ -324,6 +340,18 @@ export default function NavigationHUD() {
             </button>
           </div>
         )}
+
+        {/* Step Unavailable Warnings */}
+        {!arrived &&
+          activeNavWarnings.map((wMsg) => (
+            <div
+              key={wMsg}
+              className="flex items-center gap-3 p-3 rounded-2xl bg-amber-500/95 text-white shadow-lg"
+            >
+              <AlertTriangle className="h-5 w-5 shrink-0" />
+              <p className="flex-1 text-sm font-semibold">{wMsg}</p>
+            </div>
+          ))}
       </div>
 
       {/* ===== Accessibility-aware proximity pills ===== */}

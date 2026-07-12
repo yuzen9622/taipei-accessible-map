@@ -375,6 +375,8 @@
   "navInstructions": "逐步導航",
   "initialBearing": "初始方位",
   "navWarnings": "注意事項",
+  "walkStepsUnavailable": "無法提供詳細步行指引步驟",
+  "roadStepsUnavailable": "無法提供詳細道路指引步驟",
   "stepProgress": "第 {{current}} 步 / 共 {{total}} 步",
   "depart": "出發",
   "arrive": "抵達",

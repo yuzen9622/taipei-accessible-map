@@ -110,7 +110,8 @@ export default function useNavigation() {
     if (!route) return;
     let cancelled = false;
     getRouteInstructions({
-      route: { legs: route.legs },
+      route: route,
+      userHeading: useNavStore.getState().userHeading ?? undefined,
       language: lang,
     })
       .then((res) => {
@@ -119,7 +120,9 @@ export default function useNavigation() {
           const cp = buildCumulativePath(route.legs);
           pathRef.current = cp;
           waypointsRef.current = resolveWaypoints(res.data.instructions, cp);
-          useNavStore.getState().setInstructions(res.data.instructions);
+          useNavStore
+            .getState()
+            .setInstructions(res.data.instructions, res.data.warnings ?? []);
           useNavStore
             .getState()
             .setRouteTotalM(cp.cumM[cp.cumM.length - 1] ?? null);
@@ -220,7 +223,9 @@ export default function useNavigation() {
       center: [wp.coord.lng, wp.coord.lat],
       zoom: NAV_ZOOM,
       pitch: navPitch(),
-      bearing: next?.coord ? bearingDeg(wp.coord, next.coord) : map.getBearing(),
+      bearing: next?.coord
+        ? bearingDeg(wp.coord, next.coord)
+        : map.getBearing(),
       duration: PREVIEW_EASE_MS,
     });
   }, [currentStepIndex, instructions]);

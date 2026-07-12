@@ -15,6 +15,7 @@ export type NavViewMode = "3d" | "2d";
  */
 interface NavState {
   instructions: NavInstruction[];
+  warnings: string[];
   currentStepIndex: number;
   distanceToNextM: number | null;
   /** Combined heading shown by the marker / used to rotate the map. */
@@ -44,7 +45,10 @@ interface NavState {
 }
 
 interface NavAction {
-  setInstructions: (instructions: NavInstruction[]) => void;
+  setInstructions: (
+    instructions: NavInstruction[],
+    warnings?: string[],
+  ) => void;
   setCurrentStepIndex: (index: number) => void;
   /** Manual override from the prev/next buttons. */
   setStepIndex: (index: number) => void;
@@ -68,6 +72,7 @@ type NavStore = NavState & NavAction;
 
 const initialState: NavState = {
   instructions: [],
+  warnings: [],
   currentStepIndex: 0,
   distanceToNextM: null,
   userHeading: null,
@@ -88,9 +93,10 @@ const initialState: NavState = {
 
 const useNavStore = create<NavStore>((set) => ({
   ...initialState,
-  setInstructions: (instructions) =>
+  setInstructions: (instructions, warnings = []) =>
     set({
       instructions,
+      warnings,
       currentStepIndex: 0,
       arrived: false,
       isOffRoute: false,
