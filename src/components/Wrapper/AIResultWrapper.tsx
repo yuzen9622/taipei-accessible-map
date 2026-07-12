@@ -1,5 +1,6 @@
 import { LngLatBounds } from "maplibre-gl";
 import { useEffect } from "react";
+import { extendBounds, fitRouteBounds } from "@/lib/mapCamera";
 import useMapStore from "@/stores/useMapStore";
 
 /**
@@ -21,12 +22,9 @@ export default function AIResultWrapper() {
 
     const bounds = new LngLatBounds();
     for (const m of aiResultMarkers) {
-      bounds.extend([m.position.lng, m.position.lat]);
+      extendBounds(bounds, m.position.lng, m.position.lat);
     }
-    map.fitBounds(bounds, {
-      padding: { top: 80, bottom: 200, left: 60, right: 60 },
-      maxZoom: 17,
-    });
+    fitRouteBounds(map, bounds);
   }, [aiResultMarkers, map]);
 
   return null;

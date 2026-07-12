@@ -1,7 +1,11 @@
-import { LngLatBounds } from "maplibre-gl";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { getAccessibleRoute } from "@/lib/api/a11y";
+import {
+  extendBounds,
+  fitRouteBounds,
+  routeBoundsFromLegs,
+} from "@/lib/mapCamera";
 import useMapStore from "@/stores/useMapStore";
 import type { LatLng } from "@/types";
 
@@ -71,17 +75,7 @@ export default function useComputeRoute() {
         setRouteSelect({ index: 0, route: routes[0] });
 
         if (map) {
-          const bounds = new LngLatBounds();
-
-          if (routes.length > 0) {
-            for (const leg of routes[0].legs) {
-              if (leg.polyline?.length) {
-                for (const [lng, lat] of leg.polyline) {
-                  bounds.extend([lng, lat]);
-                }
-              }
-            }
-          }
+          const bounds = routeBoundsFromLegs(routes[0].legs);
 
           if (
             bounds.isEmpty() &&
@@ -100,30 +94,17 @@ export default function useComputeRoute() {
             const dLng =
               response.data.destination.lng ??
               (response.data.destination as any).longitude;
-            if (
-              Number.isFinite(oLat) &&
-              Number.isFinite(oLng) &&
-              Number.isFinite(dLat) &&
-              Number.isFinite(dLng)
-            ) {
-              bounds.extend([oLng, oLat]);
-              bounds.extend([dLng, dLat]);
-            }
+            extendBounds(bounds, oLng, oLat);
+            extendBounds(bounds, dLng, dLat);
           }
 
           for (const w of response.data.waypoints ?? []) {
             const wLat = w.lat ?? (w as any).latitude;
             const wLng = w.lng ?? (w as any).longitude;
-            if (Number.isFinite(wLat) && Number.isFinite(wLng)) {
-              bounds.extend([wLng, wLat]);
-            }
+            extendBounds(bounds, wLng, wLat);
           }
 
-          if (!bounds.isEmpty()) {
-            map.fitBounds(bounds, {
-              padding: { top: 50, bottom: 200, left: 50, right: 50 },
-            });
-          }
+          fitRouteBounds(map, bounds);
         }
         return true;
       } catch (error) {
@@ -168,37 +149,22 @@ export default function useComputeRoute() {
 
       if (map) {
         try {
-          const bounds = new LngLatBounds();
-
-          for (const leg of routes[0].legs) {
-            if (leg.polyline?.length) {
-              for (const [lng, lat] of leg.polyline) {
-                bounds.extend([lng, lat]);
-              }
-            }
-          }
+          const bounds = routeBoundsFromLegs(routes[0].legs);
 
           if (bounds.isEmpty() && origin && destination) {
-            const oLat = origin.lat ?? origin.latitude;
-            const oLng = origin.lng ?? origin.longitude;
-            const dLat = destination.lat ?? destination.latitude;
-            const dLng = destination.lng ?? destination.longitude;
-            if (
-              Number.isFinite(oLat) &&
-              Number.isFinite(oLng) &&
-              Number.isFinite(dLat) &&
-              Number.isFinite(dLng)
-            ) {
-              bounds.extend([oLng, oLat]);
-              bounds.extend([dLng, dLat]);
-            }
+            extendBounds(
+              bounds,
+              origin.lng ?? origin.longitude,
+              origin.lat ?? origin.latitude,
+            );
+            extendBounds(
+              bounds,
+              destination.lng ?? destination.longitude,
+              destination.lat ?? destination.latitude,
+            );
           }
 
-          if (!bounds.isEmpty()) {
-            map.fitBounds(bounds, {
-              padding: { top: 50, bottom: 200, left: 50, right: 50 },
-            });
-          }
+          fitRouteBounds(map, bounds);
         } catch (e) {
           console.error("Failed to fit map bounds", e);
         }

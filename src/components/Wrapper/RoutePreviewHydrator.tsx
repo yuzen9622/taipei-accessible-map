@@ -4,6 +4,7 @@ import { LngLatBounds } from "maplibre-gl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { getLineRoutePreview } from "@/lib/api/line";
+import { extendBounds, fitRouteBounds } from "@/lib/mapCamera";
 import { adaptRoutePreviewRoutes } from "@/lib/routePreviewAdapter";
 import useMapStore from "@/stores/useMapStore";
 import type { PlaceDetail } from "@/types";
@@ -172,20 +173,19 @@ export default function RoutePreviewHydrator() {
     if (!map || !sessionData || !selectedRouteData || hasCentered) return;
 
     const bounds = new LngLatBounds();
-    if (sessionData.origin.lat != null && sessionData.origin.lng != null) {
-      bounds.extend([sessionData.origin.lng, sessionData.origin.lat]);
-    }
-    bounds.extend([sessionData.destination.lng, sessionData.destination.lat]);
+    extendBounds(bounds, sessionData.origin.lng, sessionData.origin.lat);
+    extendBounds(
+      bounds,
+      sessionData.destination.lng,
+      sessionData.destination.lat,
+    );
     for (const leg of selectedRouteData.legs) {
-      for (const [lng, lat] of leg.polyline ?? []) {
-        bounds.extend([lng, lat]);
+      for (const point of leg.polyline ?? []) {
+        extendBounds(bounds, point?.[0], point?.[1]);
       }
     }
     if (!bounds.isEmpty()) {
-      map.fitBounds(bounds, {
-        padding: { top: 80, bottom: 220, left: 60, right: 60 },
-        maxZoom: 17,
-      });
+      fitRouteBounds(map, bounds);
       setHasCentered(true);
     }
   }, [map, sessionData, selectedRouteData, hasCentered]);
