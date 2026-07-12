@@ -2,6 +2,8 @@ import {
   Bike,
   BusIcon,
   Car,
+  ChevronDown,
+  ChevronUp,
   Clock,
   Footprints,
   ShieldCheck,
@@ -10,12 +12,16 @@ import {
   TramFront,
 } from "lucide-react";
 import maplibregl from "maplibre-gl";
-import { memo, useMemo } from "react";
+import { memo, useMemo, useState } from "react";
 import { useAppTranslation } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
-import type { AccessibleRoute, RouteLeg } from "@/types/route";
+import type {
+  AccessibleRoute,
+  RouteLeg,
+  IntermediateStop,
+} from "@/types/route";
 import {
   formatDistance,
   formatDuration,
@@ -25,6 +31,52 @@ import {
   getLegColor,
   scoreToLabel,
 } from "@/types/route";
+
+function IntermediateStops({
+  stops,
+  color,
+}: {
+  stops?: IntermediateStop[];
+  color: string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  if (!stops || stops.length === 0) return null;
+
+  return (
+    <div className="my-1.5 ml-2.5">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/40 px-2 py-1 rounded-md transition-colors focus:outline-none"
+      >
+        {isOpen ? (
+          <ChevronUp className="h-3 w-3 shrink-0" />
+        ) : (
+          <ChevronDown className="h-3 w-3 shrink-0" />
+        )}
+        <span>經過 {stops.length} 個站點</span>
+      </button>
+
+      {isOpen && (
+        <div className="pl-3.5 my-2 space-y-2 border-l border-muted-foreground/30 ml-3.5 animate-in fade-in slide-in-from-top-1 duration-200">
+          {stops.map((stop, idx) => (
+            <div
+              key={`${stop.stationUid || stop.name}-${idx}`}
+              className="flex items-center gap-2.5 text-xs text-muted-foreground relative"
+            >
+              <div
+                className="w-1.5 h-1.5 rounded-full shrink-0 border border-background"
+                style={{ backgroundColor: color }}
+              />
+              <span>{stop.name}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
@@ -164,6 +216,10 @@ function LegDetail({
               <span className="text-muted-foreground shrink-0">上車：</span>
               <span className="font-medium">{leg.departureStop}</span>
             </div>
+            <IntermediateStops
+              stops={leg.intermediateStops}
+              color={getLegColor(leg)}
+            />
             <div className="flex items-start gap-2">
               <span className="text-muted-foreground shrink-0">下車：</span>
               <span className="font-medium">{leg.arrivalStop}</span>
@@ -196,6 +252,10 @@ function LegDetail({
               <span className="text-muted-foreground shrink-0">上車：</span>
               <span className="font-medium">{leg.departureStation}</span>
             </div>
+            <IntermediateStops
+              stops={leg.intermediateStops}
+              color={getLegColor(leg)}
+            />
             <div className="flex items-start gap-2">
               <span className="text-muted-foreground shrink-0">下車：</span>
               <span className="font-medium">{leg.arrivalStation}</span>
@@ -237,6 +297,10 @@ function LegDetail({
                 </span>
               )}
             </div>
+            <IntermediateStops
+              stops={leg.intermediateStops}
+              color={getLegColor(leg)}
+            />
             <div className="flex items-start gap-2">
               <span className="text-muted-foreground shrink-0">下車：</span>
               <span className="font-medium">{leg.arrivalStation}</span>
@@ -281,6 +345,10 @@ function LegDetail({
                 </span>
               )}
             </div>
+            <IntermediateStops
+              stops={leg.intermediateStops}
+              color={getLegColor(leg)}
+            />
             <div className="flex items-start gap-2">
               <span className="text-muted-foreground shrink-0">下車：</span>
               <span className="font-medium">{leg.arrivalStation}</span>
@@ -312,7 +380,13 @@ function LegDetail({
             {formatDistance(leg.distanceM)}
           </p>
           <p className="text-xs text-muted-foreground">
-            約 {formatDuration(leg.durationMinutes)}
+            約{" "}
+            {formatDuration(
+              leg.durationInTrafficMin ??
+                leg.durationMin ??
+                leg.durationMinutes ??
+                0,
+            )}
           </p>
           <p className="text-xs text-muted-foreground">
             {[
@@ -501,6 +575,12 @@ export const RouteCard = memo(function RouteCard({
             </div>
           ))}
         </div>
+
+        {route.attribution && (
+          <p className="text-[10px] text-muted-foreground italic text-right mt-1">
+            {route.attribution}
+          </p>
+        )}
 
         <div className="flex justify-end pt-4 border-t">
           <Button

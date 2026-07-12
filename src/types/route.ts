@@ -43,6 +43,12 @@ export interface ExitInfo {
   coords: [number, number]; // [lng, lat]
 }
 
+export interface IntermediateStop {
+  name: string;
+  stationUid?: string;
+  location?: [number, number]; // [lng, lat]
+}
+
 // --- Leg types (discriminated union by `type`) ---
 
 export interface WalkLeg {
@@ -55,6 +61,7 @@ export interface WalkLeg {
   a11yFacilities: SlimOsmA11y[];
   a11yRefs?: string[];
   exitInfo?: ExitInfo | null;
+  steps?: WalkStep[];
 }
 
 export interface BusLeg {
@@ -75,6 +82,7 @@ export interface BusLeg {
   arrivalStopA11y: SlimOsmA11y[];
   nearestBus?: NearestBus;
   a11yRefs?: string[];
+  intermediateStops?: IntermediateStop[];
 }
 
 export interface MetroLeg {
@@ -99,6 +107,7 @@ export interface MetroLeg {
   arrivalStationA11y: SlimOsmA11y[];
   facilityHighlights: string[];
   a11yRefs?: string[];
+  intermediateStops?: IntermediateStop[];
 }
 
 export interface ThsrLeg {
@@ -118,6 +127,7 @@ export interface ThsrLeg {
   arrivalStationA11y: SlimOsmA11y[];
   facilityHighlights: string[];
   a11yRefs?: string[];
+  intermediateStops?: IntermediateStop[];
 }
 
 export interface TraLeg {
@@ -138,6 +148,7 @@ export interface TraLeg {
   arrivalStationA11y: SlimOsmA11y[];
   facilityHighlights: string[];
   a11yRefs?: string[];
+  intermediateStops?: IntermediateStop[];
 }
 
 export interface DriveLeg {
@@ -146,10 +157,16 @@ export interface DriveLeg {
   from: string;
   to: string;
   distanceM: number;
-  durationMinutes: number;
+  durationMinutes?: number;
+  durationMin: number;
+  durationInTrafficMin?: number;
+  trafficLevel?: "light" | "moderate" | "heavy";
+  summary?: string;
+  modeFallback?: "DRIVE";
   departureTime?: string | null;
   arrivalTime?: string | null;
   polyline: [number, number][];
+  steps?: DriveStep[];
 }
 
 export type RouteLeg =
@@ -182,6 +199,7 @@ export interface AccessibleRoute {
   accessibilityLabel?: A11yLabel;
   scoreComponents?: ScoreComponents;
   facilities?: Record<string, SlimOsmA11y>;
+  attribution?: string;
 }
 
 // --- Route intent (from /ai/intent) ---
@@ -311,15 +329,40 @@ export interface NavInstruction {
   polylineIndex: number | null;
 }
 
+export type NavWarning =
+  | "WALK_STEPS_UNAVAILABLE"
+  | "ORS_STEPS_UNAVAILABLE"
+  | "ROAD_STEPS_UNAVAILABLE";
+
+export interface DriveStep {
+  instruction: string;
+  maneuver?: string;
+  distanceM: number;
+  durationMin: number;
+  polyline: [number, number][]; // [lng, lat][] (GeoJSON order)
+}
+
+export interface WalkStep {
+  instruction?: string;
+  maneuver?: string;
+  relativeDirection: string;
+  absoluteDirection: string | null;
+  streetName: string;
+  bogusName: boolean;
+  area: boolean;
+  distanceM: number;
+  location: [number, number]; // [lng, lat] (GeoJSON order)
+}
+
 export interface NavInstructionsData {
   instructions: NavInstruction[];
   initialBearing: number;
   totalSteps: number;
-  warnings: string[];
+  warnings: NavWarning[];
 }
 
 export interface NavInstructionsRequest {
-  route: { routeId?: string; legs: RouteLeg[] };
+  route: AccessibleRoute;
   userHeading?: number;
   language?: string;
 }

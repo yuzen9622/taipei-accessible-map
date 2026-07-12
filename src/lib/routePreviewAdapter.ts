@@ -138,6 +138,7 @@ function adaptPreviewLeg(leg: RoutePreviewLeg): RouteLeg {
         to,
         distanceM,
         durationMinutes,
+        durationMin: leg.durationMin ?? durationMinutes,
         departureTime: leg.departureTime,
         arrivalTime: leg.arrivalTime,
         polyline,
