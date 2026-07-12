@@ -72,8 +72,10 @@ export type metroA11yData = {
   _importdata?: { date: string; timezone: string; timezone_type: number };
   出入口編號?: string;
   "出入口電梯/無障礙坡道名稱": string;
-  經度: number | string;
-  緯度: number | string;
+  // Older payloads carried flat 經度/緯度; newer ones only a GeoJSON point.
+  經度?: number | string;
+  緯度?: number | string;
+  location?: { type: "Point"; coordinates: [number, number] };
 };
 
 export type metroA11yAPI = {
@@ -94,8 +96,11 @@ export interface IBathroom {
   name: string;
   address: string;
   administration: string;
-  latitude: number;
-  longitude: number;
+  // Older payloads carried flat latitude/longitude; newer ones only a
+  // GeoJSON point.
+  latitude?: number;
+  longitude?: number;
+  location?: { type: "Point"; coordinates: [number, number] };
   grade: string;
   type2: string;
   type: string;

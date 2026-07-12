@@ -130,15 +130,13 @@ export function a11yPlacesToMarkers(res: unknown): AiResultMarker[] {
     });
   };
 
-  // 已知形狀 → 重用既有 formatter（先過濾出合法項目避免 throw）
+  // 已知形狀 → 重用既有 formatter（formatter 內部會過濾無座標項目）
   const metroItems = nearbyMetroA11y.filter(
-    (m) => m?.["出入口電梯/無障礙坡道名稱"] && m.經度 && m.緯度,
+    (m) => m?.["出入口電梯/無障礙坡道名稱"],
   );
   formatMetroA11y(metroItems as metroA11yData[]).forEach(pushFromMarker);
 
-  const bathItems = nearbyBathroom.filter(
-    (b) => b?.latitude != null && b?.longitude != null && b?.name,
-  );
+  const bathItems = nearbyBathroom.filter((b) => b?.name);
   formatBathroom(bathItems as IBathroom[]).forEach(pushFromMarker);
 
   // 未知形狀（osm / parking）→ 防禦式建 Marker

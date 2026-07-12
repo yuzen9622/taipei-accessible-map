@@ -3,6 +3,7 @@
 import { ArrowLeft, ArrowUpDown, DoorOpen, MapPin, Train } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { getNearbyRouteA11yPlaces } from "@/lib/api/a11y";
+import { geoCoords } from "@/lib/utils";
 import { useAppTranslation } from "@/i18n/client";
 import useMapStore from "@/stores/useMapStore";
 import type { IBathroom, metroA11yData } from "@/types";
@@ -112,12 +113,10 @@ export default function StationDetailContent() {
                           key={m._id}
                           type="button"
                           onClick={() => {
-                            if (map)
+                            const pos = geoCoords(m.location, m.緯度, m.經度);
+                            if (map && pos)
                               map.flyTo({
-                                center: [
-                                  parseFloat(String(m.經度)),
-                                  parseFloat(String(m.緯度)),
-                                ],
+                                center: [pos.lng, pos.lat],
                                 zoom: 18,
                               });
                           }}
@@ -151,9 +150,10 @@ export default function StationDetailContent() {
                     key={b._id}
                     type="button"
                     onClick={() => {
-                      if (map)
+                      const pos = geoCoords(b.location, b.latitude, b.longitude);
+                      if (map && pos)
                         map.flyTo({
-                          center: [b.longitude, b.latitude],
+                          center: [pos.lng, pos.lat],
                           zoom: 17,
                         });
                     }}

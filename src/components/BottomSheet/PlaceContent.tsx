@@ -19,6 +19,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAppTranslation } from "@/i18n/client";
 import { getNearbyRouteA11yPlaces, getOsmPlaceDetail } from "@/lib/api/a11y";
 import { getPlaceTypeLabel } from "@/lib/placeTypes";
+import { geoCoords } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import type { IBathroom, metroA11yData } from "@/types";
 import type { OsmPlaceDetail } from "@/types/route";
@@ -431,7 +432,10 @@ export default function PlaceContent() {
               <button
                 key={`bathroom-${b._id ?? i}`}
                 type="button"
-                onClick={() => handleFlyTo(b.longitude, b.latitude)}
+                onClick={() => {
+                  const pos = geoCoords(b.location, b.latitude, b.longitude);
+                  if (pos) handleFlyTo(pos.lng, pos.lat);
+                }}
                 className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/40 hover:bg-muted/70 transition-colors text-left"
               >
                 <div className="h-9 w-9 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
@@ -452,12 +456,10 @@ export default function PlaceContent() {
               <button
                 key={`metro-${m._id ?? i}`}
                 type="button"
-                onClick={() =>
-                  handleFlyTo(
-                    parseFloat(String(m.經度)),
-                    parseFloat(String(m.緯度)),
-                  )
-                }
+                onClick={() => {
+                  const pos = geoCoords(m.location, m.緯度, m.經度);
+                  if (pos) handleFlyTo(pos.lng, pos.lat);
+                }}
                 className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/40 hover:bg-muted/70 transition-colors text-left"
               >
                 <div className="h-9 w-9 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">

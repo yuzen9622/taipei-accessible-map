@@ -14,18 +14,42 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * The a11y datasets used to ship flat coordinate fields (經度/緯度 or
+ * latitude/longitude) but newer backend payloads only carry a GeoJSON
+ * `location.coordinates` [lng, lat]. Accept both shapes.
+ */
+export function geoCoords(
+  location: { coordinates?: unknown } | null | undefined,
+  legacyLat?: number | string,
+  legacyLng?: number | string,
+): { lat: number; lng: number } | null {
+  const finite = (lat: unknown, lng: unknown) => {
+    const la = parseFloat(String(lat));
+    const ln = parseFloat(String(lng));
+    return Number.isFinite(la) && Number.isFinite(ln)
+      ? { lat: la, lng: ln }
+      : null;
+  };
+  const c = location?.coordinates;
+  if (Array.isArray(c) && c.length >= 2) {
+    const fromGeo = finite(c[1], c[0]);
+    if (fromGeo) return fromGeo;
+  }
+  return finite(legacyLat, legacyLng);
+}
+
 export function formatMetroA11y(places: metroA11yData[]) {
-  return places.map((place) => {
+  return places.flatMap((place) => {
     const { _id, osmId, 經度, 緯度 } = place;
+    const position = geoCoords(place.location, 緯度, 經度);
+    if (!position) return [];
     const name = place["出入口電梯/無障礙坡道名稱"] ?? "";
     const a11yType = name.includes("電梯") ? A11yEnum.ELEVATOR : A11yEnum.RAMP;
 
     return {
       id: _id ?? osmId,
-      position: {
-        lat: parseFloat(String(緯度)),
-        lng: parseFloat(String(經度)),
-      },
+      position,
       type: "pin",
       content: {
         title: name,
@@ -38,12 +62,14 @@ export function formatMetroA11y(places: metroA11yData[]) {
 }
 
 export function formatBathroom(bathrooms: IBathroom[]) {
-  return bathrooms.map((bathroom) => {
+  return bathrooms.flatMap((bathroom) => {
     const { _id, latitude, longitude, name, diaper } = bathroom;
+    const position = geoCoords(bathroom.location, latitude, longitude);
+    if (!position) return [];
 
     return {
       id: _id,
-      position: { lat: latitude, lng: longitude },
+      position,
       type: "pin",
       content: {
         title: name,
