@@ -579,23 +579,6 @@ export function formatDistance(meters: number): string {
   return `${Math.round(meters)} m`;
 }
 
-export function formatWaitInfo(
-  waitInfo: WaitInfo | null | undefined,
-): string | null {
-  if (!waitInfo) return null;
-  if (waitInfo.source === "unavailable") return null;
-  if (waitInfo.source === "realtime" && typeof waitInfo.time === "number") {
-    return `${waitInfo.time} min`;
-  }
-  if (waitInfo.source === "schedule" && typeof waitInfo.time === "string") {
-    return waitInfo.time;
-  }
-  if (typeof waitInfo.time === "number") {
-    return `~${waitInfo.time} min`;
-  }
-  return null;
-}
-
 export interface LiveBus {
   plateNumb: string;
   direction: number;

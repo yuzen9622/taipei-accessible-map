@@ -71,16 +71,22 @@ export default function RouteLine() {
             latitude={firstPath[0].lat}
             anchor="center"
           >
-            <div className="p-1 rounded-full bg-blue-700 outline-3 outline-offset-2 outline-background" />
+            {/* Origin: hollow ring, same emerald as the plan-panel origin dot */}
+            <div className="h-4.5 w-4.5 rounded-full bg-white dark:bg-zinc-900 border-[3.5px] border-emerald-500 shadow-[0_1px_4px_rgba(0,0,0,0.35)]" />
           </Marker>
         )}
         {lastPath?.[lastPath.length - 1] && (
           <Marker
             longitude={lastPath[lastPath.length - 1].lng}
             latitude={lastPath[lastPath.length - 1].lat}
-            anchor="center"
+            anchor="bottom"
           >
-            <div className="p-1 rounded-full bg-primary outline-3 outline-offset-2 outline-background" />
+            {/* Destination: teardrop pin, same red as the plan-panel dot */}
+            <div className="flex flex-col items-center pb-1.5 drop-shadow-[0_3px_4px_rgba(0,0,0,0.3)]">
+              <div className="h-7 w-7 rotate-45 rounded-[50%_50%_0_50%] bg-gradient-to-br from-red-500 to-rose-600 border-2 border-white flex items-center justify-center">
+                <div className="-rotate-45 h-2 w-2 rounded-full bg-white" />
+              </div>
+            </div>
           </Marker>
         )}
       </>

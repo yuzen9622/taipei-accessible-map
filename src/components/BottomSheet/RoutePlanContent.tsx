@@ -423,7 +423,7 @@ export default function RoutePlanContent() {
       <div className="flex flex-col gap-3 py-2">
         <div className="flex flex-col gap-2">
           <span className="text-sm font-medium text-muted-foreground ml-1">
-            交通工具
+            {t("transportTool")}
           </span>
           <div className="flex gap-1 bg-muted/30 p-1 rounded-2xl w-full overflow-x-auto no-scrollbar">
             {[
@@ -454,7 +454,7 @@ export default function RoutePlanContent() {
 
         <div className="flex flex-col gap-2">
           <span className="text-sm font-medium text-muted-foreground ml-1">
-            無障礙模式
+            {t("a11yModeLabel")}
           </span>
           <div className="flex gap-1 bg-muted/30 p-1 rounded-2xl w-full overflow-x-auto no-scrollbar">
             {[
