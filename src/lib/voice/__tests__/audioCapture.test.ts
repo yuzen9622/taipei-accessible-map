@@ -59,7 +59,9 @@ function makeFakeContext(opts?: {
     audioWorklet: {
       addModule: vi.fn(opts?.addModuleImpl ?? (() => Promise.resolve())),
     },
-    createMediaStreamSource: vi.fn(opts?.createMediaStreamSourceImpl ?? (() => makeFakeSource())),
+    createMediaStreamSource: vi.fn(
+      opts?.createMediaStreamSourceImpl ?? (() => makeFakeSource()),
+    ),
     close: vi.fn(() => {
       ctx.state = "closed";
       return Promise.resolve();
@@ -110,7 +112,10 @@ describe("createCapture — internal release contract (plan §7.1 case 21)", () 
     const createObjectURL = vi.fn(() => "blob:fake-url");
     const revokeObjectURL = vi.fn();
 
-    vi.stubGlobal("AudioWorkletNode", makeCtorMock(() => fakeWorkletNode));
+    vi.stubGlobal(
+      "AudioWorkletNode",
+      makeCtorMock(() => fakeWorkletNode),
+    );
 
     const AudioContextCtor = makeCtorMock(
       () => fakeContext,
@@ -189,7 +194,9 @@ describe("createCapture — transactional setup fault injection (plan §7.1 case
 
     const deps = makeDeps({
       getUserMedia: vi.fn(async () => stream),
-      AudioContext: makeCtorMock(() => fakeContext) as unknown as CreateCaptureDeps["AudioContext"],
+      AudioContext: makeCtorMock(
+        () => fakeContext,
+      ) as unknown as CreateCaptureDeps["AudioContext"],
       createObjectURL: vi.fn(() => {
         throw error;
       }),
@@ -215,7 +222,9 @@ describe("createCapture — transactional setup fault injection (plan §7.1 case
 
     const deps = makeDeps({
       getUserMedia: vi.fn(async () => stream),
-      AudioContext: makeCtorMock(() => fakeContext) as unknown as CreateCaptureDeps["AudioContext"],
+      AudioContext: makeCtorMock(
+        () => fakeContext,
+      ) as unknown as CreateCaptureDeps["AudioContext"],
       createObjectURL: vi.fn(() => "blob:fake-url"),
       revokeObjectURL,
     });
@@ -242,11 +251,16 @@ describe("createCapture — transactional setup fault injection (plan §7.1 case
     const fakeWorkletNode = makeFakeWorkletNode();
     const revokeObjectURL = vi.fn();
 
-    vi.stubGlobal("AudioWorkletNode", makeCtorMock(() => fakeWorkletNode));
+    vi.stubGlobal(
+      "AudioWorkletNode",
+      makeCtorMock(() => fakeWorkletNode),
+    );
 
     const deps = makeDeps({
       getUserMedia: vi.fn(async () => stream),
-      AudioContext: makeCtorMock(() => fakeContext) as unknown as CreateCaptureDeps["AudioContext"],
+      AudioContext: makeCtorMock(
+        () => fakeContext,
+      ) as unknown as CreateCaptureDeps["AudioContext"],
       createObjectURL: vi.fn(() => "blob:fake-url"),
       revokeObjectURL,
     });

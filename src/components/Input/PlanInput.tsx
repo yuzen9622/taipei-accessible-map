@@ -37,8 +37,12 @@ export default function RoutePlanInput() {
 
   const [queryInput, setQueryInput] = useState("");
   const [mode, setMode] = useState<"structured" | "natural">("natural");
-  const [travelMode, setTravelMode] = useState<"transit" | "drive" | "motorcycle" | "walk">("transit");
-  const [a11yMode, setA11yMode] = useState<"normal" | "wheelchair" | "elderly" | "visual_impaired">("normal");
+  const [travelMode, setTravelMode] = useState<
+    "transit" | "drive" | "motorcycle" | "walk"
+  >("transit");
+  const [a11yMode, setA11yMode] = useState<
+    "normal" | "wheelchair" | "elderly" | "visual_impaired"
+  >("normal");
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -142,7 +146,9 @@ export default function RoutePlanInput() {
               size="sm"
               className={cn(
                 "h-8 px-3 rounded-xl text-xs flex gap-1.5 transition-all",
-                travelMode === tm.id ? "shadow-sm" : "text-muted-foreground hover:bg-muted/80"
+                travelMode === tm.id
+                  ? "shadow-sm"
+                  : "text-muted-foreground hover:bg-muted/80",
               )}
               onClick={() => setTravelMode(tm.id as any)}
               aria-label={tm.label}
@@ -157,9 +163,17 @@ export default function RoutePlanInput() {
         <div className="flex gap-1 bg-muted/30 p-1 rounded-2xl w-fit">
           {[
             { id: "normal", icon: User, label: t("normalMode", "一般") },
-            { id: "wheelchair", icon: Accessibility, label: t("wheelchairMode", "輪椅") },
+            {
+              id: "wheelchair",
+              icon: Accessibility,
+              label: t("wheelchairMode", "輪椅"),
+            },
             { id: "elderly", icon: User, label: t("elderlyMode", "長者") },
-            { id: "visual_impaired", icon: EyeOff, label: t("visualImpairedMode", "視障") },
+            {
+              id: "visual_impaired",
+              icon: EyeOff,
+              label: t("visualImpairedMode", "視障"),
+            },
           ].map((am) => (
             <Button
               key={am.id}
@@ -167,7 +181,9 @@ export default function RoutePlanInput() {
               size="sm"
               className={cn(
                 "h-8 px-3 rounded-xl text-xs flex gap-1.5 transition-all",
-                a11yMode === am.id ? "shadow-sm" : "text-muted-foreground hover:bg-muted/80"
+                a11yMode === am.id
+                  ? "shadow-sm"
+                  : "text-muted-foreground hover:bg-muted/80",
               )}
               onClick={() => setA11yMode(am.id as any)}
               aria-label={am.label}

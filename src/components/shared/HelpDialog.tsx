@@ -62,11 +62,7 @@ function FeatureCard({
   );
 }
 
-function IconLegendCard({
-  items,
-}: {
-  items: string[];
-}) {
+function IconLegendCard({ items }: { items: string[] }) {
   const iconMap = [Accessibility, Navigation, Filter];
   return (
     <div className="rounded-xl border border-border/60 bg-card/50 p-4">
@@ -168,7 +164,10 @@ export default function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
             </DialogDescription>
           </DialogHeader>
 
-          <Tabs defaultValue="features" className="flex-1 min-h-0 flex flex-col">
+          <Tabs
+            defaultValue="features"
+            className="flex-1 min-h-0 flex flex-col"
+          >
             <div className="shrink-0 border-b border-border/60 px-4 pt-2">
               <TabsList className="w-full bg-transparent h-auto p-0 gap-0">
                 <TabsTrigger
@@ -277,9 +276,16 @@ export default function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
               </TabsContent>
 
               <TabsContent value="faq" className="mt-0 p-4 space-y-3">
-                <Accordion type="multiple" className="rounded-xl border border-border/60 bg-card/50 overflow-hidden">
+                <Accordion
+                  type="multiple"
+                  className="rounded-xl border border-border/60 bg-card/50 overflow-hidden"
+                >
                   {faqItems.map((item, i) => (
-                    <AccordionItem key={i} value={`faq-${i}`} className="border-border/40">
+                    <AccordionItem
+                      key={i}
+                      value={`faq-${i}`}
+                      className="border-border/40"
+                    >
                       <AccordionTrigger className="px-4 py-3 text-sm font-medium text-primary hover:no-underline hover:bg-accent/30">
                         {item.question}
                       </AccordionTrigger>

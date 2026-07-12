@@ -99,7 +99,10 @@ afterEach(() => {
 
 describe("authRefresh single-flight (case 19)", () => {
   it("calls the refresh endpoint exactly once for N concurrent callers, all resolve the same token, store committed once", async () => {
-    useAuthStore.setState({ user: makeUser("u1"), session: { accessToken: "old" } });
+    useAuthStore.setState({
+      user: makeUser("u1"),
+      session: { accessToken: "old" },
+    });
     const fetchMock = stubFetch({
       refresh: (init) => {
         expect(init?.method).toBe("POST");
@@ -120,12 +123,17 @@ describe("authRefresh single-flight (case 19)", () => {
     expect(refreshCalls).toHaveLength(1);
     expect(String(refreshCalls[0][0])).toBe(`${END_POINT}/api/v1/user/refresh`);
     expect(results).toEqual(["new-token", "new-token", "new-token"]);
-    expect(useAuthStore.getState().session).toEqual({ accessToken: "new-token" });
+    expect(useAuthStore.getState().session).toEqual({
+      accessToken: "new-token",
+    });
     expect(useAuthStore.getState().user).toEqual(makeUser("u1"));
   });
 
   it("on failure clears accessToken and user; never leaves user=null with a non-empty token", async () => {
-    useAuthStore.setState({ user: makeUser("u1"), session: { accessToken: "old" } });
+    useAuthStore.setState({
+      user: makeUser("u1"),
+      session: { accessToken: "old" },
+    });
     stubFetch({ refresh: () => jsonResponse({ ok: false, code: 401 }) });
 
     const result = await refreshAccessToken();
@@ -173,7 +181,9 @@ describe("useAuthStore logout race (case 20)", () => {
 
         scenario.settle(logoutDeferred);
         if (outcome === "success") {
-          refreshDeferred.resolve(jsonResponse({ ok: true, accessToken: "new-token" }));
+          refreshDeferred.resolve(
+            jsonResponse({ ok: true, accessToken: "new-token" }),
+          );
         } else {
           refreshDeferred.resolve(jsonResponse({ ok: false, code: 401 }));
         }
@@ -189,7 +199,10 @@ describe("useAuthStore logout race (case 20)", () => {
   }
 
   it("opens a fresh lane on the next call after a discarded logout race", async () => {
-    useAuthStore.setState({ user: makeUser("u1"), session: { accessToken: "old" } });
+    useAuthStore.setState({
+      user: makeUser("u1"),
+      session: { accessToken: "old" },
+    });
     const refreshDeferred = makeDeferred<Response>();
     stubFetch({ refresh: () => refreshDeferred.promise });
 
@@ -202,7 +215,9 @@ describe("useAuthStore logout race (case 20)", () => {
     // New identity, new lane, fresh transport call.
     const bSession = { accessToken: "B-token" };
     useAuthStore.setState({ user: makeUser("B"), session: bSession });
-    stubFetch({ refresh: () => jsonResponse({ ok: true, accessToken: "B-new" }) });
+    stubFetch({
+      refresh: () => jsonResponse({ ok: true, accessToken: "B-new" }),
+    });
     const second = await refreshAccessToken();
     expect(second).toBe("B-new");
   });
@@ -210,12 +225,16 @@ describe("useAuthStore logout race (case 20)", () => {
 
 describe("useAuthStore.logout synchronization (case 20b)", () => {
   it("clears user/session synchronously, revokes with the pre-clear token via raw fetch, never touches the refresh transport", async () => {
-    useAuthStore.setState({ user: makeUser("u1"), session: { accessToken: "old-token" } });
+    useAuthStore.setState({
+      user: makeUser("u1"),
+      session: { accessToken: "old-token" },
+    });
     let capturedAuthHeader: string | undefined;
     const fetchMock = stubFetch({
       logout: (init) => {
-        capturedAuthHeader = (init?.headers as Record<string, string> | undefined)
-          ?.Authorization;
+        capturedAuthHeader = (
+          init?.headers as Record<string, string> | undefined
+        )?.Authorization;
         return jsonResponse({ ok: true });
       },
     });
@@ -236,7 +255,10 @@ describe("useAuthStore.logout synchronization (case 20b)", () => {
   });
 
   it("does not throw when revoke rejects; state stays cleared", async () => {
-    useAuthStore.setState({ user: makeUser("u1"), session: { accessToken: "old-token" } });
+    useAuthStore.setState({
+      user: makeUser("u1"),
+      session: { accessToken: "old-token" },
+    });
     stubFetch({
       logout: () => Promise.reject(new Error("network down")),
     });
@@ -254,7 +276,10 @@ describe("useAuthStore.logout synchronization (case 20b)", () => {
 
 describe("fetch 401 integration (case 23)", () => {
   it("shares one lane with a concurrent direct caller, transport called once, retry carries the new Authorization", async () => {
-    useAuthStore.setState({ user: makeUser("u1"), session: { accessToken: "old-token" } });
+    useAuthStore.setState({
+      user: makeUser("u1"),
+      session: { accessToken: "old-token" },
+    });
     const refreshDeferred = makeDeferred<Response>();
     const endpointDeferred1 = makeDeferred<Response>();
     const endpointDeferred2 = makeDeferred<Response>();
@@ -291,7 +316,9 @@ describe("fetch 401 integration (case 23)", () => {
 
     expect(refreshCalls).toBe(1); // fetch.ts joined the existing lane, no 2nd transport call
 
-    refreshDeferred.resolve(jsonResponse({ ok: true, accessToken: "new-token" }));
+    refreshDeferred.resolve(
+      jsonResponse({ ok: true, accessToken: "new-token" }),
+    );
     await flush();
     endpointDeferred2.resolve(jsonResponse({ ok: true, data: "result" }));
 
@@ -311,7 +338,10 @@ describe("fetch 401 integration (case 23)", () => {
 
 describe("no retry after a logout-discarded refresh (case 24)", () => {
   it("resolves null and does not retry when refreshAccessToken discards due to a concurrent logout", async () => {
-    useAuthStore.setState({ user: makeUser("u1"), session: { accessToken: "old-token" } });
+    useAuthStore.setState({
+      user: makeUser("u1"),
+      session: { accessToken: "old-token" },
+    });
     const refreshDeferred = makeDeferred<Response>();
     let endpointCalls = 0;
     stubFetch({
@@ -327,7 +357,9 @@ describe("no retry after a logout-discarded refresh (case 24)", () => {
     });
     await flush();
     useAuthStore.getState().logout();
-    refreshDeferred.resolve(jsonResponse({ ok: true, accessToken: "new-token" }));
+    refreshDeferred.resolve(
+      jsonResponse({ ok: true, accessToken: "new-token" }),
+    );
 
     const result = await fetchResultPromise;
 
@@ -339,7 +371,10 @@ describe("no retry after a logout-discarded refresh (case 24)", () => {
 
 describe("ABA relogin race (case 25)", () => {
   it("does not commit a stale refresh success onto a newly logged-in session", async () => {
-    useAuthStore.setState({ user: makeUser("A"), session: { accessToken: "A-token" } });
+    useAuthStore.setState({
+      user: makeUser("A"),
+      session: { accessToken: "A-token" },
+    });
     const refreshDeferred = makeDeferred<Response>();
     stubFetch({ refresh: () => refreshDeferred.promise });
 
@@ -350,7 +385,9 @@ describe("ABA relogin race (case 25)", () => {
     const bSession = { accessToken: "B-token" };
     useAuthStore.setState({ user: makeUser("B"), session: bSession });
 
-    refreshDeferred.resolve(jsonResponse({ ok: true, accessToken: "stale-new-token" }));
+    refreshDeferred.resolve(
+      jsonResponse({ ok: true, accessToken: "stale-new-token" }),
+    );
     const staleResult = await stalePromise;
 
     expect(staleResult).toBeNull();
@@ -359,7 +396,10 @@ describe("ABA relogin race (case 25)", () => {
   });
 
   it("does not invalidate a newly logged-in session when the stale refresh fails", async () => {
-    useAuthStore.setState({ user: makeUser("A"), session: { accessToken: "A-token" } });
+    useAuthStore.setState({
+      user: makeUser("A"),
+      session: { accessToken: "A-token" },
+    });
     const refreshDeferred = makeDeferred<Response>();
     stubFetch({ refresh: () => refreshDeferred.promise });
 
@@ -381,7 +421,10 @@ describe("ABA relogin race (case 25)", () => {
 
 describe("retry-still-401 does not recurse (case 27)", () => {
   it("refreshes once, retries once, invalidates via compare-and-commit, and returns the 401 as-is", async () => {
-    useAuthStore.setState({ user: makeUser("u1"), session: { accessToken: "old-token" } });
+    useAuthStore.setState({
+      user: makeUser("u1"),
+      session: { accessToken: "old-token" },
+    });
     let refreshCalls = 0;
     let endpointCalls = 0;
     stubFetch({
@@ -407,7 +450,10 @@ describe("retry-still-401 does not recurse (case 27)", () => {
   });
 
   it("does not clear a session that was replaced during the retry window", async () => {
-    useAuthStore.setState({ user: makeUser("u1"), session: { accessToken: "old-token" } });
+    useAuthStore.setState({
+      user: makeUser("u1"),
+      session: { accessToken: "old-token" },
+    });
     const endpointDeferred2 = makeDeferred<Response>();
     let endpointCalls = 0;
     let replaced: { accessToken: string } | null = null;
@@ -437,14 +483,19 @@ describe("retry-still-401 does not recurse (case 27)", () => {
 
 describe("cross-identity lane isolation & reentrant merge (case 28)", () => {
   it("merges N (>=3) new-identity callers into exactly one new lane once the stale lane settles", async () => {
-    useAuthStore.setState({ user: makeUser("A"), session: { accessToken: "A-token" } });
+    useAuthStore.setState({
+      user: makeUser("A"),
+      session: { accessToken: "A-token" },
+    });
     const refreshADeferred = makeDeferred<Response>();
     const refreshBDeferred = makeDeferred<Response>();
     let refreshCallCount = 0;
     stubFetch({
       refresh: () => {
         refreshCallCount++;
-        return refreshCallCount === 1 ? refreshADeferred.promise : refreshBDeferred.promise;
+        return refreshCallCount === 1
+          ? refreshADeferred.promise
+          : refreshBDeferred.promise;
       },
     });
 
@@ -452,28 +503,44 @@ describe("cross-identity lane isolation & reentrant merge (case 28)", () => {
     await flush();
 
     useAuthStore.getState().logout();
-    useAuthStore.setState({ user: makeUser("B"), session: { accessToken: "B-token" } });
+    useAuthStore.setState({
+      user: makeUser("B"),
+      session: { accessToken: "B-token" },
+    });
 
-    const bCallers = [refreshAccessToken(), refreshAccessToken(), refreshAccessToken()];
+    const bCallers = [
+      refreshAccessToken(),
+      refreshAccessToken(),
+      refreshAccessToken(),
+    ];
     await flush();
     expect(refreshCallCount).toBe(1); // B callers still queued behind A
 
-    refreshADeferred.resolve(jsonResponse({ ok: true, accessToken: "stale-A-new-token" }));
+    refreshADeferred.resolve(
+      jsonResponse({ ok: true, accessToken: "stale-A-new-token" }),
+    );
     await flush();
     expect(refreshCallCount).toBe(2); // exactly one B lane created on reentry
 
-    refreshBDeferred.resolve(jsonResponse({ ok: true, accessToken: "B-new-token" }));
+    refreshBDeferred.resolve(
+      jsonResponse({ ok: true, accessToken: "B-new-token" }),
+    );
 
     const [aResult, ...bResults] = await Promise.all([aPromise, ...bCallers]);
 
     expect(refreshCallCount).toBe(2);
     expect(aResult).toBeNull();
     expect(bResults).toEqual(["B-new-token", "B-new-token", "B-new-token"]);
-    expect(useAuthStore.getState().session).toEqual({ accessToken: "B-new-token" });
+    expect(useAuthStore.getState().session).toEqual({
+      accessToken: "B-new-token",
+    });
   });
 
   it("discards a B lane and merges into a single C lane when identity changes again while B waits", async () => {
-    useAuthStore.setState({ user: makeUser("A"), session: { accessToken: "A-token" } });
+    useAuthStore.setState({
+      user: makeUser("A"),
+      session: { accessToken: "A-token" },
+    });
     const refreshADeferred = makeDeferred<Response>();
     const refreshBDeferred = makeDeferred<Response>();
     const refreshCDeferred = makeDeferred<Response>();
@@ -490,7 +557,10 @@ describe("cross-identity lane isolation & reentrant merge (case 28)", () => {
     const aPromise = refreshAccessToken();
     await flush();
     useAuthStore.getState().logout();
-    useAuthStore.setState({ user: makeUser("B"), session: { accessToken: "B-token" } });
+    useAuthStore.setState({
+      user: makeUser("B"),
+      session: { accessToken: "B-token" },
+    });
 
     const bPromise = refreshAccessToken();
     refreshADeferred.resolve(jsonResponse({ ok: true, accessToken: "stale" }));
@@ -498,17 +568,24 @@ describe("cross-identity lane isolation & reentrant merge (case 28)", () => {
     expect(refreshCallCount).toBe(2); // B lane created
 
     useAuthStore.getState().logout();
-    useAuthStore.setState({ user: makeUser("C"), session: { accessToken: "C-token" } });
+    useAuthStore.setState({
+      user: makeUser("C"),
+      session: { accessToken: "C-token" },
+    });
 
     const cCallers = [refreshAccessToken(), refreshAccessToken()];
     await flush();
     expect(refreshCallCount).toBe(2); // C callers still queued behind B
 
-    refreshBDeferred.resolve(jsonResponse({ ok: true, accessToken: "stale-B" }));
+    refreshBDeferred.resolve(
+      jsonResponse({ ok: true, accessToken: "stale-B" }),
+    );
     await flush();
     expect(refreshCallCount).toBe(3); // single C lane created on reentry
 
-    refreshCDeferred.resolve(jsonResponse({ ok: true, accessToken: "C-new-token" }));
+    refreshCDeferred.resolve(
+      jsonResponse({ ok: true, accessToken: "C-new-token" }),
+    );
 
     const [aResult, bResult, ...cResults] = await Promise.all([
       aPromise,
@@ -519,7 +596,9 @@ describe("cross-identity lane isolation & reentrant merge (case 28)", () => {
     expect(aResult).toBeNull();
     expect(bResult).toBeNull();
     expect(cResults).toEqual(["C-new-token", "C-new-token"]);
-    expect(useAuthStore.getState().session).toEqual({ accessToken: "C-new-token" });
+    expect(useAuthStore.getState().session).toEqual({
+      accessToken: "C-new-token",
+    });
   });
 
   it("resolves null without throwing when the auth-state port has not been configured", async () => {

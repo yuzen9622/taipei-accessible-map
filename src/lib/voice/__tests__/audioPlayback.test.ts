@@ -29,13 +29,15 @@ class FakeAudioContext {
     this.close = vi.fn(async () => {
       this.state = "closed";
     });
-    this.createBuffer = vi.fn((_channels: number, length: number, sampleRate: number) => {
-      const data = new Float32Array(length);
-      return {
-        duration: length / sampleRate,
-        getChannelData: () => data,
-      } satisfies FakeAudioBuffer;
-    });
+    this.createBuffer = vi.fn(
+      (_channels: number, length: number, sampleRate: number) => {
+        const data = new Float32Array(length);
+        return {
+          duration: length / sampleRate,
+          getChannelData: () => data,
+        } satisfies FakeAudioBuffer;
+      },
+    );
     this.createBufferSource = vi.fn(() => new FakeAudioBufferSourceNode());
   }
 }
@@ -54,11 +56,14 @@ function makeCtorMock<T>(impl: () => T): ReturnType<typeof vi.fn> {
 
 function makeDeps(ctx: FakeAudioContext): Partial<CreatePlaybackDeps> {
   return {
-    AudioContext: makeCtorMock(() => ctx) as unknown as CreatePlaybackDeps["AudioContext"],
+    AudioContext: makeCtorMock(
+      () => ctx,
+    ) as unknown as CreatePlaybackDeps["AudioContext"],
   };
 }
 
-const flushMicrotasks = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+const flushMicrotasks = () =>
+  new Promise<void>((resolve) => setTimeout(resolve, 0));
 
 function int16Frame(values: number[]): ArrayBuffer {
   const arr = new Int16Array(values);
@@ -89,8 +94,10 @@ describe("createPlayback — sequential scheduling", () => {
     playback.play(int16Frame([1, 2, 3, 4])); // length 4 -> duration 4/24000
     playback.play(int16Frame([5, 6])); // length 2 -> duration 2/24000
 
-    const firstNode = ctx.createBufferSource.mock.results[0].value as FakeAudioBufferSourceNode;
-    const secondNode = ctx.createBufferSource.mock.results[1].value as FakeAudioBufferSourceNode;
+    const firstNode = ctx.createBufferSource.mock.results[0]
+      .value as FakeAudioBufferSourceNode;
+    const secondNode = ctx.createBufferSource.mock.results[1]
+      .value as FakeAudioBufferSourceNode;
 
     const firstStart = firstNode.start.mock.calls[0][0] as number;
     const secondStart = secondNode.start.mock.calls[0][0] as number;
@@ -111,7 +118,8 @@ describe("createPlayback — clear()", () => {
       return callCount === 1 ? ctx1 : ctx2;
     });
     const playback = createPlayback({
-      AudioContext: AudioContextCtor as unknown as CreatePlaybackDeps["AudioContext"],
+      AudioContext:
+        AudioContextCtor as unknown as CreatePlaybackDeps["AudioContext"],
     });
 
     playback.play(int16Frame([1, 2]));
@@ -205,8 +213,12 @@ describe("createPlayback — blocked/resume contract", () => {
     playback.play(int16Frame([3, 4]));
 
     expect(ctx.createBufferSource).toHaveBeenCalledTimes(2);
-    expect(ctx.createBufferSource.mock.results[0].value.start).toHaveBeenCalledTimes(1);
-    expect(ctx.createBufferSource.mock.results[1].value.start).toHaveBeenCalledTimes(1);
+    expect(
+      ctx.createBufferSource.mock.results[0].value.start,
+    ).toHaveBeenCalledTimes(1);
+    expect(
+      ctx.createBufferSource.mock.results[1].value.start,
+    ).toHaveBeenCalledTimes(1);
   });
 });
 

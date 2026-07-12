@@ -35,7 +35,9 @@ function resolveDeps(deps: Partial<CreatePlaybackDeps>): CreatePlaybackDeps {
   };
 }
 
-export function createPlayback(deps: Partial<CreatePlaybackDeps> = {}): Playback {
+export function createPlayback(
+  deps: Partial<CreatePlaybackDeps> = {},
+): Playback {
   const { AudioContext: AudioContextCtor } = resolveDeps(deps);
 
   let context: AudioContext | null = null;

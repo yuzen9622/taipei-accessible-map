@@ -72,8 +72,10 @@ function resolveDeps(deps: Partial<CreateCaptureDeps>): CreateCaptureDeps {
       deps.getUserMedia ??
       ((constraints) => navigator.mediaDevices.getUserMedia(constraints)),
     AudioContext: deps.AudioContext ?? AudioContext,
-    createObjectURL: deps.createObjectURL ?? ((blob) => URL.createObjectURL(blob)),
-    revokeObjectURL: deps.revokeObjectURL ?? ((url) => URL.revokeObjectURL(url)),
+    createObjectURL:
+      deps.createObjectURL ?? ((blob) => URL.createObjectURL(blob)),
+    revokeObjectURL:
+      deps.revokeObjectURL ?? ((url) => URL.revokeObjectURL(url)),
   };
 }
 
@@ -88,8 +90,12 @@ export async function createCapture(
   onFrame: (frame: ArrayBuffer) => void,
   deps: Partial<CreateCaptureDeps> = {},
 ): Promise<CaptureHandle> {
-  const { getUserMedia, AudioContext: AudioContextCtor, createObjectURL, revokeObjectURL } =
-    resolveDeps(deps);
+  const {
+    getUserMedia,
+    AudioContext: AudioContextCtor,
+    createObjectURL,
+    revokeObjectURL,
+  } = resolveDeps(deps);
 
   let stream: MediaStream | undefined;
   let context: AudioContext | undefined;
@@ -142,10 +148,16 @@ export async function createCapture(
 
   try {
     stream = await getUserMedia({
-      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
     });
     context = new AudioContextCtor();
-    const blob = new Blob([CAPTURE_WORKLET_SOURCE], { type: "application/javascript" });
+    const blob = new Blob([CAPTURE_WORKLET_SOURCE], {
+      type: "application/javascript",
+    });
     objectUrl = createObjectURL(blob);
     await context.audioWorklet.addModule(objectUrl);
     source = context.createMediaStreamSource(stream);

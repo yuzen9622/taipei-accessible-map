@@ -293,7 +293,9 @@ export class VoiceSessionController {
     this.socket = null;
     if (socket) {
       if (sendEndMessage) {
-        socket.send(JSON.stringify({ type: "session.end" } satisfies SessionEndMessage));
+        socket.send(
+          JSON.stringify({ type: "session.end" } satisfies SessionEndMessage),
+        );
       }
       socket.onopen = null;
       socket.onmessage = null;
@@ -366,7 +368,10 @@ export class VoiceSessionController {
       // Downlink audio: never JSON-parsed, forwarded to playback in
       // arrival order (§5.9).
       this.playback?.play(data);
-      if (this.status.status === "listening" || this.status.status === "model-speaking") {
+      if (
+        this.status.status === "listening" ||
+        this.status.status === "model-speaking"
+      ) {
         this.setStatus({ status: "model-speaking" });
       }
       return;
@@ -377,7 +382,10 @@ export class VoiceSessionController {
       try {
         message = JSON.parse(data) as ServerEventMessage;
       } catch {
-        console.warn("[voiceSession] Failed to parse text message, discarding", data);
+        console.warn(
+          "[voiceSession] Failed to parse text message, discarding",
+          data,
+        );
         return;
       }
       this.dispatchEvent(gen, message);
@@ -385,7 +393,10 @@ export class VoiceSessionController {
     }
 
     // Anything else (e.g. Blob, if the adapter forgot binaryType).
-    console.warn("[voiceSession] Unknown message payload type, discarding", data);
+    console.warn(
+      "[voiceSession] Unknown message payload type, discarding",
+      data,
+    );
   }
 
   private dispatchEvent(gen: number, message: ServerEventMessage): void {
@@ -408,13 +419,21 @@ export class VoiceSessionController {
       }
       case "tool_result": {
         const m = message as ToolResultMessage;
-        this.deps.onToolEvent({ type: "result", name: m.name, ok: m.ok, durationMs: m.durationMs });
+        this.deps.onToolEvent({
+          type: "result",
+          name: m.name,
+          ok: m.ok,
+          durationMs: m.durationMs,
+        });
         return;
       }
       case "interrupted": {
         // §5.10: interrupted always clears playback immediately.
         this.playback?.clear();
-        if (this.status.status === "model-speaking" || this.status.status === "listening") {
+        if (
+          this.status.status === "model-speaking" ||
+          this.status.status === "listening"
+        ) {
           this.setStatus({ status: "listening" });
         }
         return;
@@ -429,11 +448,17 @@ export class VoiceSessionController {
         // The server always follows this with a close carrying the
         // matching code/reason; the real state transition happens in
         // handleClose. Nothing to do here besides logging.
-        console.warn("[voiceSession] Server error event", (message as ErrorMessage).code);
+        console.warn(
+          "[voiceSession] Server error event",
+          (message as ErrorMessage).code,
+        );
         return;
       }
       default:
-        console.warn("[voiceSession] Unknown event type, discarding", message.type);
+        console.warn(
+          "[voiceSession] Unknown event type, discarding",
+          message.type,
+        );
     }
   }
 
@@ -464,7 +489,11 @@ export class VoiceSessionController {
     if (gen !== this.generation) return; // stale capture, discarded
     // §6: never send binary before `ready` — only listening/model-speaking
     // are reachable post-ready states in which uplink audio is valid.
-    if (this.status.status !== "listening" && this.status.status !== "model-speaking") return;
+    if (
+      this.status.status !== "listening" &&
+      this.status.status !== "model-speaking"
+    )
+      return;
     this.socket?.send(frame);
   }
 
@@ -541,7 +570,10 @@ export class VoiceSessionController {
     this.clearReconnectTimer();
 
     const delay = this.reconnectDelay;
-    this.reconnectDelay = Math.min(this.reconnectDelay * 2, RECONNECT_MAX_DELAY_MS);
+    this.reconnectDelay = Math.min(
+      this.reconnectDelay * 2,
+      RECONNECT_MAX_DELAY_MS,
+    );
 
     this.setStatus({ status: "reconnecting" });
 

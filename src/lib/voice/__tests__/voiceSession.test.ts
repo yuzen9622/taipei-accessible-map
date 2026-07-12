@@ -69,9 +69,11 @@ function createHarness(opts?: {
   const captureCalls: CaptureCall[] = [];
   const refreshCalls: RefreshCall[] = [];
 
-  let identity: string | null = opts?.identity === undefined ? "user-A" : opts.identity;
+  let identity: string | null =
+    opts?.identity === undefined ? "user-A" : opts.identity;
   let token: string | undefined = opts?.token ?? "token-1";
-  let location: { latitude: number; longitude: number } | null = opts?.location ?? null;
+  let location: { latitude: number; longitude: number } | null =
+    opts?.location ?? null;
 
   const onStatusChange = vi.fn();
   const onTranscript = vi.fn();
@@ -156,7 +158,8 @@ function createHarness(opts?: {
       location = v;
     },
     triggerBlocked: () => blockedCb?.(),
-    lastStatus: (): VoiceStatus | undefined => onStatusChange.mock.calls.at(-1)?.[0],
+    lastStatus: (): VoiceStatus | undefined =>
+      onStatusChange.mock.calls.at(-1)?.[0],
   };
 }
 
@@ -219,11 +222,16 @@ describe("VoiceSessionController", () => {
   });
 
   it("case 2: session.start sent synchronously on open, token in body, not in URL", () => {
-    const h = createHarness({ token: "tok-A", location: { latitude: 1, longitude: 2 } });
+    const h = createHarness({
+      token: "tok-A",
+      location: { latitude: 1, longitude: 2 },
+    });
     h.controller.start();
 
     expect(h.createSocket).toHaveBeenCalledTimes(1);
-    expect(h.createSocket).toHaveBeenCalledWith("wss://example.test/api/v1/voice/ws");
+    expect(h.createSocket).toHaveBeenCalledWith(
+      "wss://example.test/api/v1/voice/ws",
+    );
 
     h.sockets[0].triggerOpen();
     expect(h.sockets[0].sent).toHaveLength(1);
@@ -430,7 +438,9 @@ describe("VoiceSessionController", () => {
     const frame3 = new Uint8Array([6]).buffer;
 
     h.sockets[0].triggerMessage(frame1);
-    h.sockets[0].triggerMessage(JSON.stringify({ type: "transcript", role: "model", text: "hi" }));
+    h.sockets[0].triggerMessage(
+      JSON.stringify({ type: "transcript", role: "model", text: "hi" }),
+    );
     h.sockets[0].triggerMessage(frame2);
     h.sockets[0].triggerMessage(frame3);
 
@@ -450,7 +460,8 @@ describe("VoiceSessionController", () => {
       private _binaryType = "blob";
       private _onopen: (() => void) | null = null;
       private _onmessage: ((e: { data: unknown }) => void) | null = null;
-      private _onclose: ((e: { code: number; reason: string }) => void) | null = null;
+      private _onclose: ((e: { code: number; reason: string }) => void) | null =
+        null;
 
       constructor(public url: string) {}
 
