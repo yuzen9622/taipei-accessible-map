@@ -135,6 +135,11 @@ export default function ClientMap() {
     if (spriteFixMapRef.current === target) return;
     spriteFixMapRef.current = target;
     target.on("styleimagemissing", (e) => {
+      // Only register the stand-in once the style (incl. sprite) has fully
+      // loaded — before that, "missing" may just mean "sprite still
+      // downloading", and a transparent placeholder would permanently mask
+      // the real icon when it arrives.
+      if (!target.isStyleLoaded()) return;
       if (target.hasImage(e.id)) return;
       target.addImage(e.id, {
         width: 1,
