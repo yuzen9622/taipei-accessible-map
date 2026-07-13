@@ -41,6 +41,7 @@ interface MapState {
   routeInfoShow: boolean;
   searchPlace: PlaceDetail | null;
   computeRoutes: AccessibleRoute[] | null;
+  routeWaypoints: LatLng[];
   selectRoute: {
     index: number;
     route: AccessibleRoute;
@@ -58,6 +59,7 @@ interface MapState {
   destinationName: string;
   sheetMode: SheetMode;
   isNavigating: boolean;
+  pendingNavExit: { target: RailPanel | "plan" | "home" } | null;
   is3D: boolean;
   sidebarCollapsed: boolean;
   activeRailPanel: RailPanel;
@@ -74,6 +76,7 @@ interface MapAction {
   setInfoShow: (infoShow: Partial<InfoShow>) => void;
   setSearchPlace: (place: PlaceDetail | null) => void;
   setComputeRoutes: (routes: AccessibleRoute[] | null) => void;
+  setRouteWaypoints: (waypoints: LatLng[]) => void;
   setRouteInfoShow: (show: boolean) => void;
   setSelectA11yPlace: (place: Marker | null) => void;
   setRouteSelect: (
@@ -105,6 +108,9 @@ interface MapAction {
   closeRouteDrawer: () => void;
   setSheetMode: (mode: SheetMode) => void;
   setIsNavigating: (v: boolean) => void;
+  requestNavExit: (target: RailPanel | "plan" | "home") => void;
+  confirmNavExit: () => void;
+  cancelNavExit: () => void;
   setIs3D: (v: boolean) => void;
   setSidebarCollapsed: (v: boolean) => void;
   setActiveRailPanel: (panel: RailPanel) => void;
@@ -129,6 +135,25 @@ export const SAVED_PLACE_CATEGORIES = [
   "other",
 ] as const;
 export type SavedPlaceCategory = (typeof SAVED_PLACE_CATEGORIES)[number];
+
+const SIDEBAR_RAIL_W = 56;
+const SIDEBAR_GAP = 12;
+const SIDEBAR_PANEL_W = 380;
+const SIDEBAR_TOTAL = SIDEBAR_RAIL_W + SIDEBAR_GAP + SIDEBAR_PANEL_W + 16;
+
+export function getMapPadding(): {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+} {
+  const isDesktop =
+    typeof window !== "undefined" && window.innerWidth >= 1024;
+  const collapsed = useMapStore.getState().sidebarCollapsed;
+  const left =
+    isDesktop && !collapsed ? SIDEBAR_TOTAL + 32 : isDesktop ? 80 : 50;
+  return { top: 80, bottom: 200, left, right: 50 };
+}
 
 const useMapStore = create<MapStore>((set, get) => ({
   map: null,
@@ -161,7 +186,10 @@ const useMapStore = create<MapStore>((set, get) => ({
   searchPlace: null,
   setSearchPlace: (place) => set({ searchPlace: place }),
   computeRoutes: null,
-  setComputeRoutes: (routes) => set({ computeRoutes: routes }),
+  routeWaypoints: [],
+  setComputeRoutes: (routes) =>
+    set(routes ? { computeRoutes: routes } : { computeRoutes: null, routeWaypoints: [] }),
+  setRouteWaypoints: (waypoints) => set({ routeWaypoints: waypoints }),
   selectRoute: null,
   setRouteSelect: (route) => {
     if (!route) {
@@ -349,22 +377,61 @@ const useMapStore = create<MapStore>((set, get) => ({
   liveBusPositions: [],
   setLiveBusPositions: (positions) => set({ liveBusPositions: positions }),
   isNavigating: false,
+  pendingNavExit: null,
+  requestNavExit: (target) => {
+    if (!get().isNavigating) {
+      return;
+    }
+    set({ pendingNavExit: { target } });
+  },
+  confirmNavExit: () => {
+    const intent = get().pendingNavExit;
+    set({ pendingNavExit: null });
+    if (!intent) return;
+    // End navigation first — setIsNavigating(false) sets sheetMode to "route",
+    // but the intent callback below will override it to the desired target.
+    set({ isNavigating: false, is3D: false });
+    const { map } = get();
+    if (map) {
+      const legs = get().selectRoute?.route.legs ?? [];
+      const bounds = new LngLatBounds();
+      for (const leg of legs) {
+        for (const [lng, lat] of leg.polyline ?? []) bounds.extend([lng, lat]);
+      }
+      if (!bounds.isEmpty()) {
+        map.fitBounds(bounds, { pitch: 0, bearing: 0, duration: 1000, padding: getMapPadding() });
+      } else {
+        map.easeTo({ pitch: 0, bearing: 0, duration: 1000 });
+      }
+    }
+    // Apply the intent: switch to the target panel
+    if (intent.target === "plan") {
+      get().setSheetMode("plan");
+    } else {
+      get().setSheetMode("home");
+      set({
+        computeRoutes: null,
+        routeWaypoints: [],
+        routeA11y: [],
+        selectRoute: null,
+        infoShow: { isOpen: false, kind: null },
+        searchPlace: null,
+      });
+      if (intent.target !== "home") {
+        get().setActiveRailPanel(intent.target);
+      }
+    }
+  },
+  cancelNavExit: () => {
+    set({ pendingNavExit: null });
+  },
   setIsNavigating: (v) => {
     const { map, userLocation: loc } = get();
     if (v) {
       set({ isNavigating: true, sheetMode: "navigation", is3D: true });
-      if (map) {
-        map.easeTo({
-          pitch: 60,
-          zoom: 18,
-          center: loc ? [loc.lng, loc.lat] : undefined,
-          duration: 1000,
-        });
-      }
     } else {
       set({ isNavigating: false, sheetMode: "route", is3D: false });
       if (map) {
-        // Back to a flat route overview, like ending nav in mainstream apps.
         const legs = get().selectRoute?.route.legs ?? [];
         const bounds = new LngLatBounds();
         for (const leg of legs) {
@@ -378,7 +445,7 @@ const useMapStore = create<MapStore>((set, get) => ({
             pitch: 0,
             bearing: 0,
             duration: 1000,
-            padding: { top: 50, bottom: 200, left: 50, right: 50 },
+            padding: getMapPadding(),
           });
         }
       }

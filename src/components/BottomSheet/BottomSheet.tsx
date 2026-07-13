@@ -19,6 +19,7 @@ import { AnimatePresence, motion } from "motion/react";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import AccountLogin from "@/components/shared/AccountLogin";
+import ExitNavDialog from "@/components/Navigation/ExitNavDialog";
 import useIsDesktop from "@/hook/useIsDesktop";
 import { useAppTranslation } from "@/i18n/client";
 import { cn } from "@/lib/utils";
@@ -124,7 +125,7 @@ export default function BottomSheet() {
     setInfoShow,
     setSearchPlace,
     isNavigating,
-    setIsNavigating,
+    requestNavExit,
   } = useMapStore();
   const isDesktop = useIsDesktop();
   const stepListOpen = useNavStore((s) => s.stepListOpen);
@@ -225,10 +226,10 @@ export default function BottomSheet() {
 
   const handleRailClick = useCallback(
     (panel: RailPanel) => {
-      // Leaving the navigation panel must also stop the nav engine, otherwise
-      // the camera keeps chasing the user behind the newly opened panel.
-      if (isNavigating) setIsNavigating(false);
-      // Picking anything from the icon rail while collapsed re-opens the panel.
+      if (isNavigating) {
+        requestNavExit(panel === "route" ? "plan" : panel);
+        return;
+      }
       if (collapsed) {
         setCollapsed(false);
         if (panel === "route") {
@@ -280,13 +281,11 @@ export default function BottomSheet() {
       setInfoShow,
       setSearchPlace,
       isNavigating,
-      setIsNavigating,
+      requestNavExit,
     ],
   );
 
   const handlePanelClose = useCallback(() => {
-    // Mid-navigation the panel is just the step list — closing it must not
-    // end navigation.
     if (isNavigating) {
       setStepListOpen(false);
       return;
@@ -349,14 +348,18 @@ export default function BottomSheet() {
             <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
           </div>
 
-          {/* Mobile Header */}
-          <div className="flex items-center justify-between px-4 pb-2">
-            <h1 className="text-base font-bold flex items-center gap-1.5">
-              <Accessibility className="h-5 w-5 text-primary" />
-              {t("title")}
-            </h1>
-            <AccountLogin />
-          </div>
+          {/* Mobile Header — hidden during plan / route / navigation (those modes render their own header) */}
+          {sheetMode !== "plan" &&
+            sheetMode !== "route" &&
+            sheetMode !== "navigation" && (
+              <div className="flex items-center justify-between px-4 pb-2">
+                <h1 className="text-base font-bold flex items-center gap-1.5">
+                  <Accessibility className="h-5 w-5 text-primary" />
+                  {t("title")}
+                </h1>
+                <AccountLogin />
+              </div>
+            )}
 
           {/* Mobile Content */}
           <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-safe">
@@ -574,6 +577,9 @@ export default function BottomSheet() {
           </button>
         )}
       </div>
+
+      {/* Navigation exit confirmation dialog */}
+      <ExitNavDialog />
     </>
   );
 }

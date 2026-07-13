@@ -3,6 +3,7 @@ import {
   BusIcon,
   Car,
   Footprints,
+  MapPin,
   TrainFrontIcon,
   TrainFrontTunnelIcon,
   TramFront,
@@ -42,7 +43,29 @@ function getLegIcon(leg: RouteLeg) {
 }
 
 export default function RouteLine() {
-  const { selectRoute } = useMapStore();
+  const { selectRoute, routeWaypoints } = useMapStore();
+
+  const waypointMarkers = useMemo(() => {
+    if (!routeWaypoints.length) return null;
+    return routeWaypoints.map((wp, i) => (
+      <Marker
+        key={`wp-${wp.lat}-${wp.lng}`}
+        longitude={wp.lng}
+        latitude={wp.lat}
+        anchor="bottom"
+      >
+        <div
+          className="flex flex-col items-center"
+          role="img"
+          aria-label={`中繼站 ${i + 1}`}
+        >
+          <div className="flex items-center justify-center w-7 h-7 bg-blue-500 rounded-full border-2 border-background shadow-lg">
+            <MapPin className="h-4 w-4 text-white" />
+          </div>
+        </div>
+      </Marker>
+    ));
+  }, [routeWaypoints]);
 
   const polylinesElement = useMemo(() => {
     if (!selectRoute?.route) return null;
@@ -164,5 +187,10 @@ export default function RouteLine() {
     );
   }, [selectRoute?.route]);
 
-  return <>{polylinesElement}</>;
+  return (
+    <>
+      {polylinesElement}
+      {waypointMarkers}
+    </>
+  );
 }

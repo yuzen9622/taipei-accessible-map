@@ -17,6 +17,7 @@ export default function useComputeRoute() {
     map,
     setRouteSelect,
     setRouteInfoShow,
+    setRouteWaypoints,
     userLocation,
     closeRouteDrawer,
   } = useMapStore();
@@ -74,6 +75,16 @@ export default function useComputeRoute() {
         setComputeRoutes(routes);
         setRouteSelect({ index: 0, route: routes[0] });
 
+        const apiWaypoints: LatLng[] = (response.data.waypoints ?? [])
+          .map((w) => ({
+            lat: w.lat ?? (w as any).latitude,
+            lng: w.lng ?? (w as any).longitude,
+          }))
+          .filter(
+            (w) => Number.isFinite(w.lat) && Number.isFinite(w.lng),
+          );
+        setRouteWaypoints(apiWaypoints);
+
         if (map) {
           const bounds = routeBoundsFromLegs(routes[0].legs);
 
@@ -122,6 +133,7 @@ export default function useComputeRoute() {
       setComputeRoutes,
       setRouteSelect,
       setRouteInfoShow,
+      setRouteWaypoints,
       userLocation,
     ],
   );

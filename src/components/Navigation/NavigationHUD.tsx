@@ -268,39 +268,47 @@ export default function NavigationHUD() {
 
   return (
     <>
-      {/* ===== Top instruction banner ===== */}
+      {/* ===== Top instruction banner — dark HUD ===== */}
       <div className="absolute top-3 left-3 right-3 lg:left-1/2 lg:right-auto lg:-translate-x-1/2 lg:w-[560px] z-40 space-y-2">
         {arrived ? (
-          <div className="bg-green-600 text-white rounded-2xl shadow-xl p-4 flex items-center gap-3">
-            <CheckCircle2 className="h-8 w-8 shrink-0" />
+          <motion.div
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-green-600 text-white rounded-2xl shadow-2xl p-5 flex items-center gap-4"
+          >
+            <div className="h-14 w-14 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="h-8 w-8" />
+            </div>
             <div className="flex-1 min-w-0">
-              <p className="text-lg font-bold leading-tight">{t("arrived")}</p>
-              <p className="text-sm text-white/80">{t("arrivedDesc")}</p>
+              <p className="text-xl font-bold leading-tight">{t("arrived")}</p>
+              <p className="text-sm text-white/80 mt-0.5">{t("arrivedDesc")}</p>
             </div>
             <button
               type="button"
               onClick={() => setIsNavigating(false)}
-              className="shrink-0 bg-white/20 hover:bg-white/30 rounded-full px-4 py-2 text-sm font-semibold transition-colors"
+              className="shrink-0 bg-white/20 hover:bg-white/30 rounded-full px-5 py-2.5 text-sm font-semibold transition-colors"
             >
               {t("endNav")}
             </button>
-          </div>
+          </motion.div>
         ) : (
-          <div className="bg-primary text-primary-foreground rounded-2xl shadow-xl overflow-hidden">
-            <div className="flex items-center gap-4 px-5 py-4">
-              <StepIcon className="h-9 w-9 shrink-0" />
+          <div className="bg-slate-900 dark:ring-1 dark:ring-white/10 text-white rounded-2xl shadow-2xl overflow-hidden">
+            <div className="flex items-center gap-5 px-6 py-5">
+              <div className="h-16 w-16 rounded-2xl bg-white/10 flex items-center justify-center shrink-0">
+                <StepIcon className="h-10 w-10" />
+              </div>
               <div className="flex-1 min-w-0">
                 {distanceToNextM != null && (
-                  <p className="text-3xl font-bold leading-none mb-1 tabular-nums">
+                  <p className="text-4xl font-black leading-none mb-1.5 tabular-nums tracking-tight">
                     {formatDistance(distanceToNextM)}
                   </p>
                 )}
-                <p className="text-sm font-medium leading-snug text-primary-foreground/90 line-clamp-2">
+                <p className="text-sm font-medium leading-snug text-white/80 line-clamp-2">
                   {step?.text ?? t("preparingNav")}
                 </p>
               </div>
               {instructions.length > 0 && (
-                <span className="shrink-0 text-xs bg-black/20 rounded-full px-2.5 py-1 text-primary-foreground/80">
+                <span className="shrink-0 text-xs bg-white/10 rounded-full px-3 py-1.5 text-white/60 tabular-nums">
                   {t("stepOf", {
                     current: currentStep + 1,
                     total: instructions.length,
@@ -309,12 +317,12 @@ export default function NavigationHUD() {
               )}
             </div>
             {nextStep && (
-              <div className="flex items-center gap-2 bg-black/20 px-5 py-2">
-                <span className="text-xs text-primary-foreground/60 shrink-0">
+              <div className="flex items-center gap-2.5 bg-white/5 border-t border-white/10 px-6 py-2.5">
+                <span className="text-xs text-white/40 shrink-0 font-medium uppercase tracking-wider">
                   {t("then")}
                 </span>
-                <NextIcon className="h-4 w-4 shrink-0 text-primary-foreground/80" />
-                <span className="text-[13px] text-primary-foreground/90 truncate">
+                <NextIcon className="h-4 w-4 shrink-0 text-white/60" />
+                <span className="text-[13px] text-white/70 truncate">
                   {nextStep.text}
                 </span>
               </div>
@@ -355,7 +363,7 @@ export default function NavigationHUD() {
       </div>
 
       {/* ===== Accessibility-aware proximity pills ===== */}
-      <div className="absolute left-3 bottom-[140px] lg:bottom-[104px] z-30 flex flex-col items-start gap-2 max-w-[80%]">
+      <div className="absolute left-3 bottom-[120px] lg:bottom-[88px] z-30 flex flex-col items-start gap-2 max-w-[80%]">
         <AnimatePresence>
           {facilityAlert && !arrived && (
             <motion.span
@@ -397,41 +405,57 @@ export default function NavigationHUD() {
         </AnimatePresence>
       </div>
 
-      {/* ===== Bottom ETA status bar ===== */}
-      <div className="absolute bottom-3 left-3 right-3 lg:left-1/2 lg:right-auto lg:-translate-x-1/2 lg:w-[560px] z-40">
-        <div className="bg-background/95 backdrop-blur-md border border-border/50 rounded-2xl shadow-xl px-5 py-3 flex items-center gap-3">
-          <div className="flex-1 min-w-0">
-            <p className="text-xl font-bold leading-tight text-green-600 dark:text-green-400 tabular-nums">
+      {/* ===== Bottom dashboard — white bar ===== */}
+      <div className="absolute bottom-3 left-3 right-3 lg:left-1/2 lg:right-auto lg:-translate-x-1/2 lg:w-[560px] xl:w-[640px] z-40">
+        <div className="bg-background/95 backdrop-blur-md border border-border/50 rounded-2xl shadow-2xl px-5 py-3.5 flex items-center gap-4">
+          {/* Left: remaining time + distance */}
+          <div className="min-w-0 shrink-0">
+            <p className="text-2xl font-black leading-tight text-green-600 dark:text-green-400 tabular-nums">
               {remainMinutes != null
                 ? t("minutesLeft", { count: remainMinutes })
                 : "…"}
             </p>
-            <p className="text-xs text-muted-foreground truncate tabular-nums">
+            <p className="text-xs text-muted-foreground truncate tabular-nums mt-0.5">
               {remainingM != null && `${formatDistance(remainingM)} · `}
               {etaText && t("etaArrive", { time: etaText })}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={() => setStepListOpen(!stepListOpen)}
-            aria-label={t("stepList")}
-            aria-pressed={stepListOpen}
-            className={`h-10 w-10 rounded-full flex items-center justify-center transition-colors shrink-0 ${
-              stepListOpen
-                ? "bg-primary/10 text-primary"
-                : "bg-muted/60 text-muted-foreground hover:bg-muted"
-            }`}
-          >
-            <List className="h-5 w-5" />
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsNavigating(false)}
-            className="shrink-0 flex items-center gap-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full px-4 h-10 text-sm font-semibold transition-colors"
-          >
-            <Square className="h-3.5 w-3.5" />
-            {t("end")}
-          </button>
+
+          {/* Center: next step preview (desktop only) */}
+          {nextStep && !arrived && (
+            <div className="hidden lg:flex flex-1 items-center gap-2 min-w-0 px-3 py-1.5 rounded-xl bg-muted/50">
+              <NextIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground truncate">
+                {nextStep.text}
+              </span>
+            </div>
+          )}
+          {(!nextStep || arrived) && <div className="hidden lg:block flex-1" />}
+
+          {/* Right: step list + exit button */}
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setStepListOpen(!stepListOpen)}
+              aria-label={t("stepList")}
+              aria-pressed={stepListOpen}
+              className={`h-10 w-10 rounded-full flex items-center justify-center transition-colors ${
+                stepListOpen
+                  ? "bg-primary/10 text-primary"
+                  : "bg-muted/60 text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <List className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsNavigating(false)}
+              className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white rounded-full px-5 h-11 text-sm font-bold transition-colors shadow-lg"
+            >
+              <Square className="h-4 w-4" />
+              {t("endNav")}
+            </button>
+          </div>
         </div>
       </div>
     </>

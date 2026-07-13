@@ -86,23 +86,28 @@ export default function useNavigation() {
 
   // ---- Nav-start camera: anchor on the user only when they're near the
   // route; otherwise frame the route start so the map never flies off to a
-  // distant GPS fix (e.g. previewing a Taipei route from another city). ----
+  // distant GPS fix (e.g. previewing a Taipei route from another city).
+  // Uses requestAnimationFrame so the mobile bottom-sheet layout settles
+  // before we animate, and flyTo for a dramatic zoom-in transition. ----
   useEffect(() => {
     if (!route) return;
-    const { map, userLocation } = useMapStore.getState();
-    const cp = buildCumulativePath(route.legs);
-    pathRef.current = cp;
-    const anchor = gpsNearRoute(userLocation, cp)
-      ? userLocation
-      : (cp.path[0] ?? userLocation);
-    if (!map || !anchor) return;
-    introUntilRef.current = Date.now() + INTRO_EASE_MS;
-    map.easeTo({
-      center: [anchor.lng, anchor.lat],
-      zoom: NAV_ZOOM,
-      pitch: navPitch(),
-      duration: INTRO_EASE_MS,
+    const id = requestAnimationFrame(() => {
+      const { map, userLocation } = useMapStore.getState();
+      const cp = buildCumulativePath(route.legs);
+      pathRef.current = cp;
+      const anchor = gpsNearRoute(userLocation, cp)
+        ? userLocation
+        : (cp.path[0] ?? userLocation);
+      if (!map || !anchor) return;
+      introUntilRef.current = Date.now() + INTRO_EASE_MS;
+      map.flyTo({
+        center: [anchor.lng, anchor.lat],
+        zoom: NAV_ZOOM,
+        pitch: navPitch(),
+        duration: INTRO_EASE_MS,
+      });
     });
+    return () => cancelAnimationFrame(id);
   }, [route]);
 
   // ---- Load instructions when navigation starts (passthrough legs only) ----
