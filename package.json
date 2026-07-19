@@ -9,10 +9,17 @@
     "start": "next start",
     "lint": "biome check",
     "format": "biome format --write",
+    "mobile:sync": "npm run build && cap sync",
+    "android": "npm run mobile:sync && cap open android",
+    "ios": "npm run mobile:sync && cap open ios",
     "test": "vitest run",
     "check:cycles": "madge --circular --extensions ts,tsx src"
   },
   "dependencies": {
+    "@capacitor/android": "^8.4.2",
+    "@capacitor/cli": "^8.4.2",
+    "@capacitor/core": "^8.4.2",
+    "@capacitor/ios": "^8.4.2",
     "@lucide/lab": "^0.1.2",
     "@next/env": "^15.5.2",
     "@radix-ui/react-accordion": "^1.2.12",

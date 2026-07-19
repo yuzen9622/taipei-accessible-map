@@ -30,6 +30,13 @@ const notoSansTC = Noto_Sans_TC({
   weight: ["400", "500", "700"],
 });
 
+export function generateStaticParams() {
+  return [
+    { lng: "zh-TW" },
+    { lng: "en" },
+  ];
+}
+
 export const metadata: Metadata = {
   title: "無障礙智慧地圖 - Accessible Smart Map",
   description:
