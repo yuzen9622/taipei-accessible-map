@@ -1,15 +1,21 @@
 import {
+  Accessibility,
+  AlertTriangle,
   Bike,
   BusIcon,
   Car,
   Check,
   ChevronDown,
   Clock,
+  CornerRightUp,
   Footprints,
+  MoveVertical,
   ShieldCheck,
+  Toilet as ToiletIcon,
   TrainFrontIcon,
   TrainFrontTunnelIcon,
   TramFront,
+  TrendingUp,
 } from "lucide-react";
 import { memo, useId, useMemo, useState } from "react";
 import { useAppTranslation } from "@/i18n/client";
@@ -19,9 +25,12 @@ import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
 import type {
   AccessibleRoute,
-  RouteLeg,
+  DriveStep,
   IntermediateStop,
+  RouteLeg,
+  SlimOsmA11y,
   WaitInfo,
+  WalkStep,
 } from "@/types/route";
 import {
   formatDistance,
@@ -39,6 +48,97 @@ type RouteCardProps = {
   route: AccessibleRoute;
   idx: number;
 };
+
+// --- Pure helpers (exported for unit testing, see __tests__/RouteCard.test.ts) ---
+
+// exitName may already spell out the exit number (e.g. "2號出口"); appending
+// again would render "2號出口 (2 號出口)". Plain `.includes()` would also
+// false-positive on numeric coincidences like "12號出口" containing "2", so
+// this checks the number is not part of a larger digit/letter run.
+export function shouldAppendExitNumber(
+  exitName: string | undefined,
+  exitNumber: string | undefined,
+): boolean {
+  if (!exitNumber) return false;
+  if (!exitName) return true;
+  const escaped = exitNumber.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(`(?<![0-9A-Za-z])${escaped}(?![0-9A-Za-z])`);
+  return !pattern.test(exitName);
+}
+
+const CONFIDENCE_LABEL_KEY: Record<
+  NonNullable<AccessibleRoute["dataConfidence"]>,
+  string
+> = {
+  high: "confidenceHigh",
+  medium: "confidenceMedium",
+  low: "confidenceLow",
+};
+
+export function getConfidenceLabelKey(
+  confidence: AccessibleRoute["dataConfidence"],
+): string | null {
+  return confidence ? (CONFIDENCE_LABEL_KEY[confidence] ?? null) : null;
+}
+
+// Order-preserving, first-seen-wins de-duplication of a11y facility
+// categories, used to render one icon per distinct category instead of one
+// per facility.
+export function dedupeA11yCategories(
+  items: SlimOsmA11y[] | undefined,
+): SlimOsmA11y["category"][] {
+  if (!items?.length) return [];
+  const seen = new Set<SlimOsmA11y["category"]>();
+  const out: SlimOsmA11y["category"][] = [];
+  for (const item of items) {
+    if (!seen.has(item.category)) {
+      seen.add(item.category);
+      out.push(item.category);
+    }
+  }
+  return out;
+}
+
+const A11Y_CATEGORY_ICON: Record<
+  SlimOsmA11y["category"],
+  typeof Accessibility
+> = {
+  wheelchair_accessible: Accessibility,
+  elevator: MoveVertical,
+  ramp: TrendingUp,
+  kerb_cut: CornerRightUp,
+  toilet: ToiletIcon,
+};
+
+function getA11yCategoryLabelKey(category: SlimOsmA11y["category"]): string {
+  switch (category) {
+    case "wheelchair_accessible":
+      return "wheelchairAccess";
+    case "elevator":
+      return "elevator";
+    case "ramp":
+      return "ramp";
+    case "kerb_cut":
+      return "kerbCut";
+    case "toilet":
+      return "toilet";
+  }
+}
+
+function getWheelchairStatusKey(
+  wheelchair: SlimOsmA11y["wheelchair"] | undefined,
+): string | null {
+  switch (wheelchair) {
+    case "yes":
+      return "wheelchairYes";
+    case "limited":
+      return "wheelchairLimited";
+    case "no":
+      return "wheelchairNo";
+    default:
+      return null;
+  }
+}
 
 function IntermediateStops({
   stops,
@@ -195,6 +295,75 @@ function WaitBadge({ waitInfo }: { waitInfo: WaitInfo | null | undefined }) {
   return <span className="text-xs text-muted-foreground">{text}</span>;
 }
 
+function A11yStationIcons({
+  items,
+  ariaLabel,
+}: {
+  items?: SlimOsmA11y[];
+  ariaLabel: string;
+}) {
+  const { t } = useAppTranslation();
+  const [isOpen, setIsOpen] = useState(false);
+  const listId = useId();
+  const categories = dedupeA11yCategories(items);
+
+  if (categories.length === 0) return null;
+
+  return (
+    <div className="ml-2.5">
+      <div className="flex items-center gap-1">
+        {categories.map((category) => {
+          const Icon = A11Y_CATEGORY_ICON[category];
+          return (
+            <Icon
+              key={category}
+              className="h-3 w-3 text-blue-600 dark:text-blue-400"
+              aria-label={t(getA11yCategoryLabelKey(category)) ?? category}
+            />
+          );
+        })}
+        <button
+          type="button"
+          onClick={() => setIsOpen(!isOpen)}
+          aria-expanded={isOpen}
+          aria-controls={listId}
+          aria-label={`${ariaLabel} ${t("viewA11yDetails") ?? "查看無障礙設施詳情"}`}
+          className="text-muted-foreground hover:text-foreground rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+        >
+          <ChevronDown
+            className={cn(
+              "h-3 w-3 transition-transform duration-200 ease-out motion-reduce:transition-none",
+              isOpen && "rotate-180",
+            )}
+          />
+        </button>
+      </div>
+      <div
+        id={listId}
+        aria-hidden={!isOpen}
+        className={cn(
+          "grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none",
+          isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+        )}
+      >
+        <div className="overflow-hidden">
+          <ul className="pl-2 my-1 space-y-1 text-xs text-muted-foreground">
+            {(items ?? []).map((item, idx) => {
+              const wheelchairKey = getWheelchairStatusKey(item.wheelchair);
+              return (
+                <li key={item.osmId || `${item.category}-${idx}`}>
+                  {item.name || t(getA11yCategoryLabelKey(item.category))}
+                  {wheelchairKey && ` · ${t(wheelchairKey)}`}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TransitStops({
   boardName,
   alightName,
@@ -202,6 +371,9 @@ function TransitStops({
   alightTime,
   intermediateStops,
   color,
+  departureA11y,
+  arrivalA11y,
+  isSelected,
 }: {
   boardName?: string;
   alightName?: string;
@@ -209,6 +381,9 @@ function TransitStops({
   alightTime?: string;
   intermediateStops?: IntermediateStop[];
   color: string;
+  departureA11y?: SlimOsmA11y[];
+  arrivalA11y?: SlimOsmA11y[];
+  isSelected?: boolean;
 }) {
   const { t } = useAppTranslation();
   return (
@@ -219,8 +394,16 @@ function TransitStops({
           {t("labelColon")}
         </span>
         <span className="font-medium">{boardName}</span>
-        {boardTime && <span className="text-muted-foreground">{boardTime}</span>}
+        {boardTime && (
+          <span className="text-muted-foreground">{boardTime}</span>
+        )}
       </div>
+      {isSelected && (
+        <A11yStationIcons
+          items={departureA11y}
+          ariaLabel={t("departureA11yLabel") ?? "出發站無障礙設施"}
+        />
+      )}
       <IntermediateStops stops={intermediateStops} color={color} />
       <div className="flex items-start gap-2">
         <span className="text-muted-foreground shrink-0">
@@ -232,6 +415,12 @@ function TransitStops({
           <span className="text-muted-foreground">{alightTime}</span>
         )}
       </div>
+      {isSelected && (
+        <A11yStationIcons
+          items={arrivalA11y}
+          ariaLabel={t("arrivalA11yLabel") ?? "到達站無障礙設施"}
+        />
+      )}
     </div>
   );
 }
@@ -249,16 +438,126 @@ function FacilityHighlights({ items }: { items?: string[] }) {
   );
 }
 
+function WalkStepsList({ steps }: { steps?: WalkStep[] }) {
+  const { t } = useAppTranslation();
+  const [isOpen, setIsOpen] = useState(false);
+  const listId = useId();
+
+  if (!steps || steps.length === 0) return null;
+
+  return (
+    <div className="mt-1">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
+        aria-controls={listId}
+        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/40 px-2 py-2.5 lg:py-1 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+      >
+        <ChevronDown
+          className={cn(
+            "h-3 w-3 shrink-0 transition-transform duration-200 ease-out motion-reduce:transition-none",
+            isOpen && "rotate-180",
+          )}
+        />
+        <span>{t("viewWalkSteps") ?? "查看步行細節"}</span>
+      </button>
+      <div
+        id={listId}
+        aria-hidden={!isOpen}
+        className={cn(
+          "grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none",
+          isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+        )}
+      >
+        <div className="overflow-hidden">
+          <ul className="pl-3.5 my-2 space-y-1.5 border-l border-muted-foreground/30 ml-3.5">
+            {steps.map((step, idx) => (
+              <li
+                key={`${step.streetName || step.instruction || "step"}-${idx}`}
+                className="text-xs text-muted-foreground"
+              >
+                <span className="text-foreground">
+                  {step.instruction ||
+                    [step.relativeDirection, step.streetName]
+                      .filter(Boolean)
+                      .join(" ")}
+                </span>
+                {" · "}
+                {formatDistance(step.distanceM)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DriveStepsList({ steps }: { steps?: DriveStep[] }) {
+  const { t } = useAppTranslation();
+  const [isOpen, setIsOpen] = useState(false);
+  const listId = useId();
+
+  if (!steps || steps.length === 0) return null;
+
+  return (
+    <div className="mt-1">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
+        aria-controls={listId}
+        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/40 px-2 py-2.5 lg:py-1 rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+      >
+        <ChevronDown
+          className={cn(
+            "h-3 w-3 shrink-0 transition-transform duration-200 ease-out motion-reduce:transition-none",
+            isOpen && "rotate-180",
+          )}
+        />
+        <span>{t("viewDriveSteps") ?? "查看路線細節"}</span>
+      </button>
+      <div
+        id={listId}
+        aria-hidden={!isOpen}
+        className={cn(
+          "grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none",
+          isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+        )}
+      >
+        <div className="overflow-hidden">
+          <ul className="pl-3.5 my-2 space-y-1.5 border-l border-muted-foreground/30 ml-3.5">
+            {steps.map((step, idx) => (
+              <li
+                key={`${step.instruction || "step"}-${idx}`}
+                className="text-xs text-muted-foreground"
+              >
+                <span className="text-foreground">{step.instruction}</span>
+                {" · "}
+                {formatDistance(step.distanceM)} ·{" "}
+                {formatDuration(step.durationMin)}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function LegDetail({
   leg,
   isFirst,
   isLast,
   pointCtx,
+  isSelected,
 }: {
   leg: RouteLeg;
   isFirst: boolean;
   isLast: boolean;
   pointCtx: PointLabelContext;
+  isSelected: boolean;
 }) {
   const { t } = useAppTranslation();
   switch (leg.type) {
@@ -274,6 +573,16 @@ function LegDetail({
           {leg.exitInfo && (
             <p className="text-xs text-blue-600 dark:text-blue-400">
               <span aria-hidden>🛗</span> {leg.exitInfo.exitName} (
+              {shouldAppendExitNumber(
+                leg.exitInfo.exitName,
+                leg.exitInfo.exitNumber,
+              ) && (
+                <>
+                  {t("exitNumber", { number: leg.exitInfo.exitNumber }) ??
+                    `${leg.exitInfo.exitNumber} 號出口`}
+                  ・
+                </>
+              )}
               {leg.exitInfo.type === "elevator" ? t("elevator") : t("ramp")})
             </p>
           )}
@@ -283,6 +592,7 @@ function LegDetail({
               {t("a11yFacilitiesAlong", { count: leg.a11yFacilities.length })}
             </p>
           )}
+          {isSelected && <WalkStepsList steps={leg.steps} />}
         </div>
       );
     case "BUS":
@@ -302,6 +612,9 @@ function LegDetail({
             alightName={leg.arrivalStop}
             intermediateStops={leg.intermediateStops}
             color={getLegColor(leg)}
+            departureA11y={leg.departureStopA11y}
+            arrivalA11y={leg.arrivalStopA11y}
+            isSelected={isSelected}
           />
           {leg.nearestBus && (
             <p className="text-xs text-green-600 dark:text-green-400">
@@ -331,6 +644,9 @@ function LegDetail({
               alightName={leg.arrivalStation}
               intermediateStops={leg.intermediateStops}
               color={getLegColor(leg)}
+              departureA11y={leg.departureStationA11y}
+              arrivalA11y={leg.arrivalStationA11y}
+              isSelected={isSelected}
             />
             <div className="text-xs text-muted-foreground">
               {t("stopsUnit", { count: leg.stopsCount })} ·{" "}
@@ -365,6 +681,9 @@ function LegDetail({
               alightTime={leg.arrivalTime}
               intermediateStops={leg.intermediateStops}
               color={getLegColor(leg)}
+              departureA11y={leg.departureStationA11y}
+              arrivalA11y={leg.arrivalStationA11y}
+              isSelected={isSelected}
             />
             <div className="text-xs text-muted-foreground">
               {t("approxTime", { time: formatDuration(leg.rideMinutes) })}
@@ -400,6 +719,7 @@ function LegDetail({
               .filter(Boolean)
               .join(" → ")}
           </p>
+          {isSelected && <DriveStepsList steps={leg.steps} />}
         </div>
       );
   }
@@ -447,6 +767,11 @@ export const RouteCard = memo(function RouteCard({
       ? scoreToLabel(route.accessibilityScore)
       : null);
 
+  const confidenceLabelKey = getConfidenceLabelKey(route.dataConfidence);
+  const confidenceLabelText = confidenceLabelKey
+    ? (t(confidenceLabelKey) ?? route.dataConfidence)
+    : route.dataConfidence;
+
   const routeSummary = useMemo(() => {
     const types = route.legs
       .filter((l) => l.type !== "WALK")
@@ -462,7 +787,9 @@ export const RouteCard = memo(function RouteCard({
             return `${l.trainTypeName}${l.trainNo}`;
           case "DRIVE":
           case "MOTORCYCLE":
-            return l.label ?? (l.type === "DRIVE" ? t("drive") : t("motorcycle"));
+            return (
+              l.label ?? (l.type === "DRIVE" ? t("drive") : t("motorcycle"))
+            );
         }
         return "";
       });
@@ -478,7 +805,7 @@ export const RouteCard = memo(function RouteCard({
 
   return (
     <Card className={cn(isSelected && "ring-2 ring-primary")}>
-      <CardHeader>
+      <CardHeader className="grid-cols-1">
         <CardTitle className="flex justify-between items-center gap-2">
           <h2
             className="text-lg font-bold truncate min-w-0"
@@ -495,7 +822,10 @@ export const RouteCard = memo(function RouteCard({
         </CardTitle>
 
         {routeSummary && (
-          <p className="text-xs text-muted-foreground truncate" title={routeSummary}>
+          <p
+            className="text-xs text-muted-foreground truncate min-w-0"
+            title={routeSummary}
+          >
             {routeSummary}
           </p>
         )}
@@ -517,6 +847,27 @@ export const RouteCard = memo(function RouteCard({
           {route.transferCount > 0 && (
             <Badge variant="outline" className="text-xs">
               {t("transferCount", { count: route.transferCount })}
+            </Badge>
+          )}
+          {isSelected && route.totalWalkDistanceM != null && (
+            <Badge
+              variant="outline"
+              className="text-xs gap-1"
+              aria-label={
+                t("totalWalkDistance", {
+                  distance: formatDistance(route.totalWalkDistanceM),
+                }) ?? `總步行距離 ${formatDistance(route.totalWalkDistanceM)}`
+              }
+            >
+              <Footprints className="h-3 w-3" aria-hidden />
+              {formatDistance(route.totalWalkDistanceM)}
+            </Badge>
+          )}
+          {isSelected && route.dataConfidence && (
+            <Badge variant="outline" className="text-xs">
+              {t("dataConfidence") ?? "資料可信度"}
+              {t("labelColon")}
+              {confidenceLabelText}
             </Badge>
           )}
           {isSelected && <Badge>{t("selectedRoute")}</Badge>}
@@ -558,6 +909,23 @@ export const RouteCard = memo(function RouteCard({
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {isSelected && !!route.scoreWarnings?.length && (
+          <div className="space-y-1 pt-1">
+            {route.scoreWarnings.map((warning) => (
+              <p
+                key={warning}
+                className="flex items-start gap-1 text-xs text-amber-600 dark:text-amber-400"
+              >
+                <AlertTriangle
+                  className="h-3 w-3 shrink-0 mt-0.5"
+                  aria-hidden
+                />
+                <span>{warning}</span>
+              </p>
+            ))}
           </div>
         )}
 
@@ -609,6 +977,7 @@ export const RouteCard = memo(function RouteCard({
                     isFirst={index === 0}
                     isLast={index === route.legs.length - 1}
                     pointCtx={pointCtx}
+                    isSelected={isSelected}
                   />
                 </div>
               </div>
@@ -625,6 +994,12 @@ export const RouteCard = memo(function RouteCard({
             {isSelected ? t("selectedRoute") : t("selectRoute")}
           </Button>
         </div>
+
+        {isSelected && route.attribution && (
+          <p className="text-xs text-muted-foreground pt-2">
+            {route.attribution}
+          </p>
+        )}
       </CardContent>
     </Card>
   );

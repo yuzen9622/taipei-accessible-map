@@ -5,10 +5,41 @@ import { toast } from "sonner";
 import useSupercluster from "use-supercluster";
 import MetroA11yPin from "@/components/MetroA11yPin";
 import { useAppTranslation } from "@/i18n/client";
-import { getAllA11yBathrooms, getAllA11yPlaces } from "@/lib/api/a11y";
-import { formatBathroom, formatMetroA11y } from "@/lib/utils";
+import { getAllA11yFacilities } from "@/lib/api/a11y";
 import useMapStore from "@/stores/useMapStore";
-import type { IBathroom, Marker as MarkerType, metroA11yData } from "@/types";
+import { A11yEnum, type Marker as MarkerType } from "@/types";
+import type { A11yFacility } from "@/types/route";
+
+// Only elevator/ramp/toilet facilities have a pin category in the current UI
+// (see A11yPanel's filter chips); parking/campus-only sources are dropped.
+function facilityToMarker(facility: A11yFacility): MarkerType | null {
+  let a11yType: A11yEnum;
+  switch (facility.category) {
+    case "elevator":
+      a11yType = A11yEnum.ELEVATOR;
+      break;
+    case "ramp":
+      a11yType = A11yEnum.RAMP;
+      break;
+    case "toilet":
+      a11yType = A11yEnum.RESTROOM;
+      break;
+    default:
+      return null;
+  }
+  const [lng, lat] = facility.location.coordinates;
+  return {
+    id: facility._id,
+    position: { lat, lng },
+    type: "pin",
+    content: {
+      title: facility.name,
+      desc: facility.source === "metro" ? (facility.exitName ?? "") : "",
+    },
+    zIndex: 1,
+    a11yType,
+  };
+}
 
 export default function AccessibilityPin() {
   const { t } = useAppTranslation();
@@ -19,20 +50,27 @@ export default function AccessibilityPin() {
     null,
   );
   const [zoom, setZoom] = useState<number>(15);
-  const [isLoading, setIsLoading] = useState(true);
+  // a11yPlaces lives in the store and survives remounts (route changes, dev
+  // HMR); the deployed /all-facilities payload is ~5MB and can take >15s, so
+  // fetch it at most once per browser session.
+  const [isLoading, setIsLoading] = useState(
+    () => (useMapStore.getState().a11yPlaces?.length ?? 0) === 0,
+  );
 
   useEffect(() => {
+    if (useMapStore.getState().a11yPlaces?.length) return;
     const controller = new AbortController();
     setIsLoading(true);
-    Promise.all([getAllA11yPlaces(), getAllA11yBathrooms()])
-      .then(([placesRes, bathroomRes]) => {
+    getAllA11yFacilities()
+      .then((facilitiesRes) => {
         if (controller.signal.aborted) return;
-        const places = placesRes.data as metroA11yData[];
-        const bathrooms = bathroomRes.data as IBathroom[];
-        setA11yPlaces([
-          ...formatMetroA11y(places),
-          ...formatBathroom(bathrooms),
-        ]);
+        const facilities = facilitiesRes.data ?? [];
+        setA11yPlaces(
+          facilities.flatMap((facility) => {
+            const marker = facilityToMarker(facility);
+            return marker ? [marker] : [];
+          }),
+        );
       })
       .catch(() => {
         if (controller.signal.aborted) return;

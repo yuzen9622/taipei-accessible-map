@@ -6,6 +6,42 @@ export interface GeoPoint {
   coordinates: [number, number]; // [lng, lat]
 }
 
+// --- Unified accessibility facility (GET /a11y/all-facilities, /all-bathrooms) ---
+export type A11yFacilityCategory =
+  | "elevator"
+  | "ramp"
+  | "toilet"
+  | "parking"
+  | "other";
+
+interface A11yFacilityBase {
+  _id: string;
+  name: string;
+  location: GeoPoint;
+  category: A11yFacilityCategory;
+}
+
+export type A11yFacility =
+  | (A11yFacilityBase & {
+      source: "metro";
+      exitName: string | null;
+    })
+  | (A11yFacilityBase & {
+      source: "osm";
+      osmId: string;
+      wheelchair: "yes" | "limited" | "no" | null;
+    })
+  | (A11yFacilityBase & {
+      source: "campus";
+      schoolName: string;
+    })
+  | (A11yFacilityBase & {
+      source: "bathroom";
+    })
+  | (A11yFacilityBase & {
+      source: "parking";
+    });
+
 // --- Slim OSM A11y facility ---
 export interface SlimOsmA11y {
   osmId: string;
@@ -72,6 +108,7 @@ export interface BusLeg {
   departureStopId?: string;
   arrivalStopId?: string;
   tdxCity?: string;
+  cityCode?: string;
   departureTime?: string;
   arrivalTime?: string;
   waitInfo: WaitInfo;
@@ -198,6 +235,9 @@ export interface AccessibleRoute {
   accessibilityScore?: number;
   accessibilityLabel?: A11yLabel;
   scoreComponents?: ScoreComponents;
+  dataConfidence?: "high" | "medium" | "low";
+  scoreWarnings?: string[];
+  totalWalkDistanceM?: number;
   facilities?: Record<string, SlimOsmA11y>;
   attribution?: string;
 }
@@ -220,6 +260,7 @@ export interface AccessibleRouteData {
   destination: { lat: number; lng: number };
   waypoints?: { lat: number; lng: number }[];
   city: string;
+  travelMode?: "transit" | "drive" | "motorcycle" | "walk";
   routes: AccessibleRoute[];
   intent?: RouteIntent;
 }

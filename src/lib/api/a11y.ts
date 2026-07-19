@@ -7,29 +7,25 @@ import {
 import type { IBathroom, metroA11yData } from "@/types";
 import type { ApiResponse } from "@/types/response";
 import type {
-  AccessibleRouteRequest,
+  A11yFacility,
   AccessibleRouteData,
+  AccessibleRouteRequest,
+  DisabledParking,
+  EnvironmentData,
+  HazardReport,
   NavInstructionsData,
   NavInstructionsRequest,
-  HazardReport,
-  EnvironmentData,
-  WelfareInstitution,
-  DisabledParking,
   OsmPlaceDetail,
+  WelfareInstitution,
 } from "@/types/route";
 
-export async function getAllA11yPlaces() {
+export async function getAllA11yFacilities() {
   const response = await fetchRequest<ApiResponse<null>>(
-    `${END_POINT}/api/v1/a11y/all-places`,
+    // Only these categories have map pins; filtering server-side cuts the
+    // payload from ~5MB/24.7k items to ~1.6MB/7.9k items.
+    `${END_POINT}/api/v1/a11y/all-facilities?category=elevator,ramp,toilet`,
   );
-  return response;
-}
-
-export async function getAllA11yBathrooms() {
-  const response = await fetchRequest<ApiResponse<null>>(
-    `${END_POINT}/api/v1/a11y/all-bathrooms`,
-  );
-  return response as ApiResponse<IBathroom[]>;
+  return response as ApiResponse<A11yFacility[]>;
 }
 
 export async function getNearbyRouteA11yPlaces(
