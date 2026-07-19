@@ -931,15 +931,29 @@ export const RouteCard = memo(function RouteCard({
 
         {isSelected && route.accessibilityHighlights?.length > 0 && (
           <div className="flex flex-wrap gap-1.5 pt-1">
-            {route.accessibilityHighlights.map((h) => (
-              <span
-                key={h}
-                className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2.5 py-1 text-xs font-medium"
-              >
-                <Check className="h-3 w-3 shrink-0" />
-                {h}
-              </span>
-            ))}
+            {route.accessibilityHighlights.map((h) => {
+              // Backend mixes caution notes (e.g. walk-access legs that could
+              // not build a reliable footpath, "…請留意") into this array —
+              // render those as warnings, not positive green highlights.
+              const isWarning = h.includes("請留意") || h.includes("無法");
+              return (
+                <span
+                  key={h}
+                  className={
+                    isWarning
+                      ? "inline-flex items-center gap-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 px-2.5 py-1 text-xs font-medium"
+                      : "inline-flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2.5 py-1 text-xs font-medium"
+                  }
+                >
+                  {isWarning ? (
+                    <AlertTriangle className="h-3 w-3 shrink-0" />
+                  ) : (
+                    <Check className="h-3 w-3 shrink-0" />
+                  )}
+                  {h}
+                </span>
+              );
+            })}
           </div>
         )}
       </CardHeader>
