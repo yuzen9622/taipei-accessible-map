@@ -71,7 +71,20 @@ export async function fetchRequest<T>(
     init.body = JSON.stringify(body);
   }
   const response = await fetch(url, init);
-  const data = (await response.json()) as ApiResponse<unknown>;
+  // Some endpoints (e.g. DELETE emergency-contacts → 205, or 204) reply with an
+  // empty body; calling response.json() on it throws "Unexpected end of JSON
+  // input". Synthesize an envelope from the HTTP status for those cases.
+  const hasBody = response.status !== 204 && response.status !== 205;
+  const data = (
+    hasBody
+      ? await response.json()
+      : {
+          ok: response.ok,
+          status: response.ok ? "success" : "error",
+          code: response.status,
+          message: response.statusText,
+        }
+  ) as ApiResponse<unknown>;
   const isSuccess = data.ok === true || data.success === true;
   if (!isSuccess && data.code !== 401) {
     throw new ApiError(
