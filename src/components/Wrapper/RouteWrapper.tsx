@@ -43,7 +43,7 @@ function getLegIcon(leg: RouteLeg) {
 }
 
 export default function RouteLine() {
-  const { selectRoute, routeWaypoints } = useMapStore();
+  const { selectRoute, routeWaypoints, sosNavActive } = useMapStore();
 
   const waypointMarkers = useMemo(() => {
     if (!routeWaypoints.length) return null;
@@ -98,7 +98,7 @@ export default function RouteLine() {
             <div className="h-4.5 w-4.5 rounded-full bg-white dark:bg-zinc-900 border-[3.5px] border-emerald-500 shadow-[0_1px_4px_rgba(0,0,0,0.35)]" />
           </Marker>
         )}
-        {lastPath?.[lastPath.length - 1] && (
+        {!sosNavActive && lastPath?.[lastPath.length - 1] && (
           <Marker
             longitude={lastPath[lastPath.length - 1].lng}
             latitude={lastPath[lastPath.length - 1].lat}
@@ -185,7 +185,7 @@ export default function RouteLine() {
         {startEndMarker}
       </div>
     );
-  }, [selectRoute?.route]);
+  }, [selectRoute?.route, sosNavActive]);
 
   return (
     <>

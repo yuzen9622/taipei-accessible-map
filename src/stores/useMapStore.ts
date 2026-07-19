@@ -39,6 +39,9 @@ interface MapState {
   destination: PlaceDetail | null;
   infoShow: InfoShow;
   routeInfoShow: boolean;
+  /** True when the active route targets a live SOS requester (hides the static destination pin in favor of the pulsing SOS marker). */
+  sosNavActive: boolean;
+  setSosNavActive: (active: boolean) => void;
   searchPlace: PlaceDetail | null;
   computeRoutes: AccessibleRoute[] | null;
   routeWaypoints: LatLng[];
@@ -166,6 +169,8 @@ const useMapStore = create<MapStore>((set, get) => ({
   setDestination: (destination) => set({ destination }),
   routeInfoShow: false,
   setRouteInfoShow: (show) => set({ routeInfoShow: show }),
+  sosNavActive: false,
+  setSosNavActive: (active) => set({ sosNavActive: active }),
   infoShow: { isOpen: false, kind: null },
   setInfoShow: (infoShow) => {
     const nextInfoShow = { ...get().infoShow, ...infoShow } as InfoShow;

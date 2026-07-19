@@ -7,6 +7,7 @@ import {
   Loader2,
   Locate,
   MapPin,
+  Navigation,
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
@@ -19,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import useComputeRoute from "@/hook/useComputeRoute";
 import { useAppTranslation } from "@/i18n/client";
 import { getPublicSosSession } from "@/lib/api/sos";
 import { ApiError } from "@/lib/fetch";
@@ -50,7 +52,14 @@ const SOS_TYPE_ICON: Record<SosType, typeof AlertTriangle> = {
 
 export default function SosTrackerWrapper() {
   const { t, i18n } = useAppTranslation();
-  const { map } = useMapStore();
+  const {
+    map,
+    userLocation,
+    setSheetMode,
+    setDestinationName,
+    setSosNavActive,
+  } = useMapStore();
+  const { handleComputeRoute } = useComputeRoute();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [session, setSession] = useState<SosPublicSession | null>(null);
   const [phase, setPhase] = useState<Phase>("none");
@@ -94,9 +103,10 @@ export default function SosTrackerWrapper() {
       setShowResolvedDialog(true);
       setPhase("resolved");
       setSession(null);
+      setSosNavActive(false);
       cleanUrl();
     },
-    [t, stopPolling, cleanUrl],
+    [t, stopPolling, cleanUrl, setSosNavActive],
   );
 
   useEffect(() => {
@@ -160,14 +170,41 @@ export default function SosTrackerWrapper() {
     });
   }, [map, session]);
 
+  // One-tap navigation to the (live) requester. Emergency default: drive.
+  // Origin falls back to the helper's userLocation inside useComputeRoute.
+  const handleNavigate = useCallback(async () => {
+    if (!session) return;
+    if (!userLocation) {
+      toast.error(t("sosTrackingNoLocation"));
+      return;
+    }
+    setSosNavActive(true);
+    setDestinationName(session.address ?? t("sosTrackingRequesterLabel"));
+    setSheetMode("route");
+    const ok = await handleComputeRoute({
+      destination: { lat: session.lat, lng: session.lng },
+      travelMode: "drive",
+    });
+    if (!ok) setSosNavActive(false);
+  }, [
+    session,
+    userLocation,
+    t,
+    setSosNavActive,
+    setDestinationName,
+    setSheetMode,
+    handleComputeRoute,
+  ]);
+
   const handleCloseTracker = useCallback(() => {
     stopPolling();
     setSessionId(null);
     setSession(null);
     setPhase("none");
+    setSosNavActive(false);
     cleanUrl();
     toast.success(t("sosClose"));
-  }, [stopPolling, cleanUrl, t]);
+  }, [stopPolling, cleanUrl, t, setSosNavActive]);
 
   if (phase === "none") return null;
 
@@ -288,14 +325,25 @@ export default function SosTrackerWrapper() {
               </div>
 
               {/* Actions */}
-              <button
-                type="button"
-                onClick={centerOnRequester}
-                className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm shadow-sm hover:bg-primary/95 hover:shadow transition-all"
-              >
-                <Locate className="h-4 w-4" />
-                {t("sosTrackingLocate")}
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleNavigate}
+                  className="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm shadow-sm hover:bg-primary/95 hover:shadow transition-all"
+                >
+                  <Navigation className="h-4 w-4" />
+                  {t("sosTrackingNavigate")}
+                </button>
+                <button
+                  type="button"
+                  onClick={centerOnRequester}
+                  aria-label={t("sosTrackingLocate")}
+                  title={t("sosTrackingLocate")}
+                  className="shrink-0 flex items-center justify-center py-2 px-3 rounded-xl bg-muted text-foreground font-semibold text-sm hover:bg-muted/80 transition-all"
+                >
+                  <Locate className="h-4 w-4" />
+                </button>
+              </div>
             </div>
           </motion.div>
         </AnimatePresence>
