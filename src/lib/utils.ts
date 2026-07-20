@@ -9,7 +9,6 @@ import {
   type NominatimPlace,
 } from "@/types";
 
-
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
@@ -85,14 +84,21 @@ export function formatBathroom(bathrooms: IBathroom[]) {
  * Formats a NominatimPlace object to have a clean name (地名) and display_name (完整地址).
  * It updates name and display_name properties directly on the object.
  */
-export function formatNominatimPlace<T extends { name?: string; display_name: string; address?: Record<string, string> }>(
-  place: T,
-  language: string = "zh-TW"
-): T {
+export function formatNominatimPlace<
+  T extends {
+    name?: string;
+    display_name: string;
+    address?: Record<string, string>;
+  },
+>(place: T, language: string = "zh-TW"): T {
   if (!place) return place;
 
   const addr = place.address;
-  const isTaiwan = language === "zh-TW" || addr?.country_code === "tw" || addr?.country === "臺灣" || addr?.country === "Taiwan";
+  const isTaiwan =
+    language === "zh-TW" ||
+    addr?.country_code === "tw" ||
+    addr?.country === "臺灣" ||
+    addr?.country === "Taiwan";
 
   // 1. Determine a clean name (地名)
   let cleanName = "";
@@ -133,8 +139,9 @@ export function formatNominatimPlace<T extends { name?: string; display_name: st
     if (isTaiwan) {
       // Taiwan address structure: [縣市][鄉鎮市區][村里/聚落][路街段][號]
       const county = addr.county || addr.city || addr.state || "";
-      const town = addr.town || addr.district || addr.city_district || addr.suburb || "";
-      
+      const town =
+        addr.town || addr.district || addr.city_district || addr.suburb || "";
+
       const village = addr.village || "";
       const hamlet = addr.hamlet || "";
 
@@ -161,26 +168,34 @@ export function formatNominatimPlace<T extends { name?: string; display_name: st
       cleanAddress = parts.join("");
     } else {
       // International address: clean up zip codes, ISO codes, and POI name duplicates
-      const excludeKeys = ["country_code", "postcode", "ISO3166-2-lvl4", "ISO3166-2-lvl3", "ISO3166-2-lvl2"];
+      const excludeKeys = [
+        "country_code",
+        "postcode",
+        "ISO3166-2-lvl4",
+        "ISO3166-2-lvl3",
+        "ISO3166-2-lvl2",
+      ];
       const addressParts = Object.entries(addr)
         .filter(([key, val]) => {
-          if (excludeKeys.includes(key) || !val || typeof val !== "string") return false;
+          if (excludeKeys.includes(key) || !val || typeof val !== "string")
+            return false;
           if (val === cleanName) return false;
           return true;
         })
         .map(([_, val]) => val);
-      
+
       cleanAddress = addressParts.join(", ");
     }
   }
 
   // Fallback to parsed display_name if address formatting didn't yield anything
   if (!cleanAddress) {
-    const rawParts = place.display_name.split(",").map(p => p.trim());
+    const rawParts = place.display_name.split(",").map((p) => p.trim());
     const isPostalCode = (str: string) => /^\d{3,6}$/.test(str);
-    const isIsoCode = (str: string) => /^[A-Z]{2}-[A-Z0-9]+$/.test(str) || str.startsWith("ISO");
-    
-    const filteredParts = rawParts.filter(part => {
+    const isIsoCode = (str: string) =>
+      /^[A-Z]{2}-[A-Z0-9]+$/.test(str) || str.startsWith("ISO");
+
+    const filteredParts = rawParts.filter((part) => {
       if (isPostalCode(part) || isIsoCode(part)) return false;
       if (part === cleanName) return false;
       return true;
@@ -199,4 +214,3 @@ export function formatNominatimPlace<T extends { name?: string; display_name: st
 
   return place;
 }
-

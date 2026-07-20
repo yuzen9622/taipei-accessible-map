@@ -19,7 +19,10 @@ export default function ExitNavDialog() {
   const cancelNavExit = useMapStore((s) => s.cancelNavExit);
 
   return (
-    <Dialog open={pendingNavExit !== null} onOpenChange={(open) => !open && cancelNavExit()}>
+    <Dialog
+      open={pendingNavExit !== null}
+      onOpenChange={(open) => !open && cancelNavExit()}
+    >
       <DialogContent className="max-w-sm rounded-2xl p-0 overflow-hidden pointer-events-auto">
         <div className="bg-primary/5 dark:bg-primary/10 px-6 pt-6 pb-4 flex flex-col items-center text-center gap-3">
           <div className="h-14 w-14 rounded-full bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center">

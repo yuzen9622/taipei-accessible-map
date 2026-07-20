@@ -18,11 +18,7 @@ function isValidLngLat(lng: unknown, lat: unknown): lng is number {
   );
 }
 
-export function extendBounds(
-  bounds: LngLatBounds,
-  lng: unknown,
-  lat: unknown,
-) {
+export function extendBounds(bounds: LngLatBounds, lng: unknown, lat: unknown) {
   if (isValidLngLat(lng, lat)) {
     bounds.extend([lng as number, lat as number]);
   }

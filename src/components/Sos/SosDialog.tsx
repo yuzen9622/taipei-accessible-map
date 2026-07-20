@@ -32,8 +32,8 @@ import {
   updateSosLocation,
 } from "@/lib/api/sos";
 import { ApiError } from "@/lib/fetch";
-import useMapStore from "@/stores/useMapStore";
 import { formatNominatimPlace } from "@/lib/utils";
+import useMapStore from "@/stores/useMapStore";
 import type { EmergencyContact, SosType } from "@/types/sos";
 
 const SOS_COUNTDOWN_MS = 5000;
@@ -41,7 +41,11 @@ const LOCATION_UPDATE_MS = 12000;
 
 type SosStep = "countdown" | "active" | "resolved";
 
-const SOS_SUPPLEMENT_TYPES: { key: SosType; icon: typeof AlertTriangle; labelKey: string }[] = [
+const SOS_SUPPLEMENT_TYPES: {
+  key: SosType;
+  icon: typeof AlertTriangle;
+  labelKey: string;
+}[] = [
   { key: "body", icon: AlertTriangle, labelKey: "sosBodyDiscomfort" },
   { key: "trapped", icon: HelpCircle, labelKey: "sosTrapped" },
   { key: "share_location", icon: PersonStanding, labelKey: "sosFall" },
@@ -67,7 +71,9 @@ export default function SosDialog({
   const [creatingSession, setCreatingSession] = useState(false);
   const [boundContacts, setBoundContacts] = useState<EmergencyContact[]>([]);
   const [expanded, setExpanded] = useState(false);
-  const [supplementedType, setSupplementedType] = useState<SosType | null>(null);
+  const [supplementedType, setSupplementedType] = useState<SosType | null>(
+    null,
+  );
 
   const openRef = useRef(open);
   useEffect(() => {
@@ -269,21 +275,23 @@ export default function SosDialog({
                     {t("sosSupplementType")}
                   </p>
                   <div className="flex gap-2">
-                    {SOS_SUPPLEMENT_TYPES.map(({ key, icon: Icon, labelKey }) => (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => setSupplementedType(key)}
-                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all border ${
-                          supplementedType === key
-                            ? "bg-red-500/10 border-red-500/40 text-red-600"
-                            : "border-border/60 text-muted-foreground hover:bg-muted/60"
-                        }`}
-                      >
-                        <Icon className="h-3 w-3" />
-                        {t(labelKey)}
-                      </button>
-                    ))}
+                    {SOS_SUPPLEMENT_TYPES.map(
+                      ({ key, icon: Icon, labelKey }) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => setSupplementedType(key)}
+                          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+                            supplementedType === key
+                              ? "bg-red-500/10 border-red-500/40 text-red-600"
+                              : "border-border/60 text-muted-foreground hover:bg-muted/60"
+                          }`}
+                        >
+                          <Icon className="h-3 w-3" />
+                          {t(labelKey)}
+                        </button>
+                      ),
+                    )}
                   </div>
                 </div>
 
@@ -292,10 +300,14 @@ export default function SosDialog({
                   <p className="text-xs font-medium text-muted-foreground">
                     {t("sosNotifiedContacts")}
                   </p>
-                  {notifiedCount && notifiedCount > 0 && boundContactNames.length > 0 ? (
+                  {notifiedCount &&
+                  notifiedCount > 0 &&
+                  boundContactNames.length > 0 ? (
                     <p className="text-sm">{boundContactNames.join("、")}</p>
                   ) : (
-                    <p className="text-xs text-muted-foreground">{t("sosNoContacts")}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {t("sosNoContacts")}
+                    </p>
                   )}
                 </div>
 
@@ -310,13 +322,23 @@ export default function SosDialog({
 
                 {/* Quick actions */}
                 <div className="grid grid-cols-2 gap-2">
-                  <Button asChild variant="destructive" size="sm" className="rounded-xl h-9 gap-1.5 text-xs">
+                  <Button
+                    asChild
+                    variant="destructive"
+                    size="sm"
+                    className="rounded-xl h-9 gap-1.5 text-xs"
+                  >
                     <a href="tel:110">
                       <PhoneCall className="h-3.5 w-3.5" />
                       {t("sosCall110")}
                     </a>
                   </Button>
-                  <Button asChild variant="destructive" size="sm" className="rounded-xl h-9 gap-1.5 text-xs">
+                  <Button
+                    asChild
+                    variant="destructive"
+                    size="sm"
+                    className="rounded-xl h-9 gap-1.5 text-xs"
+                  >
                     <a href="tel:119">
                       <PhoneCall className="h-3.5 w-3.5" />
                       {t("sosCall119")}
@@ -366,7 +388,12 @@ export default function SosDialog({
   // Loading state while creating session
   if (open && step === "active" && creatingSession && !sessionId) {
     return (
-      <Dialog open={open} onOpenChange={(v) => { if (!v) resetAndClose(); }}>
+      <Dialog
+        open={open}
+        onOpenChange={(v) => {
+          if (!v) resetAndClose();
+        }}
+      >
         <DialogContent className="max-w-md rounded-2xl p-6">
           <div className="flex flex-col items-center gap-3 py-8">
             <Loader2 className="h-6 w-6 animate-spin text-red-600" />

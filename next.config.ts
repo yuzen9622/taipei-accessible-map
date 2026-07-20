@@ -2,9 +2,10 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  /* config options here */trailingSlash: true,
+  /* config options here */ trailingSlash: true,
 
-  images: { unoptimized: true,
+  images: {
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: "https",

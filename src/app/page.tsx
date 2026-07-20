@@ -7,9 +7,5 @@ export default function RootPage() {
     window.location.replace("./zh-TW/");
   }, []);
 
-  return (
-    <main>
-      
-    </main>
-  );
+  return <main></main>;
 }

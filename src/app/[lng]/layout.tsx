@@ -31,10 +31,7 @@ const notoSansTC = Noto_Sans_TC({
 });
 
 export function generateStaticParams() {
-  return [
-    { lng: "zh-TW" },
-    { lng: "en" },
-  ];
+  return [{ lng: "zh-TW" }, { lng: "en" }];
 }
 
 export const metadata: Metadata = {
