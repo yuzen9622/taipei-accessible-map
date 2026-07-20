@@ -3,9 +3,12 @@
 import {
   AlertTriangle,
   Check,
+  ChevronDown,
+  ChevronUp,
   HelpCircle,
   Loader2,
   MapPin,
+  PersonStanding,
   PhoneCall,
   Share2,
   X,
@@ -31,30 +34,19 @@ import {
 import { ApiError } from "@/lib/fetch";
 import useMapStore from "@/stores/useMapStore";
 import { formatNominatimPlace } from "@/lib/utils";
-import type { EmergencyContact } from "@/types/sos";
+import type { EmergencyContact, SosType } from "@/types/sos";
 
 const SOS_COUNTDOWN_MS = 5000;
 const LOCATION_UPDATE_MS = 12000;
 
-type SosType = "body" | "trapped" | "share_location";
-type SosStep = "select-type" | "countdown" | "active" | "resolved";
+type SosStep = "countdown" | "active" | "resolved";
 
-const SOS_TYPES: { key: SosType; icon: typeof AlertTriangle }[] = [
-  { key: "body", icon: AlertTriangle },
-  { key: "trapped", icon: HelpCircle },
-  { key: "share_location", icon: MapPin },
+const SOS_SUPPLEMENT_TYPES: { key: SosType; icon: typeof AlertTriangle; labelKey: string }[] = [
+  { key: "body", icon: AlertTriangle, labelKey: "sosBodyDiscomfort" },
+  { key: "trapped", icon: HelpCircle, labelKey: "sosTrapped" },
+  { key: "share_location", icon: PersonStanding, labelKey: "sosFall" },
 ];
 
-const SOS_TYPE_LABEL_KEY: Record<SosType, string> = {
-  body: "sosBodyDiscomfort",
-  trapped: "sosTrapped",
-  share_location: "sosShareLocationType",
-};
-
-/**
- * Dedicated SOS flow (select type -> 5s cancelable countdown -> active
- * sharing -> user-resolved), independent from the plain share dialog.
- */
 export default function SosDialog({
   open,
   onOpenChange,
@@ -64,60 +56,80 @@ export default function SosDialog({
 }) {
   const { t, i18n } = useAppTranslation();
   const userLocation = useMapStore((s) => s.userLocation);
-  const [step, setStep] = useState<SosStep>("select-type");
-  const [selectedType, setSelectedType] = useState<SosType | null>(null);
+  const [step, setStep] = useState<SosStep>("countdown");
   const [secondsLeft, setSecondsLeft] = useState(SOS_COUNTDOWN_MS / 1000);
   const [address, setAddress] = useState<string | null>(null);
   const [contactsDialogOpen, setContactsDialogOpen] = useState(false);
   const countdownTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // SOS session lifecycle (backend-tracked, drives the "active" screen's
-  // real contact list, location-update polling, and the shareable tracking
-  // link — see src/lib/api/sos.ts).
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [notifiedCount, setNotifiedCount] = useState<number | null>(null);
   const [creatingSession, setCreatingSession] = useState(false);
   const [boundContacts, setBoundContacts] = useState<EmergencyContact[]>([]);
+  const [expanded, setExpanded] = useState(false);
+  const [supplementedType, setSupplementedType] = useState<SosType | null>(null);
 
-  // Mirrors `open` for use inside async callbacks: lets startSosSession
-  // detect "the dialog was closed while createSosSession was in flight" so
-  // it can abandon-resolve the just-created session instead of adopting it.
   const openRef = useRef(open);
   useEffect(() => {
     openRef.current = open;
   }, [open]);
 
+  // Start countdown immediately when dialog opens
+  useEffect(() => {
+    if (!open) return;
+    setStep("countdown");
+    setSecondsLeft(SOS_COUNTDOWN_MS / 1000);
+    setExpanded(false);
+    setSupplementedType(null);
+
+    const startedAt = Date.now();
+    countdownTimer.current = setInterval(() => {
+      const left = SOS_COUNTDOWN_MS - (Date.now() - startedAt);
+      if (left <= 0) {
+        if (countdownTimer.current) clearInterval(countdownTimer.current);
+        countdownTimer.current = null;
+        setStep("active");
+        startSosSession();
+      } else {
+        setSecondsLeft(Math.ceil(left / 1000));
+      }
+    }, 100);
+
+    return () => {
+      if (countdownTimer.current) clearInterval(countdownTimer.current);
+      countdownTimer.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
   const resetAndClose = () => {
     if (countdownTimer.current) clearInterval(countdownTimer.current);
     countdownTimer.current = null;
-    setStep("select-type");
-    setSelectedType(null);
+    setStep("countdown");
     setSessionId(null);
     setNotifiedCount(null);
     setBoundContacts([]);
+    setExpanded(false);
+    setSupplementedType(null);
     onOpenChange(false);
   };
 
-  const startSosSession = async (type: SosType) => {
-    if (!userLocation) {
+  const startSosSession = async () => {
+    const loc = useMapStore.getState().userLocation;
+    if (!loc) {
       toast.error(t("noLocation"));
-      setStep("select-type");
+      resetAndClose();
       return;
     }
     setCreatingSession(true);
     try {
       const response = await createSosSession({
-        type,
-        lat: userLocation.lat,
-        lng: userLocation.lng,
+        type: "body",
+        lat: loc.lat,
+        lng: loc.lng,
         address: address ?? undefined,
       });
       if (!openRef.current) {
-        // Dialog was closed while this request was in flight. The backend
-        // session already exists and contacts were already notified —
-        // resolve it immediately so they aren't left believing there's an
-        // ongoing emergency the user actually cancelled. Use the id from
-        // this response, not the (still-null) `sessionId` state.
         if (response.data) {
           resolveSosSession(response.data.sessionId).catch(() => {});
         }
@@ -130,30 +142,11 @@ export default function SosDialog({
     } catch (err) {
       if (openRef.current) {
         toast.error((err as Error).message);
-        setStep("select-type");
-        setSelectedType(null);
+        resetAndClose();
       }
     } finally {
       if (openRef.current) setCreatingSession(false);
     }
-  };
-
-  const handleSelectType = (type: SosType) => {
-    setSelectedType(type);
-    setStep("countdown");
-    const startedAt = Date.now();
-    setSecondsLeft(SOS_COUNTDOWN_MS / 1000);
-    countdownTimer.current = setInterval(() => {
-      const left = SOS_COUNTDOWN_MS - (Date.now() - startedAt);
-      if (left <= 0) {
-        if (countdownTimer.current) clearInterval(countdownTimer.current);
-        countdownTimer.current = null;
-        setStep("active");
-        startSosSession(type);
-      } else {
-        setSecondsLeft(Math.ceil(left / 1000));
-      }
-    }, 100);
   };
 
   const handleCancelCountdown = () => {
@@ -171,16 +164,6 @@ export default function SosDialog({
     setStep("resolved");
   };
 
-  useEffect(
-    () => () => {
-      if (countdownTimer.current) clearInterval(countdownTimer.current);
-    },
-    [],
-  );
-
-  // Fetch the already-bound contact list once on entering "active", purely
-  // for display ("who was notified") — not polled, since this flow is
-  // short-lived and only needs to reflect who was bound before this SOS.
   useEffect(() => {
     if (step !== "active") return;
     getEmergencyContacts()
@@ -188,10 +171,7 @@ export default function SosDialog({
       .catch(() => {});
   }, [step]);
 
-  // Location-update polling: a dedicated effect (not an imperative
-  // interval) so its lifetime is tied directly to `open`/`step`/`sessionId`
-  // — closing the dialog always tears this down, regardless of exactly when
-  // `sessionId` got set relative to the close.
+  // Location-update polling
   useEffect(() => {
     if (!open || step !== "active" || !sessionId) return;
     let failCount = 0;
@@ -221,7 +201,7 @@ export default function SosDialog({
     return () => clearInterval(interval);
   }, [open, step, sessionId, address, t]);
 
-  // Reverse geocode the current position for the "active" screen's location line.
+  // Reverse geocode
   useEffect(() => {
     if (step !== "active" || !userLocation) return;
     const controller = new AbortController();
@@ -247,60 +227,175 @@ export default function SosDialog({
     .filter((c) => c.bindStatus === "bound")
     .map((c) => c.name);
 
+  // When in active state, render as non-modal floating card
+  if (open && step === "active" && sessionId) {
+    return (
+      <>
+        <div className="fixed top-[env(safe-area-inset-top,12px)] left-1/2 -translate-x-1/2 z-50 w-full max-w-sm px-4 pointer-events-auto lg:left-auto lg:right-4 lg:translate-x-0 lg:top-4">
+          <div className="bg-background/95 backdrop-blur-md border border-red-500/30 rounded-2xl shadow-2xl overflow-hidden">
+            {/* Compact header - always visible */}
+            <button
+              type="button"
+              onClick={() => setExpanded(!expanded)}
+              className="w-full flex items-center justify-between px-4 py-3 hover:bg-muted/30 transition-colors"
+            >
+              <div className="flex items-center gap-2.5">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
+                </span>
+                <span className="text-sm font-bold text-red-600">
+                  {t("sosActiveTitle")}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {t("sosContinuousSharing")}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                {expanded ? (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                )}
+              </div>
+            </button>
+
+            {/* Expanded content */}
+            {expanded && (
+              <div className="px-4 pb-4 space-y-3 border-t border-border/30 pt-3">
+                {/* Supplement type */}
+                <div className="space-y-1.5">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {t("sosSupplementType")}
+                  </p>
+                  <div className="flex gap-2">
+                    {SOS_SUPPLEMENT_TYPES.map(({ key, icon: Icon, labelKey }) => (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => setSupplementedType(key)}
+                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+                          supplementedType === key
+                            ? "bg-red-500/10 border-red-500/40 text-red-600"
+                            : "border-border/60 text-muted-foreground hover:bg-muted/60"
+                        }`}
+                      >
+                        <Icon className="h-3 w-3" />
+                        {t(labelKey)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Notified contacts */}
+                <div className="rounded-xl bg-muted/30 p-2.5 space-y-1">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {t("sosNotifiedContacts")}
+                  </p>
+                  {notifiedCount && notifiedCount > 0 && boundContactNames.length > 0 ? (
+                    <p className="text-sm">{boundContactNames.join("、")}</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">{t("sosNoContacts")}</p>
+                  )}
+                </div>
+
+                {/* Location */}
+                <div className="rounded-xl bg-muted/30 p-2.5 space-y-1">
+                  <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                    <MapPin className="h-3 w-3" />
+                    {t("sosCurrentLocation")}
+                  </p>
+                  <p className="text-xs">{address ?? t("locating")}</p>
+                </div>
+
+                {/* Quick actions */}
+                <div className="grid grid-cols-2 gap-2">
+                  <Button asChild variant="destructive" size="sm" className="rounded-xl h-9 gap-1.5 text-xs">
+                    <a href="tel:110">
+                      <PhoneCall className="h-3.5 w-3.5" />
+                      {t("sosCall110")}
+                    </a>
+                  </Button>
+                  <Button asChild variant="destructive" size="sm" className="rounded-xl h-9 gap-1.5 text-xs">
+                    <a href="tel:119">
+                      <PhoneCall className="h-3.5 w-3.5" />
+                      {t("sosCall119")}
+                    </a>
+                  </Button>
+                </div>
+
+                {/* Share */}
+                <div className="space-y-1.5">
+                  <p className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                    <Share2 className="h-3 w-3" />
+                    {t("sosManualShareLabel")}
+                  </p>
+                  <ShareTargets message={sosMessage} />
+                </div>
+
+                {/* Resolve */}
+                <Button
+                  variant="outline"
+                  onClick={handleResolve}
+                  className="w-full rounded-xl h-9 text-xs"
+                >
+                  {t("sosResolveButton")}
+                </Button>
+
+                {/* Manage contacts link */}
+                <button
+                  type="button"
+                  onClick={() => setContactsDialogOpen(true)}
+                  className="w-full text-center text-xs text-primary underline"
+                >
+                  {t("sosManageContactsLink")}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <EmergencyContactsDialog
+          open={contactsDialogOpen}
+          onOpenChange={setContactsDialogOpen}
+        />
+      </>
+    );
+  }
+
+  // Loading state while creating session
+  if (open && step === "active" && creatingSession && !sessionId) {
+    return (
+      <Dialog open={open} onOpenChange={(v) => { if (!v) resetAndClose(); }}>
+        <DialogContent className="max-w-md rounded-2xl p-6">
+          <div className="flex flex-col items-center gap-3 py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-red-600" />
+            <DialogTitle className="text-lg font-bold text-red-600">
+              {t("sosActiveTitle")}
+            </DialogTitle>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <>
       <Dialog
-        open={open}
+        open={open && (step === "countdown" || step === "resolved")}
         onOpenChange={(v) => {
           if (!v) resetAndClose();
         }}
       >
         <DialogContent className="max-w-md rounded-2xl p-6">
-          {step === "select-type" && (
-            <div className="space-y-4">
-              <DialogHeader>
-                <DialogTitle className="text-lg font-bold text-left">
-                  {t("sosSelectTitle")}
-                </DialogTitle>
-                <p className="text-sm text-muted-foreground text-left">
-                  {t("sosSelectDesc")}
-                </p>
-              </DialogHeader>
-              <div className="space-y-2">
-                {SOS_TYPES.map(({ key, icon: Icon }) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => handleSelectType(key)}
-                    className="w-full flex items-center gap-3 p-3.5 rounded-xl border border-border/60 hover:bg-muted/60 hover:shadow-sm transition-all text-left"
-                  >
-                    <span className="h-9 w-9 rounded-full bg-red-500/10 flex items-center justify-center shrink-0">
-                      <Icon className="h-4 w-4 text-red-600" />
-                    </span>
-                    <span className="text-sm font-semibold">
-                      {t(SOS_TYPE_LABEL_KEY[key])}
-                    </span>
-                  </button>
-                ))}
-              </div>
-              <button
-                type="button"
-                onClick={() => setContactsDialogOpen(true)}
-                className="w-full text-center text-sm text-primary underline"
-              >
-                {t("sosManageContactsLink")}
-              </button>
-            </div>
-          )}
-
-          {step === "countdown" && selectedType && (
+          {step === "countdown" && (
             <div className="space-y-5 flex flex-col items-center py-2">
               <DialogHeader className="w-full">
                 <DialogTitle className="text-lg font-bold text-center text-red-600">
                   {t("sosCountdownTitle")}
                 </DialogTitle>
                 <p className="text-sm text-muted-foreground text-center">
-                  {t(SOS_TYPE_LABEL_KEY[selectedType])}
+                  {t("sosCountdownDesc")}
                 </p>
               </DialogHeader>
               <div className="h-24 w-24 rounded-full border-4 border-red-500 flex items-center justify-center">
@@ -308,8 +403,8 @@ export default function SosDialog({
                   {secondsLeft}
                 </span>
               </div>
-              <p className="text-sm text-muted-foreground">
-                {t("sosCountdownDesc")}
+              <p className="text-xs text-muted-foreground text-center">
+                {t("sosCountdownHint")}
               </p>
               <Button
                 variant="secondary"
@@ -317,89 +412,6 @@ export default function SosDialog({
                 className="w-full rounded-xl h-11"
               >
                 {t("sosCountdownCancel")}
-              </Button>
-            </div>
-          )}
-
-          {step === "active" && creatingSession && !sessionId && (
-            <div className="flex flex-col items-center gap-3 py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-red-600" />
-              <DialogTitle className="text-lg font-bold text-red-600">
-                {t("sosActiveTitle")}
-              </DialogTitle>
-            </div>
-          )}
-
-          {step === "active" && sessionId && (
-            <div className="space-y-4">
-              <DialogHeader>
-                <DialogTitle className="text-lg font-bold text-left text-red-600 flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-red-500 animate-pulse" />
-                  {t("sosActiveTitle")}
-                </DialogTitle>
-              </DialogHeader>
-
-              <div className="rounded-xl bg-muted/30 p-3 space-y-1.5">
-                <p className="text-xs font-medium text-muted-foreground">
-                  {t("sosNotifiedContacts")}
-                </p>
-                {notifiedCount &&
-                notifiedCount > 0 &&
-                boundContactNames.length > 0 ? (
-                  <p className="text-sm">{boundContactNames.join("、")}</p>
-                ) : (
-                  <p className="text-sm">{t("sosNoContacts")}</p>
-                )}
-              </div>
-
-              <div className="rounded-xl bg-muted/30 p-3 space-y-1.5">
-                <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5" />
-                  {t("sosCurrentLocation")}
-                </p>
-                <p className="text-sm">{address ?? t("locating")}</p>
-                <p className="text-xs text-muted-foreground">
-                  {t("sosContinuousSharing")}
-                </p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  asChild
-                  variant="destructive"
-                  className="w-full rounded-xl h-11 gap-1.5"
-                >
-                  <a href="tel:110">
-                    <PhoneCall className="h-4 w-4" />
-                    {t("sosCall110")}
-                  </a>
-                </Button>
-                <Button
-                  asChild
-                  variant="destructive"
-                  className="w-full rounded-xl h-11 gap-1.5"
-                >
-                  <a href="tel:119">
-                    <PhoneCall className="h-4 w-4" />
-                    {t("sosCall119")}
-                  </a>
-                </Button>
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
-                  <Share2 className="h-3.5 w-3.5" />
-                  {t("sosManualShareLabel")}
-                </p>
-                <ShareTargets message={sosMessage} />
-              </div>
-
-              <Button
-                variant="outline"
-                onClick={handleResolve}
-                className="w-full rounded-xl h-11"
-              >
-                {t("sosResolveButton")}
               </Button>
             </div>
           )}

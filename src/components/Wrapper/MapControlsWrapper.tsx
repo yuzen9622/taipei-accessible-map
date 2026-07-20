@@ -37,7 +37,7 @@ import useMapStore, { type SheetMode } from "@/stores/useMapStore";
 import useNavStore from "@/stores/useNavStore";
 import type { AirQualityLevel, EnvironmentData } from "@/types/route";
 
-const SOS_HOLD_MS = 3000;
+// SOS is now a single tap — no hold required for accessibility
 
 const LEVEL_CONFIG: Record<
   AirQualityLevel,
@@ -148,6 +148,7 @@ const getBottomOffset = (sheetMode: SheetMode, isNavigating: boolean) => {
     case "navigation":
       return "bottom-[14dvh]";
     case "home":
+      return "bottom-[20dvh]";
     case "place":
     case "plan":
     case "route":
@@ -211,30 +212,6 @@ export default function MapControlsWrapper() {
   const [shareOpen, setShareOpen] = useState(false);
   const [sosOpen, setSosOpen] = useState(false);
   const [address, setAddress] = useState<string | null>(null);
-  const [holdRemaining, setHoldRemaining] = useState<number | null>(null);
-  const holdTimer = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const clearHold = useCallback(() => {
-    if (holdTimer.current) clearInterval(holdTimer.current);
-    holdTimer.current = null;
-    setHoldRemaining(null);
-  }, []);
-
-  const startHold = useCallback(() => {
-    const startedAt = Date.now();
-    setHoldRemaining(SOS_HOLD_MS / 1000);
-    holdTimer.current = setInterval(() => {
-      const left = SOS_HOLD_MS - (Date.now() - startedAt);
-      if (left <= 0) {
-        clearHold();
-        setSosOpen(true);
-      } else {
-        setHoldRemaining(Math.ceil(left / 1000));
-      }
-    }, 100);
-  }, [clearHold]);
-
-  useEffect(() => clearHold, [clearHold]);
 
   // Reverse geocode user location for sharing
   useEffect(() => {
@@ -519,42 +496,15 @@ export default function MapControlsWrapper() {
               >
                 <LocateFixed className="h-5 w-5" />
               </Button>
-              {/* SOS hold button during navigation */}
-              <motion.button
+              {/* SOS button during navigation (single tap) */}
+              <button
                 type="button"
-                aria-label={`SOS ${t("sosHold")}`}
-                onPointerDown={startHold}
-                onPointerUp={clearHold}
-                onPointerLeave={clearHold}
-                onPointerCancel={clearHold}
-                onContextMenu={(e) => e.preventDefault()}
-                animate={holdRemaining != null ? { scale: 1.15 } : { scale: 1 }}
-                className="h-11 w-11 rounded-full bg-red-500 text-white shadow-lg hover:bg-red-600 hover:shadow-xl transition-colors flex flex-col items-center justify-center select-none touch-none shrink-0"
+                aria-label="SOS"
+                onClick={() => setSosOpen(true)}
+                className="h-11 w-11 rounded-full bg-red-500 text-white shadow-lg hover:bg-red-600 hover:shadow-xl transition-colors flex items-center justify-center select-none shrink-0"
               >
-                <AnimatePresence mode="wait" initial={false}>
-                  {holdRemaining != null ? (
-                    <motion.span
-                      key="count"
-                      initial={{ opacity: 0, scale: 0.6 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="text-sm font-black tabular-nums"
-                    >
-                      {holdRemaining}
-                    </motion.span>
-                  ) : (
-                    <motion.span
-                      key="label"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="flex flex-col items-center leading-none"
-                    >
-                      <span className="text-xs font-black">SOS</span>
-                    </motion.span>
-                  )}
-                </AnimatePresence>
-              </motion.button>
+                <span className="text-xs font-black">SOS</span>
+              </button>
             </div>
           ) : (
             // Standard Map Mode Controls
@@ -684,44 +634,15 @@ export default function MapControlsWrapper() {
                   <Share2 className="h-5 w-5" />
                 </Button>
 
-                {/* SOS Hold-to-Trigger Button */}
-                <motion.button
+                {/* SOS Button (single tap) */}
+                <button
                   type="button"
-                  aria-label={`SOS ${t("sosHold")}`}
-                  onPointerDown={startHold}
-                  onPointerUp={clearHold}
-                  onPointerLeave={clearHold}
-                  onPointerCancel={clearHold}
-                  onContextMenu={(e) => e.preventDefault()}
-                  animate={
-                    holdRemaining != null ? { scale: 1.15 } : { scale: 1 }
-                  }
-                  className="h-11 w-11 rounded-full bg-red-500 text-white shadow-lg hover:bg-red-600 hover:shadow-xl transition-colors flex flex-col items-center justify-center select-none touch-none shrink-0"
+                  aria-label="SOS"
+                  onClick={() => setSosOpen(true)}
+                  className="h-11 w-11 rounded-full bg-red-500 text-white shadow-lg hover:bg-red-600 hover:shadow-xl transition-colors flex items-center justify-center select-none shrink-0"
                 >
-                  <AnimatePresence mode="wait" initial={false}>
-                    {holdRemaining != null ? (
-                      <motion.span
-                        key="count"
-                        initial={{ opacity: 0, scale: 0.6 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="text-sm font-black tabular-nums"
-                      >
-                        {holdRemaining}
-                      </motion.span>
-                    ) : (
-                      <motion.span
-                        key="label"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="flex flex-col items-center leading-none"
-                      >
-                        <span className="text-xs font-black">SOS</span>
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </motion.button>
+                  <span className="text-xs font-black">SOS</span>
+                </button>
               </div>
             </>
           )}

@@ -41,7 +41,7 @@ import StationDetailContent from "./StationDetailContent";
 import WelfarePanel from "./WelfarePanel";
 
 const SNAP_POINTS = {
-  peek: 0.12,
+  peek: 0.18,
   half: 0.45,
   full: 0.92,
 };
@@ -130,9 +130,8 @@ export default function BottomSheet() {
   const isDesktop = useIsDesktop();
   const stepListOpen = useNavStore((s) => s.stepListOpen);
   const setStepListOpen = useNavStore((s) => s.setStepListOpen);
-  // Only the setter is needed — the sheet height drives the layout.
-  const [, setSnap] = useState<"peek" | "half" | "full">("half");
-  const [sheetHeight, setSheetHeight] = useState(SNAP_POINTS.half);
+  const [, setSnap] = useState<"peek" | "half" | "full">("peek");
+  const [sheetHeight, setSheetHeight] = useState(SNAP_POINTS.peek);
   const [isDragging, setIsDragging] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -147,6 +146,9 @@ export default function BottomSheet() {
   useEffect(() => {
     switch (sheetMode) {
       case "home":
+        setSnap("peek");
+        setSheetHeight(SNAP_POINTS.peek);
+        break;
       case "place":
       case "plan":
       case "route":
