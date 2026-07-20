@@ -2,9 +2,10 @@
 
 import { ArrowLeft, ArrowUpDown, DoorOpen, MapPin, Train } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
+import { useAppTranslation } from "@/i18n/client";
 import { getNearbyRouteA11yPlaces } from "@/lib/api/a11y";
 import { geoCoords } from "@/lib/utils";
-import { useAppTranslation } from "@/i18n/client";
 import useMapStore from "@/stores/useMapStore";
 import type { IBathroom, metroA11yData } from "@/types";
 import { Badge } from "../ui/badge";
@@ -12,7 +13,14 @@ import { Badge } from "../ui/badge";
 export default function StationDetailContent() {
   const { t } = useAppTranslation();
   const { selectA11yPlace, setSheetMode, setSelectA11yPlace, map } =
-    useMapStore();
+    useMapStore(
+      useShallow((s) => ({
+        selectA11yPlace: s.selectA11yPlace,
+        setSheetMode: s.setSheetMode,
+        setSelectA11yPlace: s.setSelectA11yPlace,
+        map: s.map,
+      })),
+    );
 
   const [nearbyBathrooms, setNearbyBathrooms] = useState<IBathroom[]>([]);
   const [nearbyMetro, setNearbyMetro] = useState<metroA11yData[]>([]);
@@ -150,7 +158,11 @@ export default function StationDetailContent() {
                     key={b._id}
                     type="button"
                     onClick={() => {
-                      const pos = geoCoords(b.location, b.latitude, b.longitude);
+                      const pos = geoCoords(
+                        b.location,
+                        b.latitude,
+                        b.longitude,
+                      );
                       if (map && pos)
                         map.flyTo({
                           center: [pos.lng, pos.lat],

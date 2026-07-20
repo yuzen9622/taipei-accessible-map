@@ -1,5 +1,6 @@
 import { Loader2 } from "lucide-react";
 import { useEffect, useRef } from "react";
+import { useShallow } from "zustand/react/shallow";
 import useComputeRoute from "@/hook/useComputeRoute";
 import { useAppTranslation } from "@/i18n/client";
 import { cn } from "@/lib/utils";
@@ -14,7 +15,15 @@ export default function A11yCard({ place }: { place: Marker }) {
     map,
     selectA11yPlace,
     setSelectA11yPlace,
-  } = useMapStore();
+  } = useMapStore(
+    useShallow((s) => ({
+      setA11yDrawerOpen: s.setA11yDrawerOpen,
+      setDestination: s.setDestination,
+      map: s.map,
+      selectA11yPlace: s.selectA11yPlace,
+      setSelectA11yPlace: s.setSelectA11yPlace,
+    })),
+  );
   const { t } = useAppTranslation("translation");
   const { handleComputeRoute, isLoading } = useComputeRoute();
   const cardRef = useRef<HTMLDivElement>(null);

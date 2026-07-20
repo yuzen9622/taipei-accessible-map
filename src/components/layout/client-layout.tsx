@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect } from "react";
+import { useShallow } from "zustand/react/shallow";
 import BottomSheet from "@/components/BottomSheet/BottomSheet";
 import KeyboardShortcuts from "@/components/shared/KeyboardShortcuts";
 import SkipNavLink from "@/components/shared/SkipNavLink";
@@ -15,8 +16,20 @@ export default function ClientLayout({
   children: React.ReactNode;
 }) {
   const { initSearchHistory, initSavedPlaces, initSavedPlaceCategories } =
-    useMapStore();
-  const { setSession, setUser, setUserConfig } = useAuthStore();
+    useMapStore(
+      useShallow((s) => ({
+        initSearchHistory: s.initSearchHistory,
+        initSavedPlaces: s.initSavedPlaces,
+        initSavedPlaceCategories: s.initSavedPlaceCategories,
+      })),
+    );
+  const { setSession, setUser, setUserConfig } = useAuthStore(
+    useShallow((s) => ({
+      setSession: s.setSession,
+      setUser: s.setUser,
+      setUserConfig: s.setUserConfig,
+    })),
+  );
   const getNewAccessToken = useCallback(async () => {
     const token = await refreshToken();
     if (token) {

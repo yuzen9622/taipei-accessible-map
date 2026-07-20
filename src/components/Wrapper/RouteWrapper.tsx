@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { type JSX, useMemo } from "react";
 import { Marker } from "react-map-gl/maplibre";
-
+import { useShallow } from "zustand/react/shallow";
 import useMapStore from "@/stores/useMapStore";
 import type { RouteLeg } from "@/types/route";
 import { getLegColor } from "@/types/route";
@@ -43,7 +43,13 @@ function getLegIcon(leg: RouteLeg) {
 }
 
 export default function RouteLine() {
-  const { selectRoute, routeWaypoints, sosNavActive } = useMapStore();
+  const { selectRoute, routeWaypoints, sosNavActive } = useMapStore(
+    useShallow((s) => ({
+      selectRoute: s.selectRoute,
+      routeWaypoints: s.routeWaypoints,
+      sosNavActive: s.sosNavActive,
+    })),
+  );
 
   const waypointMarkers = useMemo(() => {
     if (!routeWaypoints.length) return null;

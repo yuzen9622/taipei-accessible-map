@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { useShallow } from "zustand/react/shallow";
 import useMapStore from "@/stores/useMapStore";
 import type { AiResultMarker, LatLng } from "@/types";
 
@@ -14,7 +15,16 @@ export default function useOpenAiResult() {
     setSheetMode,
     setSelectA11yPlace,
     setChatOpen,
-  } = useMapStore();
+  } = useMapStore(
+    useShallow((s) => ({
+      map: s.map,
+      setInfoShow: s.setInfoShow,
+      setSearchPlace: s.setSearchPlace,
+      setSheetMode: s.setSheetMode,
+      setSelectA11yPlace: s.setSelectA11yPlace,
+      setChatOpen: s.setChatOpen,
+    })),
+  );
 
   const openAiResult = useCallback(
     (r: AiResultMarker) => {

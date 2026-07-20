@@ -2,6 +2,7 @@
 
 import { X } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useAppTranslation } from "@/i18n/client";
 import useMapStore from "@/stores/useMapStore";
 import { A11yEnum, type Marker } from "@/types/index";
@@ -18,7 +19,17 @@ export default function AccessibleDrawer() {
     routeA11y,
     setSelectA11yPlace,
     a11yPlaces,
-  } = useMapStore();
+  } = useMapStore(
+    useShallow((s) => ({
+      selectedA11yTypes: s.selectedA11yTypes,
+      a11yDrawerOpen: s.a11yDrawerOpen,
+      setA11yDrawerOpen: s.setA11yDrawerOpen,
+      toggleA11yType: s.toggleA11yType,
+      routeA11y: s.routeA11y,
+      setSelectA11yPlace: s.setSelectA11yPlace,
+      a11yPlaces: s.a11yPlaces,
+    })),
+  );
   const { t } = useAppTranslation("translation");
   const [searchTerm, setSearchTerm] = useState("");
 

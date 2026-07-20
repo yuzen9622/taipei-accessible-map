@@ -1,24 +1,25 @@
 "use client";
 import {
+  Accessibility,
   ArrowDownUpIcon,
-  Loader2,
-  Search,
+  Bike,
   Bus,
   Car,
-  Footprints,
-  Bike,
-  Accessibility,
   EyeOff,
+  Footprints,
+  Loader2,
+  Search,
   User,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import useComputeRoute from "@/hook/useComputeRoute";
 import { useAppTranslation } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
+import PlaceInput from "../shared/PlaceInput";
 import { Button } from "../ui/button";
 import { Card } from "../ui/card";
-import PlaceInput from "../shared/PlaceInput";
 
 export default function RoutePlanInput() {
   const {
@@ -30,7 +31,18 @@ export default function RoutePlanInput() {
     setDestination,
     setOriginName,
     setDestinationName,
-  } = useMapStore();
+  } = useMapStore(
+    useShallow((s) => ({
+      origin: s.origin,
+      destination: s.destination,
+      originName: s.originName,
+      destinationName: s.destinationName,
+      setOrigin: s.setOrigin,
+      setDestination: s.setDestination,
+      setOriginName: s.setOriginName,
+      setDestinationName: s.setDestinationName,
+    })),
+  );
 
   const { handleComputeRoute, isLoading } = useComputeRoute();
   const { t } = useAppTranslation();

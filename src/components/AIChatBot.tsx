@@ -19,6 +19,7 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { Fragment, useEffect, useRef } from "react";
 import { toast } from "sonner";
+import { useShallow } from "zustand/react/shallow";
 import type { ChatBubble, ToolActivity } from "@/hook/useAIChat";
 import useAIChat, { TOOL_LABELS, TOOL_LOADING_TEXT } from "@/hook/useAIChat";
 import useOpenAiResult from "@/hook/useOpenAiResult";
@@ -223,7 +224,13 @@ function MessageBubble({ message }: { message: ChatBubble }) {
 
 export default function AIChatBot() {
   const { t } = useAppTranslation();
-  const { sidebarCollapsed, activeRailPanel, isNavigating } = useMapStore();
+  const { sidebarCollapsed, activeRailPanel, isNavigating } = useMapStore(
+    useShallow((s) => ({
+      sidebarCollapsed: s.sidebarCollapsed,
+      activeRailPanel: s.activeRailPanel,
+      isNavigating: s.isNavigating,
+    })),
+  );
   const panelOpen = activeRailPanel !== "none";
   const {
     messages,

@@ -5,6 +5,7 @@ import {
   initReactI18next,
   useTranslation as useReactTranslation,
 } from "react-i18next";
+import { useShallow } from "zustand/react/shallow";
 import en from "@/i18n/locale/en/translation.json";
 import zhTW from "@/i18n/locale/zh-TW/translation.json";
 import type { LanguageEnum } from "@/lib/config";
@@ -39,7 +40,12 @@ export function useAppTranslation(ns?: string | string[]) {
   const path = usePathname();
 
   const lang = useMemo(() => path.split("/")[1], [path]);
-  const { updateUserConfig, userConfig } = useAuthStore();
+  const { updateUserConfig, userConfig } = useAuthStore(
+    useShallow((s) => ({
+      updateUserConfig: s.updateUserConfig,
+      userConfig: s.userConfig,
+    })),
+  );
 
   useEffect(() => {
     if (!userConfig.language) return;

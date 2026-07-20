@@ -1,7 +1,8 @@
 import { arrowsUpDownSquare } from "@lucide/lab";
-import { Marker } from "react-map-gl/maplibre";
 import { AccessibilityIcon, Icon, ToiletIcon } from "lucide-react";
 import { useState } from "react";
+import { Marker } from "react-map-gl/maplibre";
+import { useShallow } from "zustand/react/shallow";
 import usePin from "@/hook/usePin";
 import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
@@ -16,7 +17,14 @@ export default function MetroA11yPin({ place }: { place: MarkerType }) {
     setSelectA11yPlace,
     setA11yDrawerOpen,
     setSheetMode,
-  } = useMapStore();
+  } = useMapStore(
+    useShallow((s) => ({
+      selectA11yPlace: s.selectA11yPlace,
+      setSelectA11yPlace: s.setSelectA11yPlace,
+      setA11yDrawerOpen: s.setA11yDrawerOpen,
+      setSheetMode: s.setSheetMode,
+    })),
+  );
   const { handlePinClick } = usePin();
 
   const A11yIcon = () => {

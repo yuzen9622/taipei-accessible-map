@@ -2,6 +2,7 @@
 
 import { AlertCircle, Lightbulb, Loader2, Sparkles, X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useAppTranslation } from "@/i18n/client";
 import { explainRoute } from "@/lib/api/ai";
 import useMapStore from "@/stores/useMapStore";
@@ -13,7 +14,9 @@ export default function RouteExplanationPanel({
   onClose: () => void;
 }) {
   const { t, i18n } = useAppTranslation();
-  const { selectRoute } = useMapStore();
+  const { selectRoute } = useMapStore(
+    useShallow((s) => ({ selectRoute: s.selectRoute })),
+  );
   const [explanation, setExplanation] = useState<RouteExplanation | null>(null);
   const [loading, setLoading] = useState(true);
 

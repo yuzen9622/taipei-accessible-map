@@ -2,6 +2,7 @@
 
 import { Bookmark, MapPin, Navigation, Tag, Trash2, X } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -139,7 +140,18 @@ export default function SavedPlacesPanel({
     setSearchPlace,
     setInfoShow,
     setSheetMode,
-  } = useMapStore();
+  } = useMapStore(
+    useShallow((s) => ({
+      savedPlaces: s.savedPlaces,
+      savedPlaceCategories: s.savedPlaceCategories,
+      setSavedPlaceCategory: s.setSavedPlaceCategory,
+      removeSavedPlace: s.removeSavedPlace,
+      map: s.map,
+      setSearchPlace: s.setSearchPlace,
+      setInfoShow: s.setInfoShow,
+      setSheetMode: s.setSheetMode,
+    })),
+  );
   const [filter, setFilter] = useState<SavedPlaceCategory | "all">("all");
 
   const handleNavigate = useCallback(

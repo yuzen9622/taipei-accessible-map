@@ -8,6 +8,7 @@ import {
   TramFront,
 } from "lucide-react";
 import { useEffect, useMemo, useRef } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useAppTranslation } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
@@ -22,7 +23,9 @@ import { Button } from "../ui/button";
  */
 export default function NavigationContent() {
   const { t } = useAppTranslation();
-  const { setIsNavigating } = useMapStore();
+  const { setIsNavigating } = useMapStore(
+    useShallow((s) => ({ setIsNavigating: s.setIsNavigating })),
+  );
 
   const instructions = useNavStore((s) => s.instructions);
   const currentStep = useNavStore((s) => s.currentStepIndex);

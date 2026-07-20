@@ -3,6 +3,7 @@
 import { ThemeProvider as NextThemesProvider, useTheme } from "next-themes";
 import type * as React from "react";
 import { useEffect } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { FontSizeEnum, fontSizeConfig } from "@/lib/config";
 import useAuthStore from "@/stores/useAuthStore";
 export function ThemeProvider({
@@ -17,7 +18,9 @@ export function ThemeProvider({
 }
 function ThemeSync({ children }: { children: React.ReactNode }) {
   const { setTheme } = useTheme();
-  const { userConfig } = useAuthStore();
+  const { userConfig } = useAuthStore(
+    useShallow((s) => ({ userConfig: s.userConfig })),
+  );
   const darkMode = useAuthStore((s) => s.userConfig.darkMode);
 
   useEffect(() => {

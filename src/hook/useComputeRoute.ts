@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
+import { useShallow } from "zustand/react/shallow";
 import { getAccessibleRoute } from "@/lib/api/a11y";
 import {
   extendBounds,
@@ -20,7 +21,17 @@ export default function useComputeRoute() {
     setRouteWaypoints,
     userLocation,
     closeRouteDrawer,
-  } = useMapStore();
+  } = useMapStore(
+    useShallow((s) => ({
+      setComputeRoutes: s.setComputeRoutes,
+      map: s.map,
+      setRouteSelect: s.setRouteSelect,
+      setRouteInfoShow: s.setRouteInfoShow,
+      setRouteWaypoints: s.setRouteWaypoints,
+      userLocation: s.userLocation,
+      closeRouteDrawer: s.closeRouteDrawer,
+    })),
+  );
 
   const computeRoute = useCallback(
     async (params: {
@@ -80,9 +91,7 @@ export default function useComputeRoute() {
             lat: w.lat ?? (w as any).latitude,
             lng: w.lng ?? (w as any).longitude,
           }))
-          .filter(
-            (w) => Number.isFinite(w.lat) && Number.isFinite(w.lng),
-          );
+          .filter((w) => Number.isFinite(w.lat) && Number.isFinite(w.lng));
         setRouteWaypoints(apiWaypoints);
 
         if (map) {

@@ -11,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useAppTranslation } from "@/i18n/client";
 import { getNearbyWelfare } from "@/lib/api/a11y";
 import useMapStore from "@/stores/useMapStore";
@@ -96,7 +97,9 @@ export default function WelfarePanel({
   hideHeader?: boolean;
 }) {
   const { t } = useAppTranslation();
-  const { userLocation, map } = useMapStore();
+  const { userLocation, map } = useMapStore(
+    useShallow((s) => ({ userLocation: s.userLocation, map: s.map })),
+  );
   const [data, setData] = useState<WelfareInstitution[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

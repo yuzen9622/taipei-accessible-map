@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useAppTranslation } from "@/i18n/client";
 import { a11yPlacesToMarkers, googlePlacesToMarkers } from "@/lib/aiResults";
 import type { ChatMessage } from "@/lib/api/ai";
@@ -75,7 +76,9 @@ export const TOOL_LOADING_TEXT: Record<string, string> = {
 
 export default function useAIChat() {
   const { t } = useAppTranslation();
-  const { userConfig } = useAuthStore();
+  const { userConfig } = useAuthStore(
+    useShallow((s) => ({ userConfig: s.userConfig })),
+  );
 
   const [messages, setMessages] = useState<ChatBubble[]>([
     {
@@ -94,7 +97,15 @@ export default function useAIChat() {
     setChatOpen: setOpen,
     setSheetMode,
     setAiResultMarkers,
-  } = useMapStore();
+  } = useMapStore(
+    useShallow((s) => ({
+      userLocation: s.userLocation,
+      chatOpen: s.chatOpen,
+      setChatOpen: s.setChatOpen,
+      setSheetMode: s.setSheetMode,
+      setAiResultMarkers: s.setAiResultMarkers,
+    })),
+  );
   const { handleComputeRoute, setComputedRouteData } = useComputeRoute();
   const abortRef = useRef<AbortController | null>(null);
 

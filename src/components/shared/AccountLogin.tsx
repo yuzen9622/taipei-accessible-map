@@ -18,6 +18,7 @@ import {
 import Image from "next/image";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useShallow } from "zustand/react/shallow";
 import EmergencyContactsDialog from "@/components/Sos/EmergencyContactsDialog";
 import EmergencyContactsManager from "@/components/Sos/EmergencyContactsManager";
 import AIMemoryPanel from "@/components/settings/AIMemoryPanel";
@@ -72,8 +73,23 @@ export default function AccountLogin() {
     setUserConfig,
     updateUserConfig,
     logout,
-  } = useAuthStore();
-  const { setActiveRailPanel, setSheetMode } = useMapStore();
+  } = useAuthStore(
+    useShallow((s) => ({
+      user: s.user,
+      setUser: s.setUser,
+      setSession: s.setSession,
+      userConfig: s.userConfig,
+      setUserConfig: s.setUserConfig,
+      updateUserConfig: s.updateUserConfig,
+      logout: s.logout,
+    })),
+  );
+  const { setActiveRailPanel, setSheetMode } = useMapStore(
+    useShallow((s) => ({
+      setActiveRailPanel: s.setActiveRailPanel,
+      setSheetMode: s.setSheetMode,
+    })),
+  );
   const settingsSections = [
     {
       key: "general" as const,

@@ -11,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useAppTranslation } from "@/i18n/client";
 import { getNearbyHazardReports, getNearbyParking } from "@/lib/api/a11y";
 import { haversineMeters } from "@/lib/geo";
@@ -33,7 +34,15 @@ export default function A11yPanel({
 }) {
   const { t } = useAppTranslation();
   const { map, userLocation, a11yPlaces, selectedA11yTypes, toggleA11yType } =
-    useMapStore();
+    useMapStore(
+      useShallow((s) => ({
+        map: s.map,
+        userLocation: s.userLocation,
+        a11yPlaces: s.a11yPlaces,
+        selectedA11yTypes: s.selectedA11yTypes,
+        toggleA11yType: s.toggleA11yType,
+      })),
+    );
   const [nearbyHazards, setNearbyHazards] = useState<HazardReport[]>([]);
   const [nearbyParking, setNearbyParking] = useState<DisabledParking[]>([]);
 

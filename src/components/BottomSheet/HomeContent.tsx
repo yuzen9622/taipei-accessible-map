@@ -16,6 +16,7 @@ import {
   TrainFront,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import PlaceInput from "@/components/shared/PlaceInput";
 import { useAppTranslation } from "@/i18n/client";
 import { cn } from "@/lib/utils";
@@ -115,7 +116,17 @@ export default function HomeContent() {
     setSheetMode,
     setActiveRailPanel,
     savedPlaces,
-  } = useMapStore();
+  } = useMapStore(
+    useShallow((s) => ({
+      setSearchPlace: s.setSearchPlace,
+      setInfoShow: s.setInfoShow,
+      map: s.map,
+      searchHistory: s.searchHistory,
+      setSheetMode: s.setSheetMode,
+      setActiveRailPanel: s.setActiveRailPanel,
+      savedPlaces: s.savedPlaces,
+    })),
+  );
   const [input, setInput] = useState("");
   const [subPanel, setSubPanel] = useState<SubPanel>("none");
   const [moreActionsOpen, setMoreActionsOpen] = useState(false);

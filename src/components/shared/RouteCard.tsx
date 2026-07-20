@@ -18,6 +18,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { memo, useId, useMemo, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useAppTranslation } from "@/i18n/client";
 import { fitRouteBounds, routeBoundsFromLegs } from "@/lib/mapCamera";
 import { cn } from "@/lib/utils";
@@ -745,9 +746,22 @@ export const RouteCard = memo(function RouteCard({
     originName,
     destinationName,
     userLocation,
-  } = useMapStore();
+  } = useMapStore(
+    useShallow((s) => ({
+      setRouteSelect: s.setRouteSelect,
+      selectRoute: s.selectRoute,
+      map: s.map,
+      origin: s.origin,
+      destination: s.destination,
+      originName: s.originName,
+      destinationName: s.destinationName,
+      userLocation: s.userLocation,
+    })),
+  );
   const { t } = useAppTranslation();
-  const { userConfig } = useAuthStore();
+  const { userConfig } = useAuthStore(
+    useShallow((s) => ({ userConfig: s.userConfig })),
+  );
   const isSelected = selectRoute?.index === idx;
 
   const pointCtx: PointLabelContext = {

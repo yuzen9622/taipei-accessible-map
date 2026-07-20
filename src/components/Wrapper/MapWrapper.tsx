@@ -1,10 +1,18 @@
+import { useShallow } from "zustand/react/shallow";
 import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import RoutePlanInput from "../Input/PlanInput";
 
 export default function MapWrapper() {
   const { selectRoute, isNavigating, sidebarCollapsed, activeRailPanel } =
-    useMapStore();
+    useMapStore(
+      useShallow((s) => ({
+        selectRoute: s.selectRoute,
+        isNavigating: s.isNavigating,
+        sidebarCollapsed: s.sidebarCollapsed,
+        activeRailPanel: s.activeRailPanel,
+      })),
+    );
 
   if (!selectRoute || isNavigating) return null;
 

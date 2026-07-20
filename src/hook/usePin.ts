@@ -1,10 +1,11 @@
 import { useCallback } from "react";
 import { toast } from "sonner";
-import type { LatLng } from "@/types";
+import { useShallow } from "zustand/react/shallow";
 import useMapStore from "@/stores/useMapStore";
+import type { LatLng } from "@/types";
 
 export default function usePin() {
-  const { map } = useMapStore();
+  const { map } = useMapStore(useShallow((s) => ({ map: s.map })));
   const handlePinClick = useCallback(
     (position: LatLng | null) => {
       if (!map) return;

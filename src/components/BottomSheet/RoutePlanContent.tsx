@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useShallow } from "zustand/react/shallow";
 import PlaceInput from "@/components/shared/PlaceInput";
 import useComputeRoute from "@/hook/useComputeRoute";
 import { useAppTranslation } from "@/i18n/client";
@@ -48,7 +49,21 @@ export default function RoutePlanContent() {
     userLocation,
     setSheetMode,
     setSearchPlace,
-  } = useMapStore();
+  } = useMapStore(
+    useShallow((s) => ({
+      origin: s.origin,
+      destination: s.destination,
+      setOrigin: s.setOrigin,
+      setDestination: s.setDestination,
+      originName: s.originName,
+      destinationName: s.destinationName,
+      setOriginName: s.setOriginName,
+      setDestinationName: s.setDestinationName,
+      userLocation: s.userLocation,
+      setSheetMode: s.setSheetMode,
+      setSearchPlace: s.setSearchPlace,
+    })),
+  );
   const { isLoading, handleComputeRoute } = useComputeRoute();
 
   const [originInput, setOriginInput] = useState(originName || "");

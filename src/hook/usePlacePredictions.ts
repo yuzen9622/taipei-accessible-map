@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { formatNominatimPlace } from "@/lib/utils";
 import useAuthStore from "@/stores/useAuthStore";
 import type { NominatimPlace } from "@/types";
@@ -6,7 +7,9 @@ import type { NominatimPlace } from "@/types";
 export default function usePlaceSuggestions(input: string) {
   const [suggestions, setSuggestions] = useState<NominatimPlace[]>([]);
   const [loading, setLoading] = useState(false);
-  const { userConfig } = useAuthStore();
+  const { userConfig } = useAuthStore(
+    useShallow((s) => ({ userConfig: s.userConfig })),
+  );
 
   useEffect(() => {
     if (!input) {
@@ -33,7 +36,6 @@ export default function usePlaceSuggestions(input: string) {
     }, 500);
     return () => clearTimeout(handler);
   }, [input, userConfig.language]);
-
 
   return { suggestions, loading };
 }

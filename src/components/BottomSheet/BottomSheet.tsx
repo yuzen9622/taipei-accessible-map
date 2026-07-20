@@ -18,8 +18,9 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import AccountLogin from "@/components/shared/AccountLogin";
+import { useShallow } from "zustand/react/shallow";
 import ExitNavDialog from "@/components/Navigation/ExitNavDialog";
+import AccountLogin from "@/components/shared/AccountLogin";
 import useIsDesktop from "@/hook/useIsDesktop";
 import { useAppTranslation } from "@/i18n/client";
 import { cn } from "@/lib/utils";
@@ -126,7 +127,23 @@ export default function BottomSheet() {
     setSearchPlace,
     isNavigating,
     requestNavExit,
-  } = useMapStore();
+  } = useMapStore(
+    useShallow((s) => ({
+      sheetMode: s.sheetMode,
+      sidebarCollapsed: s.sidebarCollapsed,
+      setSidebarCollapsed: s.setSidebarCollapsed,
+      activeRailPanel: s.activeRailPanel,
+      setActiveRailPanel: s.setActiveRailPanel,
+      setSheetMode: s.setSheetMode,
+      setComputeRoutes: s.setComputeRoutes,
+      setRouteA11y: s.setRouteA11y,
+      setRouteSelect: s.setRouteSelect,
+      setInfoShow: s.setInfoShow,
+      setSearchPlace: s.setSearchPlace,
+      isNavigating: s.isNavigating,
+      requestNavExit: s.requestNavExit,
+    })),
+  );
   const isDesktop = useIsDesktop();
   const stepListOpen = useNavStore((s) => s.stepListOpen);
   const setStepListOpen = useNavStore((s) => s.setStepListOpen);
@@ -589,7 +606,12 @@ export default function BottomSheet() {
 // --- Panel title based on active panel ---
 function PanelTitle() {
   const { t } = useAppTranslation();
-  const { sheetMode, activeRailPanel } = useMapStore();
+  const { sheetMode, activeRailPanel } = useMapStore(
+    useShallow((s) => ({
+      sheetMode: s.sheetMode,
+      activeRailPanel: s.activeRailPanel,
+    })),
+  );
 
   const modePanelActive = MODE_PANELS.has(sheetMode);
   if (modePanelActive) {
@@ -683,7 +705,13 @@ function PanelTitle() {
 
 // --- Desktop panel content switcher ---
 function DesktopPanelContent() {
-  const { sheetMode, activeRailPanel, setActiveRailPanel } = useMapStore();
+  const { sheetMode, activeRailPanel, setActiveRailPanel } = useMapStore(
+    useShallow((s) => ({
+      sheetMode: s.sheetMode,
+      activeRailPanel: s.activeRailPanel,
+      setActiveRailPanel: s.setActiveRailPanel,
+    })),
+  );
 
   const modePanelActive = MODE_PANELS.has(sheetMode);
   if (modePanelActive) {
@@ -727,7 +755,9 @@ function DesktopPanelContent() {
 
 // --- Mobile sheet content (same as before) ---
 function MobileSheetContent() {
-  const { sheetMode } = useMapStore();
+  const { sheetMode } = useMapStore(
+    useShallow((s) => ({ sheetMode: s.sheetMode })),
+  );
   switch (sheetMode) {
     case "home":
       return <HomeContent />;

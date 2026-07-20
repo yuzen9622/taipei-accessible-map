@@ -1,6 +1,6 @@
 "use client";
 import { XIcon } from "lucide-react";
-
+import { useShallow } from "zustand/react/shallow";
 import { useAppTranslation } from "@/i18n/client";
 import useMapStore from "@/stores/useMapStore";
 import LoadingDrawer from "../shared/LoadingDrawer";
@@ -10,7 +10,13 @@ import { DrawerHeader } from "../ui/drawer";
 import DrawerWrapper from "../Wrapper/DrawerWrapper";
 
 export default function RouteDrawer() {
-  const { computeRoutes, routeInfoShow, closeRouteDrawer } = useMapStore();
+  const { computeRoutes, routeInfoShow, closeRouteDrawer } = useMapStore(
+    useShallow((s) => ({
+      computeRoutes: s.computeRoutes,
+      routeInfoShow: s.routeInfoShow,
+      closeRouteDrawer: s.closeRouteDrawer,
+    })),
+  );
   const { t } = useAppTranslation("translation");
 
   return (

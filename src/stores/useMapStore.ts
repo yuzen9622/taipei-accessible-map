@@ -150,8 +150,7 @@ export function getMapPadding(): {
   left: number;
   right: number;
 } {
-  const isDesktop =
-    typeof window !== "undefined" && window.innerWidth >= 1024;
+  const isDesktop = typeof window !== "undefined" && window.innerWidth >= 1024;
   const collapsed = useMapStore.getState().sidebarCollapsed;
   const left =
     isDesktop && !collapsed ? SIDEBAR_TOTAL + 32 : isDesktop ? 80 : 50;
@@ -162,7 +161,20 @@ const useMapStore = create<MapStore>((set, get) => ({
   map: null,
   setMap: (map) => set({ map }),
   userLocation: null,
-  setUserLocation: (userLocation) => set({ userLocation }),
+  setUserLocation: (userLocation) => {
+    // GPS fires ~every second even when standing still; skip writes when the
+    // fix moved less than ~0.5 m so subscribers don't re-render for nothing.
+    const prev = get().userLocation;
+    if (
+      prev &&
+      userLocation &&
+      Math.abs(prev.lat - userLocation.lat) < 5e-6 &&
+      Math.abs(prev.lng - userLocation.lng) < 5e-6
+    ) {
+      return;
+    }
+    set({ userLocation });
+  },
   origin: null,
   setOrigin: (origin) => set({ origin }),
   destination: null,
@@ -193,7 +205,11 @@ const useMapStore = create<MapStore>((set, get) => ({
   computeRoutes: null,
   routeWaypoints: [],
   setComputeRoutes: (routes) =>
-    set(routes ? { computeRoutes: routes } : { computeRoutes: null, routeWaypoints: [] }),
+    set(
+      routes
+        ? { computeRoutes: routes }
+        : { computeRoutes: null, routeWaypoints: [] },
+    ),
   setRouteWaypoints: (waypoints) => set({ routeWaypoints: waypoints }),
   selectRoute: null,
   setRouteSelect: (route) => {
@@ -404,7 +420,12 @@ const useMapStore = create<MapStore>((set, get) => ({
         for (const [lng, lat] of leg.polyline ?? []) bounds.extend([lng, lat]);
       }
       if (!bounds.isEmpty()) {
-        map.fitBounds(bounds, { pitch: 0, bearing: 0, duration: 1000, padding: getMapPadding() });
+        map.fitBounds(bounds, {
+          pitch: 0,
+          bearing: 0,
+          duration: 1000,
+          padding: getMapPadding(),
+        });
       } else {
         map.easeTo({ pitch: 0, bearing: 0, duration: 1000 });
       }

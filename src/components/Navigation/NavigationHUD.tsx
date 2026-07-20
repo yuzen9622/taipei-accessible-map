@@ -23,6 +23,7 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useShallow } from "zustand/react/shallow";
 import useComputeRoute from "@/hook/useComputeRoute";
 import { useAppTranslation } from "@/i18n/client";
 import { getNearbyHazardReports } from "@/lib/api/a11y";
@@ -93,7 +94,13 @@ const FACILITY_LABEL_KEY: Record<SlimOsmA11y["category"], string> = {
  */
 export default function NavigationHUD() {
   const { t, i18n } = useAppTranslation();
-  const { selectRoute, setIsNavigating, userLocation } = useMapStore();
+  const { selectRoute, setIsNavigating, userLocation } = useMapStore(
+    useShallow((s) => ({
+      selectRoute: s.selectRoute,
+      setIsNavigating: s.setIsNavigating,
+      userLocation: s.userLocation,
+    })),
+  );
   const { handleComputeRoute, isLoading } = useComputeRoute();
 
   const instructions = useNavStore((s) => s.instructions);

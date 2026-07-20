@@ -1,4 +1,5 @@
 "use client";
+import { useShallow } from "zustand/react/shallow";
 import useComputeRoute from "@/hook/useComputeRoute";
 import useMapStore from "@/stores/useMapStore";
 import type { GooglePlaceResult } from "@/types/transit";
@@ -24,7 +25,15 @@ export default function PlaceCard({
     setA11yDrawerOpen,
     setSearchPlace,
     map,
-  } = useMapStore();
+  } = useMapStore(
+    useShallow((s) => ({
+      setInfoShow: s.setInfoShow,
+      setDestination: s.setDestination,
+      setA11yDrawerOpen: s.setA11yDrawerOpen,
+      setSearchPlace: s.setSearchPlace,
+      map: s.map,
+    })),
+  );
   const { handleComputeRoute } = useComputeRoute();
   return (
     <Card className="hover:bg-muted/50">

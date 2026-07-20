@@ -1,6 +1,7 @@
-import { Marker } from "react-map-gl/maplibre";
 import { MapPin } from "lucide-react";
 import { useCallback } from "react";
+import { Marker } from "react-map-gl/maplibre";
+import { useShallow } from "zustand/react/shallow";
 import useMapStore from "@/stores/useMapStore";
 import type { PlaceDetail } from "@/types";
 
@@ -9,7 +10,9 @@ export default function SearchPin({
 }: {
   destination: PlaceDetail;
 }) {
-  const { map, setInfoShow } = useMapStore();
+  const { map, setInfoShow } = useMapStore(
+    useShallow((s) => ({ map: s.map, setInfoShow: s.setInfoShow })),
+  );
   const handleMarker = useCallback(() => {
     if (!map) return;
 

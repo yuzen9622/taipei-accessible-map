@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Marker, useMap } from "react-map-gl/maplibre";
 import { toast } from "sonner";
 import useSupercluster from "use-supercluster";
+import { useShallow } from "zustand/react/shallow";
 import MetroA11yPin from "@/components/MetroA11yPin";
 import { useAppTranslation } from "@/i18n/client";
 import { getAllA11yFacilities } from "@/lib/api/a11y";
@@ -44,7 +45,14 @@ function facilityToMarker(facility: A11yFacility): MarkerType | null {
 export default function AccessibilityPin() {
   const { t } = useAppTranslation();
   const { selectedA11yTypes, a11yPlaces, setA11yPlaces, routeA11y } =
-    useMapStore();
+    useMapStore(
+      useShallow((s) => ({
+        selectedA11yTypes: s.selectedA11yTypes,
+        a11yPlaces: s.a11yPlaces,
+        setA11yPlaces: s.setA11yPlaces,
+        routeA11y: s.routeA11y,
+      })),
+    );
   const { current: map } = useMap();
   const [bounds, setBounds] = useState<[number, number, number, number] | null>(
     null,

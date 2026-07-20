@@ -3,6 +3,7 @@
 import { AlertTriangle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Marker, Popup } from "react-map-gl/maplibre";
+import { useShallow } from "zustand/react/shallow";
 import { useAppTranslation } from "@/i18n/client";
 import { getNearbyHazardReports } from "@/lib/api/a11y";
 import useMapStore from "@/stores/useMapStore";
@@ -10,7 +11,9 @@ import type { HazardReport } from "@/types/route";
 
 export default function HazardWrapper() {
   const { t } = useAppTranslation();
-  const { userLocation } = useMapStore();
+  const { userLocation } = useMapStore(
+    useShallow((s) => ({ userLocation: s.userLocation })),
+  );
   const [hazards, setHazards] = useState<HazardReport[]>([]);
   const [selected, setSelected] = useState<HazardReport | null>(null);
 

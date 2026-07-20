@@ -14,6 +14,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Marker } from "react-map-gl/maplibre";
 import { toast } from "sonner";
+import { useShallow } from "zustand/react/shallow";
 import {
   Dialog,
   DialogContent,
@@ -58,7 +59,15 @@ export default function SosTrackerWrapper() {
     setSheetMode,
     setDestinationName,
     setSosNavActive,
-  } = useMapStore();
+  } = useMapStore(
+    useShallow((s) => ({
+      map: s.map,
+      userLocation: s.userLocation,
+      setSheetMode: s.setSheetMode,
+      setDestinationName: s.setDestinationName,
+      setSosNavActive: s.setSosNavActive,
+    })),
+  );
   const { handleComputeRoute } = useComputeRoute();
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [session, setSession] = useState<SosPublicSession | null>(null);

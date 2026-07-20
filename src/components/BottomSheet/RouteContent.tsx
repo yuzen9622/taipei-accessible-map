@@ -8,6 +8,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useAppTranslation } from "@/i18n/client";
 import useMapStore from "@/stores/useMapStore";
 import useNavStore from "@/stores/useNavStore";
@@ -30,7 +31,17 @@ export default function RouteContent() {
     setSheetMode,
     selectRoute,
     setIsNavigating,
-  } = useMapStore();
+  } = useMapStore(
+    useShallow((s) => ({
+      computeRoutes: s.computeRoutes,
+      setComputeRoutes: s.setComputeRoutes,
+      setRouteSelect: s.setRouteSelect,
+      setRouteInfoShow: s.setRouteInfoShow,
+      setSheetMode: s.setSheetMode,
+      selectRoute: s.selectRoute,
+      setIsNavigating: s.setIsNavigating,
+    })),
+  );
 
   const [panel, setPanel] = useState<Panel>("none");
 

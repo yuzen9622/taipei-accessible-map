@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useShallow } from "zustand/react/shallow";
 import { useAppTranslation } from "@/i18n/client";
 import { createHazardReport } from "@/lib/api/a11y";
 import useMapStore from "@/stores/useMapStore";
@@ -35,7 +36,9 @@ export default function HazardReportPanel({
   hideHeader?: boolean;
 }) {
   const { t } = useAppTranslation();
-  const { userLocation } = useMapStore();
+  const { userLocation } = useMapStore(
+    useShallow((s) => ({ userLocation: s.userLocation })),
+  );
 
   const [hazardType, setHazardType] = useState<
     "obstacle" | "construction" | "data_error"

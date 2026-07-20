@@ -1,34 +1,34 @@
 "use client";
 import {
-  Navigation,
-  LoaderCircle,
-  MapPin,
-  Train,
-  Bus,
-  Building,
-  Utensils,
-  Store,
-  Milestone,
-  Building2,
-  TreePine,
-  Coffee,
-  Hospital,
-  School,
-  Sparkles,
   Bath,
   Bike,
+  Building,
+  Building2,
+  Bus,
+  Coffee,
+  Hospital,
+  LoaderCircle,
+  MapPin,
+  Milestone,
+  Navigation,
+  School,
+  Sparkles,
+  Store,
+  Train,
+  TreePine,
+  Utensils,
 } from "lucide-react";
 import Image from "next/image";
 import type { InputHTMLAttributes } from "react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
+import { useShallow } from "zustand/react/shallow";
 import usePlacePredictions from "@/hook/usePlacePredictions";
 import { useAppTranslation } from "@/i18n/client";
 import { cn, formatNominatimPlace } from "@/lib/utils";
 import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
 import type { NominatimPlace, PlaceDetail } from "@/types";
-
 import { Command, CommandGroup, CommandItem, CommandList } from "../ui/command";
 import { Input } from "../ui/input";
 
@@ -40,7 +40,13 @@ type InputProps = InputHTMLAttributes<HTMLInputElement> & {
 function getPlaceIcon(category?: string, type?: string) {
   // 1. Check specific type first
   if (type) {
-    if (type === "train_station" || type === "station" || type === "subway" || type === "subway_entrance" || type === "tram_stop") {
+    if (
+      type === "train_station" ||
+      type === "station" ||
+      type === "subway" ||
+      type === "subway_entrance" ||
+      type === "tram_stop"
+    ) {
       return Train;
     }
     if (type === "bus_stop" || type === "bus_station" || type === "bus") {
@@ -49,22 +55,47 @@ function getPlaceIcon(category?: string, type?: string) {
     if (type === "bicycle_rental" || type === "share_bicycle") {
       return Bike;
     }
-    if (type === "restaurant" || type === "food_court" || type === "fast_food") {
+    if (
+      type === "restaurant" ||
+      type === "food_court" ||
+      type === "fast_food"
+    ) {
       return Utensils;
     }
     if (type === "cafe" || type === "pub" || type === "bar") {
       return Coffee;
     }
-    if (type === "supermarket" || type === "convenience" || type === "mall" || type === "department_store" || type === "shop") {
+    if (
+      type === "supermarket" ||
+      type === "convenience" ||
+      type === "mall" ||
+      type === "department_store" ||
+      type === "shop"
+    ) {
       return Store;
     }
-    if (type === "hospital" || type === "clinic" || type === "doctors" || type === "pharmacy") {
+    if (
+      type === "hospital" ||
+      type === "clinic" ||
+      type === "doctors" ||
+      type === "pharmacy"
+    ) {
       return Hospital;
     }
-    if (type === "school" || type === "university" || type === "college" || type === "kindergarten") {
+    if (
+      type === "school" ||
+      type === "university" ||
+      type === "college" ||
+      type === "kindergarten"
+    ) {
       return School;
     }
-    if (type === "park" || type === "garden" || type === "nature_reserve" || type === "recreation_ground") {
+    if (
+      type === "park" ||
+      type === "garden" ||
+      type === "nature_reserve" ||
+      type === "recreation_ground"
+    ) {
       return TreePine;
     }
     if (type === "toilets" || type === "shower") {
@@ -109,9 +140,17 @@ function PlaceInput({
 }: InputProps) {
   const { t } = useAppTranslation("translation");
   const [open, setOpen] = useState(false);
-  const { searchHistory, addSearchHistory, userLocation } = useMapStore();
+  const { searchHistory, addSearchHistory, userLocation } = useMapStore(
+    useShallow((s) => ({
+      searchHistory: s.searchHistory,
+      addSearchHistory: s.addSearchHistory,
+      userLocation: s.userLocation,
+    })),
+  );
   const { suggestions, loading } = usePlacePredictions((value as string) || "");
-  const { userConfig } = useAuthStore();
+  const { userConfig } = useAuthStore(
+    useShallow((s) => ({ userConfig: s.userConfig })),
+  );
 
   const handlePlaceSubmit = useCallback(
     async (text: string) => {
@@ -247,7 +286,10 @@ function PlaceInput({
                 {searchHistory.map((history, idx) => {
                   if (history.kind === "place") {
                     const { place } = history;
-                    const Icon = getPlaceIcon(place.class || place.category, place.type);
+                    const Icon = getPlaceIcon(
+                      place.class || place.category,
+                      place.type,
+                    );
                     return (
                       <CommandItem
                         itemType="button"
@@ -278,7 +320,10 @@ function PlaceInput({
             {value !== "" && open && (
               <CommandGroup heading={t("searchResults")}>
                 {suggestions.map((suggestion) => {
-                  const Icon = getPlaceIcon(suggestion.class || suggestion.category, suggestion.type);
+                  const Icon = getPlaceIcon(
+                    suggestion.class || suggestion.category,
+                    suggestion.type,
+                  );
                   return (
                     <CommandItem
                       itemType="button"

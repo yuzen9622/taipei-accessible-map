@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { MapLayerMouseEvent } from "react-map-gl/maplibre";
 import MapView, { NavigationControl } from "react-map-gl/maplibre";
 import { toast } from "sonner";
+import { useShallow } from "zustand/react/shallow";
 import NowPin from "@/components/shared/NowPin";
 import MapWrapper from "@/components/Wrapper/MapWrapper";
 import AccessibilityPin from "@/components/Wrapper/MetroA11yWrapper";
@@ -91,7 +92,20 @@ export default function ClientMap() {
     destination,
     setSheetMode,
     isNavigating,
-  } = useMapStore();
+  } = useMapStore(
+    useShallow((s) => ({
+      map: s.map,
+      setMap: s.setMap,
+      setInfoShow: s.setInfoShow,
+      userLocation: s.userLocation,
+      setUserLocation: s.setUserLocation,
+      setSearchPlace: s.setSearchPlace,
+      searchPlace: s.searchPlace,
+      destination: s.destination,
+      setSheetMode: s.setSheetMode,
+      isNavigating: s.isNavigating,
+    })),
+  );
   const { resolvedTheme } = useTheme();
   const { i18n } = useAppTranslation();
   const [mounted, setMounted] = useState(false);

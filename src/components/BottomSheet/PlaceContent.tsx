@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useAppTranslation } from "@/i18n/client";
 import { getNearbyRouteA11yPlaces, getOsmPlaceDetail } from "@/lib/api/a11y";
 import { getPlaceTypeLabel } from "@/lib/placeTypes";
@@ -41,7 +42,21 @@ export default function PlaceContent() {
     removeSavedPlace,
     isSavedPlace,
     map,
-  } = useMapStore();
+  } = useMapStore(
+    useShallow((s) => ({
+      infoShow: s.infoShow,
+      setInfoShow: s.setInfoShow,
+      setSearchPlace: s.setSearchPlace,
+      setDestination: s.setDestination,
+      setDestinationName: s.setDestinationName,
+      userLocation: s.userLocation,
+      setSheetMode: s.setSheetMode,
+      addSavedPlace: s.addSavedPlace,
+      removeSavedPlace: s.removeSavedPlace,
+      isSavedPlace: s.isSavedPlace,
+      map: s.map,
+    })),
+  );
 
   const [nearbyBathrooms, setNearbyBathrooms] = useState<IBathroom[]>([]);
   const [nearbyMetro, setNearbyMetro] = useState<metroA11yData[]>([]);

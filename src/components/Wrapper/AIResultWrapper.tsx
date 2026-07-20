@@ -1,5 +1,6 @@
 import { LngLatBounds } from "maplibre-gl";
 import { useEffect } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { extendBounds, fitRouteBounds } from "@/lib/mapCamera";
 import useMapStore from "@/stores/useMapStore";
 
@@ -9,7 +10,9 @@ import useMapStore from "@/stores/useMapStore";
  * 這裡只負責結果改變時自動縮放到涵蓋所有結果（含無障礙設施，框到該區後由既有圖層呈現）。
  */
 export default function AIResultWrapper() {
-  const { aiResultMarkers, map } = useMapStore();
+  const { aiResultMarkers, map } = useMapStore(
+    useShallow((s) => ({ aiResultMarkers: s.aiResultMarkers, map: s.map })),
+  );
 
   useEffect(() => {
     if (!map || aiResultMarkers.length === 0) return;

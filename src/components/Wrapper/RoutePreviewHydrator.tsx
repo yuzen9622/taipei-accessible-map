@@ -3,6 +3,7 @@
 import { LngLatBounds } from "maplibre-gl";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { getLineRoutePreview } from "@/lib/api/line";
 import { extendBounds, fitRouteBounds } from "@/lib/mapCamera";
 import { adaptRoutePreviewRoutes } from "@/lib/routePreviewAdapter";
@@ -64,7 +65,20 @@ export default function RoutePreviewHydrator() {
     setDestination,
     setOriginName,
     setDestinationName,
-  } = useMapStore();
+  } = useMapStore(
+    useShallow((s) => ({
+      map: s.map,
+      setComputeRoutes: s.setComputeRoutes,
+      setRouteSelect: s.setRouteSelect,
+      setRouteInfoShow: s.setRouteInfoShow,
+      setSheetMode: s.setSheetMode,
+      setActiveRailPanel: s.setActiveRailPanel,
+      setOrigin: s.setOrigin,
+      setDestination: s.setDestination,
+      setOriginName: s.setOriginName,
+      setDestinationName: s.setDestinationName,
+    })),
+  );
 
   const [sessionData, setSessionData] = useState<RoutePreviewPageData | null>(
     null,

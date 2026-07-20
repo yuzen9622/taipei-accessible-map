@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAppTranslation } from "@/i18n/client";
@@ -29,7 +30,14 @@ export default function DataManagementPanel({
 }) {
   const { t } = useAppTranslation();
   const { searchHistory, savedPlaces, clearSearchHistory, clearSavedPlaces } =
-    useMapStore();
+    useMapStore(
+      useShallow((s) => ({
+        searchHistory: s.searchHistory,
+        savedPlaces: s.savedPlaces,
+        clearSearchHistory: s.clearSearchHistory,
+        clearSavedPlaces: s.clearSavedPlaces,
+      })),
+    );
   const [quickActionsCount, setQuickActionsCount] = useState(0);
   const [hasLocationCache, setHasLocationCache] = useState(false);
 

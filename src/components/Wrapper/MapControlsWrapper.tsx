@@ -19,6 +19,7 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useShallow } from "zustand/react/shallow";
 import SosDialog from "@/components/Sos/SosDialog";
 import ShareTargets from "@/components/shared/ShareTargets";
 import { Button } from "@/components/ui/button";
@@ -173,7 +174,19 @@ export default function MapControlsWrapper() {
     sheetMode,
     chatOpen,
     setChatOpen,
-  } = useMapStore();
+  } = useMapStore(
+    useShallow((s) => ({
+      userLocation: s.userLocation,
+      sidebarCollapsed: s.sidebarCollapsed,
+      activeRailPanel: s.activeRailPanel,
+      is3D: s.is3D,
+      setIs3D: s.setIs3D,
+      isNavigating: s.isNavigating,
+      sheetMode: s.sheetMode,
+      chatOpen: s.chatOpen,
+      setChatOpen: s.setChatOpen,
+    })),
+  );
 
   const panelOpen = activeRailPanel !== "none";
   const isDesktop = useIsDesktop();

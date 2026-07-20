@@ -15,6 +15,7 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 
+import { useShallow } from "zustand/react/shallow";
 import { useAppTranslation } from "@/i18n/client";
 import GeocoderDrawerContent from "../GeocoderDrawerContent";
 import PlaceDrawerContent from "../PlaceDrawerContent";
@@ -28,7 +29,15 @@ export default function TestDrawer() {
     setSearchPlace,
     setDestination,
     userLocation,
-  } = useMapStore();
+  } = useMapStore(
+    useShallow((s) => ({
+      infoShow: s.infoShow,
+      setInfoShow: s.setInfoShow,
+      setSearchPlace: s.setSearchPlace,
+      setDestination: s.setDestination,
+      userLocation: s.userLocation,
+    })),
+  );
   const { t } = useAppTranslation("translation");
   const { isLoading, handleComputeRoute } = useComputeRoute();
 
