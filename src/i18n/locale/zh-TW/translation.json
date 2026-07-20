@@ -469,6 +469,7 @@
   "sosCountdownDesc": "倒數結束後將自動發送求助",
   "sosCountdownHint": "系統將自動取得 GPS 位置並通知您的緊急聯絡人",
   "sosCountdownCancel": "取消發送",
+  "sosSendNow": "立即發送",
   "sosSupplementType": "補充求助狀況（可選）",
   "sosActiveTitle": "求助中",
   "sosNotifiedContacts": "已通知的對象",

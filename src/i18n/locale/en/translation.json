@@ -468,6 +468,7 @@
   "sosCountdownDesc": "Sending automatically after countdown",
   "sosCountdownHint": "Your GPS location will be shared with emergency contacts",
   "sosCountdownCancel": "Cancel",
+  "sosSendNow": "Send now",
   "sosSupplementType": "Add details (optional)",
   "sosActiveTitle": "Help requested",
   "sosNotifiedContacts": "Notified contacts",

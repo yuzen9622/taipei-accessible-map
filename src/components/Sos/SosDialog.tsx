@@ -38,8 +38,20 @@ import type { EmergencyContact, SosType } from "@/types/sos";
 
 const SOS_COUNTDOWN_MS = 5000;
 const LOCATION_UPDATE_MS = 12000;
+// SVG progress ring geometry (viewBox 160×160, r=70).
+const RING_RADIUS = 70;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
 type SosStep = "countdown" | "active" | "resolved";
+
+/** Haptic pulse so a pocket mis-tap is noticed even without looking. */
+function vibrate(pattern: number | number[]) {
+  try {
+    navigator.vibrate?.(pattern);
+  } catch {
+    // unsupported (iOS Safari) — visual countdown still covers it
+  }
+}
 
 const SOS_SUPPLEMENT_TYPES: {
   key: SosType;
@@ -62,6 +74,8 @@ export default function SosDialog({
   const userLocation = useMapStore((s) => s.userLocation);
   const [step, setStep] = useState<SosStep>("countdown");
   const [secondsLeft, setSecondsLeft] = useState(SOS_COUNTDOWN_MS / 1000);
+  /** Elapsed fraction of the countdown (0 → 1), drives the progress ring. */
+  const [countdownProgress, setCountdownProgress] = useState(0);
   const [address, setAddress] = useState<string | null>(null);
   const [contactsDialogOpen, setContactsDialogOpen] = useState(false);
   const countdownTimer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -81,31 +95,44 @@ export default function SosDialog({
   }, [open]);
 
   // Start countdown immediately when dialog opens
+  // biome-ignore lint/correctness/useExhaustiveDependencies: restart only when `open` flips; startSosSession is stable per open cycle
   useEffect(() => {
     if (!open) return;
     setStep("countdown");
     setSecondsLeft(SOS_COUNTDOWN_MS / 1000);
+    setCountdownProgress(0);
     setExpanded(false);
     setSupplementedType(null);
+    vibrate(80);
 
     const startedAt = Date.now();
+    let lastSecond = SOS_COUNTDOWN_MS / 1000;
     countdownTimer.current = setInterval(() => {
       const left = SOS_COUNTDOWN_MS - (Date.now() - startedAt);
       if (left <= 0) {
         if (countdownTimer.current) clearInterval(countdownTimer.current);
         countdownTimer.current = null;
+        vibrate([120, 60, 120]);
         setStep("active");
         startSosSession();
       } else {
-        setSecondsLeft(Math.ceil(left / 1000));
+        const second = Math.ceil(left / 1000);
+        if (second !== lastSecond) {
+          lastSecond = second;
+          // Escalating haptics: the last two seconds pulse harder so an
+          // accidental trigger gets noticed before it fires.
+          vibrate(second <= 2 ? 200 : 70);
+        }
+        setSecondsLeft(second);
+        setCountdownProgress(1 - left / SOS_COUNTDOWN_MS);
       }
     }, 100);
 
     return () => {
       if (countdownTimer.current) clearInterval(countdownTimer.current);
       countdownTimer.current = null;
+      vibrate(0);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const resetAndClose = () => {
@@ -156,7 +183,17 @@ export default function SosDialog({
   };
 
   const handleCancelCountdown = () => {
+    vibrate(0);
     resetAndClose();
+  };
+
+  // Skip the countdown for users who know it's a real emergency.
+  const handleSendNow = () => {
+    if (countdownTimer.current) clearInterval(countdownTimer.current);
+    countdownTimer.current = null;
+    vibrate([120, 60, 120]);
+    setStep("active");
+    startSosSession();
   };
 
   const handleResolve = async () => {
@@ -325,22 +362,20 @@ export default function SosDialog({
                   <Button
                     asChild
                     variant="destructive"
-                    size="sm"
-                    className="rounded-xl h-9 gap-1.5 text-xs"
+                    className="rounded-xl h-11 gap-1.5 text-sm font-bold"
                   >
                     <a href="tel:110">
-                      <PhoneCall className="h-3.5 w-3.5" />
+                      <PhoneCall className="h-4 w-4" />
                       {t("sosCall110")}
                     </a>
                   </Button>
                   <Button
                     asChild
                     variant="destructive"
-                    size="sm"
-                    className="rounded-xl h-9 gap-1.5 text-xs"
+                    className="rounded-xl h-11 gap-1.5 text-sm font-bold"
                   >
                     <a href="tel:119">
-                      <PhoneCall className="h-3.5 w-3.5" />
+                      <PhoneCall className="h-4 w-4" />
                       {t("sosCall119")}
                     </a>
                   </Button>
@@ -359,7 +394,7 @@ export default function SosDialog({
                 <Button
                   variant="outline"
                   onClick={handleResolve}
-                  className="w-full rounded-xl h-9 text-xs"
+                  className="w-full rounded-xl h-11 text-sm"
                 >
                   {t("sosResolveButton")}
                 </Button>
@@ -411,35 +446,96 @@ export default function SosDialog({
       <Dialog
         open={open && (step === "countdown" || step === "resolved")}
         onOpenChange={(v) => {
+          // During the countdown an overlay tap / ESC must not silently
+          // abort the SOS — cancelling is only the explicit button.
+          if (!v && step === "countdown") return;
           if (!v) resetAndClose();
         }}
       >
-        <DialogContent className="max-w-md rounded-2xl p-6">
+        <DialogContent
+          className="max-w-md rounded-2xl p-6"
+          showCloseButton={step !== "countdown"}
+          onPointerDownOutside={(e) => {
+            if (step === "countdown") e.preventDefault();
+          }}
+          onInteractOutside={(e) => {
+            if (step === "countdown") e.preventDefault();
+          }}
+          onEscapeKeyDown={(e) => {
+            if (step === "countdown") e.preventDefault();
+          }}
+        >
           {step === "countdown" && (
-            <div className="space-y-5 flex flex-col items-center py-2">
+            <div className="space-y-6 flex flex-col items-center py-2">
               <DialogHeader className="w-full">
-                <DialogTitle className="text-lg font-bold text-center text-red-600">
+                <DialogTitle className="text-2xl font-bold text-center text-red-600">
                   {t("sosCountdownTitle")}
                 </DialogTitle>
-                <p className="text-sm text-muted-foreground text-center">
+                <p className="text-base text-muted-foreground text-center">
                   {t("sosCountdownDesc")}
                 </p>
               </DialogHeader>
-              <div className="h-24 w-24 rounded-full border-4 border-red-500 flex items-center justify-center">
-                <span className="text-4xl font-black tabular-nums text-red-600">
+
+              {/* Progress ring — the whole circle is a tap-to-cancel target,
+                  maximising the cancellable area for shaky hands. */}
+              <button
+                type="button"
+                onClick={handleCancelCountdown}
+                aria-label={t("sosCountdownCancel")}
+                className="relative h-40 w-40 rounded-full focus-visible:outline-2 focus-visible:outline-red-500 focus-visible:outline-offset-4"
+              >
+                <svg
+                  viewBox="0 0 160 160"
+                  className="absolute inset-0 h-full w-full -rotate-90"
+                  aria-hidden="true"
+                >
+                  <circle
+                    cx="80"
+                    cy="80"
+                    r={RING_RADIUS}
+                    fill="none"
+                    strokeWidth="8"
+                    className="stroke-red-500/15"
+                  />
+                  <circle
+                    cx="80"
+                    cy="80"
+                    r={RING_RADIUS}
+                    fill="none"
+                    strokeWidth="8"
+                    strokeLinecap="round"
+                    className="stroke-red-500 transition-[stroke-dashoffset] duration-100 ease-linear"
+                    strokeDasharray={RING_CIRCUMFERENCE}
+                    strokeDashoffset={RING_CIRCUMFERENCE * countdownProgress}
+                  />
+                </svg>
+                <span className="absolute inset-0 flex items-center justify-center text-6xl font-black tabular-nums text-red-600">
                   {secondsLeft}
                 </span>
-              </div>
-              <p className="text-xs text-muted-foreground text-center">
+              </button>
+
+              <p className="text-sm text-muted-foreground text-center">
                 {t("sosCountdownHint")}
               </p>
-              <Button
-                variant="secondary"
-                onClick={handleCancelCountdown}
-                className="w-full rounded-xl h-11"
-              >
-                {t("sosCountdownCancel")}
-              </Button>
+
+              {/* Cancel is the dominant action: an accidental trigger must be
+                  trivially recoverable for elderly / low-vision users. */}
+              <div className="w-full space-y-2.5">
+                <Button
+                  variant="secondary"
+                  onClick={handleCancelCountdown}
+                  className="w-full rounded-xl h-14 text-lg font-bold"
+                >
+                  {t("sosCountdownCancel")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={handleSendNow}
+                  className="w-full rounded-xl h-11 text-sm text-red-600 hover:text-red-700 hover:bg-red-500/10"
+                >
+                  {t("sosSendNow")}
+                </Button>
+              </div>
             </div>
           )}
 
