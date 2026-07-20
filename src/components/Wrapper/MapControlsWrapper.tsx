@@ -34,7 +34,7 @@ import usePin from "@/hook/usePin";
 import { useAppTranslation } from "@/i18n/client";
 import { getEnvironmentInfo } from "@/lib/api/a11y";
 import { cn, formatNominatimPlace } from "@/lib/utils";
-import useMapStore, { type SheetMode } from "@/stores/useMapStore";
+import useMapStore from "@/stores/useMapStore";
 import useNavStore from "@/stores/useNavStore";
 import type { AirQualityLevel, EnvironmentData } from "@/types/route";
 
@@ -143,23 +143,12 @@ function Metric({
   );
 }
 
-const getBottomOffset = (sheetMode: SheetMode, isNavigating: boolean) => {
-  if (isNavigating) return "bottom-[14dvh]";
-  switch (sheetMode) {
-    case "navigation":
-      return "bottom-[14dvh]";
-    case "home":
-      return "bottom-[20dvh]";
-    case "place":
-    case "plan":
-    case "route":
-    case "a11y":
-    case "station":
-      return "bottom-[47dvh]";
-    default:
-      return "bottom-[14dvh]";
-  }
-};
+// Mobile: ride just above the live bottom-sheet height published by
+// BottomSheet as --bottom-sheet-h, so dragging the sheet never covers or
+// strands the SOS/recenter controls. Navigation keeps a fixed offset above
+// the HUD.
+const MOBILE_BOTTOM_OFFSET = "bottom-[calc(var(--bottom-sheet-h,18dvh)+16px)]";
+const NAV_BOTTOM_OFFSET = "bottom-[14dvh]";
 
 export default function MapControlsWrapper() {
   const { t, i18n } = useAppTranslation();
@@ -171,7 +160,6 @@ export default function MapControlsWrapper() {
     is3D,
     setIs3D,
     isNavigating,
-    sheetMode,
     chatOpen,
     setChatOpen,
   } = useMapStore(
@@ -182,7 +170,6 @@ export default function MapControlsWrapper() {
       is3D: s.is3D,
       setIs3D: s.setIs3D,
       isNavigating: s.isNavigating,
-      sheetMode: s.sheetMode,
       chatOpen: s.chatOpen,
       setChatOpen: s.setChatOpen,
     })),
@@ -471,7 +458,7 @@ export default function MapControlsWrapper() {
         <div
           className={cn(
             "absolute right-3 pointer-events-auto flex flex-col gap-2 items-end z-30",
-            getBottomOffset(sheetMode, isNavigating),
+            isNavigating ? NAV_BOTTOM_OFFSET : MOBILE_BOTTOM_OFFSET,
             "lg:bottom-8 lg:flex-row lg:items-center",
           )}
           style={{ transition: "bottom 0.3s ease" }}

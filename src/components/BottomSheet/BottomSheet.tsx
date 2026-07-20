@@ -160,6 +160,21 @@ export default function BottomSheet() {
   const railPanelActive = !modePanelActive && activeRailPanel !== "none";
   const panelOpen = modePanelActive || railPanelActive;
 
+  // Map-first navigation: the HUD owns the screen; the sheet/panel only
+  // reappears as the step list when requested from the HUD.
+  const navHidesChrome = isNavigating && !stepListOpen;
+
+  // Publish the sheet's live height as a CSS variable so floating map
+  // controls (SOS, recenter, …) can ride just above the sheet instead of
+  // sitting at hardcoded offsets that drift out of sync when the user drags.
+  useEffect(() => {
+    const ratio = navHidesChrome ? 0 : sheetHeight;
+    document.documentElement.style.setProperty(
+      "--bottom-sheet-h",
+      `${(ratio * 100).toFixed(1)}dvh`,
+    );
+  }, [sheetHeight, navHidesChrome]);
+
   useEffect(() => {
     switch (sheetMode) {
       case "home":
@@ -333,10 +348,6 @@ export default function BottomSheet() {
     setStepListOpen,
   ]);
 
-  // Map-first navigation: the HUD owns the screen; the sheet/panel only
-  // reappears as the step list when requested from the HUD.
-  const navHidesChrome = isNavigating && !stepListOpen;
-
   return (
     <>
       {/* ======= Mobile: Bottom Sheet (unchanged) ======= */}
@@ -358,8 +369,10 @@ export default function BottomSheet() {
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
         >
           {/* Drag Handle */}
+          {/* py-4 keeps the grab target ≥32px tall for users with limited
+              fine motor control. */}
           <div
-            className="flex justify-center py-3 cursor-grab active:cursor-grabbing touch-none"
+            className="flex justify-center py-4 cursor-grab active:cursor-grabbing touch-none"
             onPointerDown={handlePointerDown}
             onPointerMove={handlePointerMove}
             onPointerUp={handlePointerUp}
