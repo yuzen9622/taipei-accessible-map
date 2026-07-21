@@ -24,17 +24,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useSosLifecycle } from "@/hook/useSosLifecycle";
 import { useAppTranslation } from "@/i18n/client";
 import {
   createSosSession,
   getEmergencyContacts,
+  getSosSession,
   resolveSosSession,
   updateSosLocation,
 } from "@/lib/api/sos";
 import { ApiError } from "@/lib/fetch";
+import { clearActiveSos, loadActiveSos, saveActiveSos } from "@/lib/sosSession";
 import { formatNominatimPlace } from "@/lib/utils";
+import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
-import type { EmergencyContact, SosType } from "@/types/sos";
+import type {
+  EmergencyContact,
+  HandlingStatus,
+  SosTimelineType,
+  SosType,
+} from "@/types/sos";
 
 const SOS_COUNTDOWN_MS = 5000;
 const LOCATION_UPDATE_MS = 12000;
@@ -43,6 +52,37 @@ const RING_RADIUS = 70;
 const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
 
 type SosStep = "countdown" | "active" | "resolved";
+
+/** i18n keys for the family member's fine-grained handling progress. */
+const HANDLING_STATUS_LABELS: Record<HandlingStatus, string> = {
+  notified: "sosHandlingNotified",
+  acknowledged: "sosHandlingAcknowledged",
+  claimed: "sosHandlingClaimed",
+  en_route: "sosHandlingEnRoute",
+  arrived: "sosHandlingArrived",
+  resolved: "sosHandlingResolved",
+};
+
+/** i18n keys for timeline entry types (append-only event history). */
+const TIMELINE_TYPE_LABELS: Record<SosTimelineType, string> = {
+  created: "sosTimelineCreated",
+  notified: "sosTimelineNotified",
+  acknowledged: "sosTimelineAcknowledged",
+  claimed: "sosTimelineClaimed",
+  status_update: "sosTimelineStatusUpdate",
+  resolved: "sosTimelineResolved",
+};
+
+function formatTimelineTime(iso: string): string {
+  try {
+    return new Date(iso).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "";
+  }
+}
 
 /** Haptic pulse so a pocket mis-tap is noticed even without looking. */
 function vibrate(pattern: number | number[]) {
@@ -72,6 +112,11 @@ export default function SosDialog({
 }) {
   const { t, i18n } = useAppTranslation();
   const userLocation = useMapStore((s) => s.userLocation);
+  const authToken = useAuthStore((s) => s.session?.accessToken);
+  // Recovery-on-reload bookkeeping: run the localStorage check at most once,
+  // and let a recovered open bypass the countdown/create flow.
+  const recoveryTriedRef = useRef(false);
+  const skipCountdownRef = useRef(false);
   const [step, setStep] = useState<SosStep>("countdown");
   const [secondsLeft, setSecondsLeft] = useState(SOS_COUNTDOWN_MS / 1000);
   /** Elapsed fraction of the countdown (0 → 1), drives the progress ring. */
@@ -81,13 +126,17 @@ export default function SosDialog({
   const countdownTimer = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [notifiedCount, setNotifiedCount] = useState<number | null>(null);
   const [creatingSession, setCreatingSession] = useState(false);
   const [boundContacts, setBoundContacts] = useState<EmergencyContact[]>([]);
   const [expanded, setExpanded] = useState(false);
+  const [timelineExpanded, setTimelineExpanded] = useState(false);
   const [supplementedType, setSupplementedType] = useState<SosType | null>(
     null,
   );
+
+  // Owner-only realtime lifecycle: who has acknowledged / claimed the SOS and
+  // the full event history. Live via SSE, with a polling fallback.
+  const { snapshot } = useSosLifecycle(sessionId, step === "active");
 
   const openRef = useRef(open);
   useEffect(() => {
@@ -98,10 +147,17 @@ export default function SosDialog({
   // biome-ignore lint/correctness/useExhaustiveDependencies: restart only when `open` flips; startSosSession is stable per open cycle
   useEffect(() => {
     if (!open) return;
+    // A session recovered from a reload opens straight into the active card —
+    // don't restart the countdown or create a second session.
+    if (skipCountdownRef.current) {
+      skipCountdownRef.current = false;
+      return;
+    }
     setStep("countdown");
     setSecondsLeft(SOS_COUNTDOWN_MS / 1000);
     setCountdownProgress(0);
     setExpanded(false);
+    setTimelineExpanded(false);
     setSupplementedType(null);
     vibrate(80);
 
@@ -140,9 +196,9 @@ export default function SosDialog({
     countdownTimer.current = null;
     setStep("countdown");
     setSessionId(null);
-    setNotifiedCount(null);
     setBoundContacts([]);
     setExpanded(false);
+    setTimelineExpanded(false);
     setSupplementedType(null);
     onOpenChange(false);
   };
@@ -170,7 +226,8 @@ export default function SosDialog({
       }
       if (response.data) {
         setSessionId(response.data.sessionId);
-        setNotifiedCount(response.data.notifiedCount);
+        // Persist so a reload can recover this active session.
+        saveActiveSos(response.data.sessionId);
       }
     } catch (err) {
       if (openRef.current) {
@@ -244,6 +301,55 @@ export default function SosDialog({
     return () => clearInterval(interval);
   }, [open, step, sessionId, address, t]);
 
+  // Family member (or backend) resolved the event: reflect it instantly from
+  // the lifecycle snapshot instead of waiting for a location-push to 400.
+  useEffect(() => {
+    if (step === "active" && snapshot?.status === "resolved") {
+      setStep("resolved");
+    }
+  }, [step, snapshot?.status]);
+
+  // Clear the persisted session whenever the SOS ends, so a later reload
+  // doesn't try to recover a finished event.
+  useEffect(() => {
+    if (step === "resolved") clearActiveSos();
+  }, [step]);
+
+  // Recover an active SOS after a page reload: once auth is ready, look up the
+  // stored session id and, if the server says it's still active, drop straight
+  // back into the active card (skipping the countdown / create flow).
+  useEffect(() => {
+    if (recoveryTriedRef.current || open || !authToken) return;
+    recoveryTriedRef.current = true;
+    const storedId = loadActiveSos();
+    if (!storedId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await getSosSession(storedId);
+        if (cancelled) return;
+        if (res.data?.status === "active") {
+          skipCountdownRef.current = true;
+          setSessionId(storedId);
+          setStep("active");
+          onOpenChange(true);
+        } else if (res.data?.status === "resolved") {
+          clearActiveSos(); // already resolved server-side
+        }
+        // else: unexpected/empty body — keep the id so the next reload retries
+      } catch (err) {
+        // 404/410 → the session is gone; drop it. Auth/network hiccups →
+        // keep it so the next reload can retry.
+        if (err instanceof ApiError && (err.code === 404 || err.code === 410)) {
+          clearActiveSos();
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [authToken, open, onOpenChange]);
+
   // Reverse geocode
   useEffect(() => {
     if (step !== "active" || !userLocation) return;
@@ -270,6 +376,19 @@ export default function SosDialog({
     .filter((c) => c.bindStatus === "bound")
     .map((c) => c.name);
 
+  const handlerName = snapshot?.claimedByName ?? null;
+  const handlingStatus = snapshot?.handlingStatus ?? null;
+  const ackCount = snapshot?.acknowledgements.length ?? 0;
+  const timeline = snapshot?.timeline ?? [];
+  const isClaimed = Boolean(handlerName);
+  // Always-visible one-liner: prefer the active handler + their status,
+  // else how many family members have confirmed receipt.
+  const handlingSummary = handlerName
+    ? `${handlerName}・${t(HANDLING_STATUS_LABELS[handlingStatus ?? "claimed"])}`
+    : ackCount > 0
+      ? t("sosAckCount", { count: ackCount })
+      : t("sosContinuousSharing");
+
   // When in active state, render as non-modal floating card
   if (open && step === "active" && sessionId) {
     return (
@@ -290,8 +409,14 @@ export default function SosDialog({
                 <span className="text-sm font-bold text-red-600">
                   {t("sosActiveTitle")}
                 </span>
-                <span className="text-xs text-muted-foreground">
-                  {t("sosContinuousSharing")}
+                <span
+                  className={`text-xs ${
+                    isClaimed
+                      ? "font-medium text-foreground"
+                      : "text-muted-foreground"
+                  }`}
+                >
+                  {handlingSummary}
                 </span>
               </div>
               <div className="flex items-center gap-1.5">
@@ -303,9 +428,34 @@ export default function SosDialog({
               </div>
             </button>
 
-            {/* Expanded content */}
+            {/* Expanded content — capped + scrollable so the resolve button
+                stays reachable on short screens no matter how long the
+                timeline / contact list grows. */}
             {expanded && (
-              <div className="px-4 pb-4 space-y-3 border-t border-border/30 pt-3">
+              <div className="px-4 pb-4 space-y-3 border-t border-border/30 pt-3 max-h-[65vh] overflow-y-auto overscroll-contain">
+                {/* Who is handling this SOS (live via SSE) */}
+                <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-2.5 space-y-1">
+                  <p className="text-xs font-medium text-muted-foreground">
+                    {t("sosHandlingLabel")}
+                  </p>
+                  {isClaimed ? (
+                    <p className="text-sm font-semibold text-foreground">
+                      {handlerName}
+                      <span className="ml-1.5 font-normal text-red-600">
+                        {t(HANDLING_STATUS_LABELS[handlingStatus ?? "claimed"])}
+                      </span>
+                    </p>
+                  ) : ackCount > 0 ? (
+                    <p className="text-sm">
+                      {t("sosAckCount", { count: ackCount })}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      {t("sosWaitingFamily")}
+                    </p>
+                  )}
+                </div>
+
                 {/* Supplement type */}
                 <div className="space-y-1.5">
                   <p className="text-xs font-medium text-muted-foreground">
@@ -337,9 +487,7 @@ export default function SosDialog({
                   <p className="text-xs font-medium text-muted-foreground">
                     {t("sosNotifiedContacts")}
                   </p>
-                  {notifiedCount &&
-                  notifiedCount > 0 &&
-                  boundContactNames.length > 0 ? (
+                  {boundContactNames.length > 0 ? (
                     <p className="text-sm">{boundContactNames.join("、")}</p>
                   ) : (
                     <p className="text-xs text-muted-foreground">
@@ -389,6 +537,53 @@ export default function SosDialog({
                   </p>
                   <ShareTargets message={sosMessage} />
                 </div>
+
+                {/* Event timeline — collapsed by default to keep the card
+                    compact; tap the header to expand. */}
+                {timeline.length > 0 && (
+                  <div className="rounded-xl bg-muted/30 p-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setTimelineExpanded((v) => !v)}
+                      aria-expanded={timelineExpanded}
+                      className="w-full flex items-center justify-between"
+                    >
+                      <span className="text-xs font-medium text-muted-foreground">
+                        {t("sosTimelineLabel")}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs text-muted-foreground tabular-nums">
+                          {timeline.length}
+                        </span>
+                        {timelineExpanded ? (
+                          <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </div>
+                    </button>
+                    {timelineExpanded && (
+                      <ol className="mt-2 space-y-1.5">
+                        {timeline.map((entry, i) => (
+                          <li
+                            key={`${entry.type}-${entry.at}-${i}`}
+                            className="flex items-start gap-2 text-xs"
+                          >
+                            <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-red-500/60" />
+                            <span className="text-muted-foreground tabular-nums">
+                              {formatTimelineTime(entry.at)}
+                            </span>
+                            <span className="flex-1 text-foreground">
+                              {entry.actorName ? `${entry.actorName} ` : ""}
+                              {t(TIMELINE_TYPE_LABELS[entry.type])}
+                              {entry.note ? `・${entry.note}` : ""}
+                            </span>
+                          </li>
+                        ))}
+                      </ol>
+                    )}
+                  </div>
+                )}
 
                 {/* Resolve */}
                 <Button

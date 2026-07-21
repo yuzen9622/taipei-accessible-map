@@ -8,6 +8,7 @@ import type {
   EmergencyContact,
   ResolveSosSessionResult,
   SosPublicSession,
+  SosSnapshot,
 } from "@/types/sos";
 
 const CONTACTS_BASE = `${END_POINT}/api/v1/user/emergency-contacts`;
@@ -60,6 +61,16 @@ export async function resolveSosSession(sessionId: string) {
     { method: "PATCH" },
   );
   return response as ApiResponse<ResolveSosSessionResult>;
+}
+
+// Owner-only full lifecycle snapshot — used for the victim's initial load
+// and as the polling fallback when the SSE stream drops (see useSosLifecycle).
+export async function getSosSession(sessionId: string) {
+  const response = await authenticatedRequest(
+    `${SOS_BASE}/${encodeURIComponent(sessionId)}`,
+    { method: "GET" },
+  );
+  return response as ApiResponse<SosSnapshot>;
 }
 
 // No auth — public tracking page. Callers distinguish 404/410 via

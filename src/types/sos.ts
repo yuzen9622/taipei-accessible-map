@@ -43,3 +43,60 @@ export interface SosPublicSession {
   address: string | null;
   updatedAt: string;
 }
+
+/** Fine-grained progress of a family member handling the SOS (owner-only). */
+export type HandlingStatus =
+  | "notified"
+  | "acknowledged"
+  | "claimed"
+  | "en_route"
+  | "arrived"
+  | "resolved";
+
+export type SosActorType = "victim" | "system" | "contact";
+
+export type SosTimelineType =
+  | "created"
+  | "notified"
+  | "acknowledged"
+  | "claimed"
+  | "status_update"
+  | "resolved";
+
+export interface SosAcknowledgement {
+  lineUserId: string;
+  name: string;
+  at: string;
+}
+
+export interface SosTimelineEntry {
+  type: SosTimelineType;
+  actorType: SosActorType;
+  actorName: string | null;
+  note: string | null;
+  at: string;
+}
+
+/**
+ * Full owner-only snapshot from `GET /sessions/:id` and each SSE `update`
+ * event. `status` is the master switch (active/resolved); `handlingStatus`
+ * is the family member's fine-grained progress.
+ */
+export interface SosSnapshot {
+  sessionId: string;
+  status: SosStatus;
+  handlingStatus: HandlingStatus;
+  claimedBy: string | null;
+  claimedByName: string | null;
+  claimedAt: string | null;
+  acknowledgements: SosAcknowledgement[];
+  timeline: SosTimelineEntry[];
+  location: {
+    lat: number;
+    lng: number;
+    address: string | null;
+    updatedAt: string;
+  } | null;
+  resolvedAt: string | null;
+  updatedAt: string;
+}
