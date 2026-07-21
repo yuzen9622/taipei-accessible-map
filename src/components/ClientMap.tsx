@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 import NowPin from "@/components/shared/NowPin";
 import MapWrapper from "@/components/Wrapper/MapWrapper";
-import AccessibilityPin from "@/components/Wrapper/MetroA11yWrapper";
+import A11yFacilitiesWrapper from "@/components/Wrapper/A11yFacilitiesWrapper";
 import RoutePreviewHydrator from "@/components/Wrapper/RoutePreviewHydrator";
 import RouteLine from "@/components/Wrapper/RouteWrapper";
 import { useAppTranslation } from "@/i18n/client";
@@ -401,7 +401,7 @@ export default function ClientMap() {
     >
       <NavigationControl position="top-right" showCompass={false} />
       <MapWrapper />
-      <AccessibilityPin />
+      <A11yFacilitiesWrapper />
       <NowPin />
       <MapControlsWrapper />
       {searchPlace ? (

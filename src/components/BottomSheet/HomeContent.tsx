@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Accessibility,
   AlertTriangle,
   Bookmark,
   Bus,
@@ -13,7 +14,6 @@ import {
   Navigation,
   Pencil,
   Plus,
-  TrainFront,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
@@ -42,7 +42,7 @@ type SubPanel =
 
 // Every available quick action; the user picks which ones show (persisted).
 type QuickActionId =
-  | "metro"
+  | "a11y"
   | "hazard"
   | "parking"
   | "bus"
@@ -56,9 +56,9 @@ const QUICK_ACTION_DEFS: {
   className: string;
 }[] = [
   {
-    id: "metro",
-    labelKey: "metroA11y",
-    Icon: TrainFront,
+    id: "a11y",
+    labelKey: "a11yFacilities",
+    Icon: Accessibility,
     className:
       "bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-500/20",
   },
@@ -100,7 +100,7 @@ const QUICK_ACTION_DEFS: {
 ];
 
 const DEFAULT_QUICK_ACTIONS: QuickActionId[] = [
-  "metro",
+  "a11y",
   "hazard",
   "parking",
   "bus",
@@ -140,9 +140,12 @@ export default function HomeContent() {
     const stored = localStorage.getItem("quickActions");
     if (!stored) return;
     try {
-      const ids = (JSON.parse(stored) as QuickActionId[]).filter((id) =>
-        QUICK_ACTION_DEFS.some((d) => d.id === id),
-      );
+      const ids = (JSON.parse(stored) as string[])
+        // "metro" was the old id of the a11y quick action
+        .map((id) => (id === "metro" ? "a11y" : id))
+        .filter((id): id is QuickActionId =>
+          QUICK_ACTION_DEFS.some((d) => d.id === id),
+        );
       setEnabledActions(ids);
     } catch {
       // ignore corrupted selection
@@ -193,7 +196,7 @@ export default function HomeContent() {
     [setSearchPlace, setInfoShow, map, setSheetMode],
   );
 
-  // Metro accessibility lives in the dedicated a11y panel: switch the rail
+  // Accessibility facilities live in the dedicated a11y panel: switch the rail
   // panel on desktop, fall back to an inline sub-panel on mobile.
   const openA11y = useCallback(() => {
     setActiveRailPanel("a11y");
@@ -320,7 +323,7 @@ export default function HomeContent() {
                   key={def.id}
                   type="button"
                   onClick={() =>
-                    def.id === "metro" ? openA11y() : setSubPanel(def.id)
+                    def.id === "a11y" ? openA11y() : setSubPanel(def.id)
                   }
                   className={cn(
                     "flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-semibold transition-colors shrink-0 snap-start",
@@ -360,7 +363,7 @@ export default function HomeContent() {
                     key={def.id}
                     type="button"
                     onClick={() =>
-                      def.id === "metro" ? openA11y() : setSubPanel(def.id)
+                      def.id === "a11y" ? openA11y() : setSubPanel(def.id)
                     }
                     className={cn(
                       "flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-semibold transition-colors",

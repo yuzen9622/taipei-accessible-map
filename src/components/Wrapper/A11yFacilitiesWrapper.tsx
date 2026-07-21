@@ -4,7 +4,7 @@ import { Marker, useMap } from "react-map-gl/maplibre";
 import { toast } from "sonner";
 import useSupercluster from "use-supercluster";
 import { useShallow } from "zustand/react/shallow";
-import MetroA11yPin from "@/components/MetroA11yPin";
+import A11yFacilityPin from "@/components/A11yFacilityPin";
 import { useAppTranslation } from "@/i18n/client";
 import { getAllA11yFacilities } from "@/lib/api/a11y";
 import useMapStore from "@/stores/useMapStore";
@@ -42,7 +42,7 @@ function facilityToMarker(facility: A11yFacility): MarkerType | null {
   };
 }
 
-export default function AccessibilityPin() {
+export default function A11yFacilitiesWrapper() {
   const { t } = useAppTranslation();
   const { selectedA11yTypes, a11yPlaces, setA11yPlaces, routeA11y } =
     useMapStore(
@@ -200,11 +200,11 @@ export default function AccessibilityPin() {
         }
 
         const place = properties.place as MarkerType;
-        return <MetroA11yPin key={`place-${place.id}`} place={place} />;
+        return <A11yFacilityPin key={`place-${place.id}`} place={place} />;
       })}
 
       {routeA11y.map((place) => (
-        <MetroA11yPin key={`route-${place.id}`} place={place} />
+        <A11yFacilityPin key={`route-${place.id}`} place={place} />
       ))}
     </>
   );

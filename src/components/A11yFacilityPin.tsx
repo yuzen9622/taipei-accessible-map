@@ -10,7 +10,7 @@ import type { Marker as MarkerType } from "@/types";
 import { A11yEnum } from "@/types/index";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./ui/hover-card";
 
-export default function MetroA11yPin({ place }: { place: MarkerType }) {
+export default function A11yFacilityPin({ place }: { place: MarkerType }) {
   const [open, setOpen] = useState(false);
   const {
     selectA11yPlace,
