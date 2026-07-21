@@ -4,16 +4,22 @@ import {
   Camera,
   Cloud,
   Droplets,
+  MapPin,
+  Navigation,
   RefreshCw,
   Thermometer,
   Wind,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import { useAppTranslation } from "@/i18n/client";
 import { getEnvironmentInfo } from "@/lib/api/a11y";
+import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import type { EnvironmentData } from "@/types/route";
+
+type EnvTarget = "current" | "destination";
 
 export default function EnvironmentPanel({
   onClose,
@@ -23,48 +29,90 @@ export default function EnvironmentPanel({
   hideHeader?: boolean;
 }) {
   const { t } = useAppTranslation();
-  const userLocation = useMapStore((s) => s.userLocation);
+  const { hasUserLocation, destPosition, destinationName } = useMapStore(
+    useShallow((s) => ({
+      hasUserLocation: !!s.userLocation,
+      destPosition: s.destination?.position ?? null,
+      destinationName: s.destinationName,
+    })),
+  );
+  // Destination-first: once the user has picked a destination, "will it rain
+  // where I'm going" matters more than "where I am right now".
+  const [target, setTarget] = useState<EnvTarget>(
+    destPosition ? "destination" : "current",
+  );
   const [data, setData] = useState<EnvironmentData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const hasFetchedRef = useRef(false);
+  // One cached result per target so toggling back doesn't refetch.
+  const cacheRef = useRef<Partial<Record<EnvTarget, EnvironmentData>>>({});
 
-  const fetchEnvironment = useCallback(async () => {
-    const loc = useMapStore.getState().userLocation;
-    if (!loc) {
-      setLoading(false);
-      setError(t("noLocation"));
-      return;
-    }
-    setLoading(true);
-    setError(null);
-
-    const timeout = setTimeout(() => {
-      setLoading(false);
-      setError(t("requestTimeout"));
-    }, 10000);
-
-    try {
-      const res = await getEnvironmentInfo(loc.lat, loc.lng);
-      clearTimeout(timeout);
-      if (res.ok && res.data) {
-        setData(res.data);
-      } else {
-        setError(t("noData"));
-      }
-    } catch {
-      clearTimeout(timeout);
-      setError(t("networkError"));
-    } finally {
-      setLoading(false);
-    }
-  }, [t]);
-
+  // If the destination is cleared while we're showing it, fall back.
   useEffect(() => {
-    if (hasFetchedRef.current || !userLocation) return;
-    hasFetchedRef.current = true;
+    if (!destPosition && target === "destination") setTarget("current");
+  }, [destPosition, target]);
+
+  // A new destination invalidates its cached snapshot — otherwise switching
+  // the route target from A to B would keep showing A's environment.
+  // biome-ignore lint/correctness/useExhaustiveDependencies(destPosition): destPosition is the invalidation trigger; the body only clears the cache
+  useEffect(() => {
+    cacheRef.current.destination = undefined;
+  }, [destPosition]);
+
+  const fetchEnvironment = useCallback(
+    async (force = false) => {
+      const loc =
+        target === "destination"
+          ? destPosition
+          : useMapStore.getState().userLocation;
+      if (!loc) {
+        setLoading(false);
+        setData(null);
+        setError(t("noLocation"));
+        return;
+      }
+      const cached = cacheRef.current[target];
+      if (cached && !force) {
+        setData(cached);
+        setLoading(false);
+        setError(null);
+        return;
+      }
+      setLoading(true);
+      setError(null);
+
+      const timeout = setTimeout(() => {
+        setLoading(false);
+        setError(t("requestTimeout"));
+      }, 10000);
+
+      try {
+        const res = await getEnvironmentInfo(loc.lat, loc.lng);
+        clearTimeout(timeout);
+        if (res.ok && res.data) {
+          cacheRef.current[target] = res.data;
+          setData(res.data);
+        } else {
+          setError(t("noData"));
+        }
+      } catch {
+        clearTimeout(timeout);
+        setError(t("networkError"));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [target, destPosition, t],
+  );
+
+  // Refetch when the target toggles or the first GPS fix arrives (cache makes
+  // repeat runs free).
+  useEffect(() => {
+    // Querying the current location needs a GPS fix first; keep the spinner
+    // until it arrives (matches the previous behaviour).
+    if (target === "current" && !hasUserLocation) return;
     fetchEnvironment();
-  }, [userLocation, fetchEnvironment]);
+  }, [fetchEnvironment, hasUserLocation, target]);
 
   return (
     <div className="space-y-4">
@@ -77,7 +125,7 @@ export default function EnvironmentPanel({
           <div className="flex items-center gap-1">
             <button
               type="button"
-              onClick={fetchEnvironment}
+              onClick={() => fetchEnvironment(true)}
               disabled={loading}
               className="h-7 w-7 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted"
               aria-label={t("refresh", "重新整理")}
@@ -97,6 +145,49 @@ export default function EnvironmentPanel({
         </div>
       )}
 
+      {/* Where to check: destination-aware segmented toggle. Big touch
+          targets for elderly / low-dexterity users. */}
+      {destPosition && (
+        <div
+          role="tablist"
+          aria-label={t("envTargetLabel")}
+          className="flex rounded-full bg-muted/60 p-1 gap-1"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={target === "current"}
+            onClick={() => setTarget("current")}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium transition-colors min-w-0",
+              target === "current"
+                ? "bg-background shadow-sm text-foreground"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <Navigation className="h-3.5 w-3.5 shrink-0" />
+            <span className="truncate">{t("envCurrentLocation")}</span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={target === "destination"}
+            onClick={() => setTarget("destination")}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium transition-colors min-w-0",
+              target === "destination"
+                ? "bg-background shadow-sm text-foreground"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            <MapPin className="h-3.5 w-3.5 shrink-0 text-rose-500" />
+            <span className="truncate">
+              {destinationName || t("envDestination")}
+            </span>
+          </button>
+        </div>
+      )}
+
       {loading ? (
         <div className="flex items-center justify-center py-8">
           <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -107,7 +198,7 @@ export default function EnvironmentPanel({
           <p className="text-sm text-muted-foreground">{error}</p>
           <button
             type="button"
-            onClick={fetchEnvironment}
+            onClick={() => fetchEnvironment(true)}
             className="text-xs text-primary hover:underline"
           >
             {t("retry")}
@@ -190,9 +281,9 @@ export default function EnvironmentPanel({
                   {t("cameras")}
                 </h3>
                 <div className="space-y-2">
-                  {data.cameras.items.slice(0, 3).map((cam, i) => (
+                  {data.cameras.items.slice(0, 3).map((cam) => (
                     <a
-                      key={i}
+                      key={`${cam.name}-${cam.distance}`}
                       href={cam.url}
                       target="_blank"
                       rel="noopener noreferrer"

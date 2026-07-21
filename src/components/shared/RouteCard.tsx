@@ -6,6 +6,8 @@ import {
   Car,
   Check,
   ChevronDown,
+  CircleAlert,
+  CircleCheck,
   Clock,
   CornerRightUp,
   Footprints,
@@ -22,9 +24,9 @@ import { useShallow } from "zustand/react/shallow";
 import { useAppTranslation } from "@/i18n/client";
 import { fitRouteBounds, routeBoundsFromLegs } from "@/lib/mapCamera";
 import { cn } from "@/lib/utils";
-import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
 import type {
+  A11yLabel,
   AccessibleRoute,
   DriveStep,
   IntermediateStop,
@@ -36,8 +38,6 @@ import type {
 import {
   formatDistance,
   formatDuration,
-  getA11yLabelColor,
-  getA11yLabelText,
   getLegColor,
   scoreToLabel,
 } from "@/types/route";
@@ -733,6 +733,63 @@ const scoreBarColor = (value: number) => {
   return "#f97316";
 };
 
+// First-layer verdict shown instead of the raw score: decision-oriented
+// wording ("can I get through?") with the numbers demoted to the expandable
+// details section. Tailwind classes (not the raw label hex) so contrast holds
+// in dark mode.
+const A11Y_VERDICT: Record<
+  A11yLabel,
+  {
+    Icon: typeof CircleCheck;
+    bg: string;
+    iconColor: string;
+    titleColor: string;
+    titleKey: string;
+    descKey: string;
+  }
+> = {
+  excellent: {
+    Icon: CircleCheck,
+    bg: "bg-emerald-500/10",
+    iconColor: "text-emerald-600 dark:text-emerald-400",
+    titleColor: "text-emerald-700 dark:text-emerald-300",
+    titleKey: "a11yVerdictExcellent",
+    descKey: "a11yVerdictExcellentDesc",
+  },
+  good: {
+    Icon: CircleCheck,
+    bg: "bg-lime-500/10",
+    iconColor: "text-lime-600 dark:text-lime-400",
+    titleColor: "text-lime-700 dark:text-lime-300",
+    titleKey: "a11yVerdictGood",
+    descKey: "a11yVerdictGoodDesc",
+  },
+  fair: {
+    Icon: CircleAlert,
+    bg: "bg-yellow-500/10",
+    iconColor: "text-yellow-600 dark:text-yellow-400",
+    titleColor: "text-yellow-700 dark:text-yellow-300",
+    titleKey: "a11yVerdictFair",
+    descKey: "a11yVerdictFairDesc",
+  },
+  poor: {
+    Icon: AlertTriangle,
+    bg: "bg-orange-500/10",
+    iconColor: "text-orange-600 dark:text-orange-400",
+    titleColor: "text-orange-700 dark:text-orange-300",
+    titleKey: "a11yVerdictPoor",
+    descKey: "a11yVerdictPoorDesc",
+  },
+  critical: {
+    Icon: AlertTriangle,
+    bg: "bg-red-500/10",
+    iconColor: "text-red-600 dark:text-red-400",
+    titleColor: "text-red-700 dark:text-red-300",
+    titleKey: "a11yVerdictCritical",
+    descKey: "a11yVerdictCriticalDesc",
+  },
+};
+
 export const RouteCard = memo(function RouteCard({
   route,
   idx,
@@ -759,10 +816,9 @@ export const RouteCard = memo(function RouteCard({
     })),
   );
   const { t } = useAppTranslation();
-  const { userConfig } = useAuthStore(
-    useShallow((s) => ({ userConfig: s.userConfig })),
-  );
   const isSelected = selectRoute?.index === idx;
+  const [scoreOpen, setScoreOpen] = useState(false);
+  const scoreDetailId = useId();
 
   const pointCtx: PointLabelContext = {
     originPosition: origin?.position ?? null,
@@ -780,6 +836,7 @@ export const RouteCard = memo(function RouteCard({
     (route.accessibilityScore != null
       ? scoreToLabel(route.accessibilityScore)
       : null);
+  const verdict = label ? A11Y_VERDICT[label] : null;
 
   const confidenceLabelKey = getConfidenceLabelKey(route.dataConfidence);
   const confidenceLabelText = confidenceLabelKey
@@ -844,20 +901,36 @@ export const RouteCard = memo(function RouteCard({
           </p>
         )}
 
+        {/* 通行評估 — the "should I take this route?" answer, in words
+            rather than a bare score. */}
+        {verdict && (
+          <div
+            className={cn(
+              "flex items-center gap-3 rounded-xl px-3 py-2.5",
+              verdict.bg,
+            )}
+          >
+            <verdict.Icon
+              className={cn("h-6 w-6 shrink-0", verdict.iconColor)}
+              aria-hidden
+            />
+            <div className="min-w-0">
+              <p
+                className={cn(
+                  "text-sm font-bold leading-tight",
+                  verdict.titleColor,
+                )}
+              >
+                {t(verdict.titleKey)}
+              </p>
+              <p className="text-xs text-muted-foreground leading-snug mt-0.5">
+                {t(verdict.descKey)}
+              </p>
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center gap-2 flex-wrap">
-          {label && (
-            <Badge
-              className="gap-1"
-              style={{
-                backgroundColor: getA11yLabelColor(label),
-                color: "#fff",
-              }}
-            >
-              <ShieldCheck className="h-3 w-3" />
-              {getA11yLabelText(label, userConfig.language)}{" "}
-              {route.accessibilityScore}
-            </Badge>
-          )}
           {route.transferCount > 0 && (
             <Badge variant="outline" className="text-xs">
               {t("transferCount", { count: route.transferCount })}
@@ -887,42 +960,76 @@ export const RouteCard = memo(function RouteCard({
           {isSelected && <Badge>{t("selectedRoute")}</Badge>}
         </div>
 
+        {/* Raw score + component breakdown, demoted to an opt-in disclosure —
+            the verdict above already answers the everyday question. */}
         {isSelected && route.scoreComponents && (
-          <div className="grid grid-cols-3 gap-2 pt-1">
-            {(
-              ["facilityScore", "timeScore", "criticalFeatureScore"] as const
-            ).map((key) => {
-              const val = route.scoreComponents?.[key] ?? 0;
-              return (
-                <div
-                  key={key}
-                  className="text-center p-2 rounded-lg bg-muted/40 space-y-1"
-                >
-                  <p className="text-lg font-bold tabular-nums leading-none pt-1">
-                    {val}
-                  </p>
-                  <div
-                    aria-hidden="true"
-                    className="h-1 rounded-full bg-muted overflow-hidden mx-1"
-                  >
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={() => setScoreOpen((v) => !v)}
+              aria-expanded={scoreOpen}
+              aria-controls={scoreDetailId}
+              className="flex w-full items-center justify-between gap-2 px-1 py-2 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <span className="flex items-center gap-1.5">
+                <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
+                {t("scoreDetails")}
+                {route.accessibilityScore != null && (
+                  <span className="tabular-nums font-semibold">
+                    {route.accessibilityScore}/100
+                  </span>
+                )}
+              </span>
+              <ChevronDown
+                aria-hidden
+                className={cn(
+                  "h-3.5 w-3.5 transition-transform",
+                  scoreOpen && "rotate-180",
+                )}
+              />
+            </button>
+            {scoreOpen && (
+              <div id={scoreDetailId} className="grid grid-cols-3 gap-2 pt-1">
+                {(
+                  [
+                    "facilityScore",
+                    "timeScore",
+                    "criticalFeatureScore",
+                  ] as const
+                ).map((key) => {
+                  const val = route.scoreComponents?.[key] ?? 0;
+                  return (
                     <div
-                      className="h-full rounded-full transition-[width] duration-500 ease-out"
-                      style={{
-                        width: `${Math.max(0, Math.min(100, val))}%`,
-                        backgroundColor: scoreBarColor(val),
-                      }}
-                    />
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    {key === "facilityScore"
-                      ? (t("facilityScore") ?? "設施")
-                      : key === "timeScore"
-                        ? (t("timeScore") ?? "時間")
-                        : (t("criticalScore") ?? "關鍵")}
-                  </p>
-                </div>
-              );
-            })}
+                      key={key}
+                      className="text-center p-2 rounded-lg bg-muted/40 space-y-1"
+                    >
+                      <p className="text-lg font-bold tabular-nums leading-none pt-1">
+                        {val}
+                      </p>
+                      <div
+                        aria-hidden="true"
+                        className="h-1 rounded-full bg-muted overflow-hidden mx-1"
+                      >
+                        <div
+                          className="h-full rounded-full transition-[width] duration-500 ease-out"
+                          style={{
+                            width: `${Math.max(0, Math.min(100, val))}%`,
+                            backgroundColor: scoreBarColor(val),
+                          }}
+                        />
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {key === "facilityScore"
+                          ? (t("facilityScore") ?? "設施")
+                          : key === "timeScore"
+                            ? (t("timeScore") ?? "時間")
+                            : (t("criticalScore") ?? "關鍵")}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
