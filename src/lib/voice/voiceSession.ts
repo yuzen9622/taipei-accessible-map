@@ -49,6 +49,8 @@ interface ToolResultMessage {
   name: string;
   ok: boolean;
   durationMs: number;
+  result?: unknown;
+  args?: unknown;
 }
 
 interface InterruptedMessage {
@@ -146,6 +148,8 @@ export interface VoiceToolEvent {
   name: string;
   ok?: boolean;
   durationMs?: number;
+  result?: unknown;
+  args?: unknown;
 }
 
 export interface VoiceTranscript {
@@ -424,6 +428,8 @@ export class VoiceSessionController {
           name: m.name,
           ok: m.ok,
           durationMs: m.durationMs,
+          result: m.result,
+          args: m.args,
         });
         return;
       }

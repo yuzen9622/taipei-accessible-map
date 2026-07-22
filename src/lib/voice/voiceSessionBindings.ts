@@ -17,6 +17,8 @@ import {
   emptyAggState,
   type TranscriptFragment,
 } from "./transcriptAggregator";
+import { executeAction } from "@/lib/ai/actionExecutor";
+import { mapToolToActions } from "@/lib/ai/toolActionMapper";
 import type {
   VoiceStatus,
   VoiceStatusName,
@@ -69,6 +71,15 @@ export function createVoiceBindings(sinks: BindingSinks): VoiceBindings {
 
   function onToolEvent(event: VoiceToolEvent): void {
     sinks.publishTool(event);
+
+    if (event.type === "result" && event.result != null) {
+      const actions = mapToolToActions(event.name, event.result, event.args);
+      for (const action of actions) {
+        if (action.type === "close-chat") continue;
+        if (action.type === "compute-route") continue;
+        executeAction(action);
+      }
+    }
   }
 
   function wrapCaptureFrame(

@@ -1,7 +1,8 @@
 import { useCallback, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useAppTranslation } from "@/i18n/client";
-import { a11yPlacesToMarkers, googlePlacesToMarkers } from "@/lib/aiResults";
+import { executeAction } from "@/lib/ai/actionExecutor";
+import { mapToolToActions } from "@/lib/ai/toolActionMapper";
 import type { ChatMessage } from "@/lib/api/ai";
 import { streamChatWithAgent } from "@/lib/api/ai";
 import useAuthStore from "@/stores/useAuthStore";
@@ -95,18 +96,14 @@ export default function useAIChat() {
     userLocation,
     chatOpen: open,
     setChatOpen: setOpen,
-    setSheetMode,
-    setAiResultMarkers,
   } = useMapStore(
     useShallow((s) => ({
       userLocation: s.userLocation,
       chatOpen: s.chatOpen,
       setChatOpen: s.setChatOpen,
-      setSheetMode: s.setSheetMode,
-      setAiResultMarkers: s.setAiResultMarkers,
     })),
   );
-  const { handleComputeRoute, setComputedRouteData } = useComputeRoute();
+  const { handleComputeRoute } = useComputeRoute();
   const abortRef = useRef<AbortController | null>(null);
 
   const chatHistory = useRef<ChatMessage[]>([
@@ -126,7 +123,7 @@ export default function useAIChat() {
 
       setInput("");
       setIsLoading(true);
-      setAiResultMarkers([]); // 清掉上一輪查詢的地圖標記
+      executeAction({ type: "clear-markers" });
 
       const userBubble: ChatBubble = { role: "user", content: trimmed };
       setMessages((prev) => [...prev, userBubble]);
@@ -222,80 +219,28 @@ export default function useAIChat() {
             });
 
             if (isDone) {
-              // 把查詢結果畫成地圖上的可點標記（自動縮放由 AIResultWrapper 處理）
-              if (toolName === "findA11yPlaces") {
-                setAiResultMarkers(a11yPlacesToMarkers(result));
-              } else if (toolName === "findGooglePlaces") {
-                setAiResultMarkers(googlePlacesToMarkers(result));
-              } else if (
-                toolName === "plan_route" ||
-                toolName === "planAccessibleRoute"
-              ) {
-                const res = (result ?? {}) as any;
-                const args = (
-                  typeof toolArgs === "string"
-                    ? JSON.parse(toolArgs || "{}")
-                    : (toolArgs ?? {})
-                ) as any;
+              const actions = mapToolToActions(toolName, result, toolArgs);
+              let shouldCloseChat = false;
 
-                // 起終點座標：優先用工具結果，其次用工具參數
-                const oLat =
-                  res.origin?.lat ??
-                  res.origin?.latitude ??
-                  args.origin?.latitude ??
-                  args.origin?.lat;
-                const oLng =
-                  res.origin?.lng ??
-                  res.origin?.longitude ??
-                  args.origin?.longitude ??
-                  args.origin?.lng;
-                const dLat =
-                  res.destination?.lat ??
-                  res.destination?.latitude ??
-                  args.destination?.latitude ??
-                  args.destination?.lat;
-                const dLng =
-                  res.destination?.lng ??
-                  res.destination?.longitude ??
-                  args.destination?.longitude ??
-                  args.destination?.lng;
-                const hasCoords =
-                  Number.isFinite(oLat) &&
-                  Number.isFinite(oLng) &&
-                  Number.isFinite(dLat) &&
-                  Number.isFinite(dLng);
-
-                // AI 路線本身是否已含可畫線的 polyline
-                const aiRoutes = res.routes;
-                const drawable =
-                  Array.isArray(aiRoutes) &&
-                  aiRoutes.length > 0 &&
-                  aiRoutes.some((r: any) =>
-                    r?.legs?.some((l: any) => l?.polyline?.length),
-                  );
-
-                const showRoutePanel = () => {
-                  setSheetMode("route");
-                  setOpen(false);
-                };
-
-                if (drawable) {
-                  setComputedRouteData(res.origin, res.destination, aiRoutes);
-                  showRoutePanel();
-                } else if (hasCoords) {
-                  // AI 路線缺 polyline → 用座標重新查完整路線（含畫線資料）
+              for (const action of actions) {
+                if (action.type === "compute-route") {
                   void handleComputeRoute({
-                    origin: { lat: oLat, lng: oLng },
-                    destination: { lat: dLat, lng: dLng },
+                    origin: action.origin,
+                    destination: action.destination,
                   }).then((ok) => {
-                    if (ok) showRoutePanel();
+                    if (ok) setOpen(false);
                   });
-                } else if (Array.isArray(aiRoutes) && aiRoutes.length > 0) {
-                  // 退而求其次：至少顯示路線卡片
-                  setComputedRouteData(res.origin, res.destination, aiRoutes);
-                  showRoutePanel();
+                } else {
+                  executeAction(action);
+                  if (
+                    action.type === "show-route" ||
+                    action.type === "switch-panel"
+                  ) {
+                    shouldCloseChat = true;
+                  }
                 }
               }
+              if (shouldCloseChat) setOpen(false);
             }
           },
           controller.signal,
@@ -328,16 +273,7 @@ export default function useAIChat() {
         abortRef.current = null;
       }
     },
-    [
-      isLoading,
-      userLocation,
-      handleComputeRoute,
-      setComputedRouteData,
-      setSheetMode,
-      setOpen,
-      setAiResultMarkers,
-      t,
-    ],
+    [isLoading, userLocation, handleComputeRoute, setOpen, t],
   );
 
   const stopStreaming = useCallback(() => {
