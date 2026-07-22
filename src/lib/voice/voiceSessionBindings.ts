@@ -8,6 +8,9 @@
  * stable ref and forwards controller callbacks straight into it.
  */
 
+import { executeAction } from "@/lib/ai/actionExecutor";
+import { mapToolToActions } from "@/lib/ai/toolActionMapper";
+import type { LatLng } from "@/types";
 import { isMicActiveStatus, wrapFrameHandler } from "./audioLevel";
 import {
   type AggEntry,
@@ -17,8 +20,6 @@ import {
   emptyAggState,
   type TranscriptFragment,
 } from "./transcriptAggregator";
-import { executeAction } from "@/lib/ai/actionExecutor";
-import { mapToolToActions } from "@/lib/ai/toolActionMapper";
 import type {
   VoiceStatus,
   VoiceStatusName,
@@ -34,6 +35,8 @@ export interface BindingSinks {
   publishTool(event: VoiceToolEvent): void;
   /** Bind to `useVoiceStore.getState().setMicLevel`. */
   setMicLevel(level: number): void;
+  /** Bind to the hook's `handleComputeRoute` caller (from `useComputeRoute`). */
+  computeRoute(params: { origin: LatLng; destination: LatLng }): void;
 }
 
 export interface VoiceBindings {
@@ -76,7 +79,13 @@ export function createVoiceBindings(sinks: BindingSinks): VoiceBindings {
       const actions = mapToolToActions(event.name, event.result, event.args);
       for (const action of actions) {
         if (action.type === "close-chat") continue;
-        if (action.type === "compute-route") continue;
+        if (action.type === "compute-route") {
+          sinks.computeRoute({
+            origin: action.origin,
+            destination: action.destination,
+          });
+          continue;
+        }
         executeAction(action);
       }
     }

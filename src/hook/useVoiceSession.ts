@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import useComputeRoute from "@/hook/useComputeRoute";
 import { refreshAccessToken } from "@/lib/authRefresh";
 import { END_POINT } from "@/lib/config";
 import { createCapture } from "@/lib/voice/audioCapture";
@@ -91,10 +92,20 @@ export default function useVoiceSession(): UseVoiceSessionResult {
   const [transcripts, setTranscripts] = useState<VoiceTranscriptEntry[]>([]);
   const [activeTool, setActiveTool] = useState<VoiceToolEvent | null>(null);
 
+  // `handleComputeRoute` identity changes when the map/userLocation load;
+  // the bindings are built once, so the sink reads the latest via
+  // `handleComputeRouteRef` to avoid a stale (null-map) closure.
+  const { handleComputeRoute } = useComputeRoute();
+
   // Read inside the auth subscription below without re-subscribing on
   // every status change.
   const statusRef = useRef(status);
   statusRef.current = status;
+
+  // Always holds the latest `handleComputeRoute` so the lazily-created
+  // `computeRoute` sink below never calls a first-render-frozen closure.
+  const handleComputeRouteRef = useRef(handleComputeRoute);
+  handleComputeRouteRef.current = handleComputeRoute;
 
   // Identity captured when startSession() runs; compared against the auth
   // store on every change while the session is active (plan §5.8 rev13).
@@ -116,6 +127,9 @@ export default function useVoiceSession(): UseVoiceSessionResult {
       },
       publishTool: (event) => setActiveTool(event),
       setMicLevel: (level) => useVoiceStore.getState().setMicLevel(level),
+      computeRoute: ({ origin, destination }) => {
+        void handleComputeRouteRef.current({ origin, destination });
+      },
     });
   }
   const bindings = bindingsRef.current;
