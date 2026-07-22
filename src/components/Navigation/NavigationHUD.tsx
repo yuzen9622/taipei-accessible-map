@@ -111,6 +111,7 @@ export default function NavigationHUD() {
   const isOffRoute = useNavStore((s) => s.isOffRoute);
   const arrived = useNavStore((s) => s.arrived);
   const voiceEnabled = useNavStore((s) => s.voiceEnabled);
+  const navigationSource = useNavStore((s) => s.navigationSource);
   const stepListOpen = useNavStore((s) => s.stepListOpen);
   const setStepListOpen = useNavStore((s) => s.setStepListOpen);
   const warnings = useNavStore((s) => s.warnings);
@@ -147,14 +148,19 @@ export default function NavigationHUD() {
 
   const speak = useCallback(
     (text: string) => {
-      if (!useNavStore.getState().voiceEnabled || !synthRef.current) return;
+      if (
+        navigationSource === "voice" ||
+        !useNavStore.getState().voiceEnabled ||
+        !synthRef.current
+      )
+        return;
       synthRef.current.cancel();
       const utter = new SpeechSynthesisUtterance(text);
       utter.lang = i18n.language === "zh-TW" ? "zh-TW" : "en-US";
       utter.rate = 0.9;
       synthRef.current.speak(utter);
     },
-    [i18n.language],
+    [i18n.language, navigationSource],
   );
 
   useEffect(() => {

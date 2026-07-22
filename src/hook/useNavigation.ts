@@ -69,6 +69,7 @@ export default function useNavigation() {
   const route = useMapStore((s) => s.selectRoute?.route ?? null);
   const userLocation = useMapStore((s) => s.userLocation);
   const compassPermission = useNavStore((s) => s.compassPermission);
+  const navigationSource = useNavStore((s) => s.navigationSource);
 
   const currentStepIndex = useNavStore((s) => s.currentStepIndex);
   const instructions = useNavStore((s) => s.instructions);
@@ -112,7 +113,7 @@ export default function useNavigation() {
 
   // ---- Load instructions when navigation starts (passthrough legs only) ----
   useEffect(() => {
-    if (!route) return;
+    if (!route || navigationSource === "voice") return;
     let cancelled = false;
     getRouteInstructions({
       route: route,
@@ -148,11 +149,11 @@ export default function useNavigation() {
     return () => {
       cancelled = true;
     };
-  }, [route, lang]);
+  }, [route, lang, navigationSource]);
 
   // ---- Progress: project user onto route → advance step, distance, off-route ----
   useEffect(() => {
-    if (!userLocation) return;
+    if (!userLocation || navigationSource === "voice") return;
     const cp = pathRef.current;
     const wps = waypointsRef.current;
     if (!cp || cp.path.length === 0 || wps.length === 0) return;
@@ -208,7 +209,7 @@ export default function useNavigation() {
     ) {
       if (!nav.arrived) nav.setArrived(true);
     }
-  }, [userLocation]);
+  }, [userLocation, navigationSource]);
 
   // ---- Step-preview camera: when GPS can't anchor the camera (missing or
   // far from the route), track the active maneuver instead so prev/next and

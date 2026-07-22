@@ -6,6 +6,7 @@ import type { NavInstruction } from "@/types/route";
 export type HeadingSource = "compass" | "gps" | null;
 export type CompassPermission = "unknown" | "granted" | "denied";
 export type NavViewMode = "3d" | "2d";
+export type NavigationSource = "local" | "voice";
 
 /**
  * High-frequency turn-by-turn runtime state, kept OUT of useMapStore on
@@ -14,6 +15,8 @@ export type NavViewMode = "3d" | "2d";
  * map. Consumers here subscribe with selectors (useNavStore(s => s.field)).
  */
 interface NavState {
+  /** Which state machine owns step advancement for the active navigation. */
+  navigationSource: NavigationSource;
   instructions: NavInstruction[];
   warnings: string[];
   currentStepIndex: number;
@@ -45,11 +48,17 @@ interface NavState {
 }
 
 interface NavAction {
+  setNavigationSource: (source: NavigationSource) => void;
   setInstructions: (
     instructions: NavInstruction[],
     warnings?: string[],
   ) => void;
   setCurrentStepIndex: (index: number) => void;
+  applyVoiceStep: (
+    index: number,
+    instruction: string,
+    remainingM: number,
+  ) => void;
   /** Manual override from the prev/next buttons. */
   setStepIndex: (index: number) => void;
   setDistanceToNextM: (m: number | null) => void;
@@ -71,6 +80,7 @@ interface NavAction {
 type NavStore = NavState & NavAction;
 
 const initialState: NavState = {
+  navigationSource: "local",
   instructions: [],
   warnings: [],
   currentStepIndex: 0,
@@ -93,6 +103,7 @@ const initialState: NavState = {
 
 const useNavStore = create<NavStore>((set) => ({
   ...initialState,
+  setNavigationSource: (navigationSource) => set({ navigationSource }),
   setInstructions: (instructions, warnings = []) =>
     set({
       instructions,
@@ -102,6 +113,16 @@ const useNavStore = create<NavStore>((set) => ({
       isOffRoute: false,
     }),
   setCurrentStepIndex: (currentStepIndex) => set({ currentStepIndex }),
+  applyVoiceStep: (currentStepIndex, instruction, remainingM) =>
+    set((state) => ({
+      instructions: state.instructions.map((step, index) =>
+        index === currentStepIndex ? { ...step, text: instruction } : step,
+      ),
+      currentStepIndex,
+      distanceToNextM: remainingM,
+      remainingM,
+      isOffRoute: false,
+    })),
   setStepIndex: (currentStepIndex) =>
     set({ currentStepIndex, lastManualTs: Date.now() }),
   setDistanceToNextM: (distanceToNextM) => set({ distanceToNextM }),

@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  VoiceSessionController,
   type VoiceCapture,
+  VoiceSessionController,
   type VoiceSessionDeps,
   type VoiceSocket,
   type VoiceStatus,
@@ -78,6 +78,7 @@ function createHarness(opts?: {
   const onStatusChange = vi.fn();
   const onTranscript = vi.fn();
   const onToolEvent = vi.fn();
+  const onNavigationEvent = vi.fn();
 
   const createSocket = vi.fn((url: string) => {
     const socket = new FakeSocket(url);
@@ -132,6 +133,7 @@ function createHarness(opts?: {
     onStatusChange,
     onTranscript,
     onToolEvent,
+    onNavigationEvent,
   };
 
   const controller = new VoiceSessionController(deps);
@@ -148,6 +150,7 @@ function createHarness(opts?: {
     onStatusChange,
     onTranscript,
     onToolEvent,
+    onNavigationEvent,
     setIdentity: (v: string | null) => {
       identity = v;
     },
@@ -611,5 +614,104 @@ describe("VoiceSessionController", () => {
 
     expect(h.createSocket).not.toHaveBeenCalled();
     expect(h.controller.getStatus().status).toBe("needs-login");
+  });
+
+  it("queues nav.setRoute until ready, then sends position and cancel controls", () => {
+    const h = createHarness();
+    h.controller.setNavigationRoute("route-capability");
+    h.controller.start();
+    h.sockets[0].triggerOpen();
+
+    expect(h.sockets[0].sent).toHaveLength(1);
+    expect(JSON.parse(h.sockets[0].sent[0] as string).type).toBe(
+      "session.start",
+    );
+
+    h.sockets[0].triggerMessage(readyMessage());
+    h.controller.sendNavigationPosition({
+      latitude: 25.0478,
+      longitude: 121.517,
+      heading: 90,
+    });
+    h.controller.cancelNavigation();
+
+    expect(
+      h.sockets[0].sent
+        .slice(1)
+        .map((message) => JSON.parse(message as string)),
+    ).toEqual([
+      { type: "nav.setRoute", routeToken: "route-capability" },
+      {
+        type: "nav.position",
+        latitude: 25.0478,
+        longitude: 121.517,
+        heading: 90,
+      },
+      { type: "nav.cancel" },
+    ]);
+  });
+
+  it("forwards every server nav event to the navigation sink", () => {
+    const h = createHarness();
+    h.controller.start();
+    h.sockets[0].triggerOpen();
+
+    const events = [
+      {
+        type: "nav.start",
+        steps: [
+          {
+            index: 0,
+            instruction: "向前直行",
+            legType: "WALK",
+            distanceM: 120,
+            isTransit: false,
+          },
+        ],
+        currentStepIndex: 0,
+        totalSteps: 1,
+      },
+      {
+        type: "nav.step",
+        currentStepIndex: 0,
+        instruction: "向前直行",
+        remainingM: 30,
+      },
+      { type: "nav.offroute", distanceM: 72 },
+      { type: "nav.arrived" },
+      { type: "nav.stop", reason: "arrived" },
+    ];
+
+    for (const event of events) {
+      h.sockets[0].triggerMessage(JSON.stringify(event));
+    }
+
+    expect(h.onNavigationEvent.mock.calls.map((call) => call[0])).toEqual(
+      events,
+    );
+  });
+
+  it("4410 rebuilds the live session and re-arms the route after ready", async () => {
+    const h = createHarness();
+    h.controller.setNavigationRoute("route-capability");
+    h.controller.start();
+    await bringToListening(h);
+
+    h.sockets[0].triggerClose(4410, "navigation-turn-timeout");
+    expect(h.controller.getStatus().status).toBe("reconnecting");
+
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(h.sockets).toHaveLength(2);
+    h.sockets[1].triggerOpen();
+    h.sockets[1].triggerMessage(readyMessage());
+
+    expect(
+      h.sockets[1].sent.some(
+        (message) =>
+          typeof message === "string" &&
+          JSON.parse(message).type === "nav.setRoute" &&
+          JSON.parse(message).routeToken === "route-capability",
+      ),
+    ).toBe(true);
   });
 });

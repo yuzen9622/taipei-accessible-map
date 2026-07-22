@@ -28,6 +28,26 @@ interface SessionEndMessage {
   type: "session.end";
 }
 
+interface NavSetRouteMessage {
+  type: "nav.setRoute";
+  routeToken: string;
+}
+
+export interface VoiceNavigationPosition {
+  latitude: number;
+  longitude: number;
+  heading?: number;
+  accuracy?: number;
+}
+
+interface NavPositionMessage extends VoiceNavigationPosition {
+  type: "nav.position";
+}
+
+interface NavCancelMessage {
+  type: "nav.cancel";
+}
+
 /** Server -> client: auth + Gemini connect done, client may now send audio. */
 interface SessionReadyMessage {
   type: "session.ready";
@@ -66,6 +86,48 @@ interface ErrorMessage {
   code: "LIVE_CONNECT_FAILED" | "LIVE_SESSION_ENDED" | string;
 }
 
+export interface VoiceNavStep {
+  index: number;
+  instruction: string;
+  legType: "WALK" | "BUS" | "METRO" | "THSR" | "TRA";
+  distanceM: number | null;
+  isTransit: boolean;
+}
+
+export type VoiceNavigationEvent =
+  | {
+      type: "nav.start";
+      steps: VoiceNavStep[];
+      currentStepIndex: number;
+      totalSteps: number;
+    }
+  | {
+      type: "nav.step";
+      currentStepIndex: number;
+      instruction: string;
+      remainingM: number;
+    }
+  | {
+      type: "nav.transit";
+      leg: {
+        mode: "BUS" | "METRO" | "THSR" | "TRA";
+        from: string;
+        to: string;
+        routeName?: string;
+      };
+    }
+  | { type: "nav.arrived" }
+  | {
+      type: "nav.stop";
+      reason: "user_voice" | "user_ui" | "arrived" | "session_end";
+    }
+  | { type: "nav.offroute"; distanceM: number }
+  | {
+      type: "nav.error";
+      code: "NAV_ROUTE_INVALID" | "NO_ROUTE_ARMED";
+      message: string;
+    };
+
 type ServerEventMessage =
   | SessionReadyMessage
   | TranscriptMessage
@@ -74,6 +136,7 @@ type ServerEventMessage =
   | InterruptedMessage
   | TurnCompleteMessage
   | ErrorMessage
+  | VoiceNavigationEvent
   | { type: string };
 
 /* ------------------------------------------------------------------ */
@@ -85,6 +148,7 @@ const CLOSE_CONFLICT = 4409;
 const CLOSE_NORMAL = 1000;
 const CLOSE_SERVER_ERROR = 1011;
 const CLOSE_ABNORMAL = 1006;
+const CLOSE_NAV_TURN_TIMEOUT = 4410;
 
 const REASON_LIVE_SESSION_ENDED = "live-session-ended";
 
@@ -169,6 +233,7 @@ export interface VoiceSessionDeps {
   onStatusChange(status: VoiceStatus): void;
   onTranscript(transcript: VoiceTranscript): void;
   onToolEvent(event: VoiceToolEvent): void;
+  onNavigationEvent(event: VoiceNavigationEvent): void;
 }
 
 /* ------------------------------------------------------------------ */
@@ -204,6 +269,8 @@ export class VoiceSessionController {
   private playback: VoicePlayback | null = null;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private reconnectDelay = RECONNECT_INITIAL_DELAY_MS;
+  /** Latest selected HTTP route capability; re-armed after every reconnect. */
+  private routeToken: string | null = null;
 
   constructor(private readonly deps: VoiceSessionDeps) {}
 
@@ -251,6 +318,21 @@ export class VoiceSessionController {
     });
   }
 
+  setNavigationRoute(routeToken: string | null): void {
+    this.routeToken = routeToken;
+    if (routeToken) {
+      this.sendControl({ type: "nav.setRoute", routeToken });
+    }
+  }
+
+  sendNavigationPosition(position: VoiceNavigationPosition): void {
+    this.sendControl({ type: "nav.position", ...position });
+  }
+
+  cancelNavigation(): void {
+    this.sendControl({ type: "nav.cancel" });
+  }
+
   getStatus(): VoiceStatus {
     return { ...this.status };
   }
@@ -260,6 +342,21 @@ export class VoiceSessionController {
   private setStatus(status: VoiceStatus): void {
     this.status = status;
     this.deps.onStatusChange(status);
+  }
+
+  private sendControl(
+    message: NavSetRouteMessage | NavPositionMessage | NavCancelMessage,
+  ): void {
+    if (!this.sessionActive || !this.socket) return;
+    if (
+      this.status.status !== "ready" &&
+      this.status.status !== "listening" &&
+      this.status.status !== "model-speaking" &&
+      this.status.status !== "playback-blocked"
+    ) {
+      return;
+    }
+    this.socket.send(JSON.stringify(message));
   }
 
   private clearReconnectTimer(): void {
@@ -408,6 +505,12 @@ export class VoiceSessionController {
       case "session.ready": {
         this.reconnectDelay = RECONNECT_INITIAL_DELAY_MS; // reset backoff on success
         this.setStatus({ status: "ready" });
+        if (this.routeToken) {
+          this.sendControl({
+            type: "nav.setRoute",
+            routeToken: this.routeToken,
+          });
+        }
         this.startCapture(gen);
         return;
       }
@@ -458,6 +561,16 @@ export class VoiceSessionController {
           "[voiceSession] Server error event",
           (message as ErrorMessage).code,
         );
+        return;
+      }
+      case "nav.start":
+      case "nav.step":
+      case "nav.transit":
+      case "nav.arrived":
+      case "nav.stop":
+      case "nav.offroute":
+      case "nav.error": {
+        this.deps.onNavigationEvent(message as VoiceNavigationEvent);
         return;
       }
       default:
@@ -530,6 +643,12 @@ export class VoiceSessionController {
         this.terminate({ status: "error", code: CLOSE_SERVER_ERROR });
         return;
       case CLOSE_ABNORMAL:
+        this.scheduleReconnect();
+        return;
+      case CLOSE_NAV_TURN_TIMEOUT:
+        // Navigation voice turn timed out twice. Rebuild the complete Live
+        // session; session.ready will re-arm the latest routeToken.
+        this.reconnectDelay = RECONNECT_INITIAL_DELAY_MS;
         this.scheduleReconnect();
         return;
       default:

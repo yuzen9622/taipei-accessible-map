@@ -100,6 +100,7 @@ export default function VoiceFloatingIndicator() {
   const setStatus = useVoiceStore((s) => s.setStatus);
   const endSession = useVoiceStore((s) => s.endSession);
   const chatOpen = useMapStore((s) => s.chatOpen);
+  const isNavigating = useMapStore((s) => s.isNavigating);
   const setChatOpen = useMapStore((s) => s.setChatOpen);
   const reducedMotion = useReducedMotion();
 
@@ -128,11 +129,16 @@ export default function VoiceFloatingIndicator() {
   };
 
   return (
-    // Fixed, high z-index (above the map's z-30 floating controls), top
-    // center so it never collides with the bottom-anchored SOS/share
-    // buttons or the AI FAB — both live at the bottom of the screen.
+    // Fixed above map controls. During navigation it moves away from the
+    // full-width top instruction banner while retaining the privacy-critical
+    // recording indicator and one-tap end control.
     <div
-      className="fixed top-3 left-1/2 -translate-x-1/2 z-40 flex justify-center px-2"
+      className={cn(
+        "fixed z-50 flex justify-center px-2",
+        isNavigating
+          ? "right-2 bottom-[92px]"
+          : "top-3 left-1/2 -translate-x-1/2",
+      )}
       aria-live="polite"
     >
       <div className="flex items-center gap-1 rounded-full bg-card/95 backdrop-blur-sm border border-border/60 shadow-lg pl-3 pr-1.5 py-1.5 text-xs font-medium text-foreground">

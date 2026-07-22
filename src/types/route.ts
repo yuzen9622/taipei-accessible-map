@@ -227,6 +227,8 @@ export type A11yLabel = "excellent" | "good" | "fair" | "poor" | "critical";
 // --- Single route ---
 export interface AccessibleRoute {
   routeId: string;
+  /** Short-lived bearer capability used to arm voice navigation (30 min TTL). */
+  routeToken?: string;
   routeName: string;
   totalMinutes: number;
   transferCount: number;

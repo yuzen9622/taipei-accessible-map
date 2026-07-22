@@ -7,6 +7,8 @@ import { END_POINT } from "@/lib/config";
 import { createCapture } from "@/lib/voice/audioCapture";
 import { createPlayback } from "@/lib/voice/audioPlayback";
 import {
+  type VoiceNavigationEvent,
+  type VoiceNavigationPosition,
   VoiceSessionController,
   type VoiceSocket,
   type VoiceStatus,
@@ -75,9 +77,14 @@ export interface UseVoiceSessionResult {
   status: VoiceStatus;
   transcripts: VoiceTranscriptEntry[];
   activeTool: VoiceToolEvent | null;
+  navigationEvents: VoiceNavigationEvent[];
   startSession: () => void;
   endSession: () => void;
   resumePlayback: () => void;
+  setNavigationRoute: (routeToken: string | null) => void;
+  sendNavigationPosition: (position: VoiceNavigationPosition) => void;
+  cancelNavigation: () => void;
+  consumeNavigationEvents: (count: number) => void;
 }
 
 /**
@@ -91,6 +98,9 @@ export default function useVoiceSession(): UseVoiceSessionResult {
   const [status, setStatusState] = useState<VoiceStatus>({ status: "idle" });
   const [transcripts, setTranscripts] = useState<VoiceTranscriptEntry[]>([]);
   const [activeTool, setActiveTool] = useState<VoiceToolEvent | null>(null);
+  const [navigationEvents, setNavigationEvents] = useState<
+    VoiceNavigationEvent[]
+  >([]);
 
   // `handleComputeRoute` identity changes when the map/userLocation load;
   // the bindings are built once, so the sink reads the latest via
@@ -149,6 +159,8 @@ export default function useVoiceSession(): UseVoiceSessionResult {
       onStatusChange: bindings.onStatusChange,
       onTranscript: bindings.onTranscript,
       onToolEvent: bindings.onToolEvent,
+      onNavigationEvent: (event) =>
+        setNavigationEvents((pending) => [...pending, event]),
     });
   }
 
@@ -185,6 +197,7 @@ export default function useVoiceSession(): UseVoiceSessionResult {
     identityAtStartRef.current = useAuthStore.getState().user?._id ?? null;
     bindings.reset();
     setActiveTool(null);
+    setNavigationEvents([]);
     controllerRef.current?.start();
   }, [bindings]);
 
@@ -196,12 +209,36 @@ export default function useVoiceSession(): UseVoiceSessionResult {
     controllerRef.current?.resumePlayback();
   }, []);
 
+  const setNavigationRoute = useCallback((routeToken: string | null) => {
+    controllerRef.current?.setNavigationRoute(routeToken);
+  }, []);
+
+  const sendNavigationPosition = useCallback(
+    (position: VoiceNavigationPosition) => {
+      controllerRef.current?.sendNavigationPosition(position);
+    },
+    [],
+  );
+
+  const cancelNavigation = useCallback(() => {
+    controllerRef.current?.cancelNavigation();
+  }, []);
+
+  const consumeNavigationEvents = useCallback((count: number) => {
+    setNavigationEvents((pending) => pending.slice(count));
+  }, []);
+
   return {
     status,
     transcripts,
     activeTool,
+    navigationEvents,
     startSession,
     endSession,
     resumePlayback,
+    setNavigationRoute,
+    sendNavigationPosition,
+    cancelNavigation,
+    consumeNavigationEvents,
   };
 }
