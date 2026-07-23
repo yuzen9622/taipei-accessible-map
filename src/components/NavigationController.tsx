@@ -29,7 +29,7 @@ export default function NavigationController() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 12 }}
             onClick={() => setFollowPaused(false)}
-            className="absolute left-1/2 -translate-x-1/2 bottom-[92px] z-40 flex items-center gap-2 px-4 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-semibold shadow-xl hover:shadow-2xl transition-shadow pointer-events-auto"
+            className="absolute left-1/2 -translate-x-1/2 bottom-[100px] z-40 flex items-center gap-2 px-4 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-semibold shadow-xl hover:shadow-2xl transition-shadow pointer-events-auto"
           >
             <LocateFixed className="h-4 w-4" />
             {t("resumeFollow")}

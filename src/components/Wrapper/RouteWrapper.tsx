@@ -165,9 +165,11 @@ export default function RouteLine() {
             id={`route-leg-${index}`}
             path={path}
             strokeColor={color}
-            strokeOpacity={0.7}
-            strokeWeight={4}
-            dashArray={[2, 2]}
+            strokeOpacity={0.8}
+            strokeWeight={6}
+            dashArray={[2, 4]}
+            lineCap="round"
+            lineJoin="round"
           />
         );
       }
@@ -180,6 +182,8 @@ export default function RouteLine() {
           strokeColor={color}
           strokeOpacity={1}
           strokeWeight={8}
+          lineCap="round"
+          lineJoin="round"
         />
       );
     });

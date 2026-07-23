@@ -22,25 +22,25 @@ export default function NowPin() {
     >
       <div
         className="relative flex items-center justify-center"
-        style={{ width: 28, height: 28 }}
+        style={{ width: 40, height: 40 }}
       >
-        {/* 外圓：透明藍色脈動 */}
-        <div className="w-6 h-6 rounded-full bg-blue-500/30 animate-ping absolute" />
-        {/* 方向錐：導航時顯示，朝行進方向 */}
+        <div className="w-9 h-9 rounded-full bg-blue-500/25 animate-ping absolute" />
+        <div className="w-8 h-8 rounded-full bg-blue-500/15 absolute" />
         {hasHeading && (
           <div
-            className="absolute left-1/2 top-0 -translate-x-1/2"
+            className="absolute left-1/2 -translate-x-1/2"
             style={{
+              top: -2,
               width: 0,
               height: 0,
-              borderLeft: "5px solid transparent",
-              borderRight: "5px solid transparent",
-              borderBottom: "9px solid #2563eb",
+              borderLeft: "7px solid transparent",
+              borderRight: "7px solid transparent",
+              borderBottom: "14px solid #2563eb",
+              filter: "drop-shadow(0 1px 2px rgba(37,99,235,0.4))",
             }}
           />
         )}
-        {/* 內圓：實心藍點 */}
-        <div className="w-3 h-3 rounded-full bg-blue-600 border-2 border-white shadow relative z-10" />
+        <div className="w-5 h-5 rounded-full bg-blue-600 border-[2.5px] border-white shadow-[0_0_0_1.5px_rgba(37,99,235,0.3),0_2px_6px_rgba(0,0,0,0.3)] relative z-10" />
       </div>
     </Marker>
   );

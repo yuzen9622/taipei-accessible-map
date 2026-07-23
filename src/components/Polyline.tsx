@@ -10,6 +10,8 @@ type PolylineProps = {
   strokeWeight?: number;
   zIndex?: number;
   dashArray?: number[];
+  lineCap?: "butt" | "round" | "square";
+  lineJoin?: "bevel" | "round" | "miter";
 };
 
 export default function Polyline({
@@ -19,6 +21,8 @@ export default function Polyline({
   strokeOpacity = 1,
   strokeWeight = 4,
   dashArray,
+  lineCap = "round",
+  lineJoin = "round",
 }: PolylineProps) {
   if (!path.length) return null;
 
@@ -38,9 +42,14 @@ export default function Polyline({
   };
   if (dashArray) paint["line-dasharray"] = dashArray;
 
+  const layout: LineLayerSpecification["layout"] = {
+    "line-cap": lineCap,
+    "line-join": lineJoin,
+  };
+
   return (
     <Source id={id} type="geojson" data={geojson}>
-      <Layer id={`${id}-line`} type="line" paint={paint} />
+      <Layer id={`${id}-line`} type="line" paint={paint} layout={layout} />
     </Source>
   );
 }
