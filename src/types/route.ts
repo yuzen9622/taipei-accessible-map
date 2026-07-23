@@ -592,6 +592,14 @@ export function scoreToLabel(score: number): A11yLabel {
   return "critical";
 }
 
+export function scoreToStars(score: number): number {
+  if (score >= 85) return 5;
+  if (score >= 70) return 4;
+  if (score >= 50) return 3;
+  if (score >= 30) return 2;
+  return 1;
+}
+
 const LEG_COLORS: Record<string, string> = {
   WALK: "#3b82f6",
   BUS: "#22c55e",

@@ -98,7 +98,8 @@
       "transcriptModel": "助理",
       "listeningHint": "請開始說話",
       "connectingHint": "連線中，請稍候…"
-    }
+    },
+    "thinking": "思考中…"
   },
   "data": "資料來源：",
   "tdx": "交通部TDX平臺",
@@ -252,6 +253,12 @@
   "a11yVerdictPoorDesc": "多處缺乏無障礙設施，輪椅通行可能受阻",
   "a11yVerdictCritical": "通行困難",
   "a11yVerdictCriticalDesc": "沿途無障礙設施嚴重不足，建議改選其他路線",
+  "starLabel5": "暢行無阻",
+  "starLabel4": "大致友善",
+  "starLabel3": "需要留意",
+  "starLabel2": "通行困難",
+  "starLabel1": "不建議此路線",
+  "starAriaLabel": "通行評級 {{filled}} 星，共 5 星",
   "voiceNav": "語音導航",
   "voiceNavOn": "語音導航已開啟",
   "voiceNavOff": "語音導航已關閉",

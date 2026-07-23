@@ -45,7 +45,8 @@
       "transcriptModel": "Assistant",
       "listeningHint": "Start speaking",
       "connectingHint": "Connecting, please wait…"
-    }
+    },
+    "thinking": "Thinking…"
   },
   "helpDescription": {
     "overview": "Welcome to our map app! We aim to provide comprehensive place information services. Across Taiwan you can use this app for general navigation. We are piloting an \"Accessible Friendly Map\" program in Taipei City first and will gradually expand to more cities in the future.",
@@ -251,6 +252,12 @@
   "a11yVerdictPoorDesc": "Many sections lack accessible facilities; wheelchair travel may be blocked",
   "a11yVerdictCritical": "Very difficult to pass",
   "a11yVerdictCriticalDesc": "Severe lack of accessible facilities — consider another route",
+  "starLabel5": "Smooth sailing",
+  "starLabel4": "Mostly accessible",
+  "starLabel3": "Needs attention",
+  "starLabel2": "Difficult passage",
+  "starLabel1": "Not recommended",
+  "starAriaLabel": "Accessibility rating: {{filled}} out of 5 stars",
   "voiceNav": "Voice Navigation",
   "voiceNavOn": "Voice navigation enabled",
   "voiceNavOff": "Voice navigation disabled",

@@ -6,8 +6,6 @@ import {
   Car,
   Check,
   ChevronDown,
-  CircleAlert,
-  CircleCheck,
   Clock,
   CornerRightUp,
   Footprints,
@@ -26,7 +24,6 @@ import { fitRouteBounds, routeBoundsFromLegs } from "@/lib/mapCamera";
 import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import type {
-  A11yLabel,
   AccessibleRoute,
   DriveStep,
   IntermediateStop,
@@ -39,7 +36,7 @@ import {
   formatDistance,
   formatDuration,
   getLegColor,
-  scoreToLabel,
+  scoreToStars,
 } from "@/types/route";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
@@ -733,62 +730,52 @@ const scoreBarColor = (value: number) => {
   return "#f97316";
 };
 
-// First-layer verdict shown instead of the raw score: decision-oriented
-// wording ("can I get through?") with the numbers demoted to the expandable
-// details section. Tailwind classes (not the raw label hex) so contrast holds
-// in dark mode.
-const A11Y_VERDICT: Record<
-  A11yLabel,
-  {
-    Icon: typeof CircleCheck;
-    bg: string;
-    iconColor: string;
-    titleColor: string;
-    titleKey: string;
-    descKey: string;
-  }
-> = {
-  excellent: {
-    Icon: CircleCheck,
-    bg: "bg-emerald-500/10",
-    iconColor: "text-emerald-600 dark:text-emerald-400",
-    titleColor: "text-emerald-700 dark:text-emerald-300",
-    titleKey: "a11yVerdictExcellent",
-    descKey: "a11yVerdictExcellentDesc",
-  },
-  good: {
-    Icon: CircleCheck,
-    bg: "bg-lime-500/10",
-    iconColor: "text-lime-600 dark:text-lime-400",
-    titleColor: "text-lime-700 dark:text-lime-300",
-    titleKey: "a11yVerdictGood",
-    descKey: "a11yVerdictGoodDesc",
-  },
-  fair: {
-    Icon: CircleAlert,
-    bg: "bg-yellow-500/10",
-    iconColor: "text-yellow-600 dark:text-yellow-400",
-    titleColor: "text-yellow-700 dark:text-yellow-300",
-    titleKey: "a11yVerdictFair",
-    descKey: "a11yVerdictFairDesc",
-  },
-  poor: {
-    Icon: AlertTriangle,
-    bg: "bg-orange-500/10",
-    iconColor: "text-orange-600 dark:text-orange-400",
-    titleColor: "text-orange-700 dark:text-orange-300",
-    titleKey: "a11yVerdictPoor",
-    descKey: "a11yVerdictPoorDesc",
-  },
-  critical: {
-    Icon: AlertTriangle,
-    bg: "bg-red-500/10",
-    iconColor: "text-red-600 dark:text-red-400",
-    titleColor: "text-red-700 dark:text-red-300",
-    titleKey: "a11yVerdictCritical",
-    descKey: "a11yVerdictCriticalDesc",
-  },
+const LABEL_TO_SCORE: Record<string, number> = {
+  excellent: 90,
+  good: 70,
+  fair: 50,
+  poor: 30,
+  critical: 10,
 };
+
+const STAR_COLOR: Record<number, string> = {
+  5: "text-emerald-600 dark:text-emerald-400",
+  4: "text-lime-600 dark:text-lime-400",
+  3: "text-yellow-600 dark:text-yellow-400",
+  2: "text-orange-600 dark:text-orange-400",
+  1: "text-red-600 dark:text-red-400",
+};
+
+function StarRating({
+  filled,
+  colorClass,
+  ariaLabel,
+}: {
+  filled: number;
+  colorClass: string;
+  ariaLabel: string;
+}) {
+  return (
+    <span className="inline-flex gap-0.5" role="img" aria-label={ariaLabel}>
+      {Array.from({ length: 5 }, (_, i) => (
+        <svg
+          key={i}
+          viewBox="0 0 20 20"
+          className={cn(
+            "h-4 w-4",
+            i < filled ? colorClass : "text-muted-foreground/25",
+          )}
+          aria-hidden
+        >
+          <path
+            fill="currentColor"
+            d="M10 1l2.39 4.84 5.34.78-3.87 3.77.91 5.32L10 13.27 5.23 15.71l.91-5.32L2.27 6.62l5.34-.78z"
+          />
+        </svg>
+      ))}
+    </span>
+  );
+}
 
 export const RouteCard = memo(function RouteCard({
   route,
@@ -831,12 +818,13 @@ export const RouteCard = memo(function RouteCard({
     myLocationFallback: t("myLocation"),
   };
 
-  const label =
-    route.accessibilityLabel ??
-    (route.accessibilityScore != null
-      ? scoreToLabel(route.accessibilityScore)
-      : null);
-  const verdict = label ? A11Y_VERDICT[label] : null;
+  const effectiveScore =
+    route.accessibilityScore ??
+    (route.accessibilityLabel
+      ? LABEL_TO_SCORE[route.accessibilityLabel]
+      : undefined);
+  const stars = effectiveScore != null ? scoreToStars(effectiveScore) : null;
+  const starColor = stars ? STAR_COLOR[stars] ?? STAR_COLOR[1] : null;
 
   const confidenceLabelKey = getConfidenceLabelKey(route.dataConfidence);
   const confidenceLabelText = confidenceLabelKey
@@ -875,7 +863,25 @@ export const RouteCard = memo(function RouteCard({
   };
 
   return (
-    <Card className={cn(isSelected && "ring-2 ring-primary")}>
+    <Card
+      className={cn(
+        "transition-shadow",
+        isSelected ? "ring-2 ring-primary" : "cursor-pointer hover:shadow-md",
+      )}
+      {...(!isSelected && {
+        role: "button",
+        tabIndex: 0,
+        "aria-label": `${t("selectRoute")}: ${route.routeName}`,
+        onClick: handleSelect,
+        onKeyDown: (e: React.KeyboardEvent) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            handleSelect();
+          }
+        },
+      })}
+    >
+      {/* ── Level 1: Scan layer (always visible) ── */}
       <CardHeader className="grid-cols-1">
         <CardTitle className="flex justify-between items-center gap-2">
           <h2
@@ -901,241 +907,250 @@ export const RouteCard = memo(function RouteCard({
           </p>
         )}
 
-        {/* 通行評估 — the "should I take this route?" answer, in words
-            rather than a bare score. */}
-        {verdict && (
-          <div
-            className={cn(
-              "flex items-center gap-3 rounded-xl px-3 py-2.5",
-              verdict.bg,
-            )}
-          >
-            <verdict.Icon
-              className={cn("h-6 w-6 shrink-0", verdict.iconColor)}
-              aria-hidden
+        {stars != null && starColor && (
+          <div className="flex items-center gap-2">
+            <StarRating
+              filled={stars}
+              colorClass={starColor}
+              ariaLabel={t("starAriaLabel", { filled: stars }) ?? `${stars}/5`}
             />
-            <div className="min-w-0">
-              <p
-                className={cn(
-                  "text-sm font-bold leading-tight",
-                  verdict.titleColor,
-                )}
-              >
-                {t(verdict.titleKey)}
-              </p>
-              <p className="text-xs text-muted-foreground leading-snug mt-0.5">
-                {t(verdict.descKey)}
-              </p>
-            </div>
-          </div>
-        )}
-
-        <div className="flex items-center gap-2 flex-wrap">
-          {route.transferCount > 0 && (
-            <Badge variant="outline" className="text-xs">
-              {t("transferCount", { count: route.transferCount })}
-            </Badge>
-          )}
-          {isSelected && route.totalWalkDistanceM != null && (
-            <Badge
-              variant="outline"
-              className="text-xs gap-1"
-              aria-label={
-                t("totalWalkDistance", {
-                  distance: formatDistance(route.totalWalkDistanceM),
-                }) ?? `總步行距離 ${formatDistance(route.totalWalkDistanceM)}`
-              }
-            >
-              <Footprints className="h-3 w-3" aria-hidden />
-              {formatDistance(route.totalWalkDistanceM)}
-            </Badge>
-          )}
-          {isSelected && route.dataConfidence && (
-            <Badge variant="outline" className="text-xs">
-              {t("dataConfidence") ?? "資料可信度"}
-              {t("labelColon")}
-              {confidenceLabelText}
-            </Badge>
-          )}
-          {isSelected && <Badge>{t("selectedRoute")}</Badge>}
-        </div>
-
-        {/* Raw score + component breakdown, demoted to an opt-in disclosure —
-            the verdict above already answers the everyday question. */}
-        {isSelected && route.scoreComponents && (
-          <div className="pt-1">
-            <button
-              type="button"
-              onClick={() => setScoreOpen((v) => !v)}
-              aria-expanded={scoreOpen}
-              aria-controls={scoreDetailId}
-              className="flex w-full items-center justify-between gap-2 px-1 py-2 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <span className="flex items-center gap-1.5">
-                <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
-                {t("scoreDetails")}
-                {route.accessibilityScore != null && (
-                  <span className="tabular-nums font-semibold">
-                    {route.accessibilityScore}/100
-                  </span>
-                )}
-              </span>
-              <ChevronDown
-                aria-hidden
-                className={cn(
-                  "h-3.5 w-3.5 transition-transform",
-                  scoreOpen && "rotate-180",
-                )}
-              />
-            </button>
-            {scoreOpen && (
-              <div id={scoreDetailId} className="grid grid-cols-3 gap-2 pt-1">
-                {(
-                  [
-                    "facilityScore",
-                    "timeScore",
-                    "criticalFeatureScore",
-                  ] as const
-                ).map((key) => {
-                  const val = route.scoreComponents?.[key] ?? 0;
-                  return (
-                    <div
-                      key={key}
-                      className="text-center p-2 rounded-lg bg-muted/40 space-y-1"
-                    >
-                      <p className="text-lg font-bold tabular-nums leading-none pt-1">
-                        {val}
-                      </p>
-                      <div
-                        aria-hidden="true"
-                        className="h-1 rounded-full bg-muted overflow-hidden mx-1"
-                      >
-                        <div
-                          className="h-full rounded-full transition-[width] duration-500 ease-out"
-                          style={{
-                            width: `${Math.max(0, Math.min(100, val))}%`,
-                            backgroundColor: scoreBarColor(val),
-                          }}
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {key === "facilityScore"
-                          ? (t("facilityScore") ?? "設施")
-                          : key === "timeScore"
-                            ? (t("timeScore") ?? "時間")
-                            : (t("criticalScore") ?? "關鍵")}
-                      </p>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        {isSelected && !!route.scoreWarnings?.length && (
-          <div className="space-y-1 pt-1">
-            {route.scoreWarnings.map((warning) => (
-              <p
-                key={warning}
-                className="flex items-start gap-1 text-xs text-amber-600 dark:text-amber-400"
-              >
-                <AlertTriangle
-                  className="h-3 w-3 shrink-0 mt-0.5"
-                  aria-hidden
-                />
-                <span>{warning}</span>
-              </p>
-            ))}
-          </div>
-        )}
-
-        {isSelected && route.accessibilityHighlights?.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 pt-1">
-            {route.accessibilityHighlights.map((h) => {
-              // Backend mixes caution notes (e.g. walk-access legs that could
-              // not build a reliable footpath, "…請留意") into this array —
-              // render those as warnings, not positive green highlights.
-              const isWarning = h.includes("請留意") || h.includes("無法");
-              return (
-                <span
-                  key={h}
-                  className={
-                    isWarning
-                      ? "inline-flex items-center gap-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 px-2.5 py-1 text-xs font-medium"
-                      : "inline-flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2.5 py-1 text-xs font-medium"
-                  }
-                >
-                  {isWarning ? (
-                    <AlertTriangle className="h-3 w-3 shrink-0" />
-                  ) : (
-                    <Check className="h-3 w-3 shrink-0" />
-                  )}
-                  {h}
-                </span>
-              );
-            })}
+            <span className={cn("text-sm font-bold", starColor)}>
+              {t(`starLabel${stars}`)}
+            </span>
           </div>
         )}
       </CardHeader>
 
-      <CardContent className="space-y-3">
-        <div className="relative space-y-2">
-          {route.legs.map((leg, index) => {
-            const color = getLegColor(leg);
-            return (
-              <div key={`${leg.type}-${index}`} className="relative pl-8">
-                {index !== route.legs.length - 1 && (
-                  <div
-                    className="absolute left-3.5 top-11 bottom-0 w-0.5 rounded-full"
-                    style={{
-                      backgroundColor: `color-mix(in srgb, ${color} 40%, transparent)`,
-                    }}
-                  />
-                )}
+      {/* ── Level 2: Decision layer (on select) ── */}
+      {isSelected && (
+        <CardContent className="space-y-3 pt-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            {route.transferCount > 0 && (
+              <Badge variant="outline" className="text-xs">
+                {t("transferCount", { count: route.transferCount })}
+              </Badge>
+            )}
+            {route.totalWalkDistanceM != null && (
+              <Badge
+                variant="outline"
+                className="text-xs gap-1"
+                aria-label={
+                  t("totalWalkDistance", {
+                    distance: formatDistance(route.totalWalkDistanceM),
+                  }) ?? `總步行距離 ${formatDistance(route.totalWalkDistanceM)}`
+                }
+              >
+                <Footprints className="h-3 w-3" aria-hidden />
+                {formatDistance(route.totalWalkDistanceM)}
+              </Badge>
+            )}
+            {route.dataConfidence && (
+              <Badge variant="outline" className="text-xs">
+                {t("dataConfidence") ?? "資料可信度"}
+                {t("labelColon")}
+                {confidenceLabelText}
+              </Badge>
+            )}
+            <Badge>{t("selectedRoute")}</Badge>
+          </div>
 
-                <div className="absolute left-0 top-1">
-                  <div
-                    className="flex items-center justify-center w-8 h-8 rounded-full border-2 bg-background"
-                    style={{
-                      borderColor: `color-mix(in srgb, ${color} 55%, transparent)`,
-                      backgroundColor: `color-mix(in srgb, ${color} 10%, var(--background))`,
-                    }}
+          {route.accessibilityHighlights?.length > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {route.accessibilityHighlights.map((h) => {
+                const isWarning = h.includes("請留意") || h.includes("無法");
+                return (
+                  <span
+                    key={h}
+                    className={
+                      isWarning
+                        ? "inline-flex items-center gap-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 px-2.5 py-1 text-xs font-medium"
+                        : "inline-flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2.5 py-1 text-xs font-medium"
+                    }
                   >
-                    <LegIcon leg={leg} />
+                    {isWarning ? (
+                      <AlertTriangle className="h-3 w-3 shrink-0" />
+                    ) : (
+                      <Check className="h-3 w-3 shrink-0" />
+                    )}
+                    {h}
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Leg overview */}
+          <div className="relative space-y-2">
+            {route.legs.map((leg, index) => {
+              const color = getLegColor(leg);
+              return (
+                <div key={`${leg.type}-${index}`} className="relative pl-8">
+                  {index !== route.legs.length - 1 && (
+                    <div
+                      className="absolute left-3.5 top-11 bottom-0 w-0.5 rounded-full"
+                      style={{
+                        backgroundColor: `color-mix(in srgb, ${color} 40%, transparent)`,
+                      }}
+                    />
+                  )}
+
+                  <div className="absolute left-0 top-1">
+                    <div
+                      className="flex items-center justify-center w-8 h-8 rounded-full border-2 bg-background"
+                      style={{
+                        borderColor: `color-mix(in srgb, ${color} 55%, transparent)`,
+                        backgroundColor: `color-mix(in srgb, ${color} 10%, var(--background))`,
+                      }}
+                    >
+                      <LegIcon leg={leg} />
+                    </div>
+                  </div>
+
+                  <div className="pb-4 ml-4">
+                    <LegDetail
+                      leg={leg}
+                      isFirst={index === 0}
+                      isLast={index === route.legs.length - 1}
+                      pointCtx={pointCtx}
+                      isSelected={isSelected}
+                    />
                   </div>
                 </div>
+              );
+            })}
+          </div>
 
-                <div className="pb-4 ml-4">
-                  <LegDetail
-                    leg={leg}
-                    isFirst={index === 0}
-                    isLast={index === route.legs.length - 1}
-                    pointCtx={pointCtx}
-                    isSelected={isSelected}
-                  />
+          {/* ── Level 3: Professional layer (opt-in disclosure) ── */}
+          {route.scoreComponents && (
+            <div className="border-t pt-2">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setScoreOpen((v) => !v);
+                }}
+                aria-expanded={scoreOpen}
+                aria-controls={scoreDetailId}
+                className="flex w-full items-center justify-between gap-2 px-1 py-2 rounded-md text-xs text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <span className="flex items-center gap-1.5">
+                  <ShieldCheck className="h-3.5 w-3.5" aria-hidden />
+                  {t("scoreDetails")}
+                  {effectiveScore != null && (
+                    <span className="tabular-nums font-semibold">
+                      {effectiveScore}/100
+                    </span>
+                  )}
+                </span>
+                <ChevronDown
+                  aria-hidden
+                  className={cn(
+                    "h-3.5 w-3.5 transition-transform",
+                    scoreOpen && "rotate-180",
+                  )}
+                />
+              </button>
+              {scoreOpen && (
+                <div
+                  id={scoreDetailId}
+                  className="grid grid-cols-3 gap-2 pt-1"
+                >
+                  {(
+                    [
+                      "facilityScore",
+                      "timeScore",
+                      "criticalFeatureScore",
+                    ] as const
+                  ).map((key) => {
+                    const val = route.scoreComponents?.[key] ?? 0;
+                    return (
+                      <div
+                        key={key}
+                        className="text-center p-2 rounded-lg bg-muted/40 space-y-1"
+                      >
+                        <p className="text-lg font-bold tabular-nums leading-none pt-1">
+                          {val}
+                        </p>
+                        <div
+                          aria-hidden="true"
+                          className="h-1 rounded-full bg-muted overflow-hidden mx-1"
+                        >
+                          <div
+                            className="h-full rounded-full transition-[width] duration-500 ease-out"
+                            style={{
+                              width: `${Math.max(0, Math.min(100, val))}%`,
+                              backgroundColor: scoreBarColor(val),
+                            }}
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {key === "facilityScore"
+                            ? (t("facilityScore") ?? "設施")
+                            : key === "timeScore"
+                              ? (t("timeScore") ?? "時間")
+                              : (t("criticalScore") ?? "關鍵")}
+                        </p>
+                      </div>
+                    );
+                  })}
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              )}
+            </div>
+          )}
 
-        <div className="flex justify-end pt-4 border-t">
+          {!!route.scoreWarnings?.length && (
+            <div className="space-y-1">
+              {route.scoreWarnings.map((warning) => (
+                <p
+                  key={warning}
+                  className="flex items-start gap-1 text-xs text-amber-600 dark:text-amber-400"
+                >
+                  <AlertTriangle
+                    className="h-3 w-3 shrink-0 mt-0.5"
+                    aria-hidden
+                  />
+                  <span>{warning}</span>
+                </p>
+              ))}
+            </div>
+          )}
+
+          <div className="flex justify-end pt-2 border-t">
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSelect();
+              }}
+              disabled={isSelected}
+              variant="secondary"
+            >
+              {t("selectedRoute")}
+            </Button>
+          </div>
+
+          {route.attribution && (
+            <p className="text-xs text-muted-foreground pt-2">
+              {route.attribution}
+            </p>
+          )}
+        </CardContent>
+      )}
+
+      {/* Unselected: show select button inline */}
+      {!isSelected && (
+        <CardContent className="pt-0">
           <Button
-            onClick={handleSelect}
-            disabled={isSelected}
-            variant={isSelected ? "secondary" : "default"}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleSelect();
+            }}
+            variant="default"
+            className="w-full"
           >
-            {isSelected ? t("selectedRoute") : t("selectRoute")}
+            {t("selectRoute")}
           </Button>
-        </div>
-
-        {isSelected && route.attribution && (
-          <p className="text-xs text-muted-foreground pt-2">
-            {route.attribution}
-          </p>
-        )}
-      </CardContent>
+        </CardContent>
+      )}
     </Card>
   );
 });
