@@ -10,7 +10,9 @@ import {
   EyeOff,
   Footprints,
   Loader2,
+  MapPin,
   Navigation,
+  Pencil,
   Plus,
   Search,
   User,
@@ -69,6 +71,11 @@ export default function RoutePlanContent() {
   const [originInput, setOriginInput] = useState(originName || "");
   const [destInput, setDestInput] = useState(destinationName || "");
   const [useMyLocation, setUseMyLocation] = useState(!origin);
+  const [destEditing, setDestEditing] = useState(!destination);
+
+  useEffect(() => {
+    if (destination) setDestEditing(false);
+  }, [destination]);
   const [travelMode, setTravelMode] = useState<
     "transit" | "drive" | "motorcycle" | "walk"
   >("transit");
@@ -116,9 +123,21 @@ export default function RoutePlanContent() {
           : place.address || "";
       setDestinationName(name);
       setDestInput(name);
+      setDestEditing(false);
     },
     [setDestination, setDestinationName],
   );
+
+  const handleClearDest = useCallback(() => {
+    setDestination(null);
+    setDestinationName("");
+    setDestInput("");
+    setDestEditing(true);
+  }, [setDestination, setDestinationName]);
+
+  const handleSearchDest = useCallback(() => {
+    setSheetMode("home");
+  }, [setSheetMode]);
 
   const handleWaypointSelect = useCallback(
     (index: number, place: PlaceDetail) => {
@@ -382,18 +401,69 @@ export default function RoutePlanContent() {
               </Fragment>
             ))}
 
-            {/* Destination input */}
+            {/* Destination — three states: chip / search prompt / manual input */}
             <div className="relative overflow-visible">
-              <PlaceInput
-                hideIcon
-                className="border-none shadow-none text-sm h-11"
-                value={destInput}
-                onChange={(e) =>
-                  setDestInput((e.target as HTMLInputElement).value)
-                }
-                placeholder={t("chooseDestination")}
-                onPlaceSelect={handleDestSelect}
-              />
+              {destination && !destEditing ? (
+                <div className="flex items-center gap-2 px-2 py-2.5 min-h-[44px]">
+                  <MapPin className="h-4 w-4 text-red-500 shrink-0" />
+                  <button
+                    type="button"
+                    onClick={() => setDestEditing(true)}
+                    aria-label={t("editDestination", "編輯目的地")}
+                    className="flex-1 min-w-0 text-left"
+                  >
+                    <span className="text-sm font-medium truncate block">
+                      {destinationName}
+                    </span>
+                    {destination.kind === "place" &&
+                      destination.place.display_name &&
+                      destination.place.display_name !== destinationName && (
+                        <span className="text-xs text-muted-foreground truncate block">
+                          {destination.place.display_name}
+                        </span>
+                      )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDestEditing(true)}
+                    aria-label={t("editDestination", "編輯目的地")}
+                    className="relative h-7 w-7 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors shrink-0 after:absolute after:inset-[-8px] after:content-['']"
+                  >
+                    <Pencil className="h-3 w-3 text-muted-foreground" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleClearDest}
+                    aria-label={t("clearDestination", "清除目的地")}
+                    className="relative h-7 w-7 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors shrink-0 after:absolute after:inset-[-8px] after:content-['']"
+                  >
+                    <X className="h-3 w-3 text-muted-foreground" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col">
+                  <PlaceInput
+                    hideIcon
+                    className="border-none shadow-none text-sm h-11"
+                    value={destInput}
+                    onChange={(e) =>
+                      setDestInput((e.target as HTMLInputElement).value)
+                    }
+                    placeholder={t("searchOrInputDest", "搜尋或輸入目的地")}
+                    onPlaceSelect={handleDestSelect}
+                  />
+                  {!destInput.trim() && (
+                    <button
+                      type="button"
+                      onClick={handleSearchDest}
+                      className="flex items-center gap-2 px-2 pb-2 min-h-[44px] text-xs text-primary hover:underline"
+                    >
+                      <Search className="h-3 w-3 shrink-0" />
+                      {t("searchDestination", "搜尋目的地")}
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
