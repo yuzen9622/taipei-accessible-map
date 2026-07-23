@@ -267,6 +267,8 @@
   "stepOf": "第 {{current}} 步 / 共 {{total}} 步",
   "recenter": "重新置中",
   "toggleViewMode": "切換 2D/3D 視角",
+  "voiceOn": "開啟語音導航",
+  "voiceOff": "關閉語音導航",
   "navigating": "導航中",
   "offRoute": "已偏離路線",
   "recalculate": "重新規劃",

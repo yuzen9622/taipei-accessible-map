@@ -266,6 +266,8 @@
   "stepOf": "Step {{current}} of {{total}}",
   "recenter": "Recenter",
   "toggleViewMode": "Toggle 2D/3D view",
+  "voiceOn": "Enable voice navigation",
+  "voiceOff": "Disable voice navigation",
   "navigating": "Navigating",
   "offRoute": "Off route",
   "recalculate": "Recalculate",
