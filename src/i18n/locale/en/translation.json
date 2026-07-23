@@ -331,6 +331,7 @@
   "searchOrInputDest": "Search or enter destination",
   "editDestination": "Edit destination",
   "clearDestination": "Clear destination",
+  "searchForQuery": "Search \"{{query}}\"",
   "useMyLocationAsOrigin": "Use current location as origin",
   "searchRoute": "Plan route",
   "swapOriginDest": "Swap origin and destination",

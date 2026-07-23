@@ -116,6 +116,8 @@ export default function HomeContent() {
     setSheetMode,
     setActiveRailPanel,
     savedPlaces,
+    pendingSearchQuery,
+    setPendingSearchQuery,
   } = useMapStore(
     useShallow((s) => ({
       setSearchPlace: s.setSearchPlace,
@@ -125,9 +127,17 @@ export default function HomeContent() {
       setSheetMode: s.setSheetMode,
       setActiveRailPanel: s.setActiveRailPanel,
       savedPlaces: s.savedPlaces,
+      pendingSearchQuery: s.pendingSearchQuery,
+      setPendingSearchQuery: s.setPendingSearchQuery,
     })),
   );
   const [input, setInput] = useState("");
+
+  useEffect(() => {
+    if (pendingSearchQuery) {
+      setInput(pendingSearchQuery);
+    }
+  }, [pendingSearchQuery]);
   const [subPanel, setSubPanel] = useState<SubPanel>("none");
   const [moreActionsOpen, setMoreActionsOpen] = useState(false);
   const [editingActions, setEditingActions] = useState(false);
@@ -232,7 +242,10 @@ export default function HomeContent() {
         <PlaceInput
           className="border-none"
           value={input}
-          onChange={(e) => setInput((e.target as HTMLInputElement).value)}
+          onChange={(e) => {
+            setInput((e.target as HTMLInputElement).value);
+            if (pendingSearchQuery) setPendingSearchQuery("");
+          }}
           placeholder={t("searchPlaceHolder")}
           onPlaceSelect={handlePlaceChange}
         />

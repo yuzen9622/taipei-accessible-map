@@ -332,6 +332,7 @@
   "searchOrInputDest": "搜尋或輸入目的地",
   "editDestination": "編輯目的地",
   "clearDestination": "清除目的地",
+  "searchForQuery": "搜尋「{{query}}」",
   "useMyLocationAsOrigin": "使用目前位置作為起點",
   "searchRoute": "開始規劃",
   "swapOriginDest": "交換起終點",

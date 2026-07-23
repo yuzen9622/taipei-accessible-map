@@ -66,6 +66,7 @@ interface MapState {
   is3D: boolean;
   sidebarCollapsed: boolean;
   activeRailPanel: RailPanel;
+  pendingSearchQuery: string;
   chatOpen: boolean;
   aiResultMarkers: AiResultMarker[];
   liveBusPositions: LiveBus[];
@@ -116,6 +117,7 @@ interface MapAction {
   cancelNavExit: () => void;
   setIs3D: (v: boolean) => void;
   setSidebarCollapsed: (v: boolean) => void;
+  setPendingSearchQuery: (query: string) => void;
   setActiveRailPanel: (panel: RailPanel) => void;
   setChatOpen: (v: boolean) => void;
   setAiResultMarkers: (markers: AiResultMarker[]) => void;
@@ -381,6 +383,8 @@ const useMapStore = create<MapStore>((set, get) => ({
     }
     set(update);
   },
+  pendingSearchQuery: "",
+  setPendingSearchQuery: (query) => set({ pendingSearchQuery: query }),
   sidebarCollapsed: false,
   setSidebarCollapsed: (v) => set({ sidebarCollapsed: v }),
   activeRailPanel: "search" as RailPanel,

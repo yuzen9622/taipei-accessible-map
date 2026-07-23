@@ -5,6 +5,7 @@ import {
   Building,
   Building2,
   Bus,
+  Clock,
   Coffee,
   Hospital,
   LoaderCircle,
@@ -12,6 +13,7 @@ import {
   Milestone,
   Navigation,
   School,
+  Search,
   Sparkles,
   Store,
   Train,
@@ -35,6 +37,7 @@ import { Input } from "../ui/input";
 type InputProps = InputHTMLAttributes<HTMLInputElement> & {
   onPlaceSelect: (places: PlaceDetail) => void;
   hideIcon?: boolean;
+  onSearchRequest?: (query: string) => void;
 };
 
 function getPlaceIcon(category?: string, type?: string) {
@@ -136,6 +139,7 @@ function PlaceInput({
   value,
   onChange,
   hideIcon,
+  onSearchRequest,
   ...props
 }: InputProps) {
   const { t } = useAppTranslation("translation");
@@ -300,7 +304,7 @@ function PlaceInput({
                         className="flex items-start gap-3 rounded-3xl p-2 cursor-pointer transition-colors"
                       >
                         <div className="mt-1 h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-                          <Icon className="h-4 w-4 text-muted-foreground" />
+                          <Clock className="h-4 w-4 text-muted-foreground" />
                         </div>
                         <div className="flex-1 min-w-0 text-start">
                           <p className="font-medium text-foreground truncate">
@@ -318,36 +322,57 @@ function PlaceInput({
               </CommandGroup>
             )}
             {value !== "" && open && (
-              <CommandGroup heading={t("searchResults")}>
-                {suggestions.map((suggestion) => {
-                  const Icon = getPlaceIcon(
-                    suggestion.class || suggestion.category,
-                    suggestion.type,
-                  );
-                  return (
+              <>
+                <CommandGroup heading={t("searchResults")}>
+                  {suggestions.map((suggestion) => {
+                    const Icon = getPlaceIcon(
+                      suggestion.class || suggestion.category,
+                      suggestion.type,
+                    );
+                    return (
+                      <CommandItem
+                        itemType="button"
+                        onSelect={() => {
+                          handlePlaceClick(suggestion);
+                        }}
+                        key={suggestion.place_id}
+                        className="flex items-start gap-3 rounded-3xl p-2 cursor-pointer transition-colors"
+                      >
+                        <div className="mt-1 h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                          <Icon className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0 text-start">
+                          <p className="font-medium text-foreground truncate">
+                            {suggestion.name || suggestion.display_name}
+                          </p>
+                          <p className="text-xs text-muted-foreground/70 truncate">
+                            {suggestion.display_name}
+                          </p>
+                        </div>
+                      </CommandItem>
+                    );
+                  })}
+                </CommandGroup>
+                {onSearchRequest && (
+                  <CommandGroup>
                     <CommandItem
                       itemType="button"
                       onSelect={() => {
-                        handlePlaceClick(suggestion);
+                        onSearchRequest(value as string);
+                        setOpen(false);
                       }}
-                      key={suggestion.place_id}
-                      className="flex items-start gap-3 rounded-3xl p-2 cursor-pointer transition-colors"
+                      className="flex items-center gap-3 rounded-3xl p-2 cursor-pointer transition-colors"
                     >
-                      <div className="mt-1 h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                        <Icon className="h-4 w-4 text-primary" />
+                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <Search className="h-4 w-4 text-primary" />
                       </div>
-                      <div className="flex-1 min-w-0 text-start">
-                        <p className="font-medium text-foreground truncate">
-                          {suggestion.name || suggestion.display_name}
-                        </p>
-                        <p className="text-xs text-muted-foreground/70 truncate">
-                          {suggestion.display_name}
-                        </p>
-                      </div>
+                      <span className="font-medium text-primary">
+                        {t("searchForQuery", { query: value })}
+                      </span>
                     </CommandItem>
-                  );
-                })}
-              </CommandGroup>
+                  </CommandGroup>
+                )}
+              </>
             )}
           </CommandList>
         </Command>

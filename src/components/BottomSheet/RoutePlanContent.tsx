@@ -51,6 +51,7 @@ export default function RoutePlanContent() {
     userLocation,
     setSheetMode,
     setSearchPlace,
+    setPendingSearchQuery,
   } = useMapStore(
     useShallow((s) => ({
       origin: s.origin,
@@ -64,6 +65,7 @@ export default function RoutePlanContent() {
       userLocation: s.userLocation,
       setSheetMode: s.setSheetMode,
       setSearchPlace: s.setSearchPlace,
+      setPendingSearchQuery: s.setPendingSearchQuery,
     })),
   );
   const { isLoading, handleComputeRoute } = useComputeRoute();
@@ -134,6 +136,14 @@ export default function RoutePlanContent() {
     setDestInput("");
     setDestEditing(true);
   }, [setDestination, setDestinationName]);
+
+  const handleSearchRequest = useCallback(
+    (query: string) => {
+      setPendingSearchQuery(query);
+      setSheetMode("home");
+    },
+    [setPendingSearchQuery, setSheetMode],
+  );
 
 
   const handleWaypointSelect = useCallback(
@@ -447,6 +457,7 @@ export default function RoutePlanContent() {
                   }
                   placeholder={t("searchOrInputDest", "搜尋或輸入目的地")}
                   onPlaceSelect={handleDestSelect}
+                  onSearchRequest={handleSearchRequest}
                 />
               )}
             </div>
