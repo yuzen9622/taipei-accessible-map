@@ -42,8 +42,8 @@ import StationDetailContent from "./StationDetailContent";
 import WelfarePanel from "./WelfarePanel";
 
 const SNAP_POINTS = {
-  peek: 0.18,
-  half: 0.45,
+  peek: 0.12,
+  half: 0.38,
   full: 0.92,
 };
 
@@ -147,13 +147,17 @@ export default function BottomSheet() {
   const isDesktop = useIsDesktop();
   const stepListOpen = useNavStore((s) => s.stepListOpen);
   const setStepListOpen = useNavStore((s) => s.setStepListOpen);
-  const [, setSnap] = useState<"peek" | "half" | "full">("peek");
+  const [snap, setSnap] = useState<"peek" | "half" | "full">("peek");
   const [sheetHeight, setSheetHeight] = useState(SNAP_POINTS.peek);
   const [isDragging, setIsDragging] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const startY = useRef(0);
   const startHeight = useRef(0);
+
+  // Hide the home header at peek so only the search bar is visible,
+  // keeping the map maximally exposed (Google Maps-style peek).
+  const atPeek = sheetHeight <= SNAP_POINTS.peek + 0.02;
 
   // Whether the content panel (Layer 2) is open on desktop
   const modePanelActive = MODE_PANELS.has(sheetMode);
@@ -380,8 +384,9 @@ export default function BottomSheet() {
             <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
           </div>
 
-          {/* Mobile Header — hidden during plan / route / navigation (those modes render their own header) */}
-          {sheetMode !== "plan" &&
+          {/* Mobile Header — hidden at peek (map-first) and during plan / route / navigation */}
+          {!atPeek &&
+            sheetMode !== "plan" &&
             sheetMode !== "route" &&
             sheetMode !== "navigation" && (
               <div className="flex items-center justify-between px-4 pb-2">
@@ -393,8 +398,23 @@ export default function BottomSheet() {
               </div>
             )}
 
-          {/* Mobile Content */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 pb-safe">
+          {/* Mobile Content — overflow hidden at peek so users drag the
+              sheet up instead of scrolling within a tiny sliver. Tapping
+              the content area at peek lifts the sheet to half. */}
+          <div
+            className={cn(
+              "flex-1 overflow-x-hidden px-4 pb-safe",
+              atPeek ? "overflow-y-hidden" : "overflow-y-auto",
+            )}
+            onClick={
+              atPeek && sheetMode === "home"
+                ? () => {
+                    setSnap("half");
+                    setSheetHeight(SNAP_POINTS.half);
+                  }
+                : undefined
+            }
+          >
             <AnimatePresence mode="wait">
               <motion.div
                 key={sheetMode}

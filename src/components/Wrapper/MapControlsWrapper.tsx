@@ -42,47 +42,40 @@ import type { AirQualityLevel, EnvironmentData } from "@/types/route";
 
 const LEVEL_CONFIG: Record<
   AirQualityLevel,
-  { label: string; labelEn: string; color: string; bg: string }
+  { labelKey: string; color: string; bg: string }
 > = {
   GOOD: {
-    label: "良好",
-    labelEn: "Good",
+    labelKey: "airLevelGood",
     color: "text-green-700 dark:text-green-400",
     bg: "bg-green-100/80 dark:bg-green-900/40",
   },
   MODERATE: {
-    label: "普通",
-    labelEn: "Moderate",
+    labelKey: "airLevelModerate",
     color: "text-yellow-700 dark:text-yellow-400",
     bg: "bg-yellow-100/80 dark:bg-yellow-900/40",
   },
   UNHEALTHY_SENSITIVE: {
-    label: "敏感族群不健康",
-    labelEn: "Unhealthy for Sensitive",
+    labelKey: "airLevelUnhealthySensitive",
     color: "text-orange-700 dark:text-orange-400",
     bg: "bg-orange-100/80 dark:bg-orange-900/40",
   },
   UNHEALTHY: {
-    label: "不健康",
-    labelEn: "Unhealthy",
+    labelKey: "airLevelUnhealthy",
     color: "text-red-700 dark:text-red-400",
     bg: "bg-red-100/80 dark:bg-red-900/40",
   },
   VERY_UNHEALTHY: {
-    label: "非常不健康",
-    labelEn: "Very Unhealthy",
+    labelKey: "airLevelVeryUnhealthy",
     color: "text-purple-700 dark:text-purple-400",
     bg: "bg-purple-100/80 dark:bg-purple-900/40",
   },
   HAZARDOUS: {
-    label: "危害",
-    labelEn: "Hazardous",
+    labelKey: "airLevelHazardous",
     color: "text-rose-800 dark:text-rose-400",
     bg: "bg-rose-100/80 dark:bg-rose-900/40",
   },
   "": {
-    label: "未知",
-    labelEn: "Unknown",
+    labelKey: "airLevelUnknown",
     color: "text-muted-foreground",
     bg: "bg-muted/80",
   },
@@ -147,7 +140,7 @@ function Metric({
 // BottomSheet as --bottom-sheet-h, so dragging the sheet never covers or
 // strands the SOS/recenter controls. Navigation keeps a fixed offset above
 // the HUD.
-const MOBILE_BOTTOM_OFFSET = "bottom-[calc(var(--bottom-sheet-h,18dvh)+16px)]";
+const MOBILE_BOTTOM_OFFSET = "bottom-[calc(var(--bottom-sheet-h,12dvh)+16px)]";
 const NAV_BOTTOM_OFFSET = "bottom-[14dvh]";
 
 export default function MapControlsWrapper() {
@@ -296,7 +289,7 @@ export default function MapControlsWrapper() {
     (envLoading || air || (weather && weather.temperature != null));
 
   const envConfig = LEVEL_CONFIG[normalizeQuality(air?.quality)];
-  const envLabel = i18n.language === "en" ? envConfig.labelEn : envConfig.label;
+  const envLabel = t(envConfig.labelKey);
   const pillConfig = air ? envConfig : LEVEL_CONFIG[""];
 
   return (
@@ -418,7 +411,7 @@ export default function MapControlsWrapper() {
           >
             {/* 3D/2D Toggle */}
             <Button
-              aria-label={is3D ? "切換為 2D 視角" : "切換為 3D 視角"}
+              aria-label={is3D ? t("switchTo2D") : t("switchTo3D")}
               aria-pressed={is3D}
               variant="secondary"
               size="icon"
@@ -430,7 +423,7 @@ export default function MapControlsWrapper() {
 
             {/* Recenter (My Location) Button */}
             <Button
-              aria-label="回到目前位置"
+              aria-label={t("recenter")}
               variant="secondary"
               size="icon"
               onClick={() => handlePinClick(userLocation)}
@@ -531,6 +524,19 @@ export default function MapControlsWrapper() {
                   <Navigation className="h-5 w-5 text-foreground" />
                 </Button>
 
+                {/* AI ChatBot FAB (Mobile, always visible — primary entry) */}
+                {!chatOpen && (
+                  <Button
+                    onClick={() => setChatOpen(true)}
+                    variant="default"
+                    size="icon"
+                    className="rounded-full h-11 w-11 shadow-lg bg-primary hover:shadow-xl transition-all text-primary-foreground"
+                    aria-label={t("chatbot.open", "開啟聊天助理")}
+                  >
+                    <BotMessageSquare className="h-6 w-6" />
+                  </Button>
+                )}
+
                 {/* More controls toggle (Mobile) */}
                 <Button
                   ref={moreToggleRef}
@@ -557,25 +563,6 @@ export default function MapControlsWrapper() {
                     id="mobile-more-controls"
                     className="flex flex-col-reverse gap-2 animate-in fade-in slide-in-from-bottom-2 duration-200"
                   >
-                    {/* AI ChatBot FAB (Mobile) */}
-                    {!chatOpen && (
-                      <Button
-                        onClick={() => {
-                          // Park focus on the toggle before the panel swaps in,
-                          // so keyboard focus never sits inside unmounted DOM.
-                          moreToggleRef.current?.focus();
-                          setChatOpen(true);
-                          setMoreControlsOpen(false);
-                        }}
-                        variant="default"
-                        size="icon"
-                        className="rounded-full h-11 w-11 shadow-lg bg-primary hover:shadow-xl transition-all text-primary-foreground"
-                        aria-label={t("chatbot.open", "開啟聊天助理")}
-                      >
-                        <BotMessageSquare className="h-6 w-6" />
-                      </Button>
-                    )}
-
                     {/* 3D/2D Toggle (Mobile) */}
                     <Button
                       aria-label={is3D ? t("switchTo2D") : t("switchTo3D")}
@@ -595,15 +582,9 @@ export default function MapControlsWrapper() {
                       size="icon"
                       onClick={() => {
                         if (!userLocation) {
-                          // openShare only toasts in this case — keep the
-                          // group open so the user can retry without
-                          // re-expanding.
                           openShare();
                           return;
                         }
-                        // Focus the toggle first so the share dialog records
-                        // it as the previously-focused element and restores
-                        // focus there on close (this button unmounts).
                         moreToggleRef.current?.focus();
                         openShare();
                         setMoreControlsOpen(false);
