@@ -4,7 +4,6 @@ import {
   Accessibility,
   BotMessageSquare,
   Bus,
-  Loader2,
   Mic,
   Navigation,
   Search,
@@ -29,10 +28,12 @@ import {
   type ToolCardIcon,
   type ToolResultItem,
 } from "@/lib/toolResultCards";
+import { toolToOrbState } from "@/lib/ai/orbState";
 import { cn } from "@/lib/utils";
 import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
 import useVoiceStore from "@/stores/useVoiceStore";
+import { ThinkingOrb } from "thinking-orbs";
 import MarkdownText from "./shared/MarkdownText";
 import { Avatar } from "./ui/avatar";
 import { Badge } from "./ui/badge";
@@ -54,14 +55,26 @@ const CARD_ICONS: Record<ToolCardIcon, React.ReactNode> = {
   nav: <Navigation className="h-3.5 w-3.5" />,
 };
 
-function ThinkingIndicator({ label }: { label: string }) {
+function ThinkingIndicator({
+  label,
+  toolName,
+}: {
+  label: string;
+  toolName?: string | null;
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 2 }}
       animate={{ opacity: 1, y: 0 }}
       className="flex items-center gap-2 text-[13px] text-muted-foreground py-1.5 px-1"
     >
-      <Loader2 className="h-3.5 w-3.5 animate-spin text-primary/70 shrink-0" />
+      <ThinkingOrb
+        state={toolToOrbState(toolName)}
+        size={20}
+        role="img"
+        aria-label={label}
+        className="shrink-0"
+      />
       <span className="animate-pulse">{label}</span>
     </motion.div>
   );
@@ -192,7 +205,12 @@ function MessageBubble({ message }: { message: ChatBubble }) {
         isUser ? "items-end" : "items-start",
       )}
     >
-      {showLoading && <ThinkingIndicator label={loadingLabel} />}
+      {showLoading && (
+        <ThinkingIndicator
+          label={loadingLabel}
+          toolName={running?.name ?? latest?.name}
+        />
+      )}
 
       {message.content && (
         <div
@@ -340,7 +358,7 @@ export default function AIChatBot() {
                     ))}
                     {isLoading &&
                       messages[messages.length - 1]?.role !== "assistant" && (
-                        <ThinkingIndicator label="思考中…" />
+                        <ThinkingIndicator label={t("chatbot.thinking", "思考中…")} />
                       )}
                   </CardContent>
                 </ScrollArea>
