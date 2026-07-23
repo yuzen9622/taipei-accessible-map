@@ -954,31 +954,6 @@ export const RouteCard = memo(function RouteCard({
             <Badge>{t("selectedRoute")}</Badge>
           </div>
 
-          {route.accessibilityHighlights?.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {route.accessibilityHighlights.map((h) => {
-                const isWarning = h.includes("請留意") || h.includes("無法");
-                return (
-                  <span
-                    key={h}
-                    className={
-                      isWarning
-                        ? "inline-flex items-center gap-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 px-2.5 py-1 text-xs font-medium"
-                        : "inline-flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2.5 py-1 text-xs font-medium"
-                    }
-                  >
-                    {isWarning ? (
-                      <AlertTriangle className="h-3 w-3 shrink-0" />
-                    ) : (
-                      <Check className="h-3 w-3 shrink-0" />
-                    )}
-                    {h}
-                  </span>
-                );
-              })}
-            </div>
-          )}
-
           {/* Leg overview */}
           <div className="relative space-y-2">
             {route.legs.map((leg, index) => {
@@ -1021,7 +996,8 @@ export const RouteCard = memo(function RouteCard({
           </div>
 
           {/* ── Level 3: Professional layer (opt-in disclosure) ── */}
-          {route.scoreComponents && (
+          {(route.scoreComponents ||
+            (route.accessibilityHighlights?.length ?? 0) > 0) && (
             <div className="border-t pt-2">
               <button
                 type="button"
@@ -1051,10 +1027,35 @@ export const RouteCard = memo(function RouteCard({
                 />
               </button>
               {scoreOpen && (
-                <div
-                  id={scoreDetailId}
-                  className="grid grid-cols-3 gap-2 pt-1"
-                >
+                <div id={scoreDetailId} className="space-y-3 pt-1">
+                  {route.accessibilityHighlights?.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {route.accessibilityHighlights.map((h) => {
+                        const isWarning =
+                          h.includes("請留意") || h.includes("無法");
+                        return (
+                          <span
+                            key={h}
+                            className={
+                              isWarning
+                                ? "inline-flex items-center gap-1 rounded-full bg-amber-500/10 text-amber-700 dark:text-amber-400 px-2.5 py-1 text-xs font-medium"
+                                : "inline-flex items-center gap-1 rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2.5 py-1 text-xs font-medium"
+                            }
+                          >
+                            {isWarning ? (
+                              <AlertTriangle className="h-3 w-3 shrink-0" />
+                            ) : (
+                              <Check className="h-3 w-3 shrink-0" />
+                            )}
+                            {h}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {route.scoreComponents && (
+                  <div className="grid grid-cols-3 gap-2">
                   {(
                     [
                       "facilityScore",
@@ -1093,6 +1094,8 @@ export const RouteCard = memo(function RouteCard({
                       </div>
                     );
                   })}
+                </div>
+                  )}
                 </div>
               )}
             </div>
