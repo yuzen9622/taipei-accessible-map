@@ -135,9 +135,6 @@ export default function RoutePlanContent() {
     setDestEditing(true);
   }, [setDestination, setDestinationName]);
 
-  const handleSearchDest = useCallback(() => {
-    setSheetMode("home");
-  }, [setSheetMode]);
 
   const handleWaypointSelect = useCallback(
     (index: number, place: PlaceDetail) => {
@@ -441,28 +438,16 @@ export default function RoutePlanContent() {
                   </button>
                 </div>
               ) : (
-                <div className="flex flex-col">
-                  <PlaceInput
-                    hideIcon
-                    className="border-none shadow-none text-sm h-11"
-                    value={destInput}
-                    onChange={(e) =>
-                      setDestInput((e.target as HTMLInputElement).value)
-                    }
-                    placeholder={t("searchOrInputDest", "搜尋或輸入目的地")}
-                    onPlaceSelect={handleDestSelect}
-                  />
-                  {!destInput.trim() && (
-                    <button
-                      type="button"
-                      onClick={handleSearchDest}
-                      className="flex items-center gap-2 px-2 pb-2 min-h-[44px] text-xs text-primary hover:underline"
-                    >
-                      <Search className="h-3 w-3 shrink-0" />
-                      {t("searchDestination", "搜尋目的地")}
-                    </button>
-                  )}
-                </div>
+                <PlaceInput
+                  hideIcon
+                  className="border-none shadow-none text-sm h-11"
+                  value={destInput}
+                  onChange={(e) =>
+                    setDestInput((e.target as HTMLInputElement).value)
+                  }
+                  placeholder={t("searchOrInputDest", "搜尋或輸入目的地")}
+                  onPlaceSelect={handleDestSelect}
+                />
               )}
             </div>
           </div>
