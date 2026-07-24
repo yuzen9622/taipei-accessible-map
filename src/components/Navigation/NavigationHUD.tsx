@@ -268,9 +268,11 @@ export default function NavigationHUD() {
     [hazards.length, routeFacilities.length],
   );
 
+  const isRecalcBusy = isLoading || recalcOverlay;
+
   const handleRecalculate = useCallback(() => {
-    if (!destination) {
-      toast.error(t("recalculateFailed"));
+    if (!destination || recalcOverlay) {
+      if (!destination) toast.error(t("recalculateFailed"));
       return;
     }
     setRecalcOverlay(true);
@@ -382,12 +384,12 @@ export default function NavigationHUD() {
             <p className="flex-1 text-sm font-semibold">{t("offRoute")}</p>
             <button
               type="button"
-              disabled={isLoading}
+              disabled={isRecalcBusy}
               onClick={handleRecalculate}
               className="shrink-0 flex items-center gap-1.5 bg-white/25 hover:bg-white/35 rounded-full px-4 py-2.5 min-h-[44px] text-sm font-semibold transition-colors"
             >
               <RefreshCw
-                className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
+                className={`h-4 w-4 ${isRecalcBusy ? "animate-spin" : ""}`}
               />
               {t("recalculate")}
             </button>
@@ -446,8 +448,9 @@ export default function NavigationHUD() {
               </span>
               <button
                 type="button"
+                disabled={isRecalcBusy}
                 onClick={handleRecalculate}
-                className="shrink-0 bg-amber-700/20 dark:bg-amber-300/20 hover:bg-amber-700/30 dark:hover:bg-amber-300/30 font-semibold whitespace-nowrap px-4 py-2.5 min-h-[44px] rounded-full transition-colors"
+                className="shrink-0 bg-amber-700/20 dark:bg-amber-300/20 hover:bg-amber-700/30 dark:hover:bg-amber-300/30 font-semibold whitespace-nowrap px-4 py-2.5 min-h-[44px] rounded-full transition-colors disabled:opacity-50"
               >
                 {t("viewAlternative")}
               </button>
