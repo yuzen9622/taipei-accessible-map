@@ -593,5 +593,10 @@
   "approxTime": "約 {{time}}",
   "transportTool": "交通工具",
   "a11yModeLabel": "無障礙模式",
-  "labelColon": "："
+  "labelColon": "：",
+  "recalculating": "正在重新規劃路線…",
+  "recalcAnalyzingRoute": "正在分析目前路況",
+  "recalcHazards": "正在考量附近 {{count}} 個障礙回報",
+  "recalcFacilities": "正在考量沿途 {{count}} 個無障礙設施",
+  "routeA11yFacilityCount": "沿途 {{count}} 個無障礙設施"
 }

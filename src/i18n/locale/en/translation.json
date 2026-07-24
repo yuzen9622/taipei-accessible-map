@@ -597,5 +597,13 @@
   "nearestBusStopsAway_one": "Nearest bus {{count}} stop away",
   "nearestBusStopsAway_other": "Nearest bus {{count}} stops away",
   "a11yFacilitiesAlong_one": "{{count}} accessible facility en route",
-  "a11yFacilitiesAlong_other": "{{count}} accessible facilities en route"
+  "a11yFacilitiesAlong_other": "{{count}} accessible facilities en route",
+  "recalculating": "Recalculating route…",
+  "recalcAnalyzingRoute": "Analyzing current route conditions",
+  "recalcHazards_one": "Considering {{count}} nearby hazard report",
+  "recalcHazards_other": "Considering {{count}} nearby hazard reports",
+  "recalcFacilities_one": "Considering {{count}} accessible facility en route",
+  "recalcFacilities_other": "Considering {{count}} accessible facilities en route",
+  "routeA11yFacilityCount_one": "{{count}} accessible facility en route",
+  "routeA11yFacilityCount_other": "{{count}} accessible facilities en route"
 }

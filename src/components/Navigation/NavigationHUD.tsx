@@ -39,6 +39,8 @@ import {
   type NavInstruction,
   type SlimOsmA11y,
 } from "@/types/route";
+import RecalculateOverlay from "./RecalculateOverlay";
+import type { RecalculateContext } from "./RecalculateOverlay";
 
 const FACILITY_ALERT_M = 250;
 const HAZARD_ALERT_M = 200;
@@ -179,16 +181,6 @@ export default function NavigationHUD() {
     if (!voiceEnabled) synthRef.current?.cancel();
   }, [voiceEnabled]);
 
-  // ---- Recalculate (off-route strip + hazard alternate-route button) ----
-  const destination = useMapStore((s) => s.destination);
-  const handleRecalculate = useCallback(() => {
-    if (!destination) {
-      toast.error(t("recalculateFailed"));
-      return;
-    }
-    handleComputeRoute({ destination: destination.position });
-  }, [destination, handleComputeRoute, t]);
-
   // ---- Upcoming accessible facility (from the route's own walk-leg data) ----
   const routeFacilities = useMemo(() => {
     if (!route) return [];
@@ -262,6 +254,42 @@ export default function NavigationHUD() {
     }
     return best;
   }, [hazards, userLocation, t]);
+
+  // ---- Recalculate (off-route strip + hazard alternate-route button) ----
+  const destination = useMapStore((s) => s.destination);
+  const [recalcOverlay, setRecalcOverlay] = useState(false);
+  const recalcMinTimeRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const recalcContext = useMemo<RecalculateContext>(
+    () => ({
+      hazardCount: hazards.length,
+      facilityCount: routeFacilities.length,
+    }),
+    [hazards.length, routeFacilities.length],
+  );
+
+  const handleRecalculate = useCallback(() => {
+    if (!destination) {
+      toast.error(t("recalculateFailed"));
+      return;
+    }
+    setRecalcOverlay(true);
+    const minTimer = new Promise<void>((resolve) => {
+      recalcMinTimeRef.current = setTimeout(resolve, 800);
+    });
+    const routePromise = handleComputeRoute({
+      destination: destination.position,
+    });
+    void Promise.all([minTimer, routePromise]).then(() =>
+      setRecalcOverlay(false),
+    );
+  }, [destination, handleComputeRoute, t]);
+
+  useEffect(() => {
+    return () => {
+      if (recalcMinTimeRef.current) clearTimeout(recalcMinTimeRef.current);
+    };
+  }, []);
 
   // ---- ETA (proportional estimate over the whole route) ----
   const remainMinutes = useMemo(() => {
@@ -365,6 +393,9 @@ export default function NavigationHUD() {
             </button>
           </div>
         )}
+
+        {/* Recalculate overlay — shows what's being weighed while recalculating */}
+        <RecalculateOverlay context={recalcContext} visible={recalcOverlay} />
 
         {/* Step Unavailable Warnings */}
         {!arrived &&

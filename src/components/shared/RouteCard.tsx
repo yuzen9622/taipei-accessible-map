@@ -41,6 +41,7 @@ import {
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import RouteReasonSummary from "./RouteReasonSummary";
 
 type RouteCardProps = {
   route: AccessibleRoute;
@@ -951,6 +952,7 @@ export const RouteCard = memo(function RouteCard({
                 {confidenceLabelText}
               </Badge>
             )}
+            <RouteReasonSummary route={route} />
             <Badge>{t("selectedRoute")}</Badge>
           </div>
 
