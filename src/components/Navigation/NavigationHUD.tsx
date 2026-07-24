@@ -303,7 +303,7 @@ export default function NavigationHUD() {
             <button
               type="button"
               onClick={() => setIsNavigating(false)}
-              className="shrink-0 bg-white/20 hover:bg-white/30 rounded-full px-5 py-2.5 text-sm font-semibold transition-colors"
+              className="shrink-0 bg-white/20 hover:bg-white/30 rounded-full px-5 py-2.5 min-h-[44px] flex items-center text-sm font-semibold transition-colors"
             >
               {t("endNav")}
             </button>
@@ -356,7 +356,7 @@ export default function NavigationHUD() {
               type="button"
               disabled={isLoading}
               onClick={handleRecalculate}
-              className="shrink-0 flex items-center gap-1.5 bg-white/25 hover:bg-white/35 rounded-full px-4 py-2 text-sm font-semibold transition-colors"
+              className="shrink-0 flex items-center gap-1.5 bg-white/25 hover:bg-white/35 rounded-full px-4 py-2.5 min-h-[44px] text-sm font-semibold transition-colors"
             >
               <RefreshCw
                 className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
@@ -416,7 +416,7 @@ export default function NavigationHUD() {
               <button
                 type="button"
                 onClick={handleRecalculate}
-                className="shrink-0 bg-amber-700/20 dark:bg-amber-300/20 hover:bg-amber-700/30 dark:hover:bg-amber-300/30 font-semibold whitespace-nowrap px-3.5 py-1.5 rounded-full transition-colors"
+                className="shrink-0 bg-amber-700/20 dark:bg-amber-300/20 hover:bg-amber-700/30 dark:hover:bg-amber-300/30 font-semibold whitespace-nowrap px-4 py-2.5 min-h-[44px] rounded-full transition-colors"
               >
                 {t("viewAlternative")}
               </button>
