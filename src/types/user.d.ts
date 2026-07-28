@@ -5,7 +5,8 @@ export interface UserDTO {
   name: string;
   email: string;
   avatar?: string;
-  client_id: string;
+  client_id?: string;
+  authProviders?: string[];
   createdAt?: string;
   updatedAt?: string;
 }

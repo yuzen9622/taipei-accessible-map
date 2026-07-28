@@ -1,13 +1,12 @@
 "use client";
 
-import { useGoogleLogin } from "@react-oauth/google";
-
 import {
   Brain,
   Contrast,
   Database,
   Globe,
   Info,
+  KeyRound,
   LogOut,
   Settings,
   Shield,
@@ -21,8 +20,10 @@ import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 import EmergencyContactsDialog from "@/components/Sos/EmergencyContactsDialog";
 import EmergencyContactsManager from "@/components/Sos/EmergencyContactsManager";
+import AccountSecurityPanel from "@/components/settings/AccountSecurityPanel";
 import AIMemoryPanel from "@/components/settings/AIMemoryPanel";
 import DataManagementPanel from "@/components/settings/DataManagementPanel";
+import AuthDialog from "@/components/shared/AuthDialog";
 import HelpDialog from "@/components/shared/HelpDialog";
 import {
   Dialog,
@@ -41,7 +42,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Switch } from "@/components/ui/switch";
 import { useAppTranslation } from "@/i18n/client";
-import { login } from "@/lib/api/auth";
 import {
   type FontSizeEnum,
   fontSizeConfig,
@@ -56,30 +56,20 @@ import { ThemeSwitcher } from "../ui/shadcn-io/theme-switcher";
 
 export default function AccountLogin() {
   const [settingsTab, setSettingsTab] = useState<
-    "general" | "safety" | "memory" | "data"
+    "general" | "safety" | "account" | "memory" | "data"
   >("general");
   const [openDialog, setOpenDialog] = useState<
     null | "settings" | "feedback" | "help"
   >(null);
   const [feedbackText, setFeedbackText] = useState("");
   const [contactsDialogOpen, setContactsDialogOpen] = useState(false);
+  const [authDialogOpen, setAuthDialogOpen] = useState(false);
   const { t } = useAppTranslation("translation");
 
-  const {
-    user,
-    setUser,
-    setSession,
-    userConfig,
-    setUserConfig,
-    updateUserConfig,
-    logout,
-  } = useAuthStore(
+  const { user, userConfig, updateUserConfig, logout } = useAuthStore(
     useShallow((s) => ({
       user: s.user,
-      setUser: s.setUser,
-      setSession: s.setSession,
       userConfig: s.userConfig,
-      setUserConfig: s.setUserConfig,
       updateUserConfig: s.updateUserConfig,
       logout: s.logout,
     })),
@@ -106,6 +96,13 @@ export default function AccountLogin() {
       desc: t("settingsEmergencyDesc"),
     },
     {
+      key: "account" as const,
+      icon: KeyRound,
+      label: "帳號安全",
+      title: "帳號安全",
+      desc: "管理登入密碼",
+    },
+    {
       key: "memory" as const,
       icon: Brain,
       label: t("settingsTabMemory"),
@@ -123,47 +120,6 @@ export default function AccountLogin() {
   const activeSettingsSection =
     settingsSections.find((section) => section.key === settingsTab) ??
     settingsSections[0];
-  const googleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      try {
-        const userInfo = await fetch(
-          "https://www.googleapis.com/oauth2/v3/userinfo",
-          {
-            headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-          },
-        );
-        const infoData = await userInfo.json();
-
-        setUser({
-          name: infoData.name,
-          email: infoData.email,
-          avatar: infoData.picture,
-          client_id: infoData.sub,
-        });
-        const userRes = await login(
-          infoData.email,
-          infoData.name,
-          infoData.picture,
-          infoData.sub,
-        );
-
-        const { ok, data, message, accessToken } = userRes;
-        if (!ok) throw new Error(message);
-
-        if (data?.user) setUser(data.user);
-        if (data?.config) setUserConfig(data.config);
-        if (accessToken) {
-          setSession({
-            accessToken,
-          });
-        }
-      } catch (error) {
-        void error;
-      }
-    },
-    onError: () => {},
-  });
-
   const handleNotifyChange = async (checked: boolean) => {
     // Turning off never needs browser permission.
     if (!checked) {
@@ -232,11 +188,9 @@ export default function AccountLogin() {
           {!user && (
             <DropdownMenuItem
               className="text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
-              onClick={() => {
-                googleLogin();
-              }}
+              onClick={() => setAuthDialogOpen(true)}
             >
-              Google 登入
+              登入 / 註冊
             </DropdownMenuItem>
           )}
 
@@ -446,6 +400,16 @@ export default function AccountLogin() {
                       {t("login")}
                     </p>
                   )}
+                  {settingsTab === "account" && user && (
+                    <div className="rounded-2xl border border-border/60 bg-background p-5 space-y-4">
+                      <AccountSecurityPanel user={user} />
+                    </div>
+                  )}
+                  {settingsTab === "account" && !user && (
+                    <p className="text-sm text-muted-foreground">
+                      {t("login")}
+                    </p>
+                  )}
                   {settingsTab === "memory" && (
                     <AIMemoryPanel
                       active={
@@ -470,6 +434,8 @@ export default function AccountLogin() {
         open={contactsDialogOpen}
         onOpenChange={setContactsDialogOpen}
       />
+
+      <AuthDialog open={authDialogOpen} onOpenChange={setAuthDialogOpen} />
 
       {/* 問題回饋 Dialog */}
 

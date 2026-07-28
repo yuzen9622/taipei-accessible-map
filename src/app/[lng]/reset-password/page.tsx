@@ -1,0 +1,112 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { resetPassword } from "@/lib/api/auth";
+import { ApiError } from "@/lib/fetch";
+import { validatePassword } from "@/lib/passwordValidation";
+import useAuthStore from "@/stores/useAuthStore";
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <ResetPasswordContent />
+    </Suspense>
+  );
+}
+
+function ResetPasswordContent() {
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const lng = pathname.split("/")[1] || "zh-TW";
+  const token = searchParams.get("token");
+
+  const setUser = useAuthStore((s) => s.setUser);
+  const setSession = useAuthStore((s) => s.setSession);
+
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    if (!token) {
+      setError("重設連結無效");
+      return;
+    }
+    const passwordError = validatePassword(password);
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await resetPassword(token, password);
+      if (!res.ok) {
+        setError("重設連結無效或已過期，請重新申請");
+        return;
+      }
+      if (res.data?.user) setUser(res.data.user);
+      if (res.accessToken) setSession({ accessToken: res.accessToken });
+      setSuccess(true);
+    } catch (err) {
+      setError(
+        err instanceof ApiError
+          ? err.message
+          : "重設連結無效或已過期，請重新申請",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!token) {
+    return (
+      <div className="flex h-dvh w-full flex-col items-center justify-center gap-4 p-6 text-center">
+        <p className="text-lg font-semibold">重設連結無效</p>
+        <Button asChild>
+          <Link href={`/${lng}`}>回到首頁</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  if (success) {
+    return (
+      <div className="flex h-dvh w-full flex-col items-center justify-center gap-4 p-6 text-center">
+        <p className="text-lg font-semibold">密碼已重設，請使用新密碼登入</p>
+        <p className="text-sm text-muted-foreground">您已自動登入</p>
+        <Button asChild>
+          <Link href={`/${lng}`}>回到地圖</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-dvh w-full flex-col items-center justify-center gap-4 p-6">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-sm space-y-3 text-center"
+      >
+        <p className="text-lg font-semibold">設定新密碼</p>
+        <Input
+          type="password"
+          placeholder="新密碼"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+        {error && <p className="text-xs text-destructive">{error}</p>}
+        <Button type="submit" className="w-full" disabled={loading}>
+          重設密碼
+        </Button>
+      </form>
+    </div>
+  );
+}
