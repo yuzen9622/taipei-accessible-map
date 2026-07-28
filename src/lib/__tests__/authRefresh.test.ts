@@ -17,7 +17,15 @@ import type { UserDTO } from "@/types/user";
 // mocking, per the plan's "以真實 zustand store 於 node 執行" requirement.
 
 function makeUser(id: string): UserDTO {
-  return { _id: id, name: id, email: `${id}@test.dev`, client_id: id };
+  return {
+    _id: id,
+    name: id,
+    email: `${id}@test.dev`,
+    client_id: id,
+    authProviders: ["google"],
+    emailVerified: true,
+    tokenVersion: 0,
+  };
 }
 
 function resetStore() {

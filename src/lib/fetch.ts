@@ -9,6 +9,15 @@ interface RequestOptions<T> {
   headers?: Record<string, string>;
   requireAuth?: boolean;
   signal?: AbortSignal;
+  /**
+   * Some authenticated endpoints reuse 401 for a business-logic error
+   * (e.g. POST /user/auth/password's "current password wrong") rather
+   * than "token invalid". Set this so a 401 there is returned as-is for
+   * the caller to check `res.ok`, instead of triggering the normal
+   * refresh-retry-then-invalidate-session flow, which would otherwise
+   * silently log the user out on a mistyped password.
+   */
+  skipAuthRetry?: boolean;
 }
 
 /**
@@ -46,6 +55,7 @@ export async function fetchRequest<T>(
     headers = {},
     requireAuth = false,
     signal,
+    skipAuthRetry = false,
     __retried,
     ...rest
   } = options as InternalRequestOptions<T>;
@@ -86,6 +96,22 @@ export async function fetchRequest<T>(
         }
   ) as ApiResponse<unknown>;
   const isSuccess = data.ok === true || data.success === true;
+  if (!isSuccess && data.code === 403 && requireAuth) {
+    // Token revoked server-side (e.g. password changed elsewhere via
+    // tokenVersion bump) — refreshing would fail too, so invalidate the
+    // session immediately instead of leaving the UI stuck in a stale
+    // "logged in" state that keeps re-hitting 403.
+    invalidateSession(sessionAtEntry);
+    const sessionAfter = useAuthStore.getState().session;
+    if (sessionAfter && sessionAfter.accessToken === "") {
+      toast.error("登入狀態已失效，請重新登入");
+    }
+    throw new ApiError(
+      data.message || "Fetch error",
+      data.code,
+      (data.data as { reason?: string } | undefined)?.reason,
+    );
+  }
   if (!isSuccess && data.code !== 401) {
     throw new ApiError(
       data.message || "Fetch error",
@@ -93,7 +119,7 @@ export async function fetchRequest<T>(
       (data.data as { reason?: string } | undefined)?.reason,
     );
   }
-  if (data.code === 401 && requireAuth) {
+  if (data.code === 401 && requireAuth && !skipAuthRetry) {
     if (__retried) {
       // Already refreshed + retried once for this original request — stop,
       // don't recurse again, safely invalidate (compare-and-commit against
