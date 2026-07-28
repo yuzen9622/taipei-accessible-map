@@ -80,6 +80,12 @@ export async function fetchRequest<T>(
   if (body) {
     init.body = JSON.stringify(body);
   }
+  // `signal` is destructured out of options above, so it never reaches fetch
+  // via `...rest` — it has to be reattached explicitly. Without this, every
+  // AbortController and setTimeout-based request timeout in the app is a no-op.
+  if (signal) {
+    init.signal = signal;
+  }
   const response = await fetch(url, init);
   // Some endpoints (e.g. DELETE emergency-contacts → 205, or 204) reply with an
   // empty body; calling response.json() on it throws "Unexpected end of JSON
