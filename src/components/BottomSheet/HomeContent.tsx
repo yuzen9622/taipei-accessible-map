@@ -176,9 +176,8 @@ export default function HomeContent() {
     (placeDetail: PlaceDetail) => {
       setSearchPlace(placeDetail);
       if (placeDetail.kind === "place") {
-        setInput(
-          placeDetail.place.name || placeDetail.place.display_name || "",
-        );
+        const [lng, lat] = placeDetail.place.location.coordinates;
+        setInput(placeDetail.place.name || placeDetail.place.fullAddress || "");
         setInfoShow({
           isOpen: true,
           kind: "place",
@@ -186,7 +185,7 @@ export default function HomeContent() {
         });
         if (map)
           map.flyTo({
-            center: [placeDetail.position.lng, placeDetail.position.lat],
+            center: [lng, lat],
           });
       } else if (placeDetail.kind === "coordinate") {
         setInput(placeDetail.address || "");
@@ -415,7 +414,7 @@ export default function HomeContent() {
             {savedPlaces.slice(0, 5).map((item, idx) => {
               const name =
                 item.kind === "place"
-                  ? item.place.name || item.place.display_name
+                  ? item.place.name || item.place.fullAddress
                   : item.address;
               return (
                 <button
@@ -444,7 +443,7 @@ export default function HomeContent() {
             {searchHistory.slice(0, 5).map((item, idx) => {
               const name =
                 item.kind === "place"
-                  ? item.place.name || item.place.display_name
+                  ? item.place.name || item.place.fullAddress
                   : item.address;
               return (
                 <button

@@ -27,10 +27,12 @@ import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 import usePlacePredictions from "@/hook/usePlacePredictions";
 import { useAppTranslation } from "@/i18n/client";
-import { cn, formatNominatimPlace } from "@/lib/utils";
-import useAuthStore from "@/stores/useAuthStore";
+import { getPlaceAutocomplete, getPlaceDetails } from "@/lib/api/placeSearch";
+import { toApiLang } from "@/lib/place/lang";
+import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
-import type { NominatimPlace, PlaceDetail } from "@/types";
+import type { PlaceDetail } from "@/types";
+import type { AutocompleteItem, PlaceResult } from "@/types/place";
 import { Command, CommandGroup, CommandItem, CommandList } from "../ui/command";
 import { Input } from "../ui/input";
 
@@ -142,57 +144,111 @@ function PlaceInput({
   onSearchRequest,
   ...props
 }: InputProps) {
-  const { t } = useAppTranslation("translation");
+  const { t, i18n } = useAppTranslation("translation");
+  const lang = toApiLang(i18n.language);
   const [open, setOpen] = useState(false);
-  const { searchHistory, addSearchHistory, userLocation } = useMapStore(
+  const { searchHistory, addSearchHistory, userLocation, map } = useMapStore(
     useShallow((s) => ({
       searchHistory: s.searchHistory,
       addSearchHistory: s.addSearchHistory,
       userLocation: s.userLocation,
+      map: s.map,
     })),
   );
-  const { suggestions, loading } = usePlacePredictions((value as string) || "");
-  const { userConfig } = useAuthStore(
-    useShallow((s) => ({ userConfig: s.userConfig })),
+  const { suggestions, loading, sessionToken, resetSession } =
+    usePlacePredictions((value as string) || "");
+  const [pendingId, setPendingId] = useState<string | null>(null);
+
+  const resolvePlace = useCallback(
+    async (item: AutocompleteItem) => {
+      if (item.source === "osm" && item.location) {
+        const [lng, lat] = item.location.coordinates;
+        map?.flyTo({ center: [lng, lat], zoom: 17 });
+      }
+
+      const response = await getPlaceDetails(item.id, {
+        sessiontoken: sessionToken,
+        lat: userLocation?.lat,
+        lng: userLocation?.lng,
+        lang,
+      });
+      if (!response.ok || !response.data) {
+        throw new Error("Place details unavailable");
+      }
+
+      const place: PlaceResult = response.data;
+      const [lng, lat] = place.location.coordinates;
+      const placeDetail: PlaceDetail = {
+        kind: "place",
+        place,
+        position: { lat, lng },
+      };
+      addSearchHistory(placeDetail);
+      onPlaceSelect(placeDetail);
+      setOpen(false);
+      resetSession();
+    },
+    [
+      addSearchHistory,
+      lang,
+      map,
+      onPlaceSelect,
+      resetSession,
+      sessionToken,
+      userLocation?.lat,
+      userLocation?.lng,
+    ],
   );
 
   const handlePlaceSubmit = useCallback(
     async (text: string) => {
-      if (!text) return;
+      const query = text.trim();
+      if (!query || pendingId) return;
+      setPendingId("submit");
       try {
-        const lang = userConfig.language === "zh-TW" ? "zh" : "en";
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(text)}&countrycodes=tw&limit=1&accept-language=${lang}&addressdetails=1`,
-        );
-        const data: NominatimPlace[] = await res.json();
-        if (data.length === 0) return null;
-        const place = formatNominatimPlace(data[0], userConfig.language);
-        const position = {
-          lat: parseFloat(place.lat),
-          lng: parseFloat(place.lon),
-        };
-        const placeDetail: PlaceDetail = { kind: "place", place, position };
-        addSearchHistory(placeDetail);
-        return placeDetail;
+        const response = await getPlaceAutocomplete({
+          q: query,
+          sessiontoken: sessionToken,
+          lat: userLocation?.lat,
+          lng: userLocation?.lng,
+          limit: 1,
+          lang,
+        });
+        const item = response.ok ? response.data?.[0] : undefined;
+        if (!item) {
+          toast.error("找不到符合的地點");
+          return;
+        }
+        await resolvePlace(item);
       } catch {
-        return null;
+        toast.error("無法取得地點詳細資料");
+      } finally {
+        setPendingId(null);
       }
     },
-    [addSearchHistory, userConfig.language],
+    [
+      lang,
+      pendingId,
+      resolvePlace,
+      sessionToken,
+      userLocation?.lat,
+      userLocation?.lng,
+    ],
   );
 
   const handlePlaceClick = useCallback(
-    (place: NominatimPlace) => {
-      const position = {
-        lat: parseFloat(place.lat),
-        lng: parseFloat(place.lon),
-      };
-      const placeDetail: PlaceDetail = { kind: "place", place, position };
-      addSearchHistory(placeDetail);
-      onPlaceSelect(placeDetail);
-      setOpen(false);
+    async (item: AutocompleteItem) => {
+      if (pendingId) return;
+      setPendingId(item.id);
+      try {
+        await resolvePlace(item);
+      } catch {
+        toast.error("無法取得地點詳細資料");
+      } finally {
+        setPendingId(null);
+      }
     },
-    [onPlaceSelect, addSearchHistory],
+    [pendingId, resolvePlace],
   );
 
   const handleHistoryClick = useCallback(
@@ -233,11 +289,7 @@ function PlaceInput({
         <form
           onSubmit={async (e) => {
             e.preventDefault();
-            const placeDetail = await handlePlaceSubmit(value as string);
-            if (placeDetail) {
-              onPlaceSelect(placeDetail);
-            }
-            setOpen(false);
+            await handlePlaceSubmit(value as string);
           }}
           className="flex-1 "
         >
@@ -290,17 +342,13 @@ function PlaceInput({
                 {searchHistory.map((history, idx) => {
                   if (history.kind === "place") {
                     const { place } = history;
-                    const Icon = getPlaceIcon(
-                      place.class || place.category,
-                      place.type,
-                    );
                     return (
                       <CommandItem
                         itemType="button"
                         onSelect={() => {
                           handleHistoryClick(history);
                         }}
-                        key={`${place.place_id}-${idx}`}
+                        key={`${place.id}-${idx}`}
                         className="flex items-start gap-3 rounded-3xl p-2 cursor-pointer transition-colors"
                       >
                         <div className="mt-1 h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
@@ -308,10 +356,10 @@ function PlaceInput({
                         </div>
                         <div className="flex-1 min-w-0 text-start">
                           <p className="font-medium text-foreground truncate">
-                            {place.name || place.display_name}
+                            {place.name || place.fullAddress}
                           </p>
                           <p className="text-xs text-muted-foreground/70 truncate">
-                            {place.display_name}
+                            {place.fullAddress}
                           </p>
                         </div>
                       </CommandItem>
@@ -326,28 +374,47 @@ function PlaceInput({
                 <CommandGroup heading={t("searchResults")}>
                   {suggestions.map((suggestion) => {
                     const Icon = getPlaceIcon(
-                      suggestion.class || suggestion.category,
-                      suggestion.type,
+                      suggestion.placeClass ?? undefined,
+                      suggestion.placeType ?? undefined,
                     );
                     return (
                       <CommandItem
                         itemType="button"
                         onSelect={() => {
-                          handlePlaceClick(suggestion);
+                          void handlePlaceClick(suggestion);
                         }}
-                        key={suggestion.place_id}
+                        key={suggestion.id}
+                        disabled={pendingId !== null}
                         className="flex items-start gap-3 rounded-3xl p-2 cursor-pointer transition-colors"
                       >
                         <div className="mt-1 h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                          <Icon className="h-4 w-4 text-primary" />
+                          {pendingId === suggestion.id ? (
+                            <LoaderCircle className="h-4 w-4 text-primary animate-spin" />
+                          ) : (
+                            <Icon className="h-4 w-4 text-primary" />
+                          )}
                         </div>
                         <div className="flex-1 min-w-0 text-start">
-                          <p className="font-medium text-foreground truncate">
-                            {suggestion.name || suggestion.display_name}
-                          </p>
-                          <p className="text-xs text-muted-foreground/70 truncate">
-                            {suggestion.display_name}
-                          </p>
+                          <div className="flex items-center gap-1.5">
+                            <p className="font-medium text-foreground truncate">
+                              {suggestion.primaryText}
+                            </p>
+                            {suggestion.typeLabel && (
+                              <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full shrink-0">
+                                {suggestion.typeLabel}
+                              </span>
+                            )}
+                          </div>
+                          {suggestion.secondaryText && (
+                            <p className="text-xs text-muted-foreground/70 truncate">
+                              {suggestion.secondaryText}
+                            </p>
+                          )}
+                          {suggestion.distanceMeters !== null && (
+                            <p className="text-xs text-muted-foreground/70">
+                              {Math.round(suggestion.distanceMeters)} m
+                            </p>
+                          )}
                         </div>
                       </CommandItem>
                     );

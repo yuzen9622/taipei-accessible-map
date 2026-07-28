@@ -1,3 +1,16 @@
+import type { PlaceResult } from "./place";
+
+export type {
+  AutocompleteItem,
+  NearbyFacilityBrief,
+  PlaceAccessibility,
+  PlaceAddressComponents,
+  PlaceGeoPoint,
+  PlaceResult,
+  PlaceReviewKey,
+  PlaceSource,
+} from "./place";
+
 export type LatLng = { lat: number; lng: number };
 
 export type NominatimPlace = {
@@ -33,7 +46,7 @@ export type Marker = {
 // --- PlaceDetail: discriminated union ---
 type PlaceType = {
   kind: "place";
-  place: NominatimPlace;
+  place: PlaceResult;
 };
 
 type CoordinateType = {
@@ -54,7 +67,7 @@ export type AiResultMarker = {
   title: string;
   desc?: string;
   target:
-    | { panel: "place"; place: NominatimPlace }
+    | { panel: "place"; place: PlaceResult }
     | { panel: "station"; marker: Marker };
 };
 

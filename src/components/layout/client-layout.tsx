@@ -7,8 +7,9 @@ import KeyboardShortcuts from "@/components/shared/KeyboardShortcuts";
 import SkipNavLink from "@/components/shared/SkipNavLink";
 import { refreshToken } from "@/lib/api/auth";
 import { getUserInfo } from "@/lib/api/user";
+import { migrateLegacyPlaceStorage } from "@/lib/place/adapters";
 import useAuthStore from "@/stores/useAuthStore";
-import useMapStore from "@/stores/useMapStore";
+import useMapStore, { type SavedPlaceCategory } from "@/stores/useMapStore";
 
 export default function ClientLayout({
   children,
@@ -45,20 +46,61 @@ export default function ClientLayout({
   useEffect(() => {
     const storedHistory = localStorage.getItem("searchHistory");
     const storedSaved = localStorage.getItem("savedPlaces");
-    getNewAccessToken();
-    if (storedHistory) {
-      initSearchHistory(JSON.parse(storedHistory));
-    }
-    if (storedSaved) {
-      initSavedPlaces(JSON.parse(storedSaved));
-    }
     const storedCats = localStorage.getItem("savedPlaceCategories");
-    if (storedCats) {
+    const storedVersion = localStorage.getItem("placeSchemaVersion");
+    getNewAccessToken();
+
+    if (storedVersion === "2") {
       try {
-        initSavedPlaceCategories(JSON.parse(storedCats));
+        initSearchHistory(storedHistory ? JSON.parse(storedHistory) : []);
+        initSavedPlaces(storedSaved ? JSON.parse(storedSaved) : []);
+        initSavedPlaceCategories(storedCats ? JSON.parse(storedCats) : {});
       } catch {
-        // ignore corrupted category cache
+        // Ignore corrupted versioned caches without changing their version.
       }
+      return;
+    }
+
+    try {
+      const migrated = migrateLegacyPlaceStorage({
+        searchHistory: storedHistory ? JSON.parse(storedHistory) : [],
+        savedPlaces: storedSaved ? JSON.parse(storedSaved) : [],
+        savedPlaceCategories: storedCats ? JSON.parse(storedCats) : {},
+      });
+      const nextHistory = JSON.stringify(migrated.searchHistory);
+      const nextSaved = JSON.stringify(migrated.savedPlaces);
+      const nextCategories = JSON.stringify(migrated.savedPlaceCategories);
+      const restoreStoredValue = (key: string, value: string | null) => {
+        if (value === null) localStorage.removeItem(key);
+        else localStorage.setItem(key, value);
+      };
+
+      // Complete conversion before the first write; set the version only after
+      // all three data keys have been persisted.
+      try {
+        localStorage.setItem("searchHistory", nextHistory);
+        localStorage.setItem("savedPlaces", nextSaved);
+        localStorage.setItem("savedPlaceCategories", nextCategories);
+        localStorage.setItem("placeSchemaVersion", "2");
+      } catch (error) {
+        try {
+          restoreStoredValue("searchHistory", storedHistory);
+          restoreStoredValue("savedPlaces", storedSaved);
+          restoreStoredValue("savedPlaceCategories", storedCats);
+          restoreStoredValue("placeSchemaVersion", storedVersion);
+        } catch {
+          // A storage quota failure can also prevent rollback writes.
+        }
+        throw error;
+      }
+
+      initSearchHistory(migrated.searchHistory);
+      initSavedPlaces(migrated.savedPlaces);
+      initSavedPlaceCategories(
+        migrated.savedPlaceCategories as Record<string, SavedPlaceCategory>,
+      );
+    } catch {
+      // Keep the old keys and version untouched so migration retries next load.
     }
   }, [
     initSearchHistory,

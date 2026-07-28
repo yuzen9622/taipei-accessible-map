@@ -59,7 +59,7 @@ export default function RoutePlanInput() {
 
   useEffect(() => {
     if (origin?.kind === "place") {
-      setOriginName(origin.place.name || origin.place.display_name || "");
+      setOriginName(origin.place.name || origin.place.fullAddress || "");
     } else if (origin?.kind === "coordinate") {
       setOriginName(origin.address || "");
     }
@@ -68,7 +68,7 @@ export default function RoutePlanInput() {
   useEffect(() => {
     if (destination?.kind === "place") {
       setDestinationName(
-        destination.place.name || destination.place.display_name || "",
+        destination.place.name || destination.place.fullAddress || "",
       );
     } else if (destination?.kind === "coordinate") {
       setDestinationName(destination.address || "");
@@ -252,7 +252,7 @@ export default function RoutePlanInput() {
                 setOrigin(place);
                 if (place.kind === "place") {
                   setOriginName(
-                    place.place.name || place.place.display_name || "",
+                    place.place.name || place.place.fullAddress || "",
                   );
                 } else if (place.kind === "coordinate") {
                   setOriginName(place.address || "");
@@ -270,7 +270,7 @@ export default function RoutePlanInput() {
                 setDestination(place);
                 if (place.kind === "place") {
                   setDestinationName(
-                    place.place.name || place.place.display_name || "",
+                    place.place.name || place.place.fullAddress || "",
                   );
                 } else if (place.kind === "coordinate") {
                   setDestinationName(place.address || "");

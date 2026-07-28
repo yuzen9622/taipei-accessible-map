@@ -12,11 +12,11 @@ import type {
 const BASE = `${END_POINT}/api/v1/a11y/reviews`;
 
 export async function getPlaceReviews(
-  params: { osmId: string; placeType: string; page?: number; limit?: number },
+  params: { placeId: string; placeType: string; page?: number; limit?: number },
   signal?: AbortSignal,
 ) {
   const query = new URLSearchParams({
-    osmId: params.osmId,
+    placeId: params.placeId,
     placeType: params.placeType,
     page: String(params.page ?? 1),
     limit: String(params.limit ?? 10),
@@ -29,11 +29,11 @@ export async function getPlaceReviews(
 }
 
 export async function getReviewSummary(
-  params: { osmId: string; placeType: string },
+  params: { placeId: string; placeType: string },
   signal?: AbortSignal,
 ) {
   const query = new URLSearchParams({
-    osmId: params.osmId,
+    placeId: params.placeId,
     placeType: params.placeType,
   });
   const response = await fetchRequest(

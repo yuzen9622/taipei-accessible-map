@@ -128,7 +128,7 @@ type MapStore = MapState & MapAction;
 
 export function placeKey(p: PlaceDetail): string {
   return p.kind === "place"
-    ? `p_${p.place.place_id}`
+    ? `p_${p.place.id}`
     : `c_${p.position.lat}_${p.position.lng}`;
 }
 
@@ -247,7 +247,7 @@ const useMapStore = create<MapStore>((set, get) => ({
     const validHistory = history.filter((item) => {
       const name =
         item.kind === "place"
-          ? item.place.name || item.place.display_name
+          ? item.place.name || item.place.fullAddress || ""
           : item.address;
       return Boolean(name?.trim());
     });
@@ -255,7 +255,7 @@ const useMapStore = create<MapStore>((set, get) => ({
     const dedupedHistory = validHistory.filter((item) => {
       const name =
         item.kind === "place"
-          ? item.place.name || item.place.display_name
+          ? item.place.name || item.place.fullAddress || ""
           : item.address;
       if (seen.has(name)) return false;
       seen.add(name);
@@ -266,14 +266,14 @@ const useMapStore = create<MapStore>((set, get) => ({
   addSearchHistory: (searchTerm: PlaceDetail) => {
     const name =
       searchTerm.kind === "place"
-        ? searchTerm.place.name || searchTerm.place.display_name
+        ? searchTerm.place.name || searchTerm.place.fullAddress || ""
         : searchTerm.address;
     if (!name || !name.trim()) return;
     const { searchHistory } = get();
     const deduped = searchHistory.filter((item) => {
       const itemName =
         item.kind === "place"
-          ? item.place.name || item.place.display_name
+          ? item.place.name || item.place.fullAddress || ""
           : item.address;
       return itemName !== name;
     });
@@ -306,7 +306,7 @@ const useMapStore = create<MapStore>((set, get) => ({
     const validPlaces = places.filter((item) => {
       const name =
         item.kind === "place"
-          ? item.place.name || item.place.display_name
+          ? item.place.name || item.place.fullAddress || ""
           : item.address;
       return Boolean(name?.trim());
     });
@@ -318,7 +318,7 @@ const useMapStore = create<MapStore>((set, get) => ({
   addSavedPlace: (place) => {
     const name =
       place.kind === "place"
-        ? place.place.name || place.place.display_name
+        ? place.place.name || place.place.fullAddress || ""
         : place.address;
     if (!name || !name.trim()) return;
     const { savedPlaces, savedPlaceKeys } = get();

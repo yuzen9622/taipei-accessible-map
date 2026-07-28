@@ -5,7 +5,7 @@ import {
   type LatLng,
   type Marker,
   type metroA11yData,
-  type NominatimPlace,
+  type PlaceResult,
 } from "@/types";
 import { formatBathroom, formatMetroA11y } from "./utils";
 
@@ -84,23 +84,63 @@ export function googlePlacesToMarkers(res: unknown): AiResultMarker[] {
     const pos = getLatLng(place);
     if (!pos) return;
     const name: string = place.name || place.formatted_address || "地點";
-    // 合成 NominatimPlace；PlaceContent 只需 lat/lon/name/display_name，
-    // 缺 osm_id 時會自動略過 OSM 詳情查詢。
-    const synthetic = {
-      place_id: place.place_id ?? `g_${i}`,
-      lat: String(pos.lat),
-      lon: String(pos.lng),
-      display_name: place.formatted_address || name,
+    const googlePlaceId =
+      typeof place.place_id === "string" && place.place_id
+        ? place.place_id
+        : null;
+    const fullAddress =
+      typeof place.formatted_address === "string"
+        ? place.formatted_address
+        : name;
+    const placeType =
+      typeof place.types?.[0] === "string"
+        ? place.types[0]
+        : typeof place.type === "string"
+          ? place.type
+          : null;
+    const synthetic: PlaceResult = {
+      id: googlePlaceId
+        ? `google:${googlePlaceId}`
+        : `coord:${pos.lat},${pos.lng}`,
+      source: "google",
       name,
-      type: place.types?.[0] ?? place.type,
-      address: place.address,
-    } as unknown as NominatimPlace;
+      fullAddress,
+      addressComponents: {
+        road: null,
+        district: null,
+        city: null,
+        postcode: null,
+      },
+      location: { type: "Point", coordinates: [pos.lng, pos.lat] },
+      placeClass: null,
+      placeType,
+      typeLabel: null,
+      distanceMeters: null,
+      rating: typeof place.rating === "number" ? place.rating : null,
+      accessibility: {
+        status: "unknown",
+        wheelchair: null,
+        nearbyFacilityCount: 0,
+        source: "none",
+      },
+      nearbyFacilities: { toilets: [], metro: [] },
+      reviewKey: googlePlaceId
+        ? { placeId: googlePlaceId, placeType: "google" }
+        : null,
+      externalLinks: {
+        osm: null,
+        google: googlePlaceId
+          ? `https://www.google.com/maps/place/?q=place_id:${encodeURIComponent(googlePlaceId)}`
+          : null,
+      },
+      attribution: "Powered by Google",
+    };
 
     markers.push({
-      id: `g_${place.place_id ?? i}`,
+      id: `g_${googlePlaceId ?? i}`,
       position: pos,
       title: name,
-      desc: place.formatted_address,
+      desc: fullAddress,
       target: { panel: "place", place: synthetic },
     });
   });

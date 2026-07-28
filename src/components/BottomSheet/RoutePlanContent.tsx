@@ -107,7 +107,7 @@ export default function RoutePlanContent() {
       setOrigin(place);
       const name =
         place.kind === "place"
-          ? place.place.name || place.place.display_name || ""
+          ? place.place.name || place.place.fullAddress || ""
           : place.address || "";
       setOriginName(name);
       setOriginInput(name);
@@ -121,7 +121,7 @@ export default function RoutePlanContent() {
       setDestination(place);
       const name =
         place.kind === "place"
-          ? place.place.name || place.place.display_name || ""
+          ? place.place.name || place.place.fullAddress || ""
           : place.address || "";
       setDestinationName(name);
       setDestInput(name);
@@ -150,7 +150,7 @@ export default function RoutePlanContent() {
     (index: number, place: PlaceDetail) => {
       const name =
         place.kind === "place"
-          ? place.place.name || place.place.display_name || ""
+          ? place.place.name || place.place.fullAddress || ""
           : place.address || "";
       setWaypointRows((rows) =>
         rows.map((r, i) => (i === index ? { ...r, place, input: name } : r)),
@@ -423,10 +423,10 @@ export default function RoutePlanContent() {
                       {destinationName}
                     </span>
                     {destination.kind === "place" &&
-                      destination.place.display_name &&
-                      destination.place.display_name !== destinationName && (
+                      destination.place.fullAddress &&
+                      destination.place.fullAddress !== destinationName && (
                         <span className="text-xs text-muted-foreground truncate block">
-                          {destination.place.display_name}
+                          {destination.place.fullAddress}
                         </span>
                       )}
                   </button>

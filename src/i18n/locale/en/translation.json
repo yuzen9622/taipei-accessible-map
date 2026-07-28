@@ -219,6 +219,7 @@
   "switchOriginDestination": "Swap origin and destination",
   "noRouteFound": "No suitable accessible route found",
   "viewOnOSM": "View on OpenStreetMap",
+  "viewOnGoogleMaps": "View on Google Maps",
   "a11yDefaultTitle": "Accessible Facility",
   "a11yDefaultDesc": "Facilities designed for people with disabilities.",
   "searchA11yPlaceholder": "Search accessible facilities...",

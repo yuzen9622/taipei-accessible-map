@@ -28,6 +28,24 @@ import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import PlaceReviewSection from "./PlaceReviewSection";
 
+function getOsmIdFromPlaceId(placeId: string): string | null {
+  const match = /^osm:(node|way|relation):(\d+)$/.exec(placeId);
+  return match?.[2] ?? null;
+}
+
+function getAccessibilityStatusLabel(
+  status: "accessible" | "limited" | "unknown",
+) {
+  switch (status) {
+    case "accessible":
+      return "無障礙";
+    case "limited":
+      return "部分無障礙";
+    default:
+      return "未知";
+  }
+}
+
 export default function PlaceContent() {
   const { t, i18n } = useAppTranslation();
   const {
@@ -66,9 +84,10 @@ export default function PlaceContent() {
   const placePosition = useMemo(() => {
     if (!infoShow.kind) return null;
     if (infoShow.kind === "place") {
+      const [lng, lat] = infoShow.place.location.coordinates;
       return {
-        lat: parseFloat(infoShow.place.lat),
-        lng: parseFloat(infoShow.place.lon),
+        lat,
+        lng,
       };
     }
     if (infoShow.kind === "coordinate" && infoShow.position) {
@@ -100,7 +119,7 @@ export default function PlaceContent() {
       setOsmDetail(null);
       return;
     }
-    const osmId = infoShow.place.osm_id;
+    const osmId = getOsmIdFromPlaceId(infoShow.place.id);
     if (!osmId) {
       setOsmDetail(null);
       return;
@@ -128,9 +147,10 @@ export default function PlaceContent() {
 
     if (infoShow.kind === "place") {
       const place = infoShow.place;
-      const latLng = { lat: parseFloat(place.lat), lng: parseFloat(place.lon) };
+      const [lng, lat] = place.location.coordinates;
+      const latLng = { lat, lng };
       setDestination({ kind: "place", place, position: latLng });
-      setDestinationName(place.name || place.display_name || "");
+      setDestinationName(place.name || place.fullAddress || "");
     } else if (infoShow.kind === "coordinate") {
       const latLng = infoShow.position ??
         userLocation ?? { lat: 25.0478, lng: 121.5319 };
@@ -156,9 +176,11 @@ export default function PlaceContent() {
     let url = process.env.NEXT_PUBLIC_URL ?? window.location.origin;
     if (infoShow.kind === "place") {
       const place = infoShow.place;
-      if (place.osm_id && place.osm_type) {
-        url += `?place=${place.osm_type}_${place.osm_id}`;
-      }
+      const [lng, lat] = place.location.coordinates;
+      url +=
+        place.id.startsWith("osm:") || place.id.startsWith("google:")
+          ? `?place=${place.id}`
+          : `?loc=${lat},${lng}`;
     }
     try {
       if (navigator.share) {
@@ -174,12 +196,13 @@ export default function PlaceContent() {
   const currentPlace: import("@/types").PlaceDetail | null = useMemo(() => {
     if (!infoShow.kind) return null;
     if (infoShow.kind === "place") {
+      const [lng, lat] = infoShow.place.location.coordinates;
       return {
         kind: "place",
         place: infoShow.place,
         position: {
-          lat: parseFloat(infoShow.place.lat),
-          lng: parseFloat(infoShow.place.lon),
+          lat,
+          lng,
         },
       };
     }
@@ -223,11 +246,7 @@ export default function PlaceContent() {
         available: osmWheelchair === "yes" || osmWheelchair === "limited",
       });
     } else if (isPlace && place) {
-      const tags = (place as Record<string, unknown>).extratags as
-        | Record<string, string>
-        | undefined;
-      const wheelchair =
-        tags?.wheelchair || (place as Record<string, unknown>).wheelchair;
+      const wheelchair = place.accessibility.wheelchair;
       items.push({
         key: "wheelchair",
         label: t("wheelchairAccess"),
@@ -290,15 +309,6 @@ export default function PlaceContent() {
   );
   const metroSliced = useMemo(() => nearbyMetro.slice(0, 4), [nearbyMetro]);
 
-  const placeIdForReview =
-    isPlace && place
-      ? place.osm_id
-        ? `${place.osm_type}_${place.osm_id}`
-        : place.place_id?.toString() || ""
-      : placePosition
-        ? `${placePosition.lat}_${placePosition.lng}`
-        : "";
-
   if (!infoShow.kind) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -307,9 +317,11 @@ export default function PlaceContent() {
     );
   }
 
-  const name = isPlace ? place!.name || place!.display_name : infoShow.address;
-  const address = isPlace ? place!.display_name : infoShow.address;
-  const addressParts = isPlace && place!.address ? place!.address : null;
+  const name = isPlace
+    ? place!.name || place!.fullAddress || ""
+    : infoShow.address;
+  const address = isPlace ? place!.fullAddress : infoShow.address;
+  const addressParts = isPlace ? place!.addressComponents : null;
   const hasA11y = nearbyBathrooms.length > 0 || nearbyMetro.length > 0;
 
   return (
@@ -341,14 +353,34 @@ export default function PlaceContent() {
 
       {/* Badges */}
       <div className="flex flex-wrap gap-2">
-        {isPlace && place!.type && (
+        {isPlace && place!.typeLabel && (
           <Badge variant="secondary" className="rounded-full">
-            {getPlaceTypeLabel(place!.type, i18n.language)}
+            {place!.typeLabel}
           </Badge>
         )}
-        {isPlace && place!.osm_id && (
+        {isPlace && !place!.typeLabel && place!.placeType && (
+          <Badge variant="secondary" className="rounded-full">
+            {getPlaceTypeLabel(place!.placeType, i18n.language)}
+          </Badge>
+        )}
+        {isPlace && (
+          <Badge
+            variant={
+              place!.accessibility.status === "accessible"
+                ? "default"
+                : place!.accessibility.status === "limited"
+                  ? "secondary"
+                  : "outline"
+            }
+            className="rounded-full gap-1"
+          >
+            <Accessibility className="h-3 w-3" />
+            {getAccessibilityStatusLabel(place!.accessibility.status)}
+          </Badge>
+        )}
+        {isPlace && place!.externalLinks.osm && (
           <a
-            href={`https://www.openstreetmap.org/${place!.osm_type}/${place!.osm_id}`}
+            href={place!.externalLinks.osm}
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -361,7 +393,25 @@ export default function PlaceContent() {
             </Badge>
           </a>
         )}
+        {isPlace && place!.externalLinks.google && (
+          <a
+            href={place!.externalLinks.google}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Badge
+              variant="outline"
+              className="rounded-full gap-1 cursor-pointer hover:bg-muted"
+            >
+              <ExternalLink className="h-3 w-3" />
+              {t("viewOnGoogleMaps")}
+            </Badge>
+          </a>
+        )}
       </div>
+      {isPlace && place!.attribution && (
+        <p className="text-xs text-muted-foreground">{place!.attribution}</p>
+      )}
 
       {/* Actions */}
       <div className="flex gap-2">
@@ -405,18 +455,16 @@ export default function PlaceContent() {
                 {addressParts.road}
               </div>
             )}
-            {(addressParts.suburb || addressParts.neighbourhood) && (
+            {addressParts.district && (
               <div>
                 <span className="text-muted-foreground">{t("district")}:</span>{" "}
-                {addressParts.suburb || addressParts.neighbourhood}
+                {addressParts.district}
               </div>
             )}
-            {(addressParts.city ||
-              addressParts.town ||
-              addressParts.county) && (
+            {addressParts.city && (
               <div>
                 <span className="text-muted-foreground">{t("city")}:</span>{" "}
-                {addressParts.city || addressParts.town || addressParts.county}
+                {addressParts.city}
               </div>
             )}
             {addressParts.postcode && (
@@ -599,8 +647,11 @@ export default function PlaceContent() {
         )}
 
       {/* Reviews */}
-      {placeIdForReview && (
-        <PlaceReviewSection osmId={placeIdForReview} placeType="osm" />
+      {isPlace && place?.reviewKey && (
+        <PlaceReviewSection
+          placeId={place.reviewKey.placeId}
+          placeType={place.reviewKey.placeType}
+        />
       )}
     </div>
   );

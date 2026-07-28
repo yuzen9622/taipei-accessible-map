@@ -102,11 +102,11 @@ function StarRating({
 const PAGE_SIZE = 10;
 
 export default function PlaceReviewSection({
-  osmId,
-  placeType = "osm",
+  placeId,
+  placeType,
 }: {
-  osmId: string;
-  placeType?: PlaceReviewType;
+  placeId: string;
+  placeType: PlaceReviewType;
 }) {
   const { t } = useAppTranslation();
   const user = useAuthStore((s) => s.user);
@@ -127,7 +127,7 @@ export default function PlaceReviewSection({
 
   // Identifies the place whose data is currently loaded, so async
   // continuations can bail if the user switched places mid-request.
-  const placeKey = `${osmId}|${placeType}`;
+  const placeKey = `${placeId}|${placeType}`;
   const activePlaceKeyRef = useRef(placeKey);
 
   const ownReview = useMemo(
@@ -141,10 +141,10 @@ export default function PlaceReviewSection({
       try {
         const [listRes, summaryRes] = await Promise.all([
           getPlaceReviews(
-            { osmId, placeType, page: 1, limit: PAGE_SIZE },
+            { placeId, placeType, page: 1, limit: PAGE_SIZE },
             signal,
           ),
-          getReviewSummary({ osmId, placeType }, signal),
+          getReviewSummary({ placeId, placeType }, signal),
         ]);
         if (signal?.aborted) return;
         if (listRes.ok && listRes.data) {
@@ -160,7 +160,7 @@ export default function PlaceReviewSection({
         if (!signal?.aborted) setLoading(false);
       }
     },
-    [osmId, placeType, t],
+    [placeId, placeType, t],
   );
 
   useEffect(() => {
@@ -185,7 +185,7 @@ export default function PlaceReviewSection({
     setLoadingMore(true);
     try {
       const res = await getPlaceReviews({
-        osmId,
+        placeId,
         placeType,
         page: page + 1,
         limit: PAGE_SIZE,
@@ -205,7 +205,7 @@ export default function PlaceReviewSection({
     } finally {
       if (activePlaceKeyRef.current === requestedKey) setLoadingMore(false);
     }
-  }, [osmId, placeType, page, totalPages, placeKey, t]);
+  }, [placeId, placeType, page, totalPages, placeKey, t]);
 
   const openCreateForm = useCallback(() => {
     setEditingId(null);
@@ -229,7 +229,9 @@ export default function PlaceReviewSection({
   }, []);
 
   const handleSubmit = useCallback(async () => {
-    const allRated = RATING_KEYS.every((k) => ratings[k] >= 1);
+    const allRated = RATING_KEYS.every(
+      (k) => Number.isInteger(ratings[k]) && ratings[k] >= 1 && ratings[k] <= 5,
+    );
     if (!allRated) {
       toast.error(t("reviewRatingRequired"));
       return;
@@ -238,6 +240,10 @@ export default function PlaceReviewSection({
     try {
       const backendRatings = toBackendRatings(ratings);
       const trimmed = comment.trim();
+      if (trimmed.length > 500) {
+        toast.error("評語不得超過 500 字");
+        return;
+      }
       if (editingId) {
         const res = await updateReview(editingId, {
           ...backendRatings,
@@ -246,7 +252,7 @@ export default function PlaceReviewSection({
         if (res.ok) toast.success(t("reviewUpdated"));
       } else {
         const res = await createReview({
-          osmId,
+          placeId,
           placeType,
           ...backendRatings,
           comment: trimmed || undefined,
@@ -264,7 +270,7 @@ export default function PlaceReviewSection({
     ratings,
     comment,
     editingId,
-    osmId,
+    placeId,
     placeType,
     closeForm,
     loadFirstPage,

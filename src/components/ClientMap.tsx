@@ -13,10 +13,12 @@ import A11yFacilitiesWrapper from "@/components/Wrapper/A11yFacilitiesWrapper";
 import RoutePreviewHydrator from "@/components/Wrapper/RoutePreviewHydrator";
 import RouteLine from "@/components/Wrapper/RouteWrapper";
 import { useAppTranslation } from "@/i18n/client";
+import { getPlaceDetails } from "@/lib/api/placeSearch";
+import { nominatimToPlaceResult } from "@/lib/place/adapters";
+import { toApiLang } from "@/lib/place/lang";
 import { formatNominatimPlace } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import useNavStore from "@/stores/useNavStore";
-import type { NominatimPlace } from "@/types";
 import AIChatBot from "./AIChatBot";
 import NavigationController from "./NavigationController";
 import SearchPin from "./shared/SearchPin";
@@ -33,19 +35,21 @@ const MAP_STYLES = {
   dark: "https://tiles.openfreemap.org/styles/dark",
 };
 
-function toNominatimOsmId(value: string | null) {
+function toPlaceId(value: string | null) {
   if (!value) return null;
+  if (/^(google:.+|osm:(node|way|relation):\d+)$/.test(value)) return value;
+
   const [type, id] = value.split("_");
   if (!id || !/^\d+$/.test(id)) return null;
-  const prefix =
+  const osmType =
     type === "node" || type === "n"
-      ? "N"
+      ? "node"
       : type === "way" || type === "w"
-        ? "W"
+        ? "way"
         : type === "relation" || type === "r"
-          ? "R"
+          ? "relation"
           : null;
-  return prefix ? `${prefix}${id}` : null;
+  return osmType ? `osm:${osmType}:${id}` : null;
 }
 
 // OpenMapTiles carries name:zh / name:en alongside the default bilingual
@@ -269,9 +273,16 @@ export default function ClientMap() {
       .then((res) => res.json())
       .then((data) => {
         const formatted = formatNominatimPlace(data, i18n.language);
-        const address = formatted?.display_name ?? `${lat}, ${lng}`;
-        setInfoShow({ isOpen: true, kind: "coordinate", address, position });
-        setSearchPlace({ kind: "coordinate", address, position });
+        if (!formatted) throw new Error("Reverse geocoding failed");
+
+        const place = nominatimToPlaceResult(formatted);
+        const [placeLng, placeLat] = place.location.coordinates;
+        setInfoShow({ isOpen: true, kind: "place", place });
+        setSearchPlace({
+          kind: "place",
+          place,
+          position: { lat: placeLat, lng: placeLng },
+        });
       })
       .catch(() => {
         setInfoShow({
@@ -288,31 +299,26 @@ export default function ClientMap() {
       });
   }, [i18n.language, setInfoShow, setSearchPlace, setSheetMode]);
 
-  // Shared-place links (?place=node_123 / way_123 / relation_123 from the
-  // place share dialog) resolve the OSM object and open it as a place panel.
+  // Shared-place links accept the current prefixed id and the legacy OSM key.
   useEffect(() => {
     const placeParam = new URLSearchParams(window.location.search).get("place");
-    const osmId = toNominatimOsmId(placeParam);
+    const placeId = toPlaceId(placeParam);
 
-    if (!osmId) return;
+    if (!placeId) return;
 
-    const lang = i18n.language === "zh-TW" ? "zh-TW" : "en";
     const controller = new AbortController();
 
     setSheetMode("place");
-    fetch(
-      `https://nominatim.openstreetmap.org/lookup?format=json&osm_ids=${osmId}&accept-language=${lang}&addressdetails=1`,
-      { signal: controller.signal },
+    getPlaceDetails(
+      placeId,
+      { lang: toApiLang(i18n.language) },
+      controller.signal,
     )
-      .then((res) => res.json())
-      .then((data: NominatimPlace[]) => {
-        const place = formatNominatimPlace(data[0], i18n.language);
-        if (!place) return;
+      .then((res) => {
+        if (!res.ok || !res.data) return;
 
-        const lat = parseFloat(place.lat);
-        const lng = parseFloat(place.lon);
-        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-
+        const place = res.data;
+        const [lng, lat] = place.location.coordinates;
         const position = { lat, lng };
         setInfoShow({ isOpen: true, kind: "place", place });
         setSearchPlace({ kind: "place", place, position });
@@ -359,17 +365,18 @@ export default function ClientMap() {
         const data = await res.json();
         const formatted = formatNominatimPlace(data, i18n.language);
 
-        if (formatted?.place_id) {
-          const position = { lat, lng };
+        if (formatted) {
+          const place = nominatimToPlaceResult(formatted);
+          const [placeLng, placeLat] = place.location.coordinates;
           setInfoShow({
             isOpen: true,
-            place: formatted,
+            place,
             kind: "place",
           });
           setSearchPlace({
             kind: "place",
-            place: formatted,
-            position,
+            place,
+            position: { lat: placeLat, lng: placeLng },
           });
         } else {
           setInfoShow({ isOpen: false, kind: null });

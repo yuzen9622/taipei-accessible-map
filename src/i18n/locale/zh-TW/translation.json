@@ -220,6 +220,7 @@
   "switchOriginDestination": "交換起終點",
   "noRouteFound": "找不到合適的無障礙路線",
   "viewOnOSM": "在 OpenStreetMap 查看",
+  "viewOnGoogleMaps": "在 Google 地圖查看",
   "a11yDefaultTitle": "無障礙設施",
   "a11yDefaultDesc": "提供身心障礙者使用的相關設施。",
   "searchA11yPlaceholder": "搜尋無障礙設施...",

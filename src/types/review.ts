@@ -3,7 +3,8 @@ export type PlaceReviewType =
   | "a11y"
   | "bathroom"
   | "welfare"
-  | "parking";
+  | "parking"
+  | "google";
 
 export interface ReviewItem {
   _id: string;
@@ -18,7 +19,7 @@ export interface ReviewItem {
 }
 
 export interface CreateReviewInput {
-  osmId: string;
+  placeId: string;
   placeType: PlaceReviewType;
   passageWidthRating: number;
   toiletRating: number;

@@ -38,9 +38,9 @@ function SavedPlaceCard({
   const { t } = useAppTranslation();
   const name =
     item.kind === "place"
-      ? item.place.name || item.place.display_name
+      ? item.place.name || item.place.fullAddress
       : item.address;
-  const address = item.kind === "place" ? item.place.display_name : undefined;
+  const address = item.kind === "place" ? item.place.fullAddress : undefined;
 
   return (
     <div className="group p-3 rounded-xl bg-muted/40 border border-border/30 hover:bg-muted/60 transition-colors">
