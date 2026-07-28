@@ -31,9 +31,15 @@ type Mode = "login" | "register" | "forgot";
 interface AuthDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Fired after a successful interactive login (Google or email/password). */
+  onLoggedIn?: (user: UserDTO) => void;
 }
 
-export default function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
+export default function AuthDialog({
+  open,
+  onOpenChange,
+  onLoggedIn,
+}: AuthDialogProps) {
   const [mode, setMode] = useState<Mode>("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -110,6 +116,7 @@ export default function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
         accessToken: res.accessToken,
       });
       handleOpenChange(false);
+      if (res.data?.user) onLoggedIn?.(res.data.user);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Google 登入失敗");
     } finally {
@@ -143,6 +150,7 @@ export default function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
         accessToken: res.accessToken,
       });
       handleOpenChange(false);
+      if (res.data?.user) onLoggedIn?.(res.data.user);
     } catch (err) {
       if (err instanceof ApiError && err.code === 403) {
         setNeedsVerification(true);

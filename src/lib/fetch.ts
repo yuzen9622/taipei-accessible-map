@@ -9,6 +9,15 @@ interface RequestOptions<T> {
   headers?: Record<string, string>;
   requireAuth?: boolean;
   signal?: AbortSignal;
+  /**
+   * Some authenticated endpoints reuse 401 for a business-logic error
+   * (e.g. POST /user/auth/password's "current password wrong") rather
+   * than "token invalid". Set this so a 401 there is returned as-is for
+   * the caller to check `res.ok`, instead of triggering the normal
+   * refresh-retry-then-invalidate-session flow, which would otherwise
+   * silently log the user out on a mistyped password.
+   */
+  skipAuthRetry?: boolean;
 }
 
 /**
@@ -46,6 +55,7 @@ export async function fetchRequest<T>(
     headers = {},
     requireAuth = false,
     signal,
+    skipAuthRetry = false,
     __retried,
     ...rest
   } = options as InternalRequestOptions<T>;
@@ -109,7 +119,7 @@ export async function fetchRequest<T>(
       (data.data as { reason?: string } | undefined)?.reason,
     );
   }
-  if (data.code === 401 && requireAuth) {
+  if (data.code === 401 && requireAuth && !skipAuthRetry) {
     if (__retried) {
       // Already refreshed + retried once for this original request — stop,
       // don't recurse again, safely invalidate (compare-and-commit against

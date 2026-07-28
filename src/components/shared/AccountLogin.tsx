@@ -25,6 +25,7 @@ import AIMemoryPanel from "@/components/settings/AIMemoryPanel";
 import DataManagementPanel from "@/components/settings/DataManagementPanel";
 import AuthDialog from "@/components/shared/AuthDialog";
 import HelpDialog from "@/components/shared/HelpDialog";
+import LineBindDialog from "@/components/shared/LineBindDialog";
 import {
   Dialog,
   DialogContent,
@@ -64,6 +65,7 @@ export default function AccountLogin() {
   const [feedbackText, setFeedbackText] = useState("");
   const [contactsDialogOpen, setContactsDialogOpen] = useState(false);
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
+  const [lineBindDialogOpen, setLineBindDialogOpen] = useState(false);
   const { t } = useAppTranslation("translation");
 
   const { user, userConfig, updateUserConfig, logout } = useAuthStore(
@@ -435,7 +437,18 @@ export default function AccountLogin() {
         onOpenChange={setContactsDialogOpen}
       />
 
-      <AuthDialog open={authDialogOpen} onOpenChange={setAuthDialogOpen} />
+      <AuthDialog
+        open={authDialogOpen}
+        onOpenChange={setAuthDialogOpen}
+        onLoggedIn={(loggedInUser) => {
+          if (!loggedInUser.lineUserId) setLineBindDialogOpen(true);
+        }}
+      />
+
+      <LineBindDialog
+        open={lineBindDialogOpen}
+        onOpenChange={setLineBindDialogOpen}
+      />
 
       {/* 問題回饋 Dialog */}
 

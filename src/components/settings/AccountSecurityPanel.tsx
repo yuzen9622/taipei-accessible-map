@@ -11,7 +11,7 @@ import useAuthStore from "@/stores/useAuthStore";
 import type { UserDTO } from "@/types/user";
 
 export default function AccountSecurityPanel({ user }: { user: UserDTO }) {
-  const hasPassword = user.authProviders?.includes("local") ?? false;
+  const hasPassword = user.authProviders.includes("local");
   const setUser = useAuthStore((s) => s.setUser);
   const setSession = useAuthStore((s) => s.setSession);
 
@@ -34,6 +34,12 @@ export default function AccountSecurityPanel({ user }: { user: UserDTO }) {
         newPassword,
         hasPassword ? currentPassword : undefined,
       );
+      if (!res.ok) {
+        // skipAuthRetry means fetchRequest returns a 401 here instead of
+        // throwing — the only case that happens is "current password wrong".
+        setError("目前密碼錯誤");
+        return;
+      }
       if (res.data?.user) setUser(res.data.user);
       if (res.accessToken) setSession({ accessToken: res.accessToken });
       setCurrentPassword("");

@@ -65,6 +65,9 @@ export async function changePassword(
   return authenticatedRequest(`${END_POINT}/api/v1/user/auth/password`, {
     method: "POST",
     body: currentPassword ? { currentPassword, newPassword } : { newPassword },
+    // 401 here means "current password wrong" (a business error, not an
+    // expired token) — don't let it trigger refresh-retry-then-logout.
+    skipAuthRetry: true,
   }) as Promise<ApiResponse<{ user: UserDTO }>>;
 }
 
