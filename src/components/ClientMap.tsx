@@ -8,12 +8,13 @@ import MapView, { NavigationControl } from "react-map-gl/maplibre";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 import NowPin from "@/components/shared/NowPin";
-import MapWrapper from "@/components/Wrapper/MapWrapper";
 import A11yFacilitiesWrapper from "@/components/Wrapper/A11yFacilitiesWrapper";
+import MapWrapper from "@/components/Wrapper/MapWrapper";
 import RoutePreviewHydrator from "@/components/Wrapper/RoutePreviewHydrator";
 import RouteLine from "@/components/Wrapper/RouteWrapper";
 import { useAppTranslation } from "@/i18n/client";
 import { getPlaceDetails } from "@/lib/api/placeSearch";
+import { applyMapDimension, type MapTheme } from "@/lib/map/basemap3d";
 import { nominatimToPlaceResult } from "@/lib/place/adapters";
 import { toApiLang } from "@/lib/place/lang";
 import { formatNominatimPlace } from "@/lib/utils";
@@ -96,6 +97,7 @@ export default function ClientMap() {
     destination,
     setSheetMode,
     isNavigating,
+    is3D,
   } = useMapStore(
     useShallow((s) => ({
       map: s.map,
@@ -108,6 +110,7 @@ export default function ClientMap() {
       destination: s.destination,
       setSheetMode: s.setSheetMode,
       isNavigating: s.isNavigating,
+      is3D: s.is3D,
     })),
   );
   const { resolvedTheme } = useTheme();
@@ -138,8 +141,14 @@ export default function ClientMap() {
     setMounted(true);
   }, []);
 
-  const mapStyle =
-    resolvedTheme === "dark" ? MAP_STYLES.dark : MAP_STYLES.light;
+  const mapTheme: MapTheme = resolvedTheme === "dark" ? "dark" : "light";
+  const mapStyle = MAP_STYLES[mapTheme];
+
+  // The style-lifecycle callbacks below must not be re-created on every 3D
+  // toggle (that would rebind onStyleData), so they read the current mode from
+  // a ref instead of from their closure.
+  const dimensionRef = useRef({ is3D, mapTheme });
+  dimensionRef.current = { is3D, mapTheme };
 
   const pointerDownTime = useRef(0);
   const pointerDownPos = useRef<[number, number]>([0, 0]);
@@ -167,24 +176,43 @@ export default function ClientMap() {
     });
   }, []);
 
+  // Snap (never fade) the 2D/3D groups into place: on first load there is
+  // nothing to fade from, and after a theme swap the new style arrives with the
+  // groups reset, so the current mode has to be restored as-is.
+  const restoreDimension = useCallback((target: maplibregl.Map) => {
+    const { is3D: mode, mapTheme: theme } = dimensionRef.current;
+    applyMapDimension(target, mode, theme, { animate: false });
+  }, []);
+
   const handleLoad = useCallback(
     (evt: { target: maplibregl.Map }) => {
       setMap(evt.target);
       applyMapLanguage(evt.target, i18n.language);
       attachSpriteFallback(evt.target);
+      restoreDimension(evt.target);
     },
-    [setMap, i18n.language, attachSpriteFallback],
+    [setMap, i18n.language, attachSpriteFallback, restoreDimension],
   );
 
   // Re-apply after theme swaps replace the style; the equality guard inside
-  // applyMapLanguage keeps this from looping on its own styledata events.
+  // applyMapLanguage keeps this from looping on its own styledata events, and
+  // applyMapDimension has the same kind of guard (needsApply).
   const handleStyleData = useCallback(
     (evt: { target: maplibregl.Map }) => {
       applyMapLanguage(evt.target, i18n.language);
       attachSpriteFallback(evt.target);
+      restoreDimension(evt.target);
     },
-    [i18n.language, attachSpriteFallback],
+    [i18n.language, attachSpriteFallback, restoreDimension],
   );
+
+  // Cross-fade whenever the mode changes. Subscribing to the store state (not
+  // patching each setter) covers all three writers: the 2D/3D button,
+  // setIsNavigating, and confirmNavExit.
+  useEffect(() => {
+    if (!map) return;
+    applyMapDimension(map, is3D, mapTheme, { animate: true });
+  }, [map, is3D, mapTheme]);
 
   useEffect(() => {
     const mock = new URLSearchParams(window.location.search).get("mockgeo");
