@@ -5,8 +5,13 @@ export interface UserDTO {
   name: string;
   email: string;
   avatar?: string;
-  client_id?: string;
+  /** null for accounts that never linked Google (email/password-only). */
+  client_id?: string | null;
+  /** "google" | "local", may contain both once a Google user sets a password. */
   authProviders?: string[];
+  emailVerified?: boolean;
+  tokenVersion?: number;
+  lineUserId?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }

@@ -86,6 +86,22 @@ export async function fetchRequest<T>(
         }
   ) as ApiResponse<unknown>;
   const isSuccess = data.ok === true || data.success === true;
+  if (!isSuccess && data.code === 403 && requireAuth) {
+    // Token revoked server-side (e.g. password changed elsewhere via
+    // tokenVersion bump) — refreshing would fail too, so invalidate the
+    // session immediately instead of leaving the UI stuck in a stale
+    // "logged in" state that keeps re-hitting 403.
+    invalidateSession(sessionAtEntry);
+    const sessionAfter = useAuthStore.getState().session;
+    if (sessionAfter && sessionAfter.accessToken === "") {
+      toast.error("登入狀態已失效，請重新登入");
+    }
+    throw new ApiError(
+      data.message || "Fetch error",
+      data.code,
+      (data.data as { reason?: string } | undefined)?.reason,
+    );
+  }
   if (!isSuccess && data.code !== 401) {
     throw new ApiError(
       data.message || "Fetch error",

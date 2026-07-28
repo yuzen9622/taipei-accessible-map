@@ -1,7 +1,8 @@
 "use client";
 
 import { GoogleLogin } from "@react-oauth/google";
-import { useState } from "react";
+import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   forgotPassword,
   loginWithEmail,
@@ -43,6 +45,20 @@ export default function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
     null,
   );
   const [forgotSent, setForgotSent] = useState(false);
+
+  const googleBtnRef = useRef<HTMLDivElement>(null);
+  const [googleBtnWidth, setGoogleBtnWidth] = useState(320);
+
+  useEffect(() => {
+    const el = googleBtnRef.current;
+    if (!el || !open) return;
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width;
+      if (width) setGoogleBtnWidth(Math.round(width));
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [open]);
 
   const { setUser, setSession, setUserConfig } = useAuthStore(
     useShallow((s) => ({
@@ -184,19 +200,49 @@ export default function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
     }
   };
 
+  const showTabs = mode !== "forgot" && !registered;
+  const showGoogle = mode !== "forgot" && !registered;
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-sm rounded-lg p-6">
-        <DialogHeader>
-          <DialogTitle className="text-lg font-semibold">
-            {mode === "login" && "登入"}
-            {mode === "register" && "註冊新帳號"}
+      <DialogContent className="max-w-[380px] rounded-2xl p-6 sm:p-7">
+        <DialogHeader className="items-center gap-1 text-center">
+          <Image
+            src="/logo.webp"
+            alt=""
+            width={40}
+            height={40}
+            className="mb-1 rounded-xl"
+          />
+          <DialogTitle className="text-xl font-semibold">
+            {mode === "login" && "歡迎回來"}
+            {mode === "register" && "建立新帳號"}
             {mode === "forgot" && "重設密碼"}
           </DialogTitle>
+          {mode !== "forgot" && (
+            <p className="text-xs text-muted-foreground">
+              登入無障礙智慧地圖，享有完整功能
+            </p>
+          )}
         </DialogHeader>
 
-        {mode !== "forgot" && !registered && (
-          <div className="flex justify-center py-1">
+        {showTabs && (
+          <Tabs
+            value={mode}
+            onValueChange={(v) => {
+              setError(null);
+              setMode(v as Mode);
+            }}
+          >
+            <TabsList className="w-full">
+              <TabsTrigger value="login">登入</TabsTrigger>
+              <TabsTrigger value="register">註冊</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        )}
+
+        {showGoogle && (
+          <div ref={googleBtnRef} className="flex w-full justify-center">
             <GoogleLogin
               onSuccess={(credentialResponse) => {
                 if (credentialResponse.credential) {
@@ -205,17 +251,20 @@ export default function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
               }}
               onError={() => toast.error("Google 登入失敗")}
               theme="outline"
-              size="medium"
-              text="signin_with"
-              width="280"
+              size="large"
+              text="continue_with"
+              shape="pill"
+              width={googleBtnWidth}
             />
           </div>
         )}
 
-        {mode !== "forgot" && !registered && (
-          <div className="flex items-center gap-2 py-1">
+        {showGoogle && (
+          <div className="flex items-center gap-3">
             <div className="h-px flex-1 bg-border" />
-            <span className="text-xs text-muted-foreground">或</span>
+            <span className="text-xs text-muted-foreground">
+              或使用電子郵件
+            </span>
             <div className="h-px flex-1 bg-border" />
           </div>
         )}
@@ -231,6 +280,7 @@ export default function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
               <Button
                 type="button"
                 variant="outline"
+                size="lg"
                 className="w-full"
                 onClick={handleResend}
               >
@@ -239,6 +289,7 @@ export default function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
             )}
             <Button
               type="button"
+              size="lg"
               className="w-full"
               onClick={() => {
                 setRegistered(null);
@@ -255,6 +306,7 @@ export default function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
               <p>若該信箱已註冊，重設密碼信已寄出，請至信箱查收</p>
               <Button
                 type="button"
+                size="lg"
                 className="w-full"
                 onClick={() => setMode("login")}
               >
@@ -272,12 +324,18 @@ export default function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
               <Input
                 type="email"
                 placeholder="電子郵件"
+                className="h-11"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
               {error && <p className="text-xs text-destructive">{error}</p>}
-              <Button type="submit" className="w-full" disabled={loading}>
+              <Button
+                type="submit"
+                size="lg"
+                className="w-full"
+                disabled={loading}
+              >
                 寄送重設密碼信
               </Button>
               <button
@@ -300,6 +358,7 @@ export default function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
             {mode === "register" && (
               <Input
                 placeholder="暱稱"
+                className="h-11"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
@@ -308,17 +367,33 @@ export default function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
             <Input
               type="email"
               placeholder="電子郵件"
+              className="h-11"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
-            <Input
-              type="password"
-              placeholder="密碼"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+            <div className="space-y-1.5">
+              <Input
+                type="password"
+                placeholder="密碼"
+                className="h-11"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              {mode === "login" && (
+                <button
+                  type="button"
+                  className="block text-xs text-muted-foreground hover:underline"
+                  onClick={() => {
+                    setError(null);
+                    setMode("forgot");
+                  }}
+                >
+                  忘記密碼？
+                </button>
+              )}
+            </div>
             {error && (
               <div className="space-y-1.5">
                 <p className="text-xs text-destructive">{error}</p>
@@ -333,33 +408,14 @@ export default function AuthDialog({ open, onOpenChange }: AuthDialogProps) {
                 )}
               </div>
             )}
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button
+              type="submit"
+              size="lg"
+              className="w-full"
+              disabled={loading}
+            >
               {mode === "login" ? "登入" : "註冊"}
             </Button>
-            <div className="flex items-center justify-between text-xs">
-              <button
-                type="button"
-                className="text-muted-foreground hover:underline"
-                onClick={() => {
-                  setError(null);
-                  setMode(mode === "login" ? "register" : "login");
-                }}
-              >
-                {mode === "login" ? "還沒有帳號？註冊" : "已有帳號？登入"}
-              </button>
-              {mode === "login" && (
-                <button
-                  type="button"
-                  className="text-muted-foreground hover:underline"
-                  onClick={() => {
-                    setError(null);
-                    setMode("forgot");
-                  }}
-                >
-                  忘記密碼？
-                </button>
-              )}
-            </div>
           </form>
         )}
       </DialogContent>
