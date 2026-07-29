@@ -273,13 +273,22 @@ function PlaceInput({
     setOpen(false);
   };
 
+  const query = (value as string) ?? "";
+  // 沒有內容時不要撐出一塊空面板，否則會看到懸空的白框
+  const hasPanelContent =
+    query === "" || suggestions.length > 0 || !!onSearchRequest;
+  const panelOpen = open && hasPanelContent;
+
   return (
     <div
       className={cn(
         "relative w-full pointer-events-auto",
         hideIcon
           ? "bg-transparent px-1 py-0.5"
-          : cn("bg-card px-3 py-1 rounded-t-3xl", !open && "rounded-3xl"),
+          : cn(
+              "bg-card px-3 py-1 border border-border/50 shadow-sm",
+              panelOpen ? "rounded-t-3xl" : "rounded-3xl",
+            ),
       )}
     >
       <div className={cn("w-full flex items-center gap-2 px-2")}>
@@ -321,129 +330,153 @@ function PlaceInput({
           <LoaderCircle className=" text-muted-foreground/50 animate-spin" />
         )}
       </div>
-      <div className=" absolute inset-0 z-10 top-10/12">
-        <Command className="w-full  text-start   shadow relative h-fit overflow-auto rounded-b-3xl">
-          <CommandList onMouseDown={(e) => e.preventDefault()}>
-            {value === "" && open && (
-              <CommandGroup heading={t("searchHistory")}>
-                <CommandItem
-                  itemType="button"
-                  onSelect={() => {
-                    handleNowClick(userLocation ?? void 0);
-                  }}
-                  key={"now_location"}
-                  className=" flex justify-between rounded-3xl items-center"
-                >
-                  <span className="p-1 text-start flex items-center gap-2 text-emerald-500 dark:text-emerald-400">
-                    <Navigation className="w-5 h-5" />
-                    <span className="text-base font-medium">你的位置</span>
-                  </span>
-                </CommandItem>
-                {searchHistory.map((history, idx) => {
-                  if (history.kind === "place") {
-                    const { place } = history;
-                    return (
-                      <CommandItem
-                        itemType="button"
-                        onSelect={() => {
-                          handleHistoryClick(history);
-                        }}
-                        key={`${place.id}-${idx}`}
-                        className="flex items-start gap-3 rounded-3xl p-2 cursor-pointer transition-colors"
-                      >
-                        <div className="mt-1 h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                        <div className="flex-1 min-w-0 text-start">
-                          <p className="font-medium text-foreground truncate">
-                            {place.name || place.fullAddress}
-                          </p>
-                          <p className="text-xs text-muted-foreground/70 truncate">
-                            {place.fullAddress}
-                          </p>
-                        </div>
-                      </CommandItem>
-                    );
-                  }
-                  return null;
-                })}
-              </CommandGroup>
+      {panelOpen && (
+        <div
+          className={cn(
+            // 對齊外框左右邊界（-1px 抵掉 border 寬度），並蓋掉輸入框下緣的 border，
+            // 讓下拉面板看起來是同一塊卡片往下延伸而不是另一個 menu
+            "absolute -left-px -right-px top-full z-20",
+            hideIcon && "left-0 right-0 mt-1.5",
+          )}
+        >
+          <Command
+            className={cn(
+              "w-full text-start h-fit overflow-hidden",
+              hideIcon
+                ? "rounded-2xl border border-border/50 shadow-lg"
+                : // rounded-none 先抵掉 Command 預設的 rounded-md（否則上緣會有小圓角，
+                  // 看起來就是另一塊 menu）；border-t-transparent 讓上緣不留分隔線，
+                  // 面板背景直接蓋掉輸入框的 border-b，變成同一塊面。
+                  // 陰影不能用 shadow-sm：它會往上暈出 1~2px，在淺色主題就是一條接縫線，
+                  // 改成只往下打的陰影（blur/2 - y - spread < 0 ⇒ 上緣無溢出）
+                  "bg-card rounded-none rounded-b-3xl border border-border/50 border-t-transparent shadow-[0_4px_8px_-2px_rgb(0_0_0/0.08)]",
             )}
-            {value !== "" && open && (
-              <>
-                <CommandGroup heading={t("searchResults")}>
-                  {suggestions.map((suggestion) => {
-                    const Icon = getPlaceIcon(
-                      suggestion.placeClass ?? undefined,
-                      suggestion.placeType ?? undefined,
-                    );
-                    return (
-                      <CommandItem
-                        itemType="button"
-                        onSelect={() => {
-                          void handlePlaceClick(suggestion);
-                        }}
-                        key={suggestion.id}
-                        disabled={pendingId !== null}
-                        className="flex items-start gap-3 rounded-3xl p-2 cursor-pointer transition-colors"
-                      >
-                        <div className="mt-1 h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                          {pendingId === suggestion.id ? (
-                            <LoaderCircle className="h-4 w-4 text-primary animate-spin" />
-                          ) : (
-                            <Icon className="h-4 w-4 text-primary" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0 text-start">
-                          <div className="flex items-center gap-1.5">
-                            <p className="font-medium text-foreground truncate">
-                              {suggestion.primaryText}
-                            </p>
-                            {suggestion.typeLabel && (
-                              <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full shrink-0">
-                                {suggestion.typeLabel}
-                              </span>
-                            )}
+          >
+            <CommandList
+              className="px-1 pb-1"
+              onMouseDown={(e) => e.preventDefault()}
+            >
+              {query === "" && (
+                <CommandGroup heading={t("searchHistory")}>
+                  <CommandItem
+                    itemType="button"
+                    onSelect={() => {
+                      handleNowClick(userLocation ?? void 0);
+                    }}
+                    key={"now_location"}
+                    className=" flex justify-between rounded-3xl items-center"
+                  >
+                    <span className="p-1 text-start flex items-center gap-2 text-emerald-500 dark:text-emerald-400">
+                      <Navigation className="w-5 h-5" />
+                      <span className="text-base font-medium">你的位置</span>
+                    </span>
+                  </CommandItem>
+                  {searchHistory.map((history, idx) => {
+                    if (history.kind === "place") {
+                      const { place } = history;
+                      return (
+                        <CommandItem
+                          itemType="button"
+                          onSelect={() => {
+                            handleHistoryClick(history);
+                          }}
+                          key={`${place.id}-${idx}`}
+                          className="flex items-start gap-3 rounded-3xl p-2 cursor-pointer transition-colors"
+                        >
+                          <div className="mt-1 h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                            <Clock className="h-4 w-4 text-muted-foreground" />
                           </div>
-                          {suggestion.secondaryText && (
+                          <div className="flex-1 min-w-0 text-start">
+                            <p className="font-medium text-foreground truncate">
+                              {place.name || place.fullAddress}
+                            </p>
                             <p className="text-xs text-muted-foreground/70 truncate">
-                              {suggestion.secondaryText}
+                              {place.fullAddress}
                             </p>
-                          )}
-                          {suggestion.distanceMeters !== null && (
-                            <p className="text-xs text-muted-foreground/70">
-                              {Math.round(suggestion.distanceMeters)} m
-                            </p>
-                          )}
-                        </div>
-                      </CommandItem>
-                    );
+                          </div>
+                        </CommandItem>
+                      );
+                    }
+                    return null;
                   })}
                 </CommandGroup>
-                {onSearchRequest && (
-                  <CommandGroup>
-                    <CommandItem
-                      itemType="button"
-                      onSelect={() => {
-                        onSearchRequest(value as string);
-                        setOpen(false);
-                      }}
-                      className="flex items-center gap-3 rounded-3xl p-2 cursor-pointer transition-colors"
-                    >
-                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                        <Search className="h-4 w-4 text-primary" />
-                      </div>
-                      <span className="font-medium text-primary">
-                        {t("searchForQuery", { query: value })}
-                      </span>
-                    </CommandItem>
+              )}
+              {query !== "" && (
+                <>
+                  <CommandGroup heading={t("searchResults")}>
+                    {suggestions.map((suggestion) => {
+                      const Icon = getPlaceIcon(
+                        suggestion.placeClass ?? undefined,
+                        suggestion.placeType ?? undefined,
+                      );
+                      return (
+                        <CommandItem
+                          itemType="button"
+                          onSelect={() => {
+                            void handlePlaceClick(suggestion);
+                          }}
+                          key={suggestion.id}
+                          disabled={pendingId !== null}
+                          className="flex items-start gap-3 rounded-3xl p-2 cursor-pointer transition-colors"
+                        >
+                          <div className="mt-1 h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                            {pendingId === suggestion.id ? (
+                              <LoaderCircle className="h-4 w-4 text-primary animate-spin" />
+                            ) : (
+                              <Icon className="h-4 w-4 text-primary" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0 text-start">
+                            <div className="flex items-center gap-1.5">
+                              <p className="font-medium text-foreground truncate">
+                                {suggestion.primaryText}
+                              </p>
+                              {suggestion.typeLabel && (
+                                <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full shrink-0">
+                                  {suggestion.typeLabel}
+                                </span>
+                              )}
+                            </div>
+                            {suggestion.secondaryText && (
+                              <p className="text-xs text-muted-foreground/70 truncate">
+                                {suggestion.secondaryText}
+                              </p>
+                            )}
+                            {suggestion.distanceMeters !== null && (
+                              <p className="text-xs text-muted-foreground/70">
+                                {Math.round(suggestion.distanceMeters)} m
+                              </p>
+                            )}
+                          </div>
+                        </CommandItem>
+                      );
+                    })}
                   </CommandGroup>
-                )}
-              </>
-            )}
-          </CommandList>
-        </Command>
-      </div>
+                  {onSearchRequest && (
+                    <CommandGroup>
+                      <CommandItem
+                        itemType="button"
+                        onSelect={() => {
+                          onSearchRequest(value as string);
+                          setOpen(false);
+                        }}
+                        className="flex items-center gap-3 rounded-3xl p-2 cursor-pointer transition-colors"
+                      >
+                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                          <Search className="h-4 w-4 text-primary" />
+                        </div>
+                        <span className="font-medium text-primary">
+                          {t("searchForQuery", { query: value })}
+                        </span>
+                      </CommandItem>
+                    </CommandGroup>
+                  )}
+                </>
+              )}
+            </CommandList>
+          </Command>
+        </div>
+      )}
     </div>
   );
 }

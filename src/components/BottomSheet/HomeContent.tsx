@@ -237,7 +237,8 @@ export default function HomeContent() {
   return (
     <div className="space-y-5">
       {/* Search */}
-      <div className="w-full rounded-2xl shadow-sm border border-border/50 overflow-visible">
+      {/* 外框樣式由 PlaceInput 自己負責，避免與展開後的下拉面板產生兩層邊框／圓角 */}
+      <div className="w-full">
         <PlaceInput
           className="border-none"
           value={input}
