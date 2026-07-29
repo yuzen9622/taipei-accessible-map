@@ -4,7 +4,6 @@ import {
   Accessibility,
   BotMessageSquare,
   Bus,
-  Mic,
   Navigation,
   Search,
   SendHorizonal,
@@ -43,6 +42,7 @@ import { Input } from "./ui/input";
 import { ScrollArea } from "./ui/scroll-area";
 import { isVoiceSessionActive } from "./Voice/VoiceFloatingIndicator";
 import VoiceModeView from "./Voice/VoiceModeView";
+import { MicIcon } from "./ui/mic-icon";
 
 const CARD_ICONS: Record<ToolCardIcon, React.ReactNode> = {
   search: <Search className="h-3.5 w-3.5" />,
@@ -397,7 +397,7 @@ export default function AIChatBot() {
                       aria-label={t("chatbot.voice.micLabel", "語音對話")}
                       className="shrink-0"
                     >
-                      <Mic className="h-4 w-4" />
+                      <MicIcon size={16} />
                     </Button>
                     {isLoading ? (
                       <Button

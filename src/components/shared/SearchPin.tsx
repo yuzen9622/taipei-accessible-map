@@ -1,7 +1,7 @@
-import { MapPin } from "lucide-react";
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Marker } from "react-map-gl/maplibre";
 import { useShallow } from "zustand/react/shallow";
+import { MapPinIcon, type MapPinIconHandle } from "@/components/ui/map-pin-icon";
 import useMapStore from "@/stores/useMapStore";
 import type { PlaceDetail } from "@/types";
 
@@ -38,6 +38,11 @@ export default function SearchPin({
     }
   }, [map, setInfoShow, destination]);
 
+  const iconRef = useRef<MapPinIconHandle>(null);
+  useEffect(() => {
+    iconRef.current?.startAnimation();
+  }, [destination?.position.lat, destination?.position.lng]);
+
   if (!destination) return null;
 
   return (
@@ -47,7 +52,12 @@ export default function SearchPin({
       anchor="bottom"
       onClick={handleMarker}
     >
-      <MapPin className="h-8 w-8 text-red-500 fill-red-500 drop-shadow-lg" />
+      <MapPinIcon
+        ref={iconRef}
+        size={32}
+        isAnimated={false}
+        className="text-red-500 fill-red-500 drop-shadow-lg"
+      />
     </Marker>
   );
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  AlertTriangle,
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
@@ -41,10 +40,28 @@ import {
 } from "@/types/route";
 import RecalculateOverlay from "./RecalculateOverlay";
 import type { RecalculateContext } from "./RecalculateOverlay";
+import {
+  TriangleAlertIcon,
+  type TriangleAlertIconHandle,
+} from "../ui/triangle-alert-icon";
 
 const FACILITY_ALERT_M = 250;
 const HAZARD_ALERT_M = 200;
 const HAZARD_POLL_MS = 60_000;
+
+/** Plays the alert wiggle once as soon as an amber alert card mounts, instead
+ * of waiting for a hover that touch devices never send. Shared by every
+ * auto-popping in-nav warning (off-route, hazard, step-unavailable) so they
+ * read as one consistent alert language. */
+function AlertPulseIcon() {
+  const ref = useRef<TriangleAlertIconHandle>(null);
+  useEffect(() => {
+    ref.current?.startAnimation();
+  }, []);
+  return (
+    <TriangleAlertIcon ref={ref} size={20} className="shrink-0" isAnimated={false} />
+  );
+}
 
 function stepIcon(step: NavInstruction | undefined) {
   if (!step) return ArrowUp;
@@ -380,7 +397,7 @@ export default function NavigationHUD() {
         {/* Off-route strip */}
         {isOffRoute && !arrived && (
           <div role="alert" className="flex items-center gap-3 p-3 rounded-2xl bg-amber-500/95 text-white shadow-lg">
-            <AlertTriangle className="h-5 w-5 shrink-0" />
+            <AlertPulseIcon />
             <p className="flex-1 text-sm font-semibold">{t("offRoute")}</p>
             <button
               type="button"
@@ -406,7 +423,7 @@ export default function NavigationHUD() {
               key={wMsg}
               className="flex items-center gap-3 p-3 rounded-2xl bg-amber-500/95 text-white shadow-lg"
             >
-              <AlertTriangle className="h-5 w-5 shrink-0" />
+              <AlertPulseIcon />
               <p className="flex-1 text-sm font-semibold">{wMsg}</p>
             </div>
           ))}
@@ -439,7 +456,7 @@ export default function NavigationHUD() {
               exit={{ opacity: 0, y: 8 }}
               className="flex items-center gap-2.5 bg-amber-100/95 dark:bg-amber-900/90 text-amber-800 dark:text-amber-200 text-sm font-medium px-4 py-3 rounded-2xl shadow-lg backdrop-blur-sm"
             >
-              <AlertTriangle className="h-5 w-5 shrink-0" />
+              <AlertPulseIcon />
               <span className="flex-1 min-w-0">
                 {t("hazardAhead", {
                   distance: formatDistance(hazardAlert.distance),

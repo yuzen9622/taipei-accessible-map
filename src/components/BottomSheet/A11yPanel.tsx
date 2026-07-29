@@ -24,6 +24,7 @@ import {
   type HazardReport,
 } from "@/types/route";
 import { Badge } from "../ui/badge";
+import { AccessibilityIcon } from "../ui/accessibility-icon";
 
 export default function A11yPanel({
   onClose,
@@ -115,7 +116,11 @@ export default function A11yPanel({
       {!hideHeader && (
         <div className="flex items-center justify-between">
           <h2 className="text-base font-bold flex items-center gap-2">
-            <Accessibility className="h-4.5 w-4.5 text-emerald-500" />
+            <AccessibilityIcon
+              size={18}
+              isAnimated={false}
+              className="text-emerald-500"
+            />
             {t("accessibleTitle")}
           </h2>
           {onClose && (
