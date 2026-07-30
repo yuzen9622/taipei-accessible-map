@@ -119,7 +119,7 @@ export default function A11yPanel({
             <AccessibilityIcon
               size={18}
               isAnimated={false}
-              className="text-emerald-500"
+              className="text-accessibility"
             />
             {t("accessibleTitle")}
           </h2>

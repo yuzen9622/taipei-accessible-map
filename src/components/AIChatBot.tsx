@@ -2,7 +2,6 @@
 
 import {
   Accessibility,
-  BotMessageSquare,
   Bus,
   Navigation,
   Search,
@@ -12,37 +11,33 @@ import {
   Thermometer,
   TriangleAlert,
   Wind,
-  XIcon,
 } from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
+import { motion } from "motion/react";
 import { Fragment, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { useShallow } from "zustand/react/shallow";
+import { ThinkingOrb } from "thinking-orbs";
 import type { ChatBubble, ToolActivity } from "@/hook/useAIChat";
 import useAIChat, { TOOL_LABELS, TOOL_LOADING_TEXT } from "@/hook/useAIChat";
 import useOpenAiResult from "@/hook/useOpenAiResult";
 import { useAppTranslation } from "@/i18n/client";
+import { toolToOrbState } from "@/lib/ai/orbState";
 import {
   getToolResultGroup,
   type ToolCardIcon,
   type ToolResultItem,
 } from "@/lib/toolResultCards";
-import { toolToOrbState } from "@/lib/ai/orbState";
 import { cn } from "@/lib/utils";
 import useAuthStore from "@/stores/useAuthStore";
-import useMapStore from "@/stores/useMapStore";
 import useVoiceStore from "@/stores/useVoiceStore";
-import { ThinkingOrb } from "thinking-orbs";
 import MarkdownText from "./shared/MarkdownText";
-import { Avatar } from "./ui/avatar";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import { Card, CardContent, CardFooter, CardHeader } from "./ui/card";
+import { CardContent, CardFooter } from "./ui/card";
 import { Input } from "./ui/input";
+import { MicIcon } from "./ui/mic-icon";
 import { ScrollArea } from "./ui/scroll-area";
 import { isVoiceSessionActive } from "./Voice/VoiceFloatingIndicator";
 import VoiceModeView from "./Voice/VoiceModeView";
-import { MicIcon } from "./ui/mic-icon";
 
 const CARD_ICONS: Record<ToolCardIcon, React.ReactNode> = {
   search: <Search className="h-3.5 w-3.5" />,
@@ -240,26 +235,16 @@ function MessageBubble({ message }: { message: ChatBubble }) {
   );
 }
 
+/**
+ * AI 助理內容——不再是獨立浮動卡片，而是 BottomSheet 的其中一種面板內容
+ * （桌面版側欄 / 手機版 Bottom Sheet 共用），由父層依 `chatOpen` 決定何時
+ * 掛載。標題列與返回/關閉按鈕交給 BottomSheet 的共用 panel header 處理，
+ * 這裡只負責訊息串、建議 chip 與輸入框。
+ */
 export default function AIChatBot() {
   const { t } = useAppTranslation();
-  const { sidebarCollapsed, activeRailPanel, isNavigating } = useMapStore(
-    useShallow((s) => ({
-      sidebarCollapsed: s.sidebarCollapsed,
-      activeRailPanel: s.activeRailPanel,
-      isNavigating: s.isNavigating,
-    })),
-  );
-  const panelOpen = activeRailPanel !== "none";
-  const {
-    messages,
-    handleSend,
-    input,
-    setInput,
-    isLoading,
-    open,
-    setOpen,
-    stopStreaming,
-  } = useAIChat();
+  const { messages, handleSend, input, setInput, isLoading, stopStreaming } =
+    useAIChat();
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -286,10 +271,8 @@ export default function AIChatBot() {
   ];
 
   useEffect(() => {
-    if (messages && open) {
-      scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-    }
-  }, [messages, open]);
+    scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [messages]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     // !isComposing：避免中文輸入法選字時按 Enter 誤送出（與 PlanInput 一致）
@@ -299,135 +282,81 @@ export default function AIChatBot() {
     }
   };
 
-  // The navigation HUD owns the screen while navigating.
-  if (isNavigating) return null;
-
-  if (!open) return null;
+  if (showVoiceMode) return <VoiceModeView />;
 
   return (
-    <div
-      className={cn(
-        "fixed flex items-end z-50",
-        "bottom-2 right-3 justify-end",
-        "lg:bottom-2 lg:right-auto lg:justify-start",
-        // The icon rail stays visible when collapsed, so sit to its right.
-        !sidebarCollapsed && panelOpen ? "lg:left-[453px]" : "lg:left-[68px]",
-      )}
-      style={{ transition: "left 0.3s ease, bottom 0.3s ease" }}
-    >
-      <AnimatePresence>
-        <motion.div
-          key="chat"
-          initial={{ opacity: 0, y: 20, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 20, scale: 0.95 }}
-          transition={{ duration: 0.25, ease: "easeOut" }}
-          className="w-[92vw] max-w-lg"
-        >
-          <Card className="h-[calc(100dvh-5rem)] gap-0 flex flex-col shadow-xl border border-border/50 backdrop-blur-sm overflow-hidden">
-            <CardHeader className="px-4 py-3 border-b flex flex-row items-center space-y-0 gap-2">
-              <Avatar className="h-8 w-8 flex items-center justify-center bg-primary/10">
-                <BotMessageSquare className="h-4 w-4 text-primary" />
-              </Avatar>
-              <div className="font-medium">
-                <h1 className="text-sm">{t("assist")}</h1>
-                <p className="text-muted-foreground text-xs">
-                  {t("assistDesc")}
-                </p>
-              </div>
-              <Button
-                onClick={() => setOpen(false)}
-                size="sm"
-                variant="ghost"
-                className="ml-auto h-8 w-8 p-0 rounded-full"
-              >
-                <XIcon className="h-4 w-4" />
-              </Button>
-            </CardHeader>
+    <div className="h-full flex flex-col min-h-0">
+      <ScrollArea className="flex-1 overflow-auto pt-1">
+        <CardContent className="min-h-full space-y-3" ref={scrollRef}>
+          {messages.map((m, i) => (
+            <Fragment key={i}>
+              <MessageBubble message={m} />
+            </Fragment>
+          ))}
+          {isLoading && messages[messages.length - 1]?.role !== "assistant" && (
+            <ThinkingIndicator label={t("chatbot.thinking", "思考中…")} />
+          )}
+        </CardContent>
+      </ScrollArea>
 
-            {showVoiceMode ? (
-              <VoiceModeView />
-            ) : (
-              <>
-                <ScrollArea className="flex-1 overflow-auto pt-1">
-                  <CardContent className="min-h-full space-y-3" ref={scrollRef}>
-                    {messages.map((m, i) => (
-                      <Fragment key={i}>
-                        <MessageBubble message={m} />
-                      </Fragment>
-                    ))}
-                    {isLoading &&
-                      messages[messages.length - 1]?.role !== "assistant" && (
-                        <ThinkingIndicator label={t("chatbot.thinking", "思考中…")} />
-                      )}
-                  </CardContent>
-                </ScrollArea>
+      <div className="sticky bg-gradient-to-t from-card to-transparent bottom-0 py-2">
+        <div className="flex gap-2 px-4 overflow-x-auto justify-center">
+          {recommendations.map((rec) => (
+            <Badge
+              onClick={() => handleSend(rec)}
+              key={rec}
+              className="px-3 py-1.5 rounded-full cursor-pointer whitespace-nowrap text-xs transition-colors hover:bg-primary/80"
+              asChild
+            >
+              <button type="button">{rec}</button>
+            </Badge>
+          ))}
+        </div>
+      </div>
 
-                <div className="sticky bg-gradient-to-t from-card to-transparent bottom-0 py-2">
-                  <div className="flex gap-2 px-4 overflow-x-auto justify-center">
-                    {recommendations.map((rec) => (
-                      <Badge
-                        onClick={() => handleSend(rec)}
-                        key={rec}
-                        className="px-3 py-1.5 rounded-full cursor-pointer whitespace-nowrap text-xs transition-colors hover:bg-primary/80"
-                        asChild
-                      >
-                        <button type="button">{rec}</button>
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                <CardFooter className="p-3 border-t bg-card flex flex-col gap-2">
-                  <div className="flex w-full items-center gap-2">
-                    <Input
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      onKeyDown={handleKeyPress}
-                      placeholder={t("chatbot.placeholder", "輸入問題...")}
-                      className="flex-1"
-                      disabled={isLoading}
-                    />
-                    <Button
-                      onClick={handleMicClick}
-                      type="button"
-                      size="icon"
-                      variant={voiceSessionActive ? "default" : "outline"}
-                      aria-pressed={voiceSessionActive}
-                      aria-label={t("chatbot.voice.micLabel", "語音對話")}
-                      className="shrink-0"
-                    >
-                      <MicIcon size={16} />
-                    </Button>
-                    {isLoading ? (
-                      <Button
-                        onClick={stopStreaming}
-                        size="icon"
-                        variant="outline"
-                        className="shrink-0"
-                      >
-                        <Square className="h-3.5 w-3.5" />
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={() => handleSend(input)}
-                        size="icon"
-                        disabled={!input.trim()}
-                        className="shrink-0"
-                      >
-                        <SendHorizonal className="h-4 w-4" />
-                        <span className="sr-only">
-                          {t("chatbot.send", "傳送")}
-                        </span>
-                      </Button>
-                    )}
-                  </div>
-                </CardFooter>
-              </>
-            )}
-          </Card>
-        </motion.div>
-      </AnimatePresence>
+      <CardFooter className="p-3 border-t bg-card flex flex-col gap-2">
+        <div className="flex w-full items-center gap-2">
+          <Input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKeyPress}
+            placeholder={t("chatbot.placeholder", "輸入問題...")}
+            className="flex-1"
+            disabled={isLoading}
+          />
+          <Button
+            onClick={handleMicClick}
+            type="button"
+            size="icon"
+            variant={voiceSessionActive ? "default" : "outline"}
+            aria-pressed={voiceSessionActive}
+            aria-label={t("chatbot.voice.micLabel", "語音對話")}
+            className="shrink-0"
+          >
+            <MicIcon size={16} />
+          </Button>
+          {isLoading ? (
+            <Button
+              onClick={stopStreaming}
+              size="icon"
+              variant="outline"
+              className="shrink-0"
+            >
+              <Square className="h-3.5 w-3.5" />
+            </Button>
+          ) : (
+            <Button
+              onClick={() => handleSend(input)}
+              size="icon"
+              disabled={!input.trim()}
+              className="shrink-0"
+            >
+              <SendHorizonal className="h-4 w-4" />
+              <span className="sr-only">{t("chatbot.send", "傳送")}</span>
+            </Button>
+          )}
+        </div>
+      </CardFooter>
     </div>
   );
 }

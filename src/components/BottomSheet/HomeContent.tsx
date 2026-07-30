@@ -59,8 +59,7 @@ const QUICK_ACTION_DEFS: {
     id: "a11y",
     labelKey: "a11yFacilities",
     Icon: Accessibility,
-    className:
-      "bg-orange-500/10 text-orange-600 dark:text-orange-400 hover:bg-orange-500/20",
+    className: "bg-accessibility/10 text-accessibility hover:bg-accessibility/20",
   },
   {
     id: "hazard",

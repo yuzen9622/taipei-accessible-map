@@ -4,6 +4,7 @@ import {
   Accessibility,
   AlertTriangle,
   Bookmark,
+  BotMessageSquare,
   Bus,
   ChevronLeft,
   ChevronRight,
@@ -16,9 +17,10 @@ import {
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-
+import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
+import AIChatBot from "@/components/AIChatBot";
 import ExitNavDialog from "@/components/Navigation/ExitNavDialog";
 import AccountLogin from "@/components/shared/AccountLogin";
 import useIsDesktop from "@/hook/useIsDesktop";
@@ -61,7 +63,7 @@ const RAIL_ITEMS: RailItem[] = [
     id: "a11y",
     Icon: Accessibility,
     labelKey: "railA11y",
-    color: "text-emerald-500",
+    color: "text-accessibility",
   },
   { id: "bus", Icon: Bus, labelKey: "railBus", color: "text-emerald-600" },
   {
@@ -127,6 +129,8 @@ export default function BottomSheet() {
     setSearchPlace,
     isNavigating,
     requestNavExit,
+    chatOpen,
+    setChatOpen,
   } = useMapStore(
     useShallow((s) => ({
       sheetMode: s.sheetMode,
@@ -137,6 +141,8 @@ export default function BottomSheet() {
       setSheetMode: s.setSheetMode,
       setComputeRoutes: s.setComputeRoutes,
       setRouteA11y: s.setRouteA11y,
+      chatOpen: s.chatOpen,
+      setChatOpen: s.setChatOpen,
       setRouteSelect: s.setRouteSelect,
       setInfoShow: s.setInfoShow,
       setSearchPlace: s.setSearchPlace,
@@ -159,10 +165,14 @@ export default function BottomSheet() {
   // keeping the map maximally exposed (Google Maps-style peek).
   const atPeek = sheetHeight <= SNAP_POINTS.peek + 0.02;
 
+  // The AI assistant is sheet content, not a floating card — the nav HUD
+  // owns the screen mid-navigation so it never competes with that.
+  const showAssistant = chatOpen && !isNavigating;
+
   // Whether the content panel (Layer 2) is open on desktop
   const modePanelActive = MODE_PANELS.has(sheetMode);
   const railPanelActive = !modePanelActive && activeRailPanel !== "none";
-  const panelOpen = modePanelActive || railPanelActive;
+  const panelOpen = modePanelActive || railPanelActive || showAssistant;
 
   // Map-first navigation: the HUD owns the screen; the sheet/panel only
   // reappears as the step list when requested from the HUD.
@@ -206,6 +216,16 @@ export default function BottomSheet() {
       setMoreOpen(false);
     }
   }, [modePanelActive]);
+
+  // Mobile only: the AI assistant is sheet content now (not a floating card),
+  // so opening it lifts the sheet to half — same treatment as place/route —
+  // instead of leaving it collapsed at peek where the chat would be unusable.
+  useEffect(() => {
+    if (showAssistant && !isDesktop) {
+      setSnap("half");
+      setSheetHeight(SNAP_POINTS.half);
+    }
+  }, [showAssistant, isDesktop]);
 
   // Opening the step list mid-navigation lifts the mobile sheet to half.
   useEffect(() => {
@@ -328,6 +348,13 @@ export default function BottomSheet() {
       setStepListOpen(false);
       return;
     }
+    if (showAssistant) {
+      // Leaving assistant view only closes the chat — whatever sheetMode /
+      // activeRailPanel was showing underneath stays put, so "back" from AI
+      // returns to the same search/place/route view the user had open.
+      setChatOpen(false);
+      return;
+    }
     if (modePanelActive) {
       setSheetMode("home");
       setActiveRailPanel("search");
@@ -341,6 +368,8 @@ export default function BottomSheet() {
     }
   }, [
     modePanelActive,
+    showAssistant,
+    setChatOpen,
     setSheetMode,
     setActiveRailPanel,
     setComputeRoutes,
@@ -357,7 +386,7 @@ export default function BottomSheet() {
       {/* ======= Mobile: Bottom Sheet (unchanged) ======= */}
       <div
         className={cn(
-          "block lg:hidden fixed inset-x-0 bottom-0 z-40 pointer-events-none",
+          "block lg:hidden fixed inset-x-0 bottom-0 z-(--z-drawer-panel) pointer-events-none",
           navHidesChrome && "hidden",
         )}
         aria-hidden={isDesktop}
@@ -391,8 +420,22 @@ export default function BottomSheet() {
             sheetMode !== "navigation" && (
               <div className="flex items-center justify-between px-4 pb-2">
                 <h1 className="text-base font-bold flex items-center gap-1.5">
-                  <Accessibility className="h-5 w-5 text-primary" />
-                  {t("title")}
+                  {showAssistant ? (
+                    <button
+                      type="button"
+                      onClick={handlePanelClose}
+                      className="flex items-center gap-1.5 -ml-1 pl-1 pr-2 py-1 rounded-full hover:bg-muted transition-colors"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      <BotMessageSquare className="h-5 w-5 text-primary" />
+                      {t("assist")}
+                    </button>
+                  ) : (
+                    <>
+                      <Accessibility className="h-5 w-5 text-primary" />
+                      {t("title")}
+                    </>
+                  )}
                 </h1>
                 <AccountLogin />
               </div>
@@ -403,11 +446,12 @@ export default function BottomSheet() {
               the content area at peek lifts the sheet to half. */}
           <div
             className={cn(
-              "flex-1 overflow-x-hidden px-4 pb-safe",
-              atPeek ? "overflow-y-hidden" : "overflow-y-auto",
+              "flex-1 overflow-x-hidden pb-safe",
+              showAssistant ? "overflow-hidden px-0" : "px-4",
+              atPeek && !showAssistant ? "overflow-y-hidden" : "overflow-y-auto",
             )}
             onClick={
-              atPeek && sheetMode === "home"
+              atPeek && sheetMode === "home" && !showAssistant
                 ? () => {
                     setSnap("half");
                     setSheetHeight(SNAP_POINTS.half);
@@ -415,25 +459,29 @@ export default function BottomSheet() {
                 : undefined
             }
           >
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={sheetMode}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.15 }}
-                className="h-full"
-              >
-                <MobileSheetContent />
-              </motion.div>
-            </AnimatePresence>
+            {showAssistant ? (
+              <AIChatBot />
+            ) : (
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={sheetMode}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.15 }}
+                  className="h-full"
+                >
+                  <MobileSheetContent />
+                </motion.div>
+              </AnimatePresence>
+            )}
           </div>
         </motion.div>
       </div>
 
       {/* ======= Desktop: Dual-layer sidebar ======= */}
       <div
-        className="hidden lg:block fixed inset-0 z-40 pointer-events-none"
+        className="hidden lg:block fixed inset-0 z-(--z-drawer-panel) pointer-events-none"
         aria-hidden={!isDesktop}
         inert={!isDesktop}
       >
@@ -442,13 +490,22 @@ export default function BottomSheet() {
         <nav
           aria-label={t("quickActions")}
           className={cn(
-            "pointer-events-auto fixed left-3 top-3 bottom-3 w-[56px] bg-background/95 backdrop-blur-md rounded-2xl shadow-xl border border-border/50 flex flex-col items-center py-3 gap-1 z-50",
+            "pointer-events-auto fixed left-3 top-3 bottom-3 w-[56px] bg-background/95 backdrop-blur-md rounded-2xl shadow-xl border border-border/50 flex flex-col items-center py-3 gap-1 z-(--z-drawer-rail)",
             isNavigating && "hidden",
           )}
         >
-          {/* Logo */}
-          <div className="flex items-center justify-center h-12 w-12 mb-1">
-            <Accessibility className="h-7 w-7 text-primary" />
+          {/* Logo — the real app icon (public/logo.png: pin + wheelchair on
+              blue), now shown in exactly one place instead of being repeated
+              inside every search field (that's a plain Search icon now, see
+              PlaceInput.tsx). AI 助理 is NOT a rail item (see
+              MapControlsWrapper.tsx) — it's an independent floating button
+              next to SOS/locate, not living in this fixed 56px column. */}
+          <div
+            className="flex items-center justify-center h-9 w-9 mb-2 rounded-xl overflow-hidden shrink-0"
+            role="img"
+            aria-label={t("title")}
+          >
+            <Image src="/logo.png" alt="" width={36} height={36} priority />
           </div>
 
           {/* Divider */}
@@ -518,7 +575,7 @@ export default function BottomSheet() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -8 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute left-[52px] bottom-0 bg-background/95 backdrop-blur-md rounded-xl shadow-xl border border-border/50 p-1.5 min-w-[140px] z-50"
+                  className="absolute left-[52px] bottom-0 bg-background/95 backdrop-blur-md rounded-xl shadow-xl border border-border/50 p-1.5 min-w-[140px] z-(--z-drawer-rail)"
                 >
                   {RAIL_MORE_ITEMS.map((item) => {
                     const isActive =
@@ -565,7 +622,7 @@ export default function BottomSheet() {
               role="region"
               aria-label={t("title")}
               className={cn(
-                "pointer-events-auto fixed bottom-3 w-[380px] bg-background/95 backdrop-blur-md rounded-2xl shadow-2xl border border-border/50 flex flex-col overflow-hidden z-40",
+                "pointer-events-auto fixed bottom-3 w-[380px] bg-background/95 backdrop-blur-md rounded-2xl shadow-2xl border border-border/50 flex flex-col overflow-hidden z-(--z-drawer-panel)",
                 // The rail is hidden mid-navigation and the HUD banner owns
                 // the top strip, so the step list hugs the left edge below it.
                 isNavigating ? "left-3 top-[140px]" : "left-[68px] top-3",
@@ -578,31 +635,53 @@ export default function BottomSheet() {
               {/* Panel header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
                 <h2 className="text-sm font-bold flex items-center gap-1.5">
-                  <PanelTitle />
+                  {showAssistant ? (
+                    <>
+                      <BotMessageSquare className="h-4 w-4 text-primary" />
+                      {t("assist")}
+                    </>
+                  ) : (
+                    <PanelTitle />
+                  )}
                 </h2>
                 <button
                   type="button"
                   onClick={handlePanelClose}
                   className="h-7 w-7 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors"
-                  aria-label={t("close")}
+                  aria-label={
+                    showAssistant ? t("chatbot.back", "返回") : t("close")
+                  }
                 >
-                  <X className="h-3.5 w-3.5" />
+                  {showAssistant ? (
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                  ) : (
+                    <X className="h-3.5 w-3.5" />
+                  )}
                 </button>
               </div>
 
               {/* Panel content */}
-              <div className="flex-1 overflow-y-auto overflow-x-hidden p-4">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={modePanelActive ? sheetMode : activeRailPanel}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 10 }}
-                    transition={{ duration: 0.12 }}
-                  >
-                    <DesktopPanelContent />
-                  </motion.div>
-                </AnimatePresence>
+              <div
+                className={cn(
+                  "flex-1 overflow-y-auto overflow-x-hidden",
+                  showAssistant ? "overflow-hidden p-0" : "p-4",
+                )}
+              >
+                {showAssistant ? (
+                  <AIChatBot />
+                ) : (
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={modePanelActive ? sheetMode : activeRailPanel}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 10 }}
+                      transition={{ duration: 0.12 }}
+                    >
+                      <DesktopPanelContent />
+                    </motion.div>
+                  </AnimatePresence>
+                )}
               </div>
             </motion.div>
           )}
@@ -615,7 +694,7 @@ export default function BottomSheet() {
             aria-label={collapsed ? t("expandSidebar") : t("collapseSidebar")}
             onClick={() => setCollapsed(!collapsed)}
             className={cn(
-              "pointer-events-auto fixed top-1/2 -translate-y-1/2 z-50 h-12 w-6 flex items-center justify-center",
+              "pointer-events-auto fixed top-1/2 -translate-y-1/2 z-(--z-drawer-rail) h-12 w-6 flex items-center justify-center",
               "bg-background border border-border/50 shadow-lg rounded-r-lg border-l-0",
               "hover:bg-muted hover:shadow-xl transition-all duration-300",
               !collapsed ? "left-[456px]" : "left-[64px]",
@@ -673,7 +752,7 @@ function PanelTitle() {
       case "station":
         return (
           <>
-            <Accessibility className="h-4 w-4 text-emerald-500" />{" "}
+            <Accessibility className="h-4 w-4 text-accessibility" />{" "}
             {t("stationDetail")}
           </>
         );
@@ -690,7 +769,7 @@ function PanelTitle() {
     case "a11y":
       return (
         <>
-          <Accessibility className="h-4 w-4 text-emerald-500" />{" "}
+          <Accessibility className="h-4 w-4 text-accessibility" />{" "}
           {t("accessibleTitle")}
         </>
       );

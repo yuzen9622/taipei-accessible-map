@@ -309,6 +309,11 @@ img.adp-marker2 {
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --color-accessibility: var(--accessibility);
+  --color-accessibility-foreground: var(--accessibility-foreground);
+  --color-accessibility-active: var(--accessibility-active);
+  --color-sos: var(--destructive);
+  --color-sos-foreground: var(--destructive-foreground, var(--primary-foreground));
 }
 
 :root {
@@ -346,6 +351,30 @@ img.adp-marker2 {
   --sidebar-accent-foreground: oklch(0.216 0.006 56.043);
   --sidebar-border: oklch(0.923 0.003 48.717);
   --sidebar-ring: oklch(0.709 0.01 56.259);
+
+  /* Accessibility 語意色：無障礙圖示/徽章的唯一標準色（不含搜尋列核心 CTA
+     ——那個例外用 --primary 實心底），統一目前 emerald-500/orange-500 各自
+     為政的無障礙相關圖示顏色。tailwind orange-600/700/400 標準 oklch 值。 */
+  --accessibility: oklch(0.646 0.222 41.116); /* orange-600, ≈ #EA580C */
+  --accessibility-foreground: oklch(0.985 0 0);
+  --accessibility-active: oklch(0.577 0.202 40.3); /* orange-700, ≈ #C2410C */
+
+  /* SOS/緊急色不新增 --alert token：現有 --destructive 在數值上已等於
+     #DC2626 red-600，重複定義只會製造第二個事實來源。--color-sos 只是
+     語意別名，指向同一個值（見 visual-design-spec.md §1.1）。 */
+
+  /* Z-Index Layering System — 全站浮動 UI 唯一事實來源，7 層（見
+     visual-design-spec.md §1.4 完整推導理由）。地圖控制列（3D／定位／
+     分享／SOS）排在 drawer-panel 之上，保證不管面板切到哪個模式都不被蓋住；
+     drawer-rail（桌面 Icon Rail 本體）排在控制項之上，因為它是恆定的導航
+     骨架；modal 蓋過一切阻斷式對話框；toast 系統通知永遠看得到。 */
+  --z-map-base: 0;
+  --z-map-overlay: 10;
+  --z-drawer-panel: 20;
+  --z-floating-controls: 30;
+  --z-drawer-rail: 40;
+  --z-modal: 50;
+  --z-toast: 60;
 }
 
 .dark {
@@ -381,6 +410,10 @@ img.adp-marker2 {
   --sidebar-accent-foreground: oklch(0.985 0.001 106.423);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.553 0.013 58.071);
+
+  /* orange-400 for dark-background contrast */
+  --accessibility: oklch(0.75 0.183 55.934);
+  --accessibility-active: oklch(0.7 0.19 48);
 }
 
 /* High Contrast Accessibility Mode */
@@ -403,6 +436,13 @@ img.adp-marker2 {
   --border: oklch(0.95 0.15 90 / 40%);
   --input: oklch(0.95 0.15 90 / 30%);
   --ring: oklch(0.85 0.15 90);
+
+  /* orange-600 on near-black measures ~3.8:1, below WCAG AA's 4.5:1 — use
+     the same high-contrast yellow as --primary instead (see
+     visual-design-spec.md §1.1). */
+  --accessibility: oklch(0.85 0.15 90);
+  --accessibility-active: oklch(0.9 0.15 90);
+  --accessibility-foreground: oklch(0.05 0 0);
 }
 
 .high-contrast * {

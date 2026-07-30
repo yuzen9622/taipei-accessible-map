@@ -110,6 +110,12 @@ interface MapAction {
     category: SavedPlaceCategory | null,
   ) => void;
   closeRouteDrawer: () => void;
+  /**
+   * The panel slot only ever shows one thing at a time (see
+   * visual-design-spec.md §5.2): switching to any mode — regardless of
+   * whether an AI tool call or a manual rail click triggered it — always
+   * closes the AI assistant too. No `fromAI` exception on either platform.
+   */
   setSheetMode: (mode: SheetMode) => void;
   setIsNavigating: (v: boolean) => void;
   requestNavExit: (target: RailPanel | "plan" | "home") => void;
@@ -381,6 +387,9 @@ const useMapStore = create<MapStore>((set, get) => ({
     if (mode !== "home" && mode !== "navigation") {
       update.sidebarCollapsed = false;
     }
+    if (get().chatOpen) {
+      update.chatOpen = false;
+    }
     set(update);
   },
   pendingSearchQuery: "",
@@ -392,6 +401,9 @@ const useMapStore = create<MapStore>((set, get) => ({
     const update: Partial<MapStore> = { activeRailPanel: panel };
     if (panel !== "none") {
       update.sidebarCollapsed = false;
+    }
+    if (get().chatOpen) {
+      update.chatOpen = false;
     }
     set(update);
   },

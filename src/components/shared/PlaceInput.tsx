@@ -20,7 +20,6 @@ import {
   TreePine,
   Utensils,
 } from "lucide-react";
-import Image from "next/image";
 import type { InputHTMLAttributes } from "react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
@@ -293,7 +292,7 @@ function PlaceInput({
     >
       <div className={cn("w-full flex items-center gap-2 px-2")}>
         {!hideIcon && (
-          <Image src={"/logo.webp"} width={20} height={20} alt="search" />
+          <Search className="h-4 w-4 text-muted-foreground shrink-0" />
         )}
         <form
           onSubmit={async (e) => {

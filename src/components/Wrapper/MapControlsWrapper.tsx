@@ -146,29 +146,18 @@ const NAV_BOTTOM_OFFSET = "bottom-[14dvh]";
 export default function MapControlsWrapper() {
   const { t, i18n } = useAppTranslation();
   const { handlePinClick } = usePin();
-  const {
-    userLocation,
-    sidebarCollapsed,
-    activeRailPanel,
-    is3D,
-    setIs3D,
-    isNavigating,
-    chatOpen,
-    setChatOpen,
-  } = useMapStore(
-    useShallow((s) => ({
-      userLocation: s.userLocation,
-      sidebarCollapsed: s.sidebarCollapsed,
-      activeRailPanel: s.activeRailPanel,
-      is3D: s.is3D,
-      setIs3D: s.setIs3D,
-      isNavigating: s.isNavigating,
-      chatOpen: s.chatOpen,
-      setChatOpen: s.setChatOpen,
-    })),
-  );
+  const { userLocation, is3D, setIs3D, isNavigating, chatOpen, setChatOpen } =
+    useMapStore(
+      useShallow((s) => ({
+        userLocation: s.userLocation,
+        is3D: s.is3D,
+        setIs3D: s.setIs3D,
+        isNavigating: s.isNavigating,
+        chatOpen: s.chatOpen,
+        setChatOpen: s.setChatOpen,
+      })),
+    );
 
-  const panelOpen = activeRailPanel !== "none";
   const isDesktop = useIsDesktop();
   const [moreControlsOpen, setMoreControlsOpen] = useState(false);
   const moreToggleRef = useRef<HTMLButtonElement>(null);
@@ -294,10 +283,10 @@ export default function MapControlsWrapper() {
 
   return (
     <>
-      <div className="fixed inset-0 pointer-events-none z-30">
+      <div className="fixed inset-0 pointer-events-none z-(--z-floating-controls)">
         {/* 1. Top-Right Container: Environment Info Badge */}
         {showAirPill && (
-          <div className="absolute top-24 right-3 pointer-events-auto z-30 flex flex-col items-end">
+          <div className="absolute top-24 right-3 pointer-events-auto z-(--z-floating-controls) flex flex-col items-end">
             <motion.button
               layout
               onClick={() => setEnvExpanded(!envExpanded)}
@@ -338,7 +327,7 @@ export default function MapControlsWrapper() {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -6, scale: 0.97 }}
                   transition={{ duration: 0.18 }}
-                  className="absolute right-0 top-12 bg-background/95 backdrop-blur-md rounded-2xl shadow-xl border border-border/50 p-3.5 space-y-3 w-[168px] z-50"
+                  className="absolute right-0 top-12 bg-background/95 backdrop-blur-md rounded-2xl shadow-xl border border-border/50 p-3.5 space-y-3 w-[168px] z-(--z-drawer-rail)"
                 >
                   <div className="flex items-center justify-end -mt-1 -mr-1">
                     <button
@@ -398,59 +387,11 @@ export default function MapControlsWrapper() {
           </div>
         )}
 
-        {/* 2. Bottom-Left Container: 3D/2D, Locate, AI Assistant vertical stack (Desktop Only) */}
-        {!isNavigating && (
-          <div
-            className={cn(
-              "absolute bottom-5 pointer-events-auto hidden lg:flex flex-col gap-2 z-30",
-              !sidebarCollapsed && panelOpen ? "left-[468px]" : "left-[76px]",
-            )}
-            style={{ transition: "left 0.3s ease" }}
-            aria-hidden={!isDesktop}
-            inert={!isDesktop}
-          >
-            {/* 3D/2D Toggle */}
-            <Button
-              aria-label={is3D ? t("switchTo2D") : t("switchTo3D")}
-              aria-pressed={is3D}
-              variant="secondary"
-              size="icon"
-              onClick={() => setIs3D(!is3D)}
-              className="rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all text-xs font-bold text-foreground"
-            >
-              {is3D ? "2D" : "3D"}
-            </Button>
-
-            {/* Recenter (My Location) Button */}
-            <Button
-              aria-label={t("recenter")}
-              variant="secondary"
-              size="icon"
-              onClick={() => handlePinClick(userLocation)}
-              className="rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all"
-            >
-              <Navigation className="h-5 w-5 text-foreground" />
-            </Button>
-
-            {/* AI ChatBot FAB */}
-            {!chatOpen && (
-              <Button
-                onClick={() => setChatOpen(true)}
-                variant="default"
-                size="icon"
-                className="rounded-full h-11 w-11 shadow-lg bg-primary hover:shadow-xl transition-all text-primary-foreground"
-                aria-label={t("chatbot.open", "開啟聊天助理")}
-              >
-                <BotMessageSquare className="h-6 w-6" />
-              </Button>
-            )}
-          </div>
-        )}
 
         {/* 3. Bottom-Right Container: SOS & Share (Desktop side-by-side; Mobile full stack above bottomsheet) */}
         <div
           className={cn(
-            "absolute right-3 pointer-events-auto flex flex-col gap-2 items-end z-30",
+            "absolute right-3 pointer-events-auto flex flex-col gap-2 items-end z-(--z-floating-controls)",
             isNavigating ? NAV_BOTTOM_OFFSET : MOBILE_BOTTOM_OFFSET,
             "lg:bottom-8 lg:flex-row lg:items-center",
           )}
@@ -601,6 +542,35 @@ export default function MapControlsWrapper() {
               {/* Share & SOS Group (Desktop side-by-side; mobile only shows SOS,
                   Share moved into the collapsible group above) */}
               <div className="flex flex-col lg:flex-row gap-2">
+                {/* 3D/2D Toggle (Desktop only — mobile has its own copy in
+                    the collapsible "more" group above) */}
+                <Button
+                  aria-label={is3D ? t("switchTo2D") : t("switchTo3D")}
+                  aria-pressed={is3D}
+                  variant="secondary"
+                  size="icon"
+                  onClick={() => setIs3D(!is3D)}
+                  aria-hidden={!isDesktop}
+                  inert={!isDesktop}
+                  className="hidden lg:inline-flex rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all text-xs font-bold text-foreground"
+                >
+                  {is3D ? "2D" : "3D"}
+                </Button>
+
+                {/* Recenter / My Location (Desktop only — mobile's copy is
+                    the always-visible button in the stack above) */}
+                <Button
+                  aria-label={t("recenter")}
+                  variant="secondary"
+                  size="icon"
+                  onClick={() => handlePinClick(userLocation)}
+                  aria-hidden={!isDesktop}
+                  inert={!isDesktop}
+                  className="hidden lg:inline-flex rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all"
+                >
+                  <Navigation className="h-5 w-5 text-foreground" />
+                </Button>
+
                 {/* Share Location Button (Desktop only) */}
                 <Button
                   type="button"
@@ -614,6 +584,24 @@ export default function MapControlsWrapper() {
                 >
                   <Share2 className="h-5 w-5" />
                 </Button>
+
+                {/* AI ChatBot FAB (Desktop only — an independent floating
+                    button next to SOS/locate, same as the mobile copy above,
+                    not a Side Rail item. Rendered only when the assistant
+                    isn't already open, matching the mobile FAB. */}
+                {!chatOpen && (
+                  <Button
+                    onClick={() => setChatOpen(true)}
+                    variant="default"
+                    size="icon"
+                    aria-hidden={!isDesktop}
+                    inert={!isDesktop}
+                    className="hidden lg:inline-flex rounded-full h-11 w-11 shadow-lg bg-primary hover:shadow-xl transition-all text-primary-foreground"
+                    aria-label={t("chatbot.open", "開啟聊天助理")}
+                  >
+                    <BotMessageSquare className="h-5 w-5" />
+                  </Button>
+                )}
 
                 {/* SOS Button (single tap) */}
                 <button

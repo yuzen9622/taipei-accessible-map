@@ -20,7 +20,6 @@ import { toApiLang } from "@/lib/place/lang";
 import { formatNominatimPlace } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import useNavStore from "@/stores/useNavStore";
-import AIChatBot from "./AIChatBot";
 import NavigationController from "./NavigationController";
 import SearchPin from "./shared/SearchPin";
 import VoiceSessionHost from "./Voice/VoiceSessionHost";
@@ -447,7 +446,6 @@ export default function ClientMap() {
       <TransitWrapper />
       <LiveBusWrapper />
       <HazardWrapper />
-      <AIChatBot />
       <VoiceSessionHost />
       <RouteLine />
       <SosTrackerWrapper />
