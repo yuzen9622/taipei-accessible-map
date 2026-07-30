@@ -22,25 +22,13 @@ import { useAppTranslation } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import type { PlaceDetail } from "@/types";
-import A11yPanel from "./A11yPanel";
-import BusPanel from "./BusPanel";
-import EnvironmentPanel from "./EnvironmentPanel";
-import HazardReportPanel from "./HazardReportPanel";
-import ParkingPanel from "./ParkingPanel";
-import SavedPlacesPanel from "./SavedPlacesPanel";
-import WelfarePanel from "./WelfarePanel";
-
-type SubPanel =
-  | "none"
-  | "a11y"
-  | "environment"
-  | "hazard"
-  | "welfare"
-  | "parking"
-  | "bus"
-  | "saved";
 
 // Every available quick action; the user picks which ones show (persisted).
+// These IDs are a subset of RailPanel — clicking a chip sets the *same*
+// global activeRailPanel the Side Rail uses, so there's exactly one place
+// ("which rail panel is showing", see BottomSheet.tsx's RailPanelOrHome)
+// that decides what renders, instead of a second local copy of that switch
+// living here too.
 type QuickActionId =
   | "a11y"
   | "hazard"
@@ -137,7 +125,6 @@ export default function HomeContent() {
       setInput(pendingSearchQuery);
     }
   }, [pendingSearchQuery]);
-  const [subPanel, setSubPanel] = useState<SubPanel>("none");
   const [moreActionsOpen, setMoreActionsOpen] = useState(false);
   const [editingActions, setEditingActions] = useState(false);
   const [enabledActions, setEnabledActions] = useState<QuickActionId[]>(
@@ -203,35 +190,6 @@ export default function HomeContent() {
     },
     [setSearchPlace, setInfoShow, map, setSheetMode],
   );
-
-  // Accessibility facilities live in the dedicated a11y panel: switch the rail
-  // panel on desktop, fall back to an inline sub-panel on mobile.
-  const openA11y = useCallback(() => {
-    setActiveRailPanel("a11y");
-    setSubPanel("a11y");
-  }, [setActiveRailPanel]);
-
-  if (subPanel === "a11y") {
-    return <A11yPanel onClose={() => setSubPanel("none")} />;
-  }
-  if (subPanel === "environment") {
-    return <EnvironmentPanel onClose={() => setSubPanel("none")} />;
-  }
-  if (subPanel === "hazard") {
-    return <HazardReportPanel onClose={() => setSubPanel("none")} />;
-  }
-  if (subPanel === "welfare") {
-    return <WelfarePanel onClose={() => setSubPanel("none")} />;
-  }
-  if (subPanel === "parking") {
-    return <ParkingPanel onClose={() => setSubPanel("none")} />;
-  }
-  if (subPanel === "bus") {
-    return <BusPanel onClose={() => setSubPanel("none")} />;
-  }
-  if (subPanel === "saved") {
-    return <SavedPlacesPanel onClose={() => setSubPanel("none")} />;
-  }
 
   return (
     <div className="space-y-5">
@@ -334,9 +292,7 @@ export default function HomeContent() {
                 <button
                   key={def.id}
                   type="button"
-                  onClick={() =>
-                    def.id === "a11y" ? openA11y() : setSubPanel(def.id)
-                  }
+                  onClick={() => setActiveRailPanel(def.id)}
                   className={cn(
                     "flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-semibold transition-colors shrink-0 snap-start",
                     def.className,
@@ -374,9 +330,7 @@ export default function HomeContent() {
                   <button
                     key={def.id}
                     type="button"
-                    onClick={() =>
-                      def.id === "a11y" ? openA11y() : setSubPanel(def.id)
-                    }
+                    onClick={() => setActiveRailPanel(def.id)}
                     className={cn(
                       "flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-semibold transition-colors",
                       def.className,
@@ -403,7 +357,7 @@ export default function HomeContent() {
             {savedPlaces.length > 3 && (
               <button
                 type="button"
-                onClick={() => setSubPanel("saved")}
+                onClick={() => setActiveRailPanel("saved")}
                 className="text-xs text-primary hover:underline font-medium"
               >
                 {t("viewAll")}

@@ -388,18 +388,23 @@ export default function MapControlsWrapper() {
         )}
 
 
-        {/* 3. Bottom-Right Container: SOS & Share (Desktop side-by-side; Mobile full stack above bottomsheet) */}
+        {/* 3. Bottom-Right Container: map controls, stacked vertically on
+             every breakpoint (desktop used to switch to a horizontal row
+             here, which spread the buttons wide across the screen and made
+             them a longer mouse-travel to reach — a vertical stack keeps
+             them in one compact reach zone, matching how Google/Apple Maps
+             lay out their desktop map controls). */}
         <div
           className={cn(
             "absolute right-3 pointer-events-auto flex flex-col gap-2 items-end z-(--z-floating-controls)",
             isNavigating ? NAV_BOTTOM_OFFSET : MOBILE_BOTTOM_OFFSET,
-            "lg:bottom-8 lg:flex-row lg:items-center",
+            "lg:bottom-8",
           )}
           style={{ transition: "bottom 0.3s ease" }}
         >
           {isNavigating ? (
             // Navigation Mode Controls
-            <div className="flex flex-col lg:flex-row gap-2">
+            <div className="flex flex-col gap-2">
               <Button
                 type="button"
                 variant="secondary"
@@ -539,9 +544,10 @@ export default function MapControlsWrapper() {
                 )}
               </div>
 
-              {/* Share & SOS Group (Desktop side-by-side; mobile only shows SOS,
-                  Share moved into the collapsible group above) */}
-              <div className="flex flex-col lg:flex-row gap-2">
+              {/* Share & SOS Group (Desktop: stacked vertically like the rest
+                  of this control tower; mobile only shows SOS, Share moved
+                  into the collapsible group above) */}
+              <div className="flex flex-col gap-2">
                 {/* 3D/2D Toggle (Desktop only — mobile has its own copy in
                     the collapsible "more" group above) */}
                 <Button

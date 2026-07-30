@@ -116,34 +116,55 @@ export default function EnvironmentPanel({
 
   return (
     <div className="space-y-4">
-      {!hideHeader && (
-        <div className="flex items-center justify-between">
+      {/* Refresh survives hideHeader: it's the only way to re-fetch once the
+          data has loaded (the 重試 button below only exists in the error
+          state), so hiding the whole header would strand the panel on cached
+          readings when embedded in the sheet/rail panel. */}
+      <div
+        className={cn(
+          "flex items-center",
+          hideHeader ? "justify-end" : "justify-between",
+        )}
+      >
+        {!hideHeader && (
           <h2 className="text-base font-bold flex items-center gap-2">
             <Cloud className="h-4.5 w-4.5 text-sky-500" />
             {t("environment")}
           </h2>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => fetchEnvironment(true)}
-              disabled={loading}
-              className="h-7 w-7 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted"
-              aria-label={t("refresh", "重新整理")}
-            >
-              <RefreshCw
-                className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`}
-              />
-            </button>
+        )}
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => fetchEnvironment(true)}
+            disabled={loading}
+            className={cn(
+              "rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted disabled:opacity-50",
+              // Standalone (no close button beside it) it carries the 44px
+              // touch target on its own; paired in the header it matches the
+              // close button's size.
+              hideHeader ? "h-11 w-11 -mt-1" : "h-7 w-7",
+            )}
+            aria-label={t("refresh")}
+          >
+            <RefreshCw
+              className={cn(
+                hideHeader ? "h-4.5 w-4.5" : "h-3.5 w-3.5",
+                loading && "animate-spin",
+              )}
+            />
+          </button>
+          {!hideHeader && (
             <button
               type="button"
               onClick={onClose}
+              aria-label={t("close")}
               className="h-7 w-7 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted"
             >
               <X className="h-3.5 w-3.5" />
             </button>
-          </div>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Where to check: destination-aware segmented toggle. Big touch
           targets for elderly / low-dexterity users. */}

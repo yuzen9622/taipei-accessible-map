@@ -440,6 +440,7 @@
   "expandSidebar": "Expand sidebar",
   "collapseSidebar": "Collapse sidebar",
   "close": "Close",
+  "back": "Back",
   "viewAll": "View all",
   "savedPlacesCount": "{{count}} saved place(s)",
   "noSavedPlaces": "No saved places yet",

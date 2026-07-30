@@ -12,12 +12,13 @@ import type {
 import { A11yEnum } from "@/types/index";
 import type { AccessibleRoute, LiveBus } from "@/types/route";
 
+// 無障礙設施 used to be a sheetMode of its own; it's a rail panel now
+// (RailPanel below), so nothing sets a "a11y" sheet mode any more.
 export type SheetMode =
   | "home"
   | "place"
   | "plan"
   | "route"
-  | "a11y"
   | "navigation"
   | "station";
 export type RailPanel =

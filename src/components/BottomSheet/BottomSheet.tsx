@@ -113,6 +113,22 @@ const MODE_PANELS = new Set([
   "station",
 ]);
 
+// Rail panels that render their own content component. "search" and "none"
+// both fall through to HomeContent, and "route" is only ever a leftover from
+// RoutePreviewHydrator (the rail routes it through sheetMode="plan" instead),
+// so none of those three count as "a sub-panel is showing". RailPanelOrHome
+// reads the same set, so "is a panel open" can never disagree with what's
+// actually rendered.
+const RAIL_CONTENT_PANELS = new Set<RailPanel>([
+  "a11y",
+  "bus",
+  "parking",
+  "saved",
+  "environment",
+  "hazard",
+  "welfare",
+]);
+
 export default function BottomSheet() {
   const { t } = useAppTranslation();
   const {
@@ -174,6 +190,14 @@ export default function BottomSheet() {
   const railPanelActive = !modePanelActive && activeRailPanel !== "none";
   const panelOpen = modePanelActive || railPanelActive || showAssistant;
 
+  // A rail *sub-panel* (無障礙設施 / 公車 / …) is showing rather than the search
+  // home view. Mobile has no rail to render an active indicator on, so this is
+  // what earns the header a back button — checking `activeRailPanel !== "none"`
+  // instead would light it up on first load, since the store starts at
+  // "search" and that renders plain HomeContent.
+  const railContentActive =
+    !modePanelActive && RAIL_CONTENT_PANELS.has(activeRailPanel);
+
   // Map-first navigation: the HUD owns the screen; the sheet/panel only
   // reappears as the step list when requested from the HUD.
   const navHidesChrome = isNavigating && !stepListOpen;
@@ -198,7 +222,6 @@ export default function BottomSheet() {
       case "place":
       case "plan":
       case "route":
-      case "a11y":
       case "station":
         setSnap("half");
         setSheetHeight(SNAP_POINTS.half);
@@ -226,6 +249,17 @@ export default function BottomSheet() {
       setSheetHeight(SNAP_POINTS.half);
     }
   }, [showAssistant, isDesktop]);
+
+  // Same treatment for rail sub-panels: sheetMode stays "home" when a quick
+  // action chip (or 已存地點管理 from the account menu) opens one, so the
+  // sheetMode effect above never fires and the panel would otherwise be left
+  // as a peek-height sliver with its header hidden.
+  useEffect(() => {
+    if (railContentActive && !isDesktop) {
+      setSnap("half");
+      setSheetHeight(SNAP_POINTS.half);
+    }
+  }, [railContentActive, isDesktop]);
 
   // Opening the step list mid-navigation lifts the mobile sheet to half.
   useEffect(() => {
@@ -312,7 +346,11 @@ export default function BottomSheet() {
       }
       // Re-clicking the active item keeps the panel open — closing on the
       // second click read as a bug (close lives on the X / collapse toggle).
-      if (activeRailPanel !== panel || modePanelActive) {
+      // showAssistant has to re-run it though: the AI assistant is painted
+      // over the panel, so clicking the already-"active" rail item is the
+      // user asking to get back to it, and skipping the call would leave
+      // chatOpen set and the click looking broken.
+      if (activeRailPanel !== panel || modePanelActive || showAssistant) {
         // Reset to home mode if we were in a mode panel
         if (modePanelActive) {
           setSheetMode("home");
@@ -329,6 +367,7 @@ export default function BottomSheet() {
     [
       activeRailPanel,
       modePanelActive,
+      showAssistant,
       collapsed,
       setCollapsed,
       setActiveRailPanel,
@@ -341,6 +380,17 @@ export default function BottomSheet() {
       isNavigating,
       requestNavExit,
     ],
+  );
+
+  // showAssistant must win over any rail highlight — otherwise the rail keeps
+  // showing 搜尋 (or whatever was active before) lit up while the panel is
+  // actually displaying the AI assistant, which is exactly the "rail says one
+  // thing, content shows another" desync this refactor is meant to eliminate.
+  // Shared by the main rail and the 更多 flyout so the two can't drift.
+  const isRailItemActive = useCallback(
+    (id: RailPanel) =>
+      !modePanelActive && !showAssistant && activeRailPanel === id,
+    [modePanelActive, showAssistant, activeRailPanel],
   );
 
   const handlePanelClose = useCallback(() => {
@@ -363,11 +413,18 @@ export default function BottomSheet() {
       setRouteSelect(null);
       setInfoShow({ isOpen: false, kind: null });
       setSearchPlace(null);
+    } else if (railContentActive) {
+      // Back out one level to the search home view — the same destination as
+      // mobile's back button. Fully closing the desktop panel stays with the
+      // collapse toggle, so "none" doesn't mean two different things on the
+      // two breakpoints (mobile has no way to reopen a closed panel).
+      setActiveRailPanel("search");
     } else {
       setActiveRailPanel("none");
     }
   }, [
     modePanelActive,
+    railContentActive,
     showAssistant,
     setChatOpen,
     setSheetMode,
@@ -418,25 +475,40 @@ export default function BottomSheet() {
             sheetMode !== "plan" &&
             sheetMode !== "route" &&
             sheetMode !== "navigation" && (
-              <div className="flex items-center justify-between px-4 pb-2">
-                <h1 className="text-base font-bold flex items-center gap-1.5">
-                  {showAssistant ? (
+              <div className="flex items-center justify-between gap-2 px-4 pb-2 min-h-11">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  {/* The AI assistant, or a quick-action chip / 已存地點管理,
+                      replaced the home view — mobile has no rail to show an
+                      active indicator on and the panels render with
+                      hideHeader, so this is the only way back. Sized to the
+                      44px touch target the rest of the app holds to; the row
+                      reserves that height in every state so swapping the
+                      icon for the button doesn't jog the layout. */}
+                  {showAssistant || railContentActive ? (
                     <button
                       type="button"
                       onClick={handlePanelClose}
-                      className="flex items-center gap-1.5 -ml-1 pl-1 pr-2 py-1 rounded-full hover:bg-muted transition-colors"
+                      aria-label={t("back")}
+                      className="-ml-2 h-11 w-11 shrink-0 flex items-center justify-center rounded-full hover:bg-muted transition-colors focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2"
                     >
-                      <ChevronLeft className="h-4 w-4" />
-                      <BotMessageSquare className="h-5 w-5 text-primary" />
-                      {t("assist")}
+                      <ChevronLeft className="h-5 w-5" />
                     </button>
                   ) : (
-                    <>
-                      <Accessibility className="h-5 w-5 text-primary" />
-                      {t("title")}
-                    </>
+                    <Accessibility className="h-5 w-5 shrink-0 text-primary" />
                   )}
-                </h1>
+                  <h1 className="text-base font-bold flex items-center gap-1.5 min-w-0 truncate">
+                    {showAssistant ? (
+                      <>
+                        <BotMessageSquare className="h-5 w-5 shrink-0 text-primary" />
+                        <span className="truncate">{t("assist")}</span>
+                      </>
+                    ) : railContentActive ? (
+                      <PanelTitle />
+                    ) : (
+                      t("title")
+                    )}
+                  </h1>
+                </div>
                 <AccountLogin />
               </div>
             )}
@@ -464,7 +536,7 @@ export default function BottomSheet() {
             ) : (
               <AnimatePresence mode="wait">
                 <motion.div
-                  key={sheetMode}
+                  key={modePanelActive ? sheetMode : activeRailPanel}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
@@ -513,7 +585,7 @@ export default function BottomSheet() {
 
           {/* Main rail items */}
           {RAIL_ITEMS.map((item) => {
-            const isActive = !modePanelActive && activeRailPanel === item.id;
+            const isActive = isRailItemActive(item.id);
             return (
               <button
                 key={item.id}
@@ -578,8 +650,7 @@ export default function BottomSheet() {
                   className="absolute left-[52px] bottom-0 bg-background/95 backdrop-blur-md rounded-xl shadow-xl border border-border/50 p-1.5 min-w-[140px] z-(--z-drawer-rail)"
                 >
                   {RAIL_MORE_ITEMS.map((item) => {
-                    const isActive =
-                      !modePanelActive && activeRailPanel === item.id;
+                    const isActive = isRailItemActive(item.id);
                     return (
                       <button
                         key={item.id}
@@ -644,15 +715,19 @@ export default function BottomSheet() {
                     <PanelTitle />
                   )}
                 </h2>
+                {/* Back when there's a level to go back to (assistant or a
+                    rail sub-panel over the search view), close when this is
+                    the top level — the icon has to match where the click
+                    actually lands, see handlePanelClose. */}
                 <button
                   type="button"
                   onClick={handlePanelClose}
                   className="h-7 w-7 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors"
                   aria-label={
-                    showAssistant ? t("chatbot.back", "返回") : t("close")
+                    showAssistant || railContentActive ? t("back") : t("close")
                   }
                 >
-                  {showAssistant ? (
+                  {showAssistant || railContentActive ? (
                     <ChevronLeft className="h-3.5 w-3.5" />
                   ) : (
                     <X className="h-3.5 w-3.5" />
@@ -815,14 +890,50 @@ function PanelTitle() {
   }
 }
 
-// --- Desktop panel content switcher ---
-function DesktopPanelContent() {
-  const { sheetMode, activeRailPanel, setActiveRailPanel } = useMapStore(
+// --- Single source of truth for "which rail panel is showing" — shared by
+// both desktop and mobile so a quick-action click has exactly one code path
+// to render through, instead of desktop reading this switch while mobile
+// fell back to HomeContent's own local subPanel copy of the same logic. ---
+function RailPanelOrHome() {
+  const { activeRailPanel, setActiveRailPanel } = useMapStore(
     useShallow((s) => ({
-      sheetMode: s.sheetMode,
       activeRailPanel: s.activeRailPanel,
       setActiveRailPanel: s.setActiveRailPanel,
     })),
+  );
+  // Back out to the search home view, matching the header's back button —
+  // "none" would close the whole panel on desktop and merely re-render the
+  // same HomeContent on mobile.
+  const closePanel = () => setActiveRailPanel("search");
+
+  switch (activeRailPanel) {
+    case "a11y":
+      return <A11yPanel onClose={closePanel} hideHeader />;
+    case "bus":
+      return <BusPanel onClose={closePanel} hideHeader />;
+    case "parking":
+      return <ParkingPanel onClose={closePanel} hideHeader />;
+    case "saved":
+      return <SavedPlacesPanel onClose={closePanel} hideHeader />;
+    case "environment":
+      return <EnvironmentPanel onClose={closePanel} hideHeader />;
+    case "hazard":
+      return <HazardReportPanel onClose={closePanel} hideHeader />;
+    case "welfare":
+      return <WelfarePanel onClose={closePanel} hideHeader />;
+    // "search" / "none" are the home view itself, and "route" only ever lands
+    // here as a leftover from RoutePreviewHydrator once sheetMode has already
+    // gone back to "home" — all three mean "no sub-panel". Keep this list in
+    // sync with RAIL_CONTENT_PANELS.
+    default:
+      return <HomeContent />;
+  }
+}
+
+// --- Desktop panel content switcher ---
+function DesktopPanelContent() {
+  const { sheetMode } = useMapStore(
+    useShallow((s) => ({ sheetMode: s.sheetMode })),
   );
 
   const modePanelActive = MODE_PANELS.has(sheetMode);
@@ -841,40 +952,17 @@ function DesktopPanelContent() {
     }
   }
 
-  const noop = () => setActiveRailPanel("none");
-
-  switch (activeRailPanel) {
-    case "search":
-      return <HomeContent />;
-    case "a11y":
-      return <A11yPanel hideHeader />;
-    case "bus":
-      return <BusPanel onClose={noop} hideHeader />;
-    case "parking":
-      return <ParkingPanel onClose={noop} hideHeader />;
-    case "saved":
-      return <SavedPlacesPanel onClose={noop} hideHeader />;
-    case "environment":
-      return <EnvironmentPanel onClose={noop} hideHeader />;
-    case "hazard":
-      return <HazardReportPanel onClose={noop} hideHeader />;
-    case "welfare":
-      return <WelfarePanel onClose={noop} hideHeader />;
-    default:
-      return <HomeContent />;
-  }
+  return <RailPanelOrHome />;
 }
 
-// --- Mobile sheet content (same as before) ---
+// --- Mobile sheet content ---
 function MobileSheetContent() {
   const { sheetMode } = useMapStore(
     useShallow((s) => ({ sheetMode: s.sheetMode })),
   );
   switch (sheetMode) {
     case "home":
-      return <HomeContent />;
-    case "a11y":
-      return <A11yPanel hideHeader />;
+      return <RailPanelOrHome />;
     case "place":
       return <PlaceContent />;
     case "plan":
@@ -886,6 +974,6 @@ function MobileSheetContent() {
     case "station":
       return <StationDetailContent />;
     default:
-      return <HomeContent />;
+      return <RailPanelOrHome />;
   }
 }
