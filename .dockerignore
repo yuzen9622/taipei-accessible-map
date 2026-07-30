@@ -11,4 +11,7 @@ README.md
 LICENSE.md
 AUTHORS.md
 .vscode
+.env
+.env.*
+!.env.example
 .env*.local
