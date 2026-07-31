@@ -1,97 +1,21 @@
 "use client";
 
-import {
-  Accessibility,
-  AlertTriangle,
-  Bookmark,
-  Bus,
-  Check,
-  ChevronDown,
-  CircleParking,
-  Clock,
-  Cloud,
-  Heart,
-  Navigation,
-  Pencil,
-  Plus,
-} from "lucide-react";
+import { BookmarkIcon, ClockIcon, MicIcon } from "@animateicons/react/lucide";
+import { Navigation } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
+import WelcomeCard from "@/components/Onboarding/WelcomeCard";
 import PlaceInput from "@/components/shared/PlaceInput";
 import { useAppTranslation } from "@/i18n/client";
+import { QUICK_ACTION_DEFS } from "@/lib/quickActions";
 import { cn } from "@/lib/utils";
+import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
+import useQuickActionsStore from "@/stores/useQuickActionsStore";
+import useVoiceStore from "@/stores/useVoiceStore";
 import type { PlaceDetail } from "@/types";
-
-// Every available quick action; the user picks which ones show (persisted).
-// These IDs are a subset of RailPanel — clicking a chip sets the *same*
-// global activeRailPanel the Side Rail uses, so there's exactly one place
-// ("which rail panel is showing", see BottomSheet.tsx's RailPanelOrHome)
-// that decides what renders, instead of a second local copy of that switch
-// living here too.
-type QuickActionId =
-  | "a11y"
-  | "hazard"
-  | "parking"
-  | "bus"
-  | "environment"
-  | "welfare";
-
-const QUICK_ACTION_DEFS: {
-  id: QuickActionId;
-  labelKey: string;
-  Icon: React.ComponentType<{ className?: string }>;
-  className: string;
-}[] = [
-  {
-    id: "a11y",
-    labelKey: "a11yFacilities",
-    Icon: Accessibility,
-    className: "bg-accessibility/10 text-accessibility hover:bg-accessibility/20",
-  },
-  {
-    id: "hazard",
-    labelKey: "reportHazard",
-    Icon: AlertTriangle,
-    className:
-      "bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20",
-  },
-  {
-    id: "parking",
-    labelKey: "parking",
-    Icon: CircleParking,
-    className:
-      "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-500/20",
-  },
-  {
-    id: "bus",
-    labelKey: "busInfo",
-    Icon: Bus,
-    className:
-      "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20",
-  },
-  {
-    id: "environment",
-    labelKey: "environment",
-    Icon: Cloud,
-    className:
-      "bg-sky-500/10 text-sky-600 dark:text-sky-400 hover:bg-sky-500/20",
-  },
-  {
-    id: "welfare",
-    labelKey: "welfare",
-    Icon: Heart,
-    className:
-      "bg-rose-500/10 text-rose-600 dark:text-rose-400 hover:bg-rose-500/20",
-  },
-];
-
-const DEFAULT_QUICK_ACTIONS: QuickActionId[] = [
-  "a11y",
-  "hazard",
-  "parking",
-  "bus",
-];
+import NearbyContextBlock from "./NearbyContextBlock";
 
 export default function HomeContent() {
   const { t } = useAppTranslation();
@@ -105,6 +29,8 @@ export default function HomeContent() {
     savedPlaces,
     pendingSearchQuery,
     setPendingSearchQuery,
+    setPendingAiQuery,
+    setChatOpen,
   } = useMapStore(
     useShallow((s) => ({
       setSearchPlace: s.setSearchPlace,
@@ -116,8 +42,11 @@ export default function HomeContent() {
       savedPlaces: s.savedPlaces,
       pendingSearchQuery: s.pendingSearchQuery,
       setPendingSearchQuery: s.setPendingSearchQuery,
+      setPendingAiQuery: s.setPendingAiQuery,
+      setChatOpen: s.setChatOpen,
     })),
   );
+  const enabledActions = useQuickActionsStore((s) => s.enabledActions);
   const [input, setInput] = useState("");
 
   useEffect(() => {
@@ -125,38 +54,6 @@ export default function HomeContent() {
       setInput(pendingSearchQuery);
     }
   }, [pendingSearchQuery]);
-  const [moreActionsOpen, setMoreActionsOpen] = useState(false);
-  const [editingActions, setEditingActions] = useState(false);
-  const [enabledActions, setEnabledActions] = useState<QuickActionId[]>(
-    DEFAULT_QUICK_ACTIONS,
-  );
-
-  // Load the saved selection after mount (avoids SSR/localStorage mismatch).
-  useEffect(() => {
-    const stored = localStorage.getItem("quickActions");
-    if (!stored) return;
-    try {
-      const ids = (JSON.parse(stored) as string[])
-        // "metro" was the old id of the a11y quick action
-        .map((id) => (id === "metro" ? "a11y" : id))
-        .filter((id): id is QuickActionId =>
-          QUICK_ACTION_DEFS.some((d) => d.id === id),
-        );
-      setEnabledActions(ids);
-    } catch {
-      // ignore corrupted selection
-    }
-  }, []);
-
-  const toggleAction = useCallback((id: QuickActionId) => {
-    setEnabledActions((prev) => {
-      const next = prev.includes(id)
-        ? prev.filter((a) => a !== id)
-        : [...prev, id];
-      localStorage.setItem("quickActions", JSON.stringify(next));
-      return next;
-    });
-  }, []);
 
   const handlePlaceChange = useCallback(
     (placeDetail: PlaceDetail) => {
@@ -191,21 +88,58 @@ export default function HomeContent() {
     [setSearchPlace, setInfoShow, map, setSheetMode],
   );
 
+  // §S5 item 1: one input handles both place search and AI questions. A hit
+  // in PlaceInput's own autocomplete always wins; this only fires when the
+  // user submits a query search came up empty on.
+  const handleAiQuery = useCallback(
+    (query: string) => {
+      setPendingAiQuery(query);
+      setChatOpen(true);
+      setInput("");
+    },
+    [setPendingAiQuery, setChatOpen],
+  );
+
+  const handleMicClick = useCallback(() => {
+    if (!useAuthStore.getState().user) {
+      toast.error(t("chatbot.voice.loginRequired", "請先登入才能使用語音對話"));
+      return;
+    }
+    useVoiceStore.getState().setViewMode("panel");
+    setChatOpen(true);
+    useVoiceStore.getState().startSession();
+  }, [setChatOpen, t]);
+
   return (
     <div className="space-y-5">
-      {/* Search */}
+      <WelcomeCard />
+
+      {/* Search — unified: place autocomplete or, when nothing matches and
+          the text reads as a question, hands off to the AI assistant. Mic
+          is a persistent second entry point into the same assistant. */}
       {/* 外框樣式由 PlaceInput 自己負責，避免與展開後的下拉面板產生兩層邊框／圓角 */}
-      <div className="w-full">
-        <PlaceInput
-          className="border-none"
-          value={input}
-          onChange={(e) => {
-            setInput((e.target as HTMLInputElement).value);
-            if (pendingSearchQuery) setPendingSearchQuery("");
-          }}
-          placeholder={t("searchPlaceHolder")}
-          onPlaceSelect={handlePlaceChange}
-        />
+      <div className="flex w-full items-center gap-2" data-coach="search">
+        <div className="min-w-0 flex-1">
+          <PlaceInput
+            className="border-none"
+            value={input}
+            onChange={(e) => {
+              setInput((e.target as HTMLInputElement).value);
+              if (pendingSearchQuery) setPendingSearchQuery("");
+            }}
+            placeholder={t("searchPlaceHolder")}
+            onPlaceSelect={handlePlaceChange}
+            onAiQuery={handleAiQuery}
+          />
+        </div>
+        <button
+          type="button"
+          onClick={handleMicClick}
+          aria-label={t("chatbot.voice.micLabel", "語音對話")}
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border/50 bg-card text-muted-foreground shadow-sm transition-colors hover:bg-accent/40 hover:text-foreground"
+        >
+          <MicIcon size={16} />
+        </button>
       </div>
 
       {/* Route Planning Entry */}
@@ -223,135 +157,46 @@ export default function HomeContent() {
         </div>
       </button>
 
-      {/* Quick actions: user-picked shortcuts; the rest live behind 更多 */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
+      {/* §S5 item 3: contextual "near you" — driven by the onboarding a11y
+          profile, replaces having to pick a category before seeing anything
+          useful. Renders nothing until there's a real nearby result. */}
+      <NearbyContextBlock />
+
+      {/* Quick actions — §S5 item 4: neutral chrome, colored icon only.
+          Which ones show is configured in Settings now (item 5), not here. */}
+      {enabledActions.length > 0 && (
+        <div className="space-y-2">
           <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
             {t("quickActions")}
           </h2>
-          <button
-            type="button"
-            onClick={() => setEditingActions(!editingActions)}
-            className="flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-          >
-            {editingActions ? (
-              <>
-                <Check className="h-3.5 w-3.5" />
-                {t("done")}
-              </>
-            ) : (
-              <>
-                <Pencil className="h-3 w-3" />
-                {t("customize")}
-              </>
-            )}
-          </button>
-        </div>
-
-        {editingActions ? (
-          <>
-            <p className="text-xs text-muted-foreground">
-              {t("customizeHint")}
-            </p>
-            <div className="flex gap-2 flex-wrap">
-              {QUICK_ACTION_DEFS.map((def) => {
-                const enabled = enabledActions.includes(def.id);
-                return (
-                  <button
-                    key={def.id}
-                    type="button"
-                    onClick={() => toggleAction(def.id)}
-                    aria-pressed={enabled}
-                    className={cn(
-                      "flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-medium transition-all",
-                      enabled
-                        ? `${def.className} ring-2 ring-primary/40`
-                        : "bg-muted/40 text-muted-foreground/70 hover:bg-muted",
-                    )}
-                  >
-                    {enabled ? (
-                      <Check className="h-4 w-4" />
-                    ) : (
-                      <Plus className="h-4 w-4" />
-                    )}
-                    {t(def.labelKey)}
-                  </button>
-                );
-              })}
-            </div>
-          </>
-        ) : (
-          <div className="space-y-2">
-            {/* Horizontal scroll strip: keeps the row to a single line on
-                narrow screens instead of wrapping/overlapping neighbouring
-                content, with snap points for a clean swipe stop. */}
-            <div className="flex gap-2 overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-4 px-4 pb-0.5">
-              {QUICK_ACTION_DEFS.filter((d) =>
-                enabledActions.includes(d.id),
-              ).map((def) => (
+          {/* Horizontal scroll strip: keeps the row to a single line on
+              narrow screens instead of wrapping/overlapping neighbouring
+              content, with snap points for a clean swipe stop. */}
+          <div className="flex gap-2 overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-4 px-4 pb-0.5">
+            {QUICK_ACTION_DEFS.filter((d) => enabledActions.includes(d.id)).map(
+              (def) => (
                 <button
                   key={def.id}
                   type="button"
+                  data-coach={def.id === "a11y" ? "a11y" : undefined}
                   onClick={() => setActiveRailPanel(def.id)}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-semibold transition-colors shrink-0 snap-start",
-                    def.className,
-                  )}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-semibold bg-muted/60 text-foreground hover:bg-muted transition-colors shrink-0 snap-start"
                 >
-                  <def.Icon className="h-4 w-4" />
+                  <def.Icon className={cn("h-4 w-4", def.iconClassName)} />
                   {t(def.labelKey)}
                 </button>
-              ))}
-              {enabledActions.length < QUICK_ACTION_DEFS.length && (
-                <button
-                  type="button"
-                  onClick={() => setMoreActionsOpen(!moreActionsOpen)}
-                  aria-expanded={moreActionsOpen}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-semibold bg-muted/60 text-muted-foreground hover:bg-muted transition-colors shrink-0 snap-start"
-                >
-                  <ChevronDown
-                    className={cn(
-                      "h-4 w-4 transition-transform",
-                      moreActionsOpen && "rotate-180",
-                    )}
-                  />
-                  {t("railMore")}
-                </button>
-              )}
-            </div>
-
-            {/* Expanded extras: wrap freely below so they stay visible
-                without requiring another scroll discovery. */}
-            {moreActionsOpen && (
-              <div className="flex gap-2 flex-wrap">
-                {QUICK_ACTION_DEFS.filter(
-                  (d) => !enabledActions.includes(d.id),
-                ).map((def) => (
-                  <button
-                    key={def.id}
-                    type="button"
-                    onClick={() => setActiveRailPanel(def.id)}
-                    className={cn(
-                      "flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-semibold transition-colors",
-                      def.className,
-                    )}
-                  >
-                    <def.Icon className="h-4 w-4" />
-                    {t(def.labelKey)}
-                  </button>
-                ))}
-              </div>
+              ),
             )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Saved Places */}
       {savedPlaces.length > 0 && (
         <section>
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
-              <Bookmark className="h-4 w-4" />
+              <BookmarkIcon size={16} />
               {t("savedPlaces")}
             </h2>
             {savedPlaces.length > 3 && (
@@ -377,7 +222,7 @@ export default function HomeContent() {
                   onClick={() => handlePlaceChange(item)}
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted/60 transition-colors text-left"
                 >
-                  <Bookmark className="h-4 w-4 text-primary shrink-0" />
+                  <BookmarkIcon size={16} className="text-primary shrink-0" />
                   <span className="text-sm truncate">{name}</span>
                 </button>
               );
@@ -390,7 +235,7 @@ export default function HomeContent() {
       {searchHistory.length > 0 && (
         <section>
           <h2 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
-            <Clock className="h-4 w-4" />
+            <ClockIcon size={16} />
             {t("recentSearches")}
           </h2>
           <div className="space-y-1">
@@ -406,7 +251,10 @@ export default function HomeContent() {
                   onClick={() => handlePlaceChange(item)}
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted/60 transition-colors text-left"
                 >
-                  <Clock className="h-4 w-4 text-muted-foreground/50 shrink-0" />
+                  <ClockIcon
+                    size={16}
+                    className="text-muted-foreground/50 shrink-0"
+                  />
                   <span className="text-sm truncate">{name}</span>
                 </button>
               );

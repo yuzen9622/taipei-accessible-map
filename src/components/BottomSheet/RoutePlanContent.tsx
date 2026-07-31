@@ -1,22 +1,24 @@
 "use client";
 
 import {
+  ArrowDownUpIcon,
+  MapPinIcon,
+  PencilIcon,
+  PlusIcon,
+  SearchIcon,
+  XIcon,
+} from "@animateicons/react/lucide";
+import {
   Accessibility,
   ArrowLeft,
-  ArrowUpDown,
   Bike,
   Bus,
   Car,
   EyeOff,
   Footprints,
   Loader2,
-  MapPin,
   Navigation,
-  Pencil,
-  Plus,
-  Search,
   User,
-  X,
 } from "lucide-react";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -26,6 +28,7 @@ import useComputeRoute from "@/hook/useComputeRoute";
 import { useAppTranslation } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
+import useOnboardingStore from "@/stores/useOnboardingStore";
 import type { PlaceDetail } from "@/types";
 import { Button } from "../ui/button";
 
@@ -81,9 +84,25 @@ export default function RoutePlanContent() {
   const [travelMode, setTravelMode] = useState<
     "transit" | "drive" | "motorcycle" | "walk"
   >("transit");
+  // Defaults to the onboarding profile's derived mode so the answers the user
+  // already gave pay off immediately; still just a starting point — picking a
+  // different pill here only changes this one route, it never writes back to
+  // the profile. The lazy initializer covers the common case (this panel
+  // mounts well after `ClientLayout` has already hydrated the store), but if
+  // this ever renders in the very first commit — before that hydration
+  // effect has run — the initializer would read the pre-hydration default.
+  // The effect below re-syncs once hydration actually completes, unless the
+  // user has already picked a pill by hand.
+  const onboardingHydrated = useOnboardingStore((s) => s.hydrated);
   const [a11yMode, setA11yMode] = useState<
     "normal" | "wheelchair" | "elderly" | "visual_impaired"
-  >("normal");
+  >(() => useOnboardingStore.getState().profile.routeMode);
+  const userPickedModeRef = useRef(false);
+  useEffect(() => {
+    if (onboardingHydrated && !userPickedModeRef.current) {
+      setA11yMode(useOnboardingStore.getState().profile.routeMode);
+    }
+  }, [onboardingHydrated]);
   const [waypointRows, setWaypointRows] = useState<WaypointRow[]>([]);
   const nextWaypointId = useRef(0);
 
@@ -144,7 +163,6 @@ export default function RoutePlanContent() {
     },
     [setPendingSearchQuery, setSheetMode],
   );
-
 
   const handleWaypointSelect = useCallback(
     (index: number, place: PlaceDetail) => {
@@ -401,7 +419,7 @@ export default function RoutePlanContent() {
                     aria-label={t("removeWaypoint")}
                     className="h-7 w-7 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors shrink-0 mr-1"
                   >
-                    <X className="h-3.5 w-3.5 text-muted-foreground" />
+                    <XIcon size={14} className="text-muted-foreground" />
                   </button>
                 </div>
                 <div className="border-t border-border/60 mx-1" />
@@ -412,7 +430,7 @@ export default function RoutePlanContent() {
             <div className="relative overflow-visible">
               {destination && !destEditing ? (
                 <div className="flex items-center gap-2 px-2 py-2.5 min-h-[44px]">
-                  <MapPin className="h-4 w-4 text-red-500 shrink-0" />
+                  <MapPinIcon size={16} className="text-red-500 shrink-0" />
                   <button
                     type="button"
                     onClick={() => setDestEditing(true)}
@@ -436,7 +454,7 @@ export default function RoutePlanContent() {
                     aria-label={t("editDestination", "編輯目的地")}
                     className="relative h-7 w-7 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors shrink-0 after:absolute after:inset-[-8px] after:content-['']"
                   >
-                    <Pencil className="h-3 w-3 text-muted-foreground" />
+                    <PencilIcon size={12} className="text-muted-foreground" />
                   </button>
                   <button
                     type="button"
@@ -444,7 +462,7 @@ export default function RoutePlanContent() {
                     aria-label={t("clearDestination", "清除目的地")}
                     className="relative h-7 w-7 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors shrink-0 after:absolute after:inset-[-8px] after:content-['']"
                   >
-                    <X className="h-3 w-3 text-muted-foreground" />
+                    <XIcon size={12} className="text-muted-foreground" />
                   </button>
                 </div>
               ) : (
@@ -470,7 +488,7 @@ export default function RoutePlanContent() {
               onClick={handleSwap}
               className="h-9 w-9 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors"
             >
-              <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
+              <ArrowDownUpIcon size={16} className="text-muted-foreground" />
             </button>
           </div>
         </div>
@@ -483,7 +501,7 @@ export default function RoutePlanContent() {
           onClick={handleAddWaypointRow}
           className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-muted-foreground hover:bg-muted/40 transition-colors w-full"
         >
-          <Plus className="h-4 w-4" />
+          <PlusIcon size={16} />
           {t("addWaypoint")}
         </button>
       )}
@@ -562,7 +580,10 @@ export default function RoutePlanContent() {
                     ? "shadow-sm"
                     : "text-muted-foreground hover:bg-muted/80",
                 )}
-                onClick={() => setA11yMode(am.id as any)}
+                onClick={() => {
+                  userPickedModeRef.current = true;
+                  setA11yMode(am.id as any);
+                }}
                 aria-label={am.label}
               >
                 <am.icon className="h-4 w-4" />
@@ -589,7 +610,7 @@ export default function RoutePlanContent() {
           </>
         ) : (
           <>
-            <Search className="h-5 w-5" />
+            <SearchIcon size={20} />
             {t("searchRoute")}
           </>
         )}

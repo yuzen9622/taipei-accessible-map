@@ -50,10 +50,10 @@
     "thinking": "Thinking…"
   },
   "helpDescription": {
-    "overview": "Welcome to our map app! We aim to provide comprehensive place information services. Across Taiwan you can use this app for general navigation. We are piloting an \"Accessible Friendly Map\" program in Taipei City first and will gradually expand to more cities in the future.",
+    "overview": "Welcome to Accessible Smart Map! We provide place search, route planning, and accessibility information across all of Taiwan. Accessibility data (restrooms, ramps, elevators, etc.) currently covers some counties/cities, with more being added continuously.",
     "tabs": {
       "features": "Features",
-      "taipei": "Taipei",
+      "taipei": "Accessibility",
       "feedback": "Feedback",
       "faq": "FAQ",
       "repository": "Source Code",
@@ -61,16 +61,16 @@
     },
     "features": {
       "general": {
-        "title": "1. General features across Taiwan: basic search and navigation\nIn all cities you can use the following basic features:",
+        "title": "1. Basic search and navigation\nAcross Taiwan you can use the following basic features:",
         "features": [
-          "Search places: enter a business name, attraction, or address in the search box above to find the desired location.",
-          "Route planning: after finding a place, click the navigation feature and the app will plan a route for you, working similarly to standard navigation apps."
+          "Search places: enter a business name, attraction, or address in the search box above, or just ask the AI assistant, e.g. \"any accessible restrooms nearby?\"",
+          "Route planning: after finding a place, click navigation to plan a route, choosing a normal/wheelchair/elderly/visually-impaired mode as needed."
         ]
       },
       "taipei": {
-        "title": "2. Taipei pilot features: Accessible Map (note: the following features are currently limited to Taipei City)",
+        "title": "2. Accessibility facility search (data coverage is expanding)",
         "features": {
-          "filter": "Within Taipei City, click the \"Filter\" icon at the top-right of the map to quickly find friendly locations based on facilities such as \"Accessible Restroom\", \"Accessible Ramp\", or \"Elevator\"."
+          "filter": "Click the \"Filter\" icon on the map to quickly find locations by facility type — accessible restroom, accessible ramp, or elevator. Accessibility data currently covers some counties/cities, with more being added continuously."
         },
         "note": "Map accessibility icon explanations:",
         "icons": [
@@ -83,25 +83,29 @@
     "feedback": {
       "title": "3. How to report issues or provide suggestions\nYour feedback helps us improve:",
       "steps": [
-        "Click the \"Menu\" icon in the top-left and select \"Feedback\".",
+        "Click the account icon in the bottom-left corner and select \"Feedback\".",
         "Fill in the details of your issue or suggestion and submit."
       ],
       "examples": [
-        "Accessibility info (Taipei): \"The accessible ramp at A Cafe has been removed.\"",
-        "Navigation (all regions): \"Route planning was incorrect when navigating in Taichung.\"",
-        "Suggest a new place (Taipei): \"Recommend Taipei's B Restaurant — they have an accessible restroom.\""
+        "Accessibility info: \"The accessible ramp at A Cafe has been removed.\"",
+        "Navigation: \"Route planning was incorrect when navigating in Taichung.\"",
+        "Suggest a new place: \"Recommend B Restaurant — they have an accessible restroom.\""
       ]
     },
     "faq": {
       "title": "Frequently Asked Questions (FAQ)",
       "items": [
         {
-          "question": "Q: Why can't I find any accessibility icons or filter options in my city (not Taipei)?",
-          "answer": "A: The accessible map feature is currently in a pilot phase and prioritizes data collection and optimization for Taipei City. We are working to expand the database and will gradually enable accessibility information for more cities. In the meantime, you can still use the app's general place search and navigation functions in other cities. Thank you for your support and patience!"
+          "question": "Q: Why can't I find any accessibility icons or filter options in my area?",
+          "answer": "A: Accessibility data is a database we're continuously expanding — it currently covers some counties/cities, with more being added over time. You can still use general place search and navigation anywhere in the meantime. Thank you for your support and patience!"
         },
         {
-          "question": "Q: Why don't I see updates immediately after submitting accessibility information for Taipei?",
+          "question": "Q: Why don't I see updates immediately after submitting accessibility feedback?",
           "answer": "A: Thank you for your report! To ensure accuracy, all submissions undergo manual review by our team, which takes some time. Please wait patiently for the update to appear."
+        },
+        {
+          "question": "Q: I'd like to see the help guide or first-run tour again — where can I find them?",
+          "answer": "A: This help guide can be reopened any time from the account menu. The first-run tour (the four-step intro shown on first launch) can be restarted from Settings → General → \"Replay onboarding tour\"."
         }
       ]
     }
@@ -359,6 +363,9 @@
   "a11yLoadFailed": "Failed to load accessibility facilities, please try again later",
   "loadingA11yData": "Loading accessibility facilities…",
   "quickActions": "Quick Actions",
+  "nearbyContextTitle": "Near you",
+  "homeShortcutsSettingsTitle": "Home screen shortcuts",
+  "homeShortcutsSettingsDesc": "Choose which shortcuts show on the home screen",
   "highContrast": "High Contrast",
   "highContrastDesc": "Dark background with yellow text, bold fonts for low vision users",
   "a11yMode": "Accessibility Mode",
@@ -608,5 +615,142 @@
   "recalcFacilities_one": "Considering {{count}} accessible facility en route",
   "recalcFacilities_other": "Considering {{count}} accessible facilities en route",
   "routeA11yFacilityCount_one": "{{count}} accessible facility en route",
-  "routeA11yFacilityCount_other": "{{count}} accessible facilities en route"
+  "routeA11yFacilityCount_other": "{{count}} accessible facilities en route",
+  "tagline": "Find it, get in, get there",
+  "auth": {
+    "welcomeBack": "Welcome back",
+    "createAccount": "Create an account",
+    "resetPassword": "Reset password",
+    "login": "Log in",
+    "register": "Sign up",
+    "orEmail": "Or continue with email",
+    "nickname": "Nickname",
+    "email": "Email",
+    "password": "Password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "forgotPassword": "Forgot password?",
+    "guestPath": "Browse the map without an account →",
+    "valueSyncTitle": "Saved places sync everywhere",
+    "valueSyncDesc": "Save on your phone, see it on desktop",
+    "valueSosTitle": "Emergency contacts",
+    "valueSosDesc": "SOS automatically notifies your family",
+    "valueAiTitle": "AI remembers your needs",
+    "valueAiDesc": "No need to repeat yourself every time",
+    "needsVerification": "Please verify your email first",
+    "resendVerification": "Resend verification email",
+    "resendSuccess": "Verification email sent, please check your inbox",
+    "resendFailed": "Failed to resend verification email",
+    "loginErrorCreds": "Incorrect email or password",
+    "loginFailed": "Login failed",
+    "loginTooMany": "Too many login attempts, please try again later",
+    "googleLoginFailed": "Google login failed",
+    "registerFailed": "Registration failed",
+    "emailTaken": "This email is already registered",
+    "forgotSendButton": "Send reset link",
+    "forgotSendFailed": "Email service is temporarily unavailable, please try again later",
+    "forgotSentBody": "If this email is registered, a reset link has been sent — please check your inbox",
+    "backToLogin": "Back to login",
+    "registerSuccessTitle": "Your account is ready",
+    "registerSuccessBody": "We sent a verification email to {{email}}",
+    "registerNoEmailBody": "Account created, but we couldn't send the verification email — please resend",
+    "openInbox": "Open inbox",
+    "resend": "Resend",
+    "goToLogin": "Go to login"
+  },
+  "welcomeCard": {
+    "ariaLabel": "Getting-started tips",
+    "greeting": "👋 Welcome, {{name}}",
+    "greetingGuest": "👋 Welcome",
+    "dismiss": "Dismiss welcome card",
+    "tip1": "① Search bar — find a place or just ask the AI",
+    "tip2": "② Filter button — show only the facilities you need",
+    "tip3": "③ Red button, bottom right — tap it for emergency SOS",
+    "tour": "Show me around",
+    "selfExplore": "I'll explore myself"
+  },
+  "coachMarks": {
+    "step1Title": "Search bar",
+    "step1Body": "Type a place name, or just ask \"any accessible restrooms nearby?\"",
+    "step2Title": "Accessibility filter",
+    "step2Body": "Show only the facility types you need",
+    "step3Title": "SOS button",
+    "step3Body": "Tap to send an SOS — it notifies your emergency contacts",
+    "next": "Next",
+    "done": "Done",
+    "skip": "Skip tour",
+    "stepOf": "Step {{current}} of {{total}}",
+    "escHint": "Press Esc to skip the tour"
+  },
+  "onboarding": {
+    "skip": "Skip",
+    "next": "Next",
+    "back": "Back",
+    "stepOf": "Step {{current}} of {{total}}",
+    "escHint": "Press Esc to skip the tour",
+    "ariaTitle": "Getting started",
+    "intro": {
+      "title": "A map built for limited mobility",
+      "body": "Not just how to get there — whether you can get in.",
+      "start": "Set up",
+      "browse": "Just look around first"
+    },
+    "needs": {
+      "title": "Which of these apply to you?",
+      "subtitle": "Pick any that fit",
+      "hint": "This changes how routes are calculated. You can edit it any time in settings.",
+      "derivedMode": "Route mode will be set to \"{{mode}}\""
+    },
+    "situation": {
+      "wheelchair": "I use a wheelchair",
+      "wheelchairDesc": "Needs step-free routes and elevators",
+      "walker": "I use a walker",
+      "walkerDesc": "Needs level, even surfaces",
+      "vision": "Visual impairment",
+      "visionDesc": "Needs audio and tactile guidance",
+      "slow": "I move slowly",
+      "slowDesc": "Needs rest stops and shorter walks",
+      "stroller": "I push a stroller",
+      "strollerDesc": "Needs step-free routes",
+      "companion": "I'm helping someone else",
+      "companionDesc": "Planning for family or someone in your care"
+    },
+    "location": {
+      "title": "We need your location",
+      "benefit1": "Find accessible facilities near you",
+      "benefit2": "Plan routes from where you are",
+      "benefit3": "Let your contacts know where you are in an emergency",
+      "privacy": "Your location is only read while you're using the app. No background tracking, never shared with third parties.",
+      "allow": "Allow location",
+      "manual": "Or enter a location manually",
+      "requesting": "Getting your location…",
+      "granted": "Got your location",
+      "denied": "Location was denied. You can still enter a location manually — everything works.",
+      "unsupported": "This device doesn't support location. Enter a location manually instead."
+    },
+    "done": {
+      "title": "All set",
+      "subtitle": "Start with one of these:",
+      "tryToilet": "Find an accessible toilet nearby",
+      "tryRoute": "Plan a step-free route",
+      "tryAi": "Ask the AI: is this area easy to get around?",
+      "start": "Just start using it"
+    }
+  },
+  "profileTitle": "Your accessibility needs",
+  "profileDesc": "Affects route planning and what the map shows",
+  "profileSummaryPrefix": "Using your settings",
+  "profileAvoidStairs": "Avoid stairs",
+  "profileRequireElevator": "Elevator required",
+  "profileRouteModeLabel": "Route mode",
+  "profileRouteModeAuto": "Set automatically from your situation",
+  "profileRouteModeManual": "You set this manually",
+  "profileNoSituations": "Not set",
+  "resetGuides": "Replay the getting-started tour",
+  "resetGuidesDone": "Reset. The tour will show again next time you open the app.",
+  "resetGuidesDesc": "Watch the first-launch tour and tips again",
+  "resetGuidesButton": "Restart",
+  "loginRegisterCta": "Log in / Sign up",
+  "goToLoginRegister": "Go to login / Sign up",
+  "statusErrorCode": "Error code: {{code}}"
 }

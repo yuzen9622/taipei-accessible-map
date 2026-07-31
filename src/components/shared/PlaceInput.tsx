@@ -1,11 +1,15 @@
 "use client";
 import {
+  ClockIcon,
+  LoaderCircleIcon,
+  SearchIcon,
+} from "@animateicons/react/lucide";
+import {
   Bath,
   Bike,
   Building,
   Building2,
   Bus,
-  Clock,
   Coffee,
   Hospital,
   LoaderCircle,
@@ -13,7 +17,6 @@ import {
   Milestone,
   Navigation,
   School,
-  Search,
   Sparkles,
   Store,
   Train,
@@ -39,7 +42,32 @@ type InputProps = InputHTMLAttributes<HTMLInputElement> & {
   onPlaceSelect: (places: PlaceDetail) => void;
   hideIcon?: boolean;
   onSearchRequest?: (query: string) => void;
+  /**
+   * Unified-input routing (§S5 item 1): when the user submits with no
+   * autocomplete hit and the text reads like a question rather than a place
+   * name, hand it to the AI assistant instead of trying (and failing) to
+   * geocode it. A hit in `suggestions` always wins — this only fires when
+   * the place search has already come up empty.
+   */
+  onAiQuery?: (query: string) => void;
 };
+
+const QUESTION_MARKERS = /[嗎呢如何怎麼哪裡哪邊有沒有可以嗎能不能為什麼?？]/;
+// House numbers, floors, lane/alley markers (號/樓/巷/弄) — a long string
+// carrying one of these reads as an address, not a question, even past the
+// length threshold below. Address/place names essentially always carry a
+// digit somewhere; genuine questions rarely do.
+const HAS_DIGIT = /\d/;
+
+function looksLikeAiQuery(text: string): boolean {
+  const trimmed = text.trim();
+  if (trimmed.length === 0) return false;
+  if (QUESTION_MARKERS.test(trimmed)) return true;
+  // Length alone is a weak signal — long place names/addresses are common in
+  // Chinese — so it only counts once digits (house numbers, floors) rule out
+  // "this is an address" first.
+  return trimmed.length > 8 && !HAS_DIGIT.test(trimmed);
+}
 
 function getPlaceIcon(category?: string, type?: string) {
   // 1. Check specific type first
@@ -141,6 +169,7 @@ function PlaceInput({
   onChange,
   hideIcon,
   onSearchRequest,
+  onAiQuery,
   ...props
 }: InputProps) {
   const { t, i18n } = useAppTranslation("translation");
@@ -292,12 +321,23 @@ function PlaceInput({
     >
       <div className={cn("w-full flex items-center gap-2 px-2")}>
         {!hideIcon && (
-          <Search className="h-4 w-4 text-muted-foreground shrink-0" />
+          <SearchIcon size={16} className="text-muted-foreground shrink-0" />
         )}
         <form
           onSubmit={async (e) => {
             e.preventDefault();
-            await handlePlaceSubmit(value as string);
+            const text = (value as string) ?? "";
+            if (
+              onAiQuery &&
+              !loading &&
+              suggestions.length === 0 &&
+              looksLikeAiQuery(text)
+            ) {
+              onAiQuery(text.trim());
+              setOpen(false);
+              return;
+            }
+            await handlePlaceSubmit(text);
           }}
           className="flex-1 "
         >
@@ -383,7 +423,10 @@ function PlaceInput({
                           className="flex items-start gap-3 rounded-3xl p-2 cursor-pointer transition-colors"
                         >
                           <div className="mt-1 h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            <ClockIcon
+                              size={16}
+                              className="text-muted-foreground"
+                            />
                           </div>
                           <div className="flex-1 min-w-0 text-start">
                             <p className="font-medium text-foreground truncate">
@@ -420,7 +463,10 @@ function PlaceInput({
                         >
                           <div className="mt-1 h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                             {pendingId === suggestion.id ? (
-                              <LoaderCircle className="h-4 w-4 text-primary animate-spin" />
+                              <LoaderCircleIcon
+                                size={16}
+                                className="text-primary animate-spin"
+                              />
                             ) : (
                               <Icon className="h-4 w-4 text-primary" />
                             )}
@@ -462,7 +508,7 @@ function PlaceInput({
                         className="flex items-center gap-3 rounded-3xl p-2 cursor-pointer transition-colors"
                       >
                         <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                          <Search className="h-4 w-4 text-primary" />
+                          <SearchIcon size={16} className="text-primary" />
                         </div>
                         <span className="font-medium text-primary">
                           {t("searchForQuery", { query: value })}

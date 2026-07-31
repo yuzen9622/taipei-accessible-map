@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
+import StatusPage from "@/components/shared/StatusPage";
 import { verifyEmail } from "@/lib/api/auth";
 import useAuthStore from "@/stores/useAuthStore";
 
@@ -62,27 +61,27 @@ function VerifyEmailContent() {
     };
   }, [token, setUser, setUserConfig, setSession]);
 
+  if (status === "verifying") {
+    return <StatusPage status="pending" title="正在驗證電子郵件…" />;
+  }
+
+  if (status === "success") {
+    return (
+      <StatusPage
+        status="success"
+        title="電子郵件驗證成功"
+        description="您已自動登入"
+        primaryAction={{ label: "回到地圖", href: `/${lng}` }}
+      />
+    );
+  }
+
   return (
-    <div className="flex h-dvh w-full flex-col items-center justify-center gap-4 p-6 text-center">
-      {status === "verifying" && <p>正在驗證電子郵件…</p>}
-      {status === "success" && (
-        <>
-          <p className="text-lg font-semibold">電子郵件驗證成功</p>
-          <p className="text-sm text-muted-foreground">您已自動登入</p>
-          <Button asChild>
-            <Link href={`/${lng}`}>回到地圖</Link>
-          </Button>
-        </>
-      )}
-      {status === "error" && (
-        <>
-          <p className="text-lg font-semibold">驗證失敗</p>
-          <p className="text-sm text-muted-foreground">{message}</p>
-          <Button asChild>
-            <Link href={`/${lng}`}>回到首頁</Link>
-          </Button>
-        </>
-      )}
-    </div>
+    <StatusPage
+      status="error"
+      title="驗證失敗"
+      description={message}
+      primaryAction={{ label: "回到首頁", href: `/${lng}` }}
+    />
   );
 }

@@ -1,15 +1,17 @@
 "use client";
 
 import {
-  Accessibility,
+  AccessibilityIcon,
+  SearchIcon,
+  SendIcon,
+  TriangleAlertIcon,
+} from "@animateicons/react/lucide";
+import {
   Bus,
   Navigation,
-  Search,
-  SendHorizonal,
   Square,
   SquareParking,
   Thermometer,
-  TriangleAlert,
   Wind,
 } from "lucide-react";
 import { motion } from "motion/react";
@@ -28,6 +30,7 @@ import {
 } from "@/lib/toolResultCards";
 import { cn } from "@/lib/utils";
 import useAuthStore from "@/stores/useAuthStore";
+import useMapStore from "@/stores/useMapStore";
 import useVoiceStore from "@/stores/useVoiceStore";
 import MarkdownText from "./shared/MarkdownText";
 import { Badge } from "./ui/badge";
@@ -40,13 +43,13 @@ import { isVoiceSessionActive } from "./Voice/VoiceFloatingIndicator";
 import VoiceModeView from "./Voice/VoiceModeView";
 
 const CARD_ICONS: Record<ToolCardIcon, React.ReactNode> = {
-  search: <Search className="h-3.5 w-3.5" />,
-  a11y: <Accessibility className="h-3.5 w-3.5" />,
+  search: <SearchIcon size={14} />,
+  a11y: <AccessibilityIcon size={14} />,
   parking: <SquareParking className="h-3.5 w-3.5" />,
   bus: <Bus className="h-3.5 w-3.5" />,
   air: <Wind className="h-3.5 w-3.5" />,
   env: <Thermometer className="h-3.5 w-3.5" />,
-  hazard: <TriangleAlert className="h-3.5 w-3.5" />,
+  hazard: <TriangleAlertIcon size={14} />,
   nav: <Navigation className="h-3.5 w-3.5" />,
 };
 
@@ -240,8 +243,16 @@ function MessageBubble({ message }: { message: ChatBubble }) {
  * （桌面版側欄 / 手機版 Bottom Sheet 共用），由父層依 `chatOpen` 決定何時
  * 掛載。標題列與返回/關閉按鈕交給 BottomSheet 的共用 panel header 處理，
  * 這裡只負責訊息串、建議 chip 與輸入框。
+ *
+ * `BottomSheet` actually mounts *two* copies of this component at once — a
+ * mobile one and a desktop one — and only toggles which is `inert`/hidden by
+ * breakpoint, rather than conditionally rendering just one. `active` tells
+ * this instance whether it's the one the user can actually see, so exactly
+ * one of the two consumes `pendingAiQuery` on mount (see the effect below) —
+ * without it, both instances' mount effects race for the same store value
+ * and the message can land in the hidden copy.
  */
-export default function AIChatBot() {
+export default function AIChatBot({ active = true }: { active?: boolean }) {
   const { t } = useAppTranslation();
   const { messages, handleSend, input, setInput, isLoading, stopStreaming } =
     useAIChat();
@@ -273,6 +284,23 @@ export default function AIChatBot() {
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages]);
+
+  // The unified home-screen input hands off a question-shaped query via the
+  // store instead of calling `handleSend` directly: this component owns its
+  // own `useAIChat()` instance (its own message history), so a query typed
+  // before the panel exists has nowhere else to land. Gated on `active`
+  // because both the mobile and desktop copies of this component mount at
+  // once (see the doc comment above) — only the visible one may consume it.
+  // The `pendingAiQuery` guard makes this safe to re-run whenever
+  // `handleSend`'s identity changes — once consumed, the field is empty and
+  // every later run no-ops.
+  useEffect(() => {
+    if (!active) return;
+    const { pendingAiQuery, setPendingAiQuery } = useMapStore.getState();
+    if (!pendingAiQuery) return;
+    setPendingAiQuery("");
+    handleSend(pendingAiQuery);
+  }, [active, handleSend]);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     // !isComposing：避免中文輸入法選字時按 Enter 誤送出（與 PlanInput 一致）
@@ -351,7 +379,7 @@ export default function AIChatBot() {
               disabled={!input.trim()}
               className="shrink-0"
             >
-              <SendHorizonal className="h-4 w-4" />
+              <SendIcon size={16} />
               <span className="sr-only">{t("chatbot.send", "傳送")}</span>
             </Button>
           )}

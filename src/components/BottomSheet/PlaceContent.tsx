@@ -1,20 +1,16 @@
 "use client";
 
 import {
-  Accessibility,
-  ArrowLeft,
-  ArrowUpDown,
-  Bookmark,
-  BookmarkCheck,
-  Check,
-  DoorOpen,
-  ExternalLink,
-  Loader2,
-  MapPin,
-  Navigation,
-  Share2,
-  X,
-} from "lucide-react";
+  AccessibilityIcon,
+  ArrowDownUpIcon,
+  BookmarkCheckIcon,
+  BookmarkIcon,
+  CheckIcon,
+  ExternalLinkIcon,
+  MapPinIcon,
+  XIcon,
+} from "@animateicons/react/lucide";
+import { ArrowLeft, DoorOpen, Loader2, Navigation, Share2 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useAppTranslation } from "@/i18n/client";
@@ -22,7 +18,9 @@ import { getNearbyRouteA11yPlaces, getOsmPlaceDetail } from "@/lib/api/a11y";
 import { getPlaceTypeLabel } from "@/lib/placeTypes";
 import { geoCoords } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
+import useOnboardingStore from "@/stores/useOnboardingStore";
 import type { IBathroom, metroA11yData } from "@/types";
+import { checklistPriorityOrder } from "@/types/a11yProfile";
 import type { OsmPlaceDetail } from "@/types/route";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
@@ -75,6 +73,8 @@ export default function PlaceContent() {
       map: s.map,
     })),
   );
+
+  const situations = useOnboardingStore((s) => s.profile.situations);
 
   const [nearbyBathrooms, setNearbyBathrooms] = useState<IBathroom[]>([]);
   const [nearbyMetro, setNearbyMetro] = useState<metroA11yData[]>([]);
@@ -293,8 +293,13 @@ export default function PlaceContent() {
       });
     }
 
+    // Surface whichever facility the user's own profile depends on first,
+    // instead of a fixed order that treats every visitor the same.
+    const priority = checklistPriorityOrder(situations);
+    items.sort((a, b) => priority.indexOf(a.key) - priority.indexOf(b.key));
+
     return items;
-  }, [isPlace, place, nearbyBathrooms, nearbyMetro, osmDetail, t]);
+  }, [isPlace, place, nearbyBathrooms, nearbyMetro, osmDetail, situations, t]);
 
   const handleFlyTo = useCallback(
     (lng: number, lat: number, zoom = 17) => {
@@ -337,7 +342,7 @@ export default function PlaceContent() {
         </button>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 text-xs font-medium text-sky-600 dark:text-sky-400 mb-0.5">
-            <MapPin className="h-3.5 w-3.5" />
+            <MapPinIcon size={14} />
             {t("placeInfoLabel")}
           </div>
           <h1 className="text-lg font-bold leading-tight line-clamp-2">
@@ -374,7 +379,7 @@ export default function PlaceContent() {
             }
             className="rounded-full gap-1"
           >
-            <Accessibility className="h-3 w-3" />
+            <AccessibilityIcon size={12} />
             {getAccessibilityStatusLabel(place!.accessibility.status)}
           </Badge>
         )}
@@ -388,7 +393,7 @@ export default function PlaceContent() {
               variant="outline"
               className="rounded-full gap-1 cursor-pointer hover:bg-muted"
             >
-              <ExternalLink className="h-3 w-3" />
+              <ExternalLinkIcon size={12} />
               {t("viewOnOSM")}
             </Badge>
           </a>
@@ -403,7 +408,7 @@ export default function PlaceContent() {
               variant="outline"
               className="rounded-full gap-1 cursor-pointer hover:bg-muted"
             >
-              <ExternalLink className="h-3 w-3" />
+              <ExternalLinkIcon size={12} />
               {t("viewOnGoogleMaps")}
             </Badge>
           </a>
@@ -425,11 +430,7 @@ export default function PlaceContent() {
           size="icon"
           className="rounded-xl h-11 w-11 shrink-0"
         >
-          {saved ? (
-            <BookmarkCheck className="h-4 w-4" />
-          ) : (
-            <Bookmark className="h-4 w-4" />
-          )}
+          {saved ? <BookmarkCheckIcon size={16} /> : <BookmarkIcon size={16} />}
         </Button>
         <Button
           onClick={handleShare}
@@ -445,7 +446,7 @@ export default function PlaceContent() {
       {addressParts && (
         <section className="rounded-xl bg-muted/30 p-3 space-y-1.5">
           <h2 className="text-sm font-semibold flex items-center gap-1.5">
-            <MapPin className="h-4 w-4 text-muted-foreground" />
+            <MapPinIcon size={16} className="text-muted-foreground" />
             {t("addressInfo")}
           </h2>
           <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
@@ -480,7 +481,7 @@ export default function PlaceContent() {
       {/* Nearby Accessibility Facilities */}
       <section>
         <h2 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
-          <Accessibility className="h-4 w-4" />
+          <AccessibilityIcon size={16} />
           {t("nearbyA11y")}
         </h2>
 
@@ -526,7 +527,7 @@ export default function PlaceContent() {
                 className="w-full flex items-center gap-3 p-3 rounded-xl bg-muted/40 hover:bg-muted/70 transition-colors text-left"
               >
                 <div className="h-9 w-9 rounded-full bg-green-500/10 flex items-center justify-center shrink-0">
-                  <ArrowUpDown className="h-4 w-4 text-green-600" />
+                  <ArrowDownUpIcon size={16} className="text-green-600" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">
@@ -552,7 +553,7 @@ export default function PlaceContent() {
       {/* Accessibility Checklist */}
       <section>
         <h2 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
-          <Accessibility className="h-4 w-4" />
+          <AccessibilityIcon size={16} />
           {t("a11yChecklist")}
         </h2>
         <div className="grid grid-cols-2 gap-2">
@@ -566,9 +567,9 @@ export default function PlaceContent() {
               }`}
             >
               {item.available ? (
-                <Check className="h-4 w-4 shrink-0" />
+                <CheckIcon size={16} className="shrink-0" />
               ) : (
-                <X className="h-4 w-4 shrink-0 opacity-40" />
+                <XIcon size={16} className="shrink-0 opacity-40" />
               )}
               <span className="truncate">{item.label}</span>
             </div>
@@ -582,7 +583,7 @@ export default function PlaceContent() {
           (osmDetail.facilities && osmDetail.facilities.length > 0)) && (
           <section className="rounded-xl bg-muted/30 p-3 space-y-2">
             <h2 className="text-sm font-semibold flex items-center gap-1.5">
-              <Accessibility className="h-4 w-4 text-muted-foreground" />
+              <AccessibilityIcon size={16} className="text-muted-foreground" />
               {t("osmAccessibilityInfo")}
             </h2>
             {osmDetail.wheelchair && (
@@ -629,7 +630,10 @@ export default function PlaceContent() {
                     }}
                     className="w-full flex items-center gap-2 p-2 rounded-lg bg-muted/40 hover:bg-muted/70 transition-colors text-left text-sm"
                   >
-                    <Accessibility className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <AccessibilityIcon
+                      size={14}
+                      className="text-muted-foreground shrink-0"
+                    />
                     <span className="truncate">{f.name || f.category}</span>
                     {f.wheelchair && (
                       <Badge

@@ -10,10 +10,10 @@
   "welcome": "歡迎，{{name}}",
   "help": "使用說明",
   "helpDescription": {
-    "overview": "歡迎使用我們的地圖 App！我們致力於提供全面的地點資訊服務。\n在全台各地，您都可以使用本 App 作為一般的導航工具；同時，我們正在台北市優先試行「無障礙友善地圖」計畫，未來將逐步擴展到更多城市。",
+    "overview": "歡迎使用無障礙智慧地圖！我們致力於提供全台灣的地點搜尋、路線規劃與無障礙設施資訊。無障礙相關資料（廁所、坡道、電梯等）目前涵蓋部分縣市，其餘地區仍在持續擴充中。",
     "tabs": {
       "features": "通用功能",
-      "taipei": "台北專區",
+      "taipei": "無障礙設施",
       "feedback": "回饋",
       "faq": "FAQ",
       "repository": "原始碼",
@@ -21,16 +21,16 @@
     },
     "features": {
       "general": {
-        "title": "1. 全台通用功能：基本搜尋與導航\n在所有城市，您都可以使用以下基本功能：",
+        "title": "1. 基本搜尋與導航\n在全台各地，您都可以使用以下基本功能：",
         "features": [
-          "搜尋地點：在上方的「搜尋框」輸入店家、景點或地址，即可找到目標位置。",
-          "路線規劃：找到地點後，可點擊「導航」功能，App 會為您規劃前往的路線，使用方式與一般導航程式相同。"
+          "搜尋地點：在上方的「搜尋框」輸入店家、景點或地址，即可找到目標位置；也可以直接問 AI 助理，例如「附近有無障礙廁所嗎」。",
+          "路線規劃：找到地點後，可點擊「導航」功能規劃路線，並依需求選擇「一般／輪椅／長者／視障」等無障礙模式。"
         ]
       },
       "taipei": {
-        "title": "2. 台北市試行功能：無障礙地圖（請注意：以下功能目前僅限台北市地區）",
+        "title": "2. 無障礙設施查詢（資料涵蓋範圍持續擴充中）",
         "features": {
-          "filter": "在台北市範圍內，點擊地圖右上方的「篩選」圖示，即可根據「無障礙廁所」、「無障礙坡道」或「電梯」等設施，快速找到符合您需求的友善地點。"
+          "filter": "點擊地圖的「篩選」圖示，即可根據「無障礙廁所」、「無障礙坡道」或「電梯」等設施，快速找到符合您需求的地點。目前無障礙資料涵蓋部分縣市，其餘地區持續擴充中。"
         },
         "note": "地圖無障礙圖示說明：",
         "icons": [
@@ -43,25 +43,29 @@
     "feedback": {
       "title": "3. 如何回報問題或提供建議\n您的回饋能幫助我們不斷進步：",
       "steps": [
-        "點擊左上角「選單」圖示，選擇「意見回饋」。",
+        "點擊左下角的帳號圖示，選擇「意見回饋」。",
         "詳細填寫您的問題或建議後「送出」。"
       ],
       "examples": [
-        "無障礙資訊 (台北市)：「A 咖啡廳的無障礙坡道已拆除。」",
-        "導航功能 (所有地區)：「在台中市導航時，路線規劃錯誤。」",
-        "新增地點建議 (台北市)：「推薦台北市的 B 餐廳，他們有無障礙廁所。」"
+        "無障礙資訊：「A 咖啡廳的無障礙坡道已拆除。」",
+        "導航功能：「在台中市導航時，路線規劃錯誤。」",
+        "新增地點建議：「推薦 B 餐廳，他們有無障礙廁所。」"
       ]
     },
     "faq": {
       "title": "常見問題解答 (FAQ)",
       "items": [
         {
-          "question": "Q:為什麼在我的城市 (非台北市) 找不到任何無障礙設施的圖示或篩選功能？",
-          "answer": "A:無障礙地圖功能目前為試辦階段，優先以台北市的資料進行測試與優化。我們正努力擴展資料庫，未來將逐步開放更多城市的無障礙資訊。現階段在其他城市，您仍可使用 App 內建的一般地點搜尋與導航功能。感謝您的支持與耐心！"
+          "question": "Q:為什麼在我的地區找不到無障礙設施的圖示或篩選功能？",
+          "answer": "A:無障礙資料是我們持續擴充的資料庫，目前涵蓋部分縣市，尚未涵蓋的地區會逐步開放。現階段您仍可在任何地區使用一般地點搜尋與導航功能。感謝您的支持與耐心！"
         },
         {
-          "question": "Q:為什麼我送出台北的無障礙資訊回饋後，沒有馬上看到更新？",
+          "question": "Q:為什麼我送出無障礙資訊回饋後，沒有馬上看到更新？",
           "answer": "A:感謝您的回饋！為確保資訊準確，所有回報都需經過團隊人工審核，作業需要一些時間，請您耐心等候。"
+        },
+        {
+          "question": "Q:我想再看一次使用說明或新手導覽，要去哪裡看？",
+          "answer": "A:這份使用說明可以隨時從帳號選單重新開啟。新手導覽（首次啟動時的四步驟介紹）可以到「設定 → 一般」找到「重看新手導覽」重新開始。"
         }
       ]
     }
@@ -360,6 +364,9 @@
   "a11yLoadFailed": "無障礙設施資料載入失敗，請稍後再試",
   "loadingA11yData": "載入無障礙設施中…",
   "quickActions": "快捷功能",
+  "nearbyContextTitle": "你附近",
+  "homeShortcutsSettingsTitle": "首頁快捷方式",
+  "homeShortcutsSettingsDesc": "選擇首頁要顯示哪些捷徑",
   "highContrast": "高對比模式",
   "highContrastDesc": "黑底黃字、加粗文字，適合低視力使用者",
   "a11yMode": "無障礙模式",
@@ -601,5 +608,142 @@
   "recalcAnalyzingRoute": "正在分析目前路況",
   "recalcHazards": "正在考量附近 {{count}} 個障礙回報",
   "recalcFacilities": "正在考量沿途 {{count}} 個無障礙設施",
-  "routeA11yFacilityCount": "沿途 {{count}} 個無障礙設施"
+  "routeA11yFacilityCount": "沿途 {{count}} 個無障礙設施",
+  "tagline": "找得到、進得去、到得了",
+  "auth": {
+    "welcomeBack": "歡迎回來",
+    "createAccount": "建立新帳號",
+    "resetPassword": "重設密碼",
+    "login": "登入",
+    "register": "註冊",
+    "orEmail": "或使用電子郵件",
+    "nickname": "暱稱",
+    "email": "電子郵件",
+    "password": "密碼",
+    "showPassword": "顯示密碼",
+    "hidePassword": "隱藏密碼",
+    "forgotPassword": "忘記密碼？",
+    "guestPath": "不登入也能查地圖和規劃路線 →",
+    "valueSyncTitle": "收藏跨裝置同步",
+    "valueSyncDesc": "手機存的地點，電腦也看得到",
+    "valueSosTitle": "緊急聯絡人",
+    "valueSosDesc": "SOS 時自動通知家人",
+    "valueAiTitle": "AI 記住你的偏好",
+    "valueAiDesc": "不用每次重講需求",
+    "needsVerification": "請先完成信箱驗證",
+    "resendVerification": "重新寄送驗證信",
+    "resendSuccess": "驗證信已寄出，請至信箱查收",
+    "resendFailed": "重寄驗證信失敗",
+    "loginErrorCreds": "電子郵件或密碼錯誤",
+    "loginFailed": "登入失敗",
+    "loginTooMany": "登入嘗試過於頻繁，請稍後再試",
+    "googleLoginFailed": "Google 登入失敗",
+    "registerFailed": "註冊失敗",
+    "emailTaken": "這個電子郵件已被註冊",
+    "forgotSendButton": "寄送重設密碼信",
+    "forgotSendFailed": "寄信服務暫時無法使用，請稍後再試",
+    "forgotSentBody": "若該信箱已註冊，重設密碼信已寄出，請至信箱查收",
+    "backToLogin": "返回登入",
+    "registerSuccessTitle": "你的帳號已建立",
+    "registerSuccessBody": "我們寄了驗證信到 {{email}}",
+    "registerNoEmailBody": "帳號已建立，但驗證信寄送失敗，請重新寄送",
+    "openInbox": "打開信箱",
+    "resend": "重寄",
+    "goToLogin": "前往登入"
+  },
+  "welcomeCard": {
+    "ariaLabel": "新手提示卡",
+    "greeting": "👋 歡迎，{{name}}",
+    "greetingGuest": "👋 歡迎",
+    "dismiss": "關閉歡迎卡",
+    "tip1": "① 搜尋列 — 找地點或直接問 AI",
+    "tip2": "② 篩選鈕 — 只看你需要的設施",
+    "tip3": "③ 右下紅鈕 — 緊急時點一下求救",
+    "tour": "帶我看一遍",
+    "selfExplore": "我自己來"
+  },
+  "coachMarks": {
+    "step1Title": "搜尋列",
+    "step1Body": "打地名找地點，或直接問「附近有無障礙廁所嗎」",
+    "step2Title": "無障礙篩選",
+    "step2Body": "只顯示你需要的設施類型",
+    "step3Title": "SOS 按鈕",
+    "step3Body": "點一下發送求救，會通知你的緊急聯絡人",
+    "next": "下一步",
+    "done": "完成",
+    "skip": "略過導覽",
+    "stepOf": "第 {{current}} 步，共 {{total}} 步",
+    "escHint": "按 Esc 可略過導覽"
+  },
+  "onboarding": {
+    "skip": "略過",
+    "next": "下一步",
+    "back": "上一步",
+    "stepOf": "第 {{current}} 步，共 {{total}} 步",
+    "escHint": "按 Esc 可略過導覽",
+    "ariaTitle": "新手導覽",
+    "intro": {
+      "title": "為行動不便者設計的地圖",
+      "body": "不只告訴你怎麼走，還告訴你進不進得去。",
+      "start": "開始設定",
+      "browse": "先四處看看"
+    },
+    "needs": {
+      "title": "哪些情況符合你？",
+      "subtitle": "可以多選",
+      "hint": "這會影響路線怎麼算，之後可以在設定裡隨時改。",
+      "derivedMode": "路線模式會設為「{{mode}}」"
+    },
+    "situation": {
+      "wheelchair": "使用輪椅",
+      "wheelchairDesc": "需要無階梯路線與電梯",
+      "walker": "使用助行器",
+      "walkerDesc": "需要平緩好走的路面",
+      "vision": "視覺障礙",
+      "visionDesc": "需要語音與引導設施",
+      "slow": "行動較慢",
+      "slowDesc": "需要休息點與較短步行",
+      "stroller": "推嬰兒車",
+      "strollerDesc": "需要無階梯路線",
+      "companion": "陪同他人",
+      "companionDesc": "為家人或被照顧者規劃"
+    },
+    "location": {
+      "title": "我們需要你的位置",
+      "benefit1": "找出你附近的無障礙設施",
+      "benefit2": "從你現在的位置規劃路線",
+      "benefit3": "緊急時讓聯絡人知道你在哪",
+      "privacy": "位置只在使用時取得，不會持續追蹤，也不會分享給第三方。",
+      "allow": "允許定位",
+      "manual": "手動輸入位置也可以",
+      "requesting": "正在取得位置…",
+      "granted": "已取得你的位置",
+      "denied": "你拒絕了定位權限。仍然可以手動輸入位置，所有功能都能用。",
+      "unsupported": "這個裝置不支援定位，請改用手動輸入位置。"
+    },
+    "done": {
+      "title": "設定完成",
+      "subtitle": "從這三件事開始：",
+      "tryToilet": "找附近的無障礙廁所",
+      "tryRoute": "規劃一條無階梯路線",
+      "tryAi": "問 AI：這附近好走嗎？",
+      "start": "直接開始使用"
+    }
+  },
+  "profileTitle": "我的無障礙需求",
+  "profileDesc": "影響路線規劃與地圖顯示",
+  "profileSummaryPrefix": "依你的設定",
+  "profileAvoidStairs": "避開階梯",
+  "profileRequireElevator": "需電梯",
+  "profileRouteModeLabel": "路線模式",
+  "profileRouteModeAuto": "依你選的情況自動判定",
+  "profileRouteModeManual": "你已手動指定",
+  "profileNoSituations": "尚未設定",
+  "resetGuides": "重看新手導覽",
+  "resetGuidesDone": "已重設，下次開啟會再顯示導覽",
+  "resetGuidesDesc": "重新看一次首次啟動時的導覽與提示",
+  "resetGuidesButton": "重新開始",
+  "loginRegisterCta": "立即登入 / 註冊",
+  "goToLoginRegister": "前往登入 / 註冊",
+  "statusErrorCode": "錯誤代碼：{{code}}"
 }

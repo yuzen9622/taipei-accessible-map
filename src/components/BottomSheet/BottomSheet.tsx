@@ -520,7 +520,9 @@ export default function BottomSheet() {
             className={cn(
               "flex-1 overflow-x-hidden pb-safe",
               showAssistant ? "overflow-hidden px-0" : "px-4",
-              atPeek && !showAssistant ? "overflow-y-hidden" : "overflow-y-auto",
+              atPeek && !showAssistant
+                ? "overflow-y-hidden"
+                : "overflow-y-auto",
             )}
             onClick={
               atPeek && sheetMode === "home" && !showAssistant
@@ -532,7 +534,7 @@ export default function BottomSheet() {
             }
           >
             {showAssistant ? (
-              <AIChatBot />
+              <AIChatBot active={!isDesktop} />
             ) : (
               <AnimatePresence mode="wait">
                 <motion.div
@@ -743,7 +745,7 @@ export default function BottomSheet() {
                 )}
               >
                 {showAssistant ? (
-                  <AIChatBot />
+                  <AIChatBot active={isDesktop} />
                 ) : (
                   <AnimatePresence mode="wait">
                     <motion.div

@@ -1,18 +1,26 @@
 "use client";
 
 import {
+  CheckIcon,
+  CompassIcon,
+  GlobeIcon,
+  InfoIcon,
+  LoginIcon,
+  LogoutIcon,
+  MessageCircleIcon,
+  PlusIcon,
+  SettingsIcon,
+  UserIcon,
+  UserPlusIcon,
+} from "@animateicons/react/lucide";
+import {
   Brain,
   Contrast,
   Database,
-  Globe,
-  Info,
   KeyRound,
-  LogOut,
-  Settings,
   Shield,
   SlidersHorizontal,
   Type,
-  User,
 } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
@@ -49,8 +57,12 @@ import {
   LanguageConfig,
   type LanguageEnum,
 } from "@/lib/config";
+import { QUICK_ACTION_DEFS } from "@/lib/quickActions";
+import { cn } from "@/lib/utils";
 import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
+import useOnboardingStore from "@/stores/useOnboardingStore";
+import useQuickActionsStore from "@/stores/useQuickActionsStore";
 import { Button } from "../ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "../ui/select";
 import { ThemeSwitcher } from "../ui/shadcn-io/theme-switcher";
@@ -74,6 +86,13 @@ export default function AccountLogin() {
       userConfig: s.userConfig,
       updateUserConfig: s.updateUserConfig,
       logout: s.logout,
+    })),
+  );
+  const resetGuides = useOnboardingStore((s) => s.resetGuides);
+  const { enabledActions, toggleAction } = useQuickActionsStore(
+    useShallow((s) => ({
+      enabledActions: s.enabledActions,
+      toggleAction: s.toggleAction,
     })),
   );
   const { setActiveRailPanel, setSheetMode } = useMapStore(
@@ -158,6 +177,41 @@ export default function AccountLogin() {
     setActiveRailPanel("saved");
   };
 
+  // Settings sections that need an account currently just say "please log
+  // in" with no way to act on it — the user has to close settings, find the
+  // account menu, then come back. Closing settings and opening the auth
+  // dialog directly skips that round trip.
+  const goToLoginFromSettings = () => {
+    setOpenDialog(null);
+    setAuthDialogOpen(true);
+  };
+
+  // Resetting the flags alone wouldn't show anything — the tour and its
+  // gating (`ready`, deep-link checks) only run once at mount, in
+  // `OnboardingHost`. A reload is the simplest way to re-enter that flow
+  // exactly like a fresh first visit, without duplicating its gating logic
+  // here.
+  const rewatchTour = () => {
+    resetGuides();
+    window.location.reload();
+  };
+
+  const requiresLoginPrompt = (
+    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border/60 px-5 py-8 text-center">
+      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+        <LoginIcon size={20} />
+      </span>
+      <p className="text-sm text-muted-foreground">{t("login")}</p>
+      <Button
+        size="sm"
+        className="rounded-full"
+        onClick={goToLoginFromSettings}
+      >
+        {t("goToLoginRegister")}
+      </Button>
+    </div>
+  );
+
   return (
     <>
       <DropdownMenu>
@@ -176,7 +230,7 @@ export default function AccountLogin() {
                 className="w-full h-full rounded-full "
               />
             ) : (
-              <User className="h-6 w-6 " />
+              <UserIcon size={24} />
             )}
           </Button>
         </DropdownMenuTrigger>
@@ -188,12 +242,16 @@ export default function AccountLogin() {
           <DropdownMenuSeparator />
 
           {!user && (
-            <DropdownMenuItem
-              className="text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
-              onClick={() => setAuthDialogOpen(true)}
-            >
-              登入 / 註冊
-            </DropdownMenuItem>
+            <>
+              <DropdownMenuItem
+                className="text-sm font-medium text-primary hover:bg-primary/10 focus:bg-primary/10 focus:text-primary rounded-md"
+                onClick={() => setAuthDialogOpen(true)}
+              >
+                <UserPlusIcon size={16} className="mr-2" />
+                {t("loginRegisterCta")}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
           )}
 
           {
@@ -205,7 +263,7 @@ export default function AccountLogin() {
                 }}
                 className="text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
               >
-                <Settings className="mr-2 h-4 w-4" />
+                <SettingsIcon size={16} className="mr-2" />
                 {t("settingTitle")}
               </DropdownMenuItem>
 
@@ -213,8 +271,16 @@ export default function AccountLogin() {
                 onClick={() => setOpenDialog("help")}
                 className="text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
               >
-                <Info className="mr-2 h-4 w-4" />
+                <InfoIcon size={16} className="mr-2" />
                 {t("help")}
+              </DropdownMenuItem>
+
+              <DropdownMenuItem
+                onClick={() => setOpenDialog("feedback")}
+                className="text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+              >
+                <MessageCircleIcon size={16} className="mr-2" />
+                {t("feedback")}
               </DropdownMenuItem>
 
               <DropdownMenuSeparator />
@@ -223,7 +289,7 @@ export default function AccountLogin() {
                   onClick={logout}
                   className="text-sm text-red-500 hover:text-red-600 rounded-md"
                 >
-                  <LogOut className="mr-2 h-4 w-4" />
+                  <LogoutIcon size={16} className="mr-2" />
                   {t("logout")}
                 </DropdownMenuItem>
               )}
@@ -338,7 +404,7 @@ export default function AccountLogin() {
 
                       <div className="flex justify-between gap-4">
                         <span className="text-sm font-medium text-foreground flex items-center gap-1">
-                          <Globe className="h-4 w-4" /> {t("language")}
+                          <GlobeIcon size={16} /> {t("language")}
                         </span>
                         <Select
                           value={userConfig.language}
@@ -392,26 +458,87 @@ export default function AccountLogin() {
                     </div>
                   )}
 
+                  {settingsTab === "general" && (
+                    <div className="mt-4 flex items-center justify-between gap-4 rounded-2xl border border-border/60 bg-background p-4">
+                      <div className="flex items-center gap-2">
+                        <CompassIcon
+                          size={16}
+                          className="text-muted-foreground"
+                        />
+                        <div>
+                          <p className="text-sm font-medium text-foreground">
+                            {t("resetGuides")}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {t("resetGuidesDesc")}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="rounded-full shrink-0"
+                        onClick={rewatchTour}
+                      >
+                        {t("resetGuidesButton")}
+                      </Button>
+                    </div>
+                  )}
+
+                  {settingsTab === "general" && (
+                    <div className="mt-4 rounded-2xl border border-border/60 bg-background p-4 space-y-3">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">
+                          {t("homeShortcutsSettingsTitle")}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {t("homeShortcutsSettingsDesc")}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {QUICK_ACTION_DEFS.map((def) => {
+                          const enabled = enabledActions.includes(def.id);
+                          return (
+                            <button
+                              key={def.id}
+                              type="button"
+                              onClick={() => toggleAction(def.id)}
+                              aria-pressed={enabled}
+                              className={cn(
+                                "flex min-h-11 items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium transition-all",
+                                enabled
+                                  ? "bg-primary/10 text-primary ring-2 ring-primary/40"
+                                  : "bg-muted/40 text-muted-foreground/70 hover:bg-muted",
+                              )}
+                            >
+                              {enabled ? (
+                                <CheckIcon size={16} />
+                              ) : (
+                                <PlusIcon size={16} />
+                              )}
+                              <def.Icon
+                                className={cn("h-4 w-4", def.iconClassName)}
+                              />
+                              {t(def.labelKey)}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
                   {settingsTab === "safety" && user && (
                     <div className="rounded-2xl border border-border/60 bg-background p-5 space-y-4">
                       <EmergencyContactsManager />
                     </div>
                   )}
-                  {settingsTab === "safety" && !user && (
-                    <p className="text-sm text-muted-foreground">
-                      {t("login")}
-                    </p>
-                  )}
+                  {settingsTab === "safety" && !user && requiresLoginPrompt}
                   {settingsTab === "account" && user && (
                     <div className="rounded-2xl border border-border/60 bg-background p-5 space-y-4">
                       <AccountSecurityPanel user={user} />
                     </div>
                   )}
-                  {settingsTab === "account" && !user && (
-                    <p className="text-sm text-muted-foreground">
-                      {t("login")}
-                    </p>
-                  )}
+                  {settingsTab === "account" && !user && requiresLoginPrompt}
                   {settingsTab === "memory" && (
                     <AIMemoryPanel
                       active={

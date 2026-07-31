@@ -1,20 +1,22 @@
 "use client";
 
 import {
+  PlusIcon,
+  ShareIcon,
+  VolumeXIcon,
+  XIcon,
+} from "@animateicons/react/lucide";
+import {
   BotMessageSquare,
   CloudRain,
   Leaf,
   Loader2,
   LocateFixed,
   Navigation,
-  Plus,
   RefreshCw,
-  Share2,
   Thermometer,
   Volume2,
-  VolumeX,
   Wind,
-  X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -316,7 +318,7 @@ export default function MapControlsWrapper() {
                 </>
               )}
               {envExpanded && (
-                <X className="h-3.5 w-3.5 text-muted-foreground" />
+                <XIcon size={14} className="text-muted-foreground" />
               )}
             </motion.button>
 
@@ -422,7 +424,7 @@ export default function MapControlsWrapper() {
                 {voiceEnabled ? (
                   <Volume2 className="h-5 w-5" />
                 ) : (
-                  <VolumeX className="h-5 w-5" />
+                  <VolumeXIcon size={20} />
                 )}
               </Button>
               <Button
@@ -500,7 +502,7 @@ export default function MapControlsWrapper() {
                     transition={{ duration: 0.2 }}
                     className="flex"
                   >
-                    <Plus className="h-5 w-5" />
+                    <PlusIcon size={20} />
                   </motion.span>
                 </Button>
 
@@ -538,7 +540,7 @@ export default function MapControlsWrapper() {
                       aria-label={t("shareLocation")}
                       className="rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all text-primary"
                     >
-                      <Share2 className="h-5 w-5" />
+                      <ShareIcon size={20} />
                     </Button>
                   </div>
                 )}
@@ -588,7 +590,7 @@ export default function MapControlsWrapper() {
                   inert={!isDesktop}
                   className="hidden lg:inline-flex rounded-full h-11 w-11 shadow-lg bg-background/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:shadow-xl transition-all text-primary"
                 >
-                  <Share2 className="h-5 w-5" />
+                  <ShareIcon size={20} />
                 </Button>
 
                 {/* AI ChatBot FAB (Desktop only — an independent floating
@@ -612,6 +614,7 @@ export default function MapControlsWrapper() {
                 {/* SOS Button (single tap) */}
                 <button
                   type="button"
+                  data-coach="sos"
                   aria-label="SOS"
                   onClick={() => setSosOpen(true)}
                   className="h-11 w-11 rounded-full bg-red-500 text-white shadow-lg hover:bg-red-600 hover:shadow-xl transition-colors flex items-center justify-center select-none shrink-0"

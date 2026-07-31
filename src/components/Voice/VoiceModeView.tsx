@@ -1,10 +1,13 @@
 "use client";
 
-import { Keyboard, Loader2, X } from "lucide-react";
+import { XIcon } from "@animateicons/react/lucide";
+import { Keyboard } from "lucide-react";
 import { useEffect, useRef } from "react";
+import { ThinkingOrb } from "thinking-orbs";
 import { Button } from "@/components/ui/button";
 import useReducedMotion from "@/hook/useReducedMotion";
 import { useAppTranslation } from "@/i18n/client";
+import { toolToOrbState } from "@/lib/ai/orbState";
 import { cn } from "@/lib/utils";
 import { recordingDotPresentation } from "@/lib/voice/audioLevel";
 import useVoiceStore from "@/stores/useVoiceStore";
@@ -66,11 +69,29 @@ export default function VoiceModeView() {
         aria-live="polite"
       >
         {transcripts.length === 0 && (
-          <p className="text-xs text-muted-foreground text-center py-6">
-            {listening
-              ? t("chatbot.voice.listeningHint", "請開始說話")
-              : t("chatbot.voice.connectingHint", "連線中，請稍候…")}
-          </p>
+          <div className="flex flex-col items-center gap-3 py-6">
+            <ThinkingOrb
+              state={
+                listening
+                  ? "listening"
+                  : status.status === "model-speaking"
+                    ? "composing"
+                    : "working"
+              }
+              size={64}
+              role="img"
+              aria-label={
+                listening
+                  ? t("chatbot.voice.listeningHint", "請開始說話")
+                  : t("chatbot.voice.connectingHint", "連線中，請稍候…")
+              }
+            />
+            <p className="text-xs text-muted-foreground text-center">
+              {listening
+                ? t("chatbot.voice.listeningHint", "請開始說話")
+                : t("chatbot.voice.connectingHint", "連線中，請稍候…")}
+            </p>
+          </div>
         )}
 
         {transcripts.map((entry) => (
@@ -103,7 +124,13 @@ export default function VoiceModeView() {
           <div className="flex items-center gap-2 text-[13px] text-muted-foreground py-1.5 px-1">
             {activeTool.type === "call" ? (
               <>
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-primary/70 shrink-0" />
+                <ThinkingOrb
+                  state={toolToOrbState(activeTool.name)}
+                  size={20}
+                  role="img"
+                  aria-label={t("chatbot.voice.toolQuerying", "查詢中…")}
+                  className="shrink-0"
+                />
                 <span className="animate-pulse">
                   {t("chatbot.voice.toolQuerying", "查詢中…")}（
                   {activeTool.name}）
@@ -152,7 +179,7 @@ export default function VoiceModeView() {
           variant="destructive"
           className="flex-1"
         >
-          <X className="h-4 w-4 mr-1.5" />
+          <XIcon size={16} className="mr-1.5" />
           {t("chatbot.voice.endSession", "結束語音對話")}
         </Button>
       </div>

@@ -3,6 +3,7 @@
 import { useCallback, useEffect } from "react";
 import { useShallow } from "zustand/react/shallow";
 import BottomSheet from "@/components/BottomSheet/BottomSheet";
+import CoachMarks from "@/components/Onboarding/CoachMarks";
 import KeyboardShortcuts from "@/components/shared/KeyboardShortcuts";
 import SkipNavLink from "@/components/shared/SkipNavLink";
 import { refreshToken } from "@/lib/api/auth";
@@ -10,6 +11,8 @@ import { getUserInfo } from "@/lib/api/user";
 import { migrateLegacyPlaceStorage } from "@/lib/place/adapters";
 import useAuthStore from "@/stores/useAuthStore";
 import useMapStore, { type SavedPlaceCategory } from "@/stores/useMapStore";
+import useOnboardingStore from "@/stores/useOnboardingStore";
+import useQuickActionsStore from "@/stores/useQuickActionsStore";
 
 export default function ClientLayout({
   children,
@@ -42,6 +45,19 @@ export default function ClientLayout({
       }
     }
   }, [setSession, setUser, setUserConfig]);
+
+  // Read the onboarding flags and accessibility profile out of localStorage
+  // after mount. Every consumer gates on the store's `hydrated` flag, so this
+  // runs before anything can decide to show or hide a one-time guide.
+  const initOnboarding = useOnboardingStore((s) => s.initFromStorage);
+  useEffect(() => {
+    initOnboarding();
+  }, [initOnboarding]);
+
+  const initQuickActions = useQuickActionsStore((s) => s.initFromStorage);
+  useEffect(() => {
+    initQuickActions();
+  }, [initQuickActions]);
 
   useEffect(() => {
     const storedHistory = localStorage.getItem("searchHistory");
@@ -121,6 +137,7 @@ export default function ClientLayout({
         {children}
       </main>
       <BottomSheet />
+      <CoachMarks />
       <KeyboardShortcuts />
     </div>
   );

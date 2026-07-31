@@ -7,6 +7,8 @@ import type { ChatMessage } from "@/lib/api/ai";
 import { streamChatWithAgent } from "@/lib/api/ai";
 import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
+import useOnboardingStore from "@/stores/useOnboardingStore";
+import { describeProfileForAssistant } from "@/types/a11yProfile";
 import useComputeRoute from "./useComputeRoute";
 
 export interface ToolActivity {
@@ -124,6 +126,21 @@ export default function useAIChat() {
       setInput("");
       setIsLoading(true);
       executeAction({ type: "clear-markers" });
+
+      // Re-derived on every send (not just at mount) so a profile edited mid
+      // session — e.g. via settings — takes effect on the next message without
+      // needing the chat to remount.
+      const profileNote = describeProfileForAssistant(
+        useOnboardingStore.getState().profile,
+        userConfig.language === "en" ? "en" : "zh-TW",
+      );
+      const baseSystemPrompt = `你是「無障礙智慧地圖」的 AI 助理，專門協助使用者查詢無障礙相關資訊、路線規劃、附近設施。請使用${userConfig.language === "en" ? "英文" : "繁體中文"}回答。`;
+      chatHistory.current[0] = {
+        role: "system",
+        content: profileNote
+          ? `${baseSystemPrompt}${profileNote}`
+          : baseSystemPrompt,
+      };
 
       const userBubble: ChatBubble = { role: "user", content: trimmed };
       setMessages((prev) => [...prev, userBubble]);
@@ -273,7 +290,14 @@ export default function useAIChat() {
         abortRef.current = null;
       }
     },
-    [isLoading, userLocation, handleComputeRoute, setOpen, t],
+    [
+      isLoading,
+      userLocation,
+      handleComputeRoute,
+      setOpen,
+      t,
+      userConfig.language,
+    ],
   );
 
   const stopStreaming = useCallback(() => {

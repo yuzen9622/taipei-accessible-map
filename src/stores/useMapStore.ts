@@ -68,6 +68,8 @@ interface MapState {
   sidebarCollapsed: boolean;
   activeRailPanel: RailPanel;
   pendingSearchQuery: string;
+  /** Set by the unified home-screen input when a query reads as a question rather than a place; `AIChatBot` consumes and sends it once the panel opens. */
+  pendingAiQuery: string;
   chatOpen: boolean;
   aiResultMarkers: AiResultMarker[];
   liveBusPositions: LiveBus[];
@@ -91,6 +93,7 @@ interface MapAction {
     }> | null,
   ) => void;
   toggleA11yType: (type: A11yEnum) => void;
+  setSelectedA11yTypes: (types: Set<A11yEnum>) => void;
   setA11yDrawerOpen: (open: boolean) => void;
   setA11yPlaces: (places: Marker[] | null) => void;
   initSearchHistory: (history: PlaceDetail[]) => void;
@@ -125,6 +128,7 @@ interface MapAction {
   setIs3D: (v: boolean) => void;
   setSidebarCollapsed: (v: boolean) => void;
   setPendingSearchQuery: (query: string) => void;
+  setPendingAiQuery: (query: string) => void;
   setActiveRailPanel: (panel: RailPanel) => void;
   setChatOpen: (v: boolean) => void;
   setAiResultMarkers: (markers: AiResultMarker[]) => void;
@@ -244,6 +248,9 @@ const useMapStore = create<MapStore>((set, get) => ({
     if (next.has(type)) next.delete(type);
     else next.add(type);
     set({ selectedA11yTypes: next, a11yDrawerOpen: next.size > 0 });
+  },
+  setSelectedA11yTypes: (types: Set<A11yEnum>) => {
+    set({ selectedA11yTypes: types, a11yDrawerOpen: types.size > 0 });
   },
   a11yDrawerOpen: false,
   setA11yDrawerOpen: (open) => set({ a11yDrawerOpen: open }),
@@ -395,6 +402,8 @@ const useMapStore = create<MapStore>((set, get) => ({
   },
   pendingSearchQuery: "",
   setPendingSearchQuery: (query) => set({ pendingSearchQuery: query }),
+  pendingAiQuery: "",
+  setPendingAiQuery: (query) => set({ pendingAiQuery: query }),
   sidebarCollapsed: false,
   setSidebarCollapsed: (v) => set({ sidebarCollapsed: v }),
   activeRailPanel: "search" as RailPanel,

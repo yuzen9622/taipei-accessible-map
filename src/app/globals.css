@@ -374,6 +374,10 @@ img.adp-marker2 {
   --z-floating-controls: 30;
   --z-drawer-rail: 40;
   --z-modal: 50;
+  /* 一次性教學層（首次啟動導覽、coach marks 聚光燈）：必須蓋過 modal，因為
+     它教的就是「畫面上這顆按鈕在哪」，被任何面板或對話框遮住就失去意義；但
+     仍低於 toast，讓「已開啟語音模式」這類系統回饋在導覽期間看得到。 */
+  --z-onboarding: 55;
   --z-toast: 60;
 }
 

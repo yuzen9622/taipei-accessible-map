@@ -1,16 +1,20 @@
 "use client";
 
 import {
-  BookOpen,
-  ExternalLink,
+  BookOpenIcon,
+  ExternalLinkIcon,
+  FilterIcon as FilterIconAnimated,
+  GlobeIcon,
+  MapPinIcon,
+  MessageCircleIcon,
+} from "@animateicons/react/lucide";
+import {
+  Accessibility,
+  Filter,
   Globe,
   HelpCircle,
-  MapPin,
-  MessageSquare,
-  Search,
   Navigation,
-  Filter,
-  Accessibility,
+  Search,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -120,7 +124,10 @@ function DataSourceCard({
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-foreground">{alt}</p>
       </div>
-      <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground opacity-60 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity" />
+      <ExternalLinkIcon
+        size={14}
+        className="shrink-0 text-muted-foreground opacity-60 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+      />
     </Link>
   );
 }
@@ -156,7 +163,7 @@ export default function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
         <div className="flex flex-col h-full max-h-[85vh]">
           <DialogHeader className="shrink-0 border-b border-border/60 px-5 py-4">
             <DialogTitle className="flex items-center gap-2 text-base font-semibold">
-              <BookOpen className="size-[18px] text-primary" />
+              <BookOpenIcon size={18} className="text-primary" />
               {t("help")}
             </DialogTitle>
             <DialogDescription className="text-[13px] text-muted-foreground mt-1">
@@ -174,21 +181,21 @@ export default function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
                   value="features"
                   className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 py-2.5 min-h-[44px] text-[13px]"
                 >
-                  <Globe className="h-3.5 w-3.5 mr-1.5" />
+                  <GlobeIcon size={14} className="mr-1.5" />
                   {t("helpDescription.tabs.features")}
                 </TabsTrigger>
                 <TabsTrigger
                   value="taipei"
                   className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 py-2.5 min-h-[44px] text-[13px]"
                 >
-                  <MapPin className="h-3.5 w-3.5 mr-1.5" />
+                  <MapPinIcon size={14} className="mr-1.5" />
                   {t("helpDescription.tabs.taipei")}
                 </TabsTrigger>
                 <TabsTrigger
                   value="feedback"
                   className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 py-2.5 min-h-[44px] text-[13px]"
                 >
-                  <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
+                  <MessageCircleIcon size={14} className="mr-1.5" />
                   {t("helpDescription.tabs.feedback")}
                 </TabsTrigger>
                 <TabsTrigger
@@ -221,7 +228,7 @@ export default function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
                 <div className="rounded-xl border border-border/60 bg-card/50 p-4">
                   <div className="flex items-start gap-3">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                      <Filter className="h-4 w-4" />
+                      <FilterIconAnimated size={16} />
                     </div>
                     <p className="text-[13px] leading-relaxed text-muted-foreground">
                       {t("helpDescription.features.taipei.features.filter")}
@@ -310,7 +317,7 @@ export default function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
                       className="inline-flex items-center gap-1.5 text-[13px] text-primary hover:underline"
                     >
                       github.com/yuzen9622/taipei-accessible-map
-                      <ExternalLink className="h-3 w-3" />
+                      <ExternalLinkIcon size={12} />
                     </Link>
                   </div>
 

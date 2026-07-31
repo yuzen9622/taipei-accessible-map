@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
+import StatusPage from "@/components/shared/StatusPage";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { resetPassword } from "@/lib/api/auth";
@@ -67,34 +67,33 @@ function ResetPasswordContent() {
 
   if (!token) {
     return (
-      <div className="flex h-dvh w-full flex-col items-center justify-center gap-4 p-6 text-center">
-        <p className="text-lg font-semibold">重設連結無效</p>
-        <Button asChild>
-          <Link href={`/${lng}`}>回到首頁</Link>
-        </Button>
-      </div>
+      <StatusPage
+        status="error"
+        title="重設連結無效"
+        primaryAction={{ label: "回到首頁", href: `/${lng}` }}
+      />
     );
   }
 
   if (success) {
     return (
-      <div className="flex h-dvh w-full flex-col items-center justify-center gap-4 p-6 text-center">
-        <p className="text-lg font-semibold">密碼已重設，請使用新密碼登入</p>
-        <p className="text-sm text-muted-foreground">您已自動登入</p>
-        <Button asChild>
-          <Link href={`/${lng}`}>回到地圖</Link>
-        </Button>
-      </div>
+      <StatusPage
+        status="success"
+        title="密碼已重設，請使用新密碼登入"
+        description="您已自動登入"
+        primaryAction={{ label: "回到地圖", href: `/${lng}` }}
+      />
     );
   }
 
+  // The active form step isn't a "result" the shared shell models — it stays
+  // a bespoke form, still inside the same StatusPage card for visual
+  // consistency with the two result states above and below it. No status
+  // icon applies to an in-progress form, so it's hidden rather than showing
+  // a misleading spinner or checkmark.
   return (
-    <div className="flex h-dvh w-full flex-col items-center justify-center gap-4 p-6">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm space-y-3 text-center"
-      >
-        <p className="text-lg font-semibold">設定新密碼</p>
+    <StatusPage status="pending" hideIcon title="設定新密碼">
+      <form onSubmit={handleSubmit} className="space-y-3">
         <Input
           type="password"
           placeholder="新密碼"
@@ -107,6 +106,6 @@ function ResetPasswordContent() {
           重設密碼
         </Button>
       </form>
-    </div>
+    </StatusPage>
   );
 }
