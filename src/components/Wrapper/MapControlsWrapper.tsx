@@ -475,6 +475,7 @@ export default function MapControlsWrapper() {
                 {/* AI ChatBot FAB (Mobile, always visible — primary entry) */}
                 {!chatOpen && (
                   <Button
+                    data-coach="ai"
                     onClick={() => setChatOpen(true)}
                     variant="default"
                     size="icon"
@@ -599,6 +600,7 @@ export default function MapControlsWrapper() {
                     isn't already open, matching the mobile FAB. */}
                 {!chatOpen && (
                   <Button
+                    data-coach="ai"
                     onClick={() => setChatOpen(true)}
                     variant="default"
                     size="icon"

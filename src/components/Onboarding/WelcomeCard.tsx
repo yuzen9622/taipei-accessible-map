@@ -1,6 +1,7 @@
 "use client";
 
 import { XIcon } from "@animateicons/react/lucide";
+import { PartyPopper } from "lucide-react";
 import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
 import { useAppTranslation } from "@/i18n/client";
@@ -49,7 +50,8 @@ export default function WelcomeCard() {
       className="space-y-3 rounded-2xl border border-primary/15 bg-primary/5 p-4"
     >
       <div className="flex items-start justify-between gap-2">
-        <p className="text-sm font-semibold">
+        <p className="flex items-center gap-1.5 text-sm font-semibold">
+          <PartyPopper className="h-4 w-4 shrink-0 text-primary" />
           {user
             ? t("welcomeCard.greeting", { name: user.name })
             : t("welcomeCard.greetingGuest")}
@@ -63,10 +65,14 @@ export default function WelcomeCard() {
           <XIcon size={16} />
         </button>
       </div>
+      {/* Kept to exactly the 4 things `CoachMarks` can actually spotlight
+          (search / a11y filter / AI / SOS) — anything listed here that the
+          tour can't walk the user to is worse than not mentioning it. */}
       <ul className="space-y-1.5 text-sm text-muted-foreground">
         <li>{t("welcomeCard.tip1")}</li>
         <li>{t("welcomeCard.tip2")}</li>
         <li>{t("welcomeCard.tip3")}</li>
+        <li>{t("welcomeCard.tip4")}</li>
       </ul>
       <div className="flex gap-2">
         <Button

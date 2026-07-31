@@ -13,8 +13,10 @@ import {
   Filter,
   Globe,
   HelpCircle,
+  LayoutGrid,
   Navigation,
   Search,
+  Sparkles,
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -155,7 +157,7 @@ export default function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
     returnObjects: true,
   }) as { question: string; answer: string }[];
 
-  const featureIcons = [Search, Navigation];
+  const featureIcons = [Search, Navigation, Sparkles, LayoutGrid];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

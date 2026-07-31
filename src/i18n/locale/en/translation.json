@@ -64,7 +64,9 @@
         "title": "1. Basic search and navigation\nAcross Taiwan you can use the following basic features:",
         "features": [
           "Search places: enter a business name, attraction, or address in the search box above, or just ask the AI assistant, e.g. \"any accessible restrooms nearby?\"",
-          "Route planning: after finding a place, click navigation to plan a route, choosing a normal/wheelchair/elderly/visually-impaired mode as needed."
+          "Route planning: after finding a place, click navigation to plan a route, choosing a normal/wheelchair/elderly/visually-impaired mode as needed.",
+          "AI assistant: tap the 💬 icon or the mic in the bottom-right to wake it — just ask in plain language, e.g. \"is this area easy to get around?\" or \"plan a wheelchair route to Taipei Main Station\". It looks up live data to answer, and remembers the accessibility needs you set in Settings so you don't have to repeat them.",
+          "More features: the \"More\" button in the bottom-right opens bus arrivals, accessible parking, saved places, and hazard reporting panels; live air quality and weather show up top; and the \"SOS\" button sends a one-tap alert to your emergency contacts."
         ]
       },
       "taipei": {
@@ -660,12 +662,13 @@
   },
   "welcomeCard": {
     "ariaLabel": "Getting-started tips",
-    "greeting": "👋 Welcome, {{name}}",
-    "greetingGuest": "👋 Welcome",
+    "greeting": "Welcome, {{name}}",
+    "greetingGuest": "Welcome",
     "dismiss": "Dismiss welcome card",
-    "tip1": "① Search bar — find a place or just ask the AI",
-    "tip2": "② Filter button — show only the facilities you need",
-    "tip3": "③ Red button, bottom right — tap it for emergency SOS",
+    "tip1": "① Search bar — find a place, or just ask the AI \"any accessible restrooms nearby?\"",
+    "tip2": "② Accessibility filter — show only elevators, ramps, or restrooms, whatever you need",
+    "tip3": "③ AI assistant — ask \"is this area easy to get around?\" or have it plan a wheelchair route",
+    "tip4": "④ Red button, bottom right — tap it in an emergency to alert your contacts",
     "tour": "Show me around",
     "selfExplore": "I'll explore myself"
   },
@@ -674,8 +677,10 @@
     "step1Body": "Type a place name, or just ask \"any accessible restrooms nearby?\"",
     "step2Title": "Accessibility filter",
     "step2Body": "Show only the facility types you need",
-    "step3Title": "SOS button",
-    "step3Body": "Tap to send an SOS — it notifies your emergency contacts",
+    "step3Title": "AI assistant",
+    "step3Body": "Ask \"is this area easy to get around?\" or have it plan a wheelchair route",
+    "step4Title": "SOS button",
+    "step4Body": "Tap to send an SOS — it notifies your emergency contacts",
     "next": "Next",
     "done": "Done",
     "skip": "Skip tour",
@@ -722,11 +727,11 @@
       "benefit3": "Let your contacts know where you are in an emergency",
       "privacy": "Your location is only read while you're using the app. No background tracking, never shared with third parties.",
       "allow": "Allow location",
-      "manual": "Or enter a location manually",
+      "manual": "Skip — I'll search for a place later",
       "requesting": "Getting your location…",
       "granted": "Got your location",
-      "denied": "Location was denied. You can still enter a location manually — everything works.",
-      "unsupported": "This device doesn't support location. Enter a location manually instead."
+      "denied": "Location was denied. You can still search for a place by address later — everything works.",
+      "unsupported": "This device doesn't support location. You can search for a place by address instead."
     },
     "done": {
       "title": "All set",

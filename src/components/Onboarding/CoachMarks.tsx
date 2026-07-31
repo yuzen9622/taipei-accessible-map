@@ -3,9 +3,16 @@
 import { motion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
+import useIsDesktop from "@/hook/useIsDesktop";
 import useReducedMotion from "@/hook/useReducedMotion";
 import { useAppTranslation } from "@/i18n/client";
 import useOnboardingStore from "@/stores/useOnboardingStore";
+
+// The desktop icon rail is fixed at `left-3 w-[56px]` (see BottomSheet.tsx),
+// so anything positioned further left than this overlaps it. Mobile has no
+// such rail, hence the much smaller floor.
+const DESKTOP_MIN_LEFT = 84;
+const MOBILE_MIN_LEFT = 16;
 
 /**
  * S3b of the UX blueprint: a 3-step spotlight tour over real UI, triggered by
@@ -18,6 +25,7 @@ import useOnboardingStore from "@/stores/useOnboardingStore";
 const STEP_SELECTORS = [
   '[data-coach="search"]',
   '[data-coach="a11y"]',
+  '[data-coach="ai"]',
   '[data-coach="sos"]',
 ] as const;
 const STEP_COUNT = STEP_SELECTORS.length;
@@ -25,11 +33,13 @@ const TITLE_KEYS = [
   "coachMarks.step1Title",
   "coachMarks.step2Title",
   "coachMarks.step3Title",
+  "coachMarks.step4Title",
 ];
 const BODY_KEYS = [
   "coachMarks.step1Body",
   "coachMarks.step2Body",
   "coachMarks.step3Body",
+  "coachMarks.step4Body",
 ];
 
 interface TargetRect {
@@ -42,6 +52,7 @@ interface TargetRect {
 export default function CoachMarks() {
   const { t } = useAppTranslation();
   const reduceMotion = useReducedMotion();
+  const isDesktop = useIsDesktop();
   const { active, finishCoachMarks } = useOnboardingStore(
     useShallow((s) => ({
       active: s.coachMarksActive,
@@ -58,7 +69,22 @@ export default function CoachMarks() {
   }, [active]);
 
   const measure = useCallback(() => {
-    const el = document.querySelector(STEP_SELECTORS[step]);
+    // Several targets (search bar, a11y chip, the AI FAB) are mounted twice —
+    // once for mobile, once for desktop — so a plain querySelector can land
+    // on the breakpoint-hidden copy and measure a zeroed-out rect. The two
+    // dual-mount patterns in this codebase hide the inactive copy two
+    // different ways: HomeContent's pair uses `lg:hidden`/`hidden lg:block`
+    // (affects `offsetParent`), while MapControlsWrapper's mobile FAB group
+    // uses `inert` (does NOT affect `offsetParent` — inert only blocks
+    // interaction/a11y, not layout). Checking both is what makes this work
+    // for every current and future dual-mounted target.
+    const candidates = document.querySelectorAll<HTMLElement>(
+      STEP_SELECTORS[step],
+    );
+    const el =
+      Array.from(candidates).find(
+        (c) => c.offsetParent !== null && !c.closest("[inert]"),
+      ) ?? null;
     if (!el) {
       // Target isn't on screen right now (e.g. the a11y chip was removed
       // from quick actions) — showing a spotlight on nothing would be worse
@@ -67,16 +93,34 @@ export default function CoachMarks() {
       if (step === STEP_COUNT - 1) finishCoachMarks();
       return;
     }
+    // The target can be scrolled out of view inside the sheet's own scroll
+    // container (e.g. the a11y chip, several sections below the search bar).
+    // Bringing it into view — and re-measuring on the scroll listener below
+    // once that finishes — is what keeps the spotlight rect honest instead of
+    // painting a hole over wherever the element happened to be laid out.
+    el.scrollIntoView({
+      block: "center",
+      behavior: reduceMotion ? "auto" : "smooth",
+    });
     const r = el.getBoundingClientRect();
     setRect({ top: r.top, left: r.left, width: r.width, height: r.height });
-  }, [step, finishCoachMarks]);
+  }, [step, finishCoachMarks, reduceMotion]);
 
   useEffect(() => {
     if (!active) return;
     measure();
+    // The desktop content panel (and the mobile sheet raising to "half") both
+    // slide in on a ~300ms motion transition. Measuring only on mount catches
+    // it mid-flight — e.g. the panel's `initial={{x:-400}}` position — and
+    // paints the spotlight/tooltip somewhere it's about to animate away from.
+    // The scroll listener below corrects *scroll* drift, but a transform
+    // animation doesn't fire scroll events, so it needs its own re-measure
+    // once the transition has had time to settle.
+    const settleTimer = window.setTimeout(measure, 350);
     window.addEventListener("resize", measure);
     window.addEventListener("scroll", measure, true);
     return () => {
+      window.clearTimeout(settleTimer);
       window.removeEventListener("resize", measure);
       window.removeEventListener("scroll", measure, true);
     };
@@ -111,7 +155,7 @@ export default function CoachMarks() {
   const placeBelow = spaceBelow > 160;
   const tooltipWidth = Math.min(320, window.innerWidth - 32);
   const tooltipLeft = Math.min(
-    Math.max(rect.left, 16),
+    Math.max(rect.left, isDesktop ? DESKTOP_MIN_LEFT : MOBILE_MIN_LEFT),
     window.innerWidth - tooltipWidth - 16,
   );
 

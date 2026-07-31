@@ -29,6 +29,7 @@ import { cn } from "@/lib/utils";
 import type { RailPanel } from "@/stores/useMapStore";
 import useMapStore from "@/stores/useMapStore";
 import useNavStore from "@/stores/useNavStore";
+import useOnboardingStore from "@/stores/useOnboardingStore";
 import A11yPanel from "./A11yPanel";
 import BusPanel from "./BusPanel";
 import EnvironmentPanel from "./EnvironmentPanel";
@@ -167,6 +168,7 @@ export default function BottomSheet() {
     })),
   );
   const isDesktop = useIsDesktop();
+  const coachMarksActive = useOnboardingStore((s) => s.coachMarksActive);
   const stepListOpen = useNavStore((s) => s.stepListOpen);
   const setStepListOpen = useNavStore((s) => s.setStepListOpen);
   const [snap, setSnap] = useState<"peek" | "half" | "full">("peek");
@@ -268,6 +270,17 @@ export default function BottomSheet() {
       setSheetHeight(SNAP_POINTS.half);
     }
   }, [isNavigating, stepListOpen]);
+
+  // Coach marks' 2nd step targets the a11y quick-action chip, which sits well
+  // below the fold at peek height (content there doesn't even scroll — only
+  // dragging does). Without this the spotlight lands on a clipped/off-screen
+  // rect and the tour looks broken. Same treatment as the other panel lifts.
+  useEffect(() => {
+    if (coachMarksActive && !isDesktop) {
+      setSnap("half");
+      setSheetHeight(SNAP_POINTS.half);
+    }
+  }, [coachMarksActive, isDesktop]);
 
   const snapToNearest = useCallback((ratio: number) => {
     const points = [SNAP_POINTS.peek, SNAP_POINTS.half, SNAP_POINTS.full];
