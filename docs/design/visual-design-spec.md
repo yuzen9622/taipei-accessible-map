@@ -1,317 +1,333 @@
-# 視覺設計規範 — 無障礙智慧地圖
+# 無障礙智慧地圖 — 視覺設計規範 v1.0
 
-版本：v1.0
-狀態：草案，待 nav-dev 實作、nav-review 驗收
-適用範圍：`src/components/BottomSheet/*`、`src/components/Wrapper/MapControlsWrapper.tsx`、`src/components/AIChatBot.tsx`、`src/app/globals.css`、`src/stores/useMapStore.ts`
-
----
-
-## 0. 背景與這份規格要解決什麼
-
-這份規格是接續一次已喊停的實作（`docs/design/_wip-ui-audit-reference.diff`，未 commit，僅供參考）。上一輪試做把方向做對了大半（AI 助理併入面板、地圖控制項移出左下角、z-index token 化），但有幾個地方需要重新裁決或補強，本規格會逐一標明「採納」「修正」「否決」：
-
-- **採納**：AI 助理不再是獨立浮動卡片，改為 BottomSheet/Layer2 面板的一種內容模式。
-- **採納**：地圖控制項統一移到右下角／右上角，永久禁用左下角。
-- **修正**：z-index 分層數字重新推導（見 §1.4），理由不同於草稿。
-- **修正**：Side Rail Logo 與搜尋列 a11y 快捷鍵的圖示/顏色角色對調，且顏色選擇與草稿不同（見 §3.1、§2）。
-- **否決**：`_wip-ui-audit-reference.diff` 中 `setSheetMode(mode, { fromAI: true })` 的 `fromAI` 例外機制。理由與最終裁決見 §5.2 ——這正是本規格被要求「明確裁決」的衝突點。
+> 狀態：**規範定案，尚未全面實作**。本文件是「一次到位」施工的唯一依據 —
+> 之後任何 UI 改動（新增功能、修 bug、換圖示）都必須先對照本文件，不再症狀式修補。
+> 若本文件與現況程式碼衝突，以本文件為準，並回頭修正程式碼；若發現本文件有遺漏的情境，
+> 先補文件再動工，不要跳過文件直接改 code。
+>
+> 基於現況程式碼盤點（2026-07-29）：`src/app/globals.css`、
+> `src/components/BottomSheet/BottomSheet.tsx`、`HomeContent.tsx`、
+> `src/components/Wrapper/MapControlsWrapper.tsx`、`src/components/AIChatBot.tsx`、
+> `src/components/Navigation/NavigationHUD.tsx`、`src/components/ui/*-icon.tsx`（動畫圖示）。
 
 ---
 
-## 1. Design Tokens
+## 0. 現況落差摘要（本規範要修正的具體債務）
 
-沿用 Tailwind CSS 4 的 `@theme` / CSS 變數作法（專案沒有 `tailwind.config.js`），全部加在 `src/app/globals.css` 既有的 `:root` / `.dark` / `.high-contrast` 區塊。**不新增獨立的 `--alert` token**——現有 `--destructive`（`oklch(0.577 0.245 27.325)` ≈ `#DC2626` red-600）在數值上已經等於使用者要的 SOS 紅，重複定義只會製造第二個事實來源。改用語意別名指向同一個值。
+| # | 現況 | 問題 | 本規範的對應章節 |
+|---|------|------|------------------|
+| 1 | `AIChatBot.tsx` 是獨立 `fixed` 卡片（z-50），`MapControlsWrapper` 另外放一顆 AI FAB 觸發它；兩者都各自用 `sidebarCollapsed`/`panelOpen` 手動算 `left` 位移來避開 Side Rail | AI 助理與搜尋/路線/地點面板是「平行的兩套浮層系統」，只靠位移閃避，未來只要面板尺寸一變就會重新互蓋 | §5 空間與層級、§6.3 AI 助理面板 |
+| 2 | Side Rail 圖示顏色來自 `RAIL_ITEMS`/`QUICK_ACTION_DEFS` 裡的 `text-emerald-500`、`bg-orange-500/10`、`text-indigo-500`、`text-amber-500`、`text-sky-500`、`text-rose-500` 等散落 Tailwind 色階 | 同類語意（無障礙=emerald、警示=amber、停車=indigo…）沒有對應到 `globals.css` 的 design token，色彩系統形同虛設 | §2 色彩系統 |
+| 3 | z-index 全部是就地手打的 `z-10/20/30/40/50`，同一層數字在不同檔案代表不同語意（e.g. `z-40` 同時用在 mobile sheet 容器、桌面 panel、HUD 頂部橫幅、`NavigationController`） | 沒有 scale，新功能加浮層只能用「試出來剛好蓋得住」的數字 | §5.1 z-index scale |
+| 4 | Side Rail label 目前是 `t(item.labelKey)` 直接塞進 `max-w-[48px] truncate`，曾發生品牌全名溢出換行 | 沒有字數上限規則，靠 `truncate` 兜底但視覺仍會被截斷得很難看 | §3.4 Rail label 規則 |
+| 5 | 「無障礙」概念視覺不一致：Side Rail logo 用純 `Accessibility` icon + `text-primary`；快捷 chip 用純色底 tint + icon；地圖上的無障礙地點目前沒有統一 pin+badge 元件 | 使用者反應「不直覺」 | §4 圖示語意系統 |
 
-### 1.1 色彩
+---
 
-```css
-@theme inline {
-  /* ...既有 --color-* 對應保留... */
-  --color-accessibility: var(--accessibility);
-  --color-accessibility-foreground: var(--accessibility-foreground);
-  --color-accessibility-active: var(--accessibility-active);
-  --color-sos: var(--destructive); /* 語意別名，非新色，见下方說明 */
-  --color-sos-foreground: var(--destructive-foreground, var(--primary-foreground));
-}
+## 1. 設計原則
 
-:root {
-  /* 既有 --primary 已是 tailwind blue-600（#2563EB），active 用 blue-700（#1D4ED8）
-     —— 不新增 --primary-active token，直接在 hover/active 狀態用 Tailwind 的
-     brightness/opacity utility（如 hover:brightness-110、active:brightness-95），
-     因為 shadcn 元件系統對 primary 已有既定的 hover/focus 慣例，另開一個平行
-     token 只會讓兩套「按下去要變什麼顏色」的邏輯打架。 */
+這五條不是抄大廠 Design Principle 清單，而是針對「無障礙 × 想被所有人喜歡使用」這個定位、且只有一位工程師維護的現實所寫的取捨依據。做任何視覺決策時，先問這五條，不要另外發明新原則。
 
-  /* Accessibility 語意色：無障礙圖示/徽章的「唯一標準色」，用來統一目前散落
-     各檔案的 emerald-500 / orange-500 / indigo-500 等各自為政的無障礙相關
-     圖示顏色（BottomSheet.tsx 的 railA11y 用 emerald、HomeContent.tsx 的
-     a11y chip 用 orange，兩者其實是同一個語意卻不同色，這是需要修的不一致）。
-     選用活力橙而非草稿的 #EA580C 原始 oklch 手動換算，改用 tailwind
-     orange-600 的標準 oklch 值，確保跟其他 shadcn token 的色彩空間推導方式
-     一致（避免手動換算誤差造成色相偏移）。 */
-  --accessibility: oklch(0.646 0.222 41.116); /* tailwind orange-600, ≈ #EA580C */
-  --accessibility-foreground: oklch(0.985 0 0);
-  --accessibility-active: oklch(0.577 0.202 40.3); /* tailwind orange-700, ≈ #C2410C */
-}
+1. **一個概念只有一種長相（One Concept, One Look）**
+   「無障礙」「警示」「導航中」等核心語意，全 App 只能對應一組固定的顏色 + 圖示形式組合（見 §4）。不允許因為某個畫面「看起來需要別的顏色」就臨時借用 Tailwind 調色盤裡的別的色階。新增畫面時如果現有語意都不合，先回來擴充 token（§2），不要在元件裡開新色。
 
-.dark {
-  --accessibility: oklch(0.75 0.183 55.934); /* tailwind orange-400 for dark bg contrast */
-  --accessibility-active: oklch(0.7 0.19 48);
-}
+2. **地圖是主角，UI 是暫時的訪客**
+   所有浮層（面板、HUD、控制項、對話框）都必須可以被一鍵收起看到完整地圖，且面板本身要用毛玻璃／留白降低視覺重量。任何新浮層在設計前要先確認：這個資訊「現在」是不是必須疊在地圖上，能不能延後到使用者主動點開才顯示。
 
-.high-contrast {
-  /* 高對比模式目前只覆寫 background/foreground/primary 等既有 token，
-     accessibility token 若不覆寫，橙色在純黑背景上對比率仍然過低
-     （WCAG AA 需 ≥4.5:1，橙 600 在 oklch(0.05 0 0) 背景上量測約 3.8:1，
-     不合格）。故高對比模式下改用跟 --primary 相同的高亮黃，確保可讀。 */
-  --accessibility: oklch(0.85 0.15 90);
-  --accessibility-active: oklch(0.9 0.15 90);
-  --accessibility-foreground: oklch(0.05 0 0);
-}
-```
+3. **同一時間只服務一個任務（面板互斥）**
+   搜尋、路線規劃、地點詳情、AI 助理、導航 HUD 是同一個「內容插槽」的不同模式，永遠只顯示其中之一，不會並存疊加（見 §5.2）。控制項（3D/定位/縮放/SOS/語音）是例外——它們是「任何模式下都可能要用」的常駐工具，因此永遠在最上層、且固定在畫面角落，不與內容插槽搶位置。
 
-**顏色使用規則（覆蓋草稿的字面規則）：**
+4. **無障礙使用者的路徑必須是最短路徑，不是隱藏路徑**
+   輪椅使用者要找「附近無障礙廁所」、視障者要開語音助理、長者要放大字體或開高對比模式——這些操作的點擊步驟數，設計時要用「首頁一屏內可達」當基準去檢查，不能藏在三層選單後面。任何新功能上首頁時，要跟現有 6 個快捷 chip 比較優先序，而不是無限往「更多」裡塞。
 
-| 語意 | Token | 使用範圍 |
+5. **動效是回饋，不是裝飾**
+   Motion（`motion/react`）只用在：狀態切換的過渡（面板開關、模式切換）、明確的使用者回饋（按下、載入中、成功/警示浮現）、以及動畫圖示的互動觸發（hover/active）。不允許為了「看起來精緻」加裝飾性動效；所有動效都要尊重 `prefers-reduced-motion`（`useReducedMotion`），這是無障礙的底線而非加分項。
+
+---
+
+## 2. 色彩系統
+
+色彩全部走 Tailwind CSS 4 的 `@theme` + CSS variable（`oklch`），對應 `src/app/globals.css`。**禁止**在元件裡直接寫 Tailwind 內建色階（`emerald-500`、`amber-500`、`indigo-500`、`sky-500`、`rose-500`、`orange-500` 等）代表語意色；這些色階只能用在「使用者自訂/資料視覺化」情境（例如 `--chart-1~5` 已涵蓋的圖表用色），不能用來畫「無障礙」「警示」這類產品語意。
+
+### 2.1 Token 清單與用途
+
+| Token | 語意 | 目前值（light） | 何時用實心（solid） | 何時用淡色（tint，`/10~/15`） | Dark mode |
+|---|---|---|---|---|---|
+| `--primary` | 品牌主色／預設互動色。導航、路線規劃、搜尋、預設按鈕、Side Rail 選中狀態 | `oklch(0.546 0.245 262.881)`（≈ tailwind blue-600） | 主要 CTA 按鈕（規劃路線、送出）、Side Rail 選中指示條、連結文字 | Rail 按鈕 hover/選中底色（`bg-primary/10`）、次要強調背景 | `oklch(0.707 0.165 254.624)`（≈ blue-400，深色需要更亮以維持對比） |
+| `--accessibility`（**新增**） | 「無障礙」語意專用色，橙色系，取代目前散落的 emerald/orange | `oklch(0.72 0.17 55)`（≈ tailwind orange-500，最終數值以實測對比為準） | Side Rail logo 底色圓形（純色底+輪椅）、地圖上無障礙 pin 徽章底色、A11y 面板的標題 icon | 快捷 chip 未選中時的底色 tint（`bg-accessibility/10`）、無障礙設施列表項目的左側色條 | 提高亮度與飽和以維持在深色底上的可讀性，比照 `--primary` 的 dark 調整邏輯 |
+| `--alert`（**新增**） | 一般性警示（迷路、設施提醒、資料落差），非緊急，橙黃色系 | `oklch(0.79 0.16 85)`（≈ tailwind amber-500） | 導航中的「偏離路線」「步行指引缺失」提示條、地圖上的通報中危險點 | 提示卡片底色 tint、待處理狀態徽章 | 同色相提高亮度，深色底維持文字對比 ≥ 4.5:1 |
+| `--destructive` | 緊急／不可逆／需要立即注意（SOS、刪除、嚴重錯誤） | `oklch(0.577 0.245 27.325)`（≈ tailwind red-600） | SOS 按鈕、刪除確認、嚴重錯誤訊息 | 錯誤欄位邊框（`border-destructive/50`） | `oklch(0.704 0.191 22.216)` |
+| `--primary-foreground` / `--accessibility-foreground` / `--alert-foreground` / `--destructive-foreground` | 對應色塊上的文字/圖示色 | 各自的高對比前景色 | 實心底色上一律用 foreground token，不手動判斷黑白 | 同上 | 隨底色調整，維持 WCAG AA |
+| `--muted` / `--muted-foreground` | 次要資訊、輔助文字、非互動裝飾 | 既有值不變 | 說明文字、時間戳、次要 icon | 卡片內底色分隔區塊 | 既有 dark 值 |
+| `--border` | 面板/卡片邊框，統一走半透明（`/50`）搭毛玻璃 | 既有值不變 | 所有 `rounded-2xl` 卡片外框 | — | 既有 dark 值（`oklch(1 0 0 / 10%)`） |
+| `--chart-1`〜`--chart-5` | 僅限資料視覺化（環境數據圖表、AQI 曲線等），**不得**挪用為語意色 | 既有值不變 | 圖表資料序列 | 圖表區域填色 | 既有 dark 值 |
+| High-contrast 模式（`.high-contrast`） | 長者/低視力使用者手動開啟 | 既有 `--background: oklch(0.05 0 0)` 等 | 所有 token 全部走這組覆寫，元件不用另外判斷 | 同上 | 已是深色系統，不再疊加一般 dark mode |
+
+### 2.2 語意色對應表（拍板決策，不可再改用其他色階）
+
+| 語意 | Token | 使用場景舉例 |
 |---|---|---|
-| 主要品牌色 | `--primary`（藍） | 主要 CTA、路線規劃入口、AI 助理 CTA、Side Rail 啟用態指示條 |
-| 無障礙語意色 | `--accessibility`（橙） | 所有「這是無障礙相關資訊」的圖示 tint：Side Rail 的 `railA11y` icon、StationDetail/PlaceContent 裡的無障礙標記、A11yPanel 圖示 |
-| **例外**：搜尋列「搜尋無障礙設施」快捷鍵 | `--primary`（藍，實心底） | 這是全站唯一被拉高到主色實心底的無障礙相關按鈕，因為它是核心功能 CTA，視覺優先權高於「這是無障礙語意」的分類色（見 §3.1 使用者原話：「用實心主色底」）。**其餘所有無障礙相關圖示一律用橙色，不得跟這個例外混淆或互相盜用彼此的顏色。** |
-| 緊急色 | `--sos`（= `--destructive`，紅） | 僅限 SOS 按鈕、SOS 對話框；不得用於一般 alert/warning（那是 amber，見 hazard 相關 UI） |
+| 無障礙 / 復康巴士 / 無障礙計程車 / 電梯坡道 | `--accessibility` | Side Rail「無障礙設施」項目、搜尋快捷 chip、A11y 面板、地圖 pin 徽章、導航中「前方無障礙設施」提示 |
+| 公車/捷運等大眾運輸 | `--primary`（不另開新色；若未來需要區分，先提案擴充再動工，不得臨時借 emerald） | Side Rail「公車動態」項目、BusPanel |
+| 停車（一般/身障車位） | `--primary` 搭配中性 icon（`CircleParking`），不使用 indigo | ParkingPanel、快捷 chip |
+| 一般提醒/待確認/資料缺失 | `--alert` | 導航「偏離路線」條、「步行指引無資料」警告、通報中危險點 pin |
+| 緊急/SOS/刪除 | `--destructive` | SOS 按鈕、退出導航確認 dialog 的危險選項 |
+| 環境/空氣品質（多階分級） | 沿用既有 `LEVEL_CONFIG` 六階漸層（green→yellow→orange→red→purple→rose），**僅限**空氣品質這一個情境例外允許多色階，因為它本身就是政府 AQI 六級標準色，不算「臨時色階」 | 空氣品質徽章、EnvironmentPanel |
+| 收藏/個人化 | `--primary`（星號/書籤用 primary，不使用 amber） | SavedPlacesPanel、Bookmark icon |
 
-### 1.2 字級
+### 2.3 深色模式與高對比模式規則
 
-沿用現有 Tailwind 預設字級尺度，不新增自訂 `--font-size-*` token；規則以「用途」而非「像素值」定義，避免各元件各自寫死：
-
-| 用途 | class | 依據 |
-|---|---|---|
-| 內文 | `text-base`（16px） | 已是專案 `body` 預設，符合行動裝置最小可讀字級（WCAG 建議 ≥16px 避免 iOS Safari 自動縮放輸入框） |
-| 次要說明文字 | `text-xs` ~ `text-sm`（12–14px） | 現有 `text-muted-foreground` 搭配用法保留 |
-| 關鍵操作按鈕文字 | `text-sm font-bold` ~ `text-base font-bold` | 面板標題、送出/確認按鈕 |
-| Rail 圖示下方微標籤 | `text-[9px] font-medium` | **只允許在「圖示+文字雙重標示」且容器寬度 ≤48px 的情境使用**，且必須套用 `truncate whitespace-nowrap max-w-[48px]`（見 §3.3 禁止事項），不可再縮更小 |
-| 核心功能按鈕（Icon+文字並列，非窄欄位） | `text-sm font-semibold` ~ `text-base font-bold` | 搜尋列快捷 chip、面板內主要按鈕 |
-
-**規則：所有「核心功能」按鈕一律 Icon + 文字雙重標示**（現有 `HomeContent.tsx` 的 quick action chip 已符合）；**唯獨寬度受限的 44px 圖示按鈕（Side Rail 一般項目除外，AI CTA 除外）不強制文字**，見 §3.3。
-
-### 1.3 圓角與陰影
-
-沿用既有 `--radius: 0.75rem` 尺度（`--radius-sm/md/lg/xl`），不新增更細的圓角 token。陰影沿用 Tailwind 內建 `shadow-sm/md/lg/xl/2xl` utility，不自訂 box-shadow 值——目前程式碼已經是這樣用（`shadow-xl`、`shadow-2xl` 等），新增自訂陰影 token 只會製造第二套系統。
-
-補充一條目前程式碼裡沒有但需要的規則：**所有毛玻璃浮層（rail、面板、bottom sheet、展開卡片）一律 `bg-background/95 backdrop-blur-md` + `border border-border/50`**，這組合已經是事實標準，寫進規格供 review 檢查一致性。
-
-### 1.4 Z-Index 分層系統（重新推導，非照抄草稿）
-
-草稿原始想法是「drawer-panel 排在 floating-controls 之下」，但沒有說明其他層（rail 本體、modal、toast）怎麼排。以下是完整推導：
-
-```css
-:root {
-  --z-map-base: 0;         /* 地圖底圖（MapLibre canvas） */
-  --z-map-overlay: 10;     /* 路線線條、地圖標記/Pin — 仍是「地圖內容」，非 UI 外殼 */
-  --z-drawer-panel: 20;    /* 面板本體：手機 Bottom Sheet 容器、桌面 Layer2 內容面板 */
-  --z-floating-controls: 30; /* 地圖控制項：環境資訊膠囊、3D/定位/分享/SOS/語音 */
-  --z-drawer-rail: 40;     /* 桌面 Icon Rail 本體 + 收合/展開 toggle */
-  --z-modal: 50;           /* 阻斷式對話框：登入、SOS 確認、離開導航確認、分享 sheet */
-  --z-toast: 60;           /* 系統通知（sonner toast） */
-}
-```
-
-**推導理由（逐層說明，而非套用草稿數字）：**
-
-1. **`map-base` < `map-overlay`**：不需解釋，地圖內容自身的堆疊。
-2. **`map-overlay` < `drawer-panel`**：任何 UI 外殼都必須蓋過地圖內容本身，否則面板會被路線線條穿幫。
-3. **`drawer-panel` < `floating-controls`**：這是本規格要嚴格保證的核心規則——地圖控制項（3D/定位/縮放/SOS）**無論任何面板處於什麼模式都必須可見不被遮擋**。但新架構下，AI 助理已經不再是獨立浮層（見 §5），面板與控制項之間主要靠**版位避讓**而非 z-index 分開（面板固定在左側/底部，控制項固定在右側/頂部，正常狀況下兩者的可視區域本來就不重疊）。z-index 在此僅作為「保底」：萬一手機版把 Bottom Sheet 拖到 `full`（92dvh）導致版位重疊，控制項仍會浮在面板之上而非被蓋住——這比反過來（面板蓋過控制項導致 SOS 按不到）安全得多，因為 SOS 是緊急出口，任何情況都不可以被蓋住。
-4. **`floating-controls` < `drawer-rail`**：桌面 Icon Rail 是「恆定存在的導航骨架」（品牌 Logo、AI 助理入口、六個分類按鈕），語意上比「隨環境變化的地圖控制項」更接近「結構」而非「懸浮小工具」。而且 Rail 的收合/展開 toggle 在視覺上會跨過 Layer2 面板邊緣，若它的 z 比 floating-controls 低，toggle 有機率被環境資訊卡片展開時蓋住（環境卡片展開位置在右上角，理論上不會物理重疊，但既然兩者本來就不共享版位，把 rail 排更高沒有副作用，卻能避免未來新增控制項時意外蓋住導航骨架）。
-5. **`drawer-rail` < `modal`**：登入、SOS 確認、離開導航確認都是「阻斷使用者、需要先處理完才能做其他事」的對話框，必須蓋過一切既有 UI，這是 modal 的定義,不需要更多論證。
-6. **`modal` < `toast`**：sonner toast（例如「已送出求救訊息」「語音導航已開啟」）代表「系統剛剛做了一件事,要讓你知道」，即使當下有 modal 開著（例如 SOS 對話框開啟時同時觸發送出成功的 toast）,這則通知也必須看得到,否則使用者會不確定操作是否成功。這條在草稿裡完全沒被列入,是本次推導新增的層。
-
-**明確禁止事項**：任何新元件的 z-index 一律使用上述 token（`z-(--z-xxx)`），不得再寫死 `z-30`/`z-40`/`z-50` 之類的數字（目前 `MapControlsWrapper.tsx`、`BottomSheet.tsx` 都是這樣寫死的,是技術債,本次改版一併換成 token）。
+- 一般 dark mode：所有 token 走 `.dark` class 覆寫，元件永遠用語意 token，不寫 `dark:text-xxx-400` 這種手動雙軌（現況 `MapControlsWrapper.tsx` 的 `LEVEL_CONFIG` 手寫 `dark:` 類是空氣品質六階的唯一例外，其餘元件不得比照）。
+- 高對比模式是無障礙核心功能，優先權高於一般美觀考量：`.high-contrast` 底下所有互動元素邊框強制 2px、字重強制 500 起跳，這條規則已存在於 `globals.css`，新元件不得寫死邊框寬度/字重覆蓋掉它。
 
 ---
 
-## 2. RWD 斷點決策：`lg`（1024px），不是 `md`（768px）
+## 3. 文字與排版
 
-**決定：維持 `lg`（1024px）作為桌面雙欄 Side Rail 版面與手機 Bottom Sheet 版面的分界，不改用使用者原始草稿寫的 `md`（768px）。**
+字型：`--font-sans`（Geist Sans + Noto Sans TC），中英混排一致，不額外引入其他字體。
 
-理由：
+### 3.1 字級／字重階層
 
-1. **版面寬度算術**：桌面模式下 Icon Rail 固定 56px + Layer2 內容面板 380px + 面板與 Rail 間距 12px ×2 ≈ 需要至少 460px 的左側空間才能不擠壓地圖。若斷點設在 768px（常見平板直向寬度、部分小筆電視窗寬度），扣掉 460px 左側面板後只剩約 300px 給地圖 + 右側控制項，地圖會被壓縮到難以操作的寬度，尤其對需要精確點擊小目標（無障礙設施圖釘）的使用者是負面體驗。1024px 斷點能保證面板攤開後地圖至少還有 ~560px 可視寬度。
-2. **現有程式碼已經是 `lg`**：`useIsDesktop`（`src/hook/useIsDesktop.ts`）與 `BottomSheet.tsx`（`hidden lg:block` / `block lg:hidden`）目前的斷點就是 1024px。改成 `md` 是一次會牽動整個雙欄／單欄切換邏輯、`aria-hidden`/`inert` 判斷、以及所有 `lg:` class 的破壞性重構，風險遠高於效益，而使用者提出 `md` 的原始草稿本身也只是「憑印象寫的規格草稿」，沒有實測依據。
-3. **與 shadcn/ui 慣例一致**：shadcn 的 `useIsMobile`/`Sheet` 元件慣例斷點也多落在 `md`~`lg` 之間，1024px 屬於常見且合理的「桌機 vs. 平板/手機」分界，不是專案獨有的怪異選擇。
-
-**結論寫入驗收條件**：任何新增的響應式元件都必須用 `lg:` 而非 `md:` 做桌面/行動判斷，並優先複用 `useIsDesktop()` hook 而非各自寫 `window.innerWidth` 判斷（`useMapStore.ts` 第 155 行目前有一處內聯判斷 `window.innerWidth >= 1024`，屬技術債，應改呼叫共用邏輯或至少維持相同數值來源，不得與 hook 的斷點分岔）。
-
----
-
-## 3. Icon 語意系統
-
-目標：同一個圖示在全站只能代表一種語意，同一個語意在全站只能用一種圖示+顏色組合。以下是稽核現有程式碼（`BottomSheet.tsx`、`HomeContent.tsx`、`MapControlsWrapper.tsx`）後訂出的標準表：
-
-| 圖示 (lucide-react) | 語意 | 顏色 | 允許出現的情境 | 明確禁止 |
+| 用途 | class | 字級/行高 | 字重 | 範例 |
 |---|---|---|---|---|
-| `Accessibility`（輪椅） | 「這是無障礙相關資訊/功能」的分類標記 | `--accessibility`（橙），**唯一例外**：搜尋列核心 CTA 用 `--primary`（藍實心底，見下） | Side Rail `railA11y` 按鈕、A11yPanel 標題、StationDetail/PlaceContent 的無障礙徽章、Bottom Sheet 手機版 header 小 icon | 不可單獨當作品牌 Logo 使用（見 §4 的災難情境）；不可用來代表「送出／確認」等其他語意 |
-| `MapPin` | 「地點/地標」——地圖上的位置概念 | 中性 `text-foreground` 或依情境；作為品牌組合圖示的一部分時用 `--primary` | 品牌 Logo 組合圖示的底層形狀（見 §4.1）、地圖上的搜尋結果標記 | 不可跟 `Bookmark`（收藏地點）或 `Clock`（歷史紀錄）混用——三者是不同語意：MapPin=地點本身、Bookmark=使用者收藏動作、Clock=時間/歷史 |
-| **品牌組合圖示**：`MapPin` + `Accessibility`（疊加） | 「無障礙智慧地圖」App 品牌本身 | `--primary` 底 + 白色前景 | **僅限** Side Rail 最上方 Logo 槽位、App favicon/啟動畫面 | 不得在任何功能性按鈕上重複使用這個組合（品牌記號只能出現一次，出現在功能按鈕上會讓使用者誤以為是「回到品牌介紹頁」之類的無意義動作） |
-| `Bot` / `BotMessageSquare` | AI 助理入口，且僅代表這一件事 | `--primary`（Side Rail CTA 用漸層藍靛，見 §4.2） | Side Rail AI CTA、面板 header 顯示 AI 助理內容時的標題 icon、Avatar 內的 icon | 不可用於任何「自動化/機器人化」的其他隱喻（例如不可拿來代表「離線快取」或「系統自動偵測」等非 AI 對話功能） |
-| `Navigation` | 路線/方向 | `text-primary` 或 `text-blue-500` | Rail 的 `railRoute`、面板標題、定位/recenter 按鈕、導航 HUD | 不可跟 `LocateFixed`（導航中的重新置中）混淆使用場景——两者外觀不同但語意相近，規則是：**一般模式用 `Navigation`，導航進行中的重新置中專用 `LocateFixed`**，維持現狀不必統一成同一個 icon（統一反而讓使用者無法從圖示分辨「現在是不是在導航模式」） |
-| `AlertTriangle` / `TriangleAlert` | 「路況障礙回報」這個特定領域，不是通用警告 | 琥珀 `amber-500/600` | Rail `hazard`、HazardReportPanel | 不可挪用來做全站通用的「錯誤/失敗」提示（那應該用 toast 內建的 error 樣式，不需要圖示） |
-| `Cloud` / `Leaf` / `Wind` / `Thermometer` / `CloudRain` | 環境資訊家族（空氣品質/天氣），彼此可互換出現在同一個情境群組 | `sky-500`（分類色）；個別指標各自的資料語意色（`Leaf`=空氣品質等級色、`Thermometer`=紅、`Wind`=藍） | EnvironmentPanel、右上角環境膠囊 | 不可拆散到其他無關功能（例如不可把 `Leaf` 拿去代表「環保回收站」之類的無障礙設施子分類，容易和空氣品質誤認） |
-| `Bus` / `CircleParking` / `Heart` / `Bookmark` | 各自獨立分類（公車／停車／福利／收藏），一圖示一語意 | 各自既有分類色（emerald/indigo/rose/amber）保留不變 | 對應 Rail 項目與面板 | 維持現狀，不在本次範圍內調整 |
+| 面板/頁面主標題 | `text-base font-bold` | 16px / 1.25 | 700 | Mobile sheet header「無障礙智慧地圖」 |
+| 面板次標題（Panel header） | `text-sm font-bold` | 14px / 1.3 | 700 | 桌面 Layer 2 panel header |
+| 分區標題（section heading） | `text-sm font-semibold text-muted-foreground` | 14px / 1.3 | 600 | 「快捷功能」「已儲存地點」 |
+| 內文/列表主要文字 | `text-sm` | 14px / 1.4 | 400（強調處 500） | 地點名稱、訊息內容 |
+| 輔助/次要文字 | `text-xs text-muted-foreground` | 12px / 1.4 | 400 | 地址、時間戳、說明句 |
+| 極小標籤（badge/計數） | `text-[10px]`〜`text-[11px]` | 10–11px | 500–600 | Metric 標籤、Badge 徽章 |
+| 導航 HUD 巨大數字 | `text-4xl font-black tabular-nums` | 36px | 900 | 前方距離「50 公尺」 |
+| 按鈕文字（標準） | `text-sm font-semibold` | 14px | 600 | 一般 CTA |
+| 按鈕文字（強調 CTA） | `text-sm font-bold` | 14px | 700 | SOS、結束導航 |
 
-**稽核發現需要修正的既有不一致**：`BottomSheet.tsx` 的 `RAIL_ITEMS` 目前把 `a11y` 的顏色寫成 `text-emerald-500`（第 64 行），與 `HomeContent.tsx` 的 a11y quick action 用 `orange-500` 系不一致——這正是本規格要統一的項目，兩處都應改用 `--accessibility` token。
+規則：正文最小可視字級為 `text-xs`（12px），**不得**再更小（現有 `text-[9px]` 的 Rail label 是唯一允許的例外，原因見 §3.4）；高對比模式下所有字重自動 +100〜+200（由 `.high-contrast` 全域規則處理，元件不必手動判斷）。
 
----
+### 3.2 中文字數限制規則
 
-## 4. Side Rail 元件規格
-
-容器（維持現有結構不變）：`fixed left-3 top-3 bottom-3 w-[56px]`，`bg-background/95 backdrop-blur-md rounded-2xl shadow-xl border border-border/50`，`z-(--z-drawer-rail)`，內距 `py-3`、項目間距 `gap-1`。
-
-### 4.1 Logo 區
-
-- 尺寸：`h-10 w-10`（40px），置中於 56px 容器內，`mb-2`。
-- 造型：`rounded-full`，背景 `bg-gradient-to-br from-primary to-blue-700`（沿用既有 primary 漸層做法,不新增漸層 token）。
-- 圖示：**組合圖示**——`MapPin` 作為主體（`h-5 w-5`，`fill="currentColor" fillOpacity={0.25}` 讓地標形狀有存在感但不搶戲）+ 右下角疊加一個白底圓形小徽章，內含 `Accessibility` icon（`h-2.5 w-2.5`，`bg-white text-primary rounded-full p-0.5`，`absolute -bottom-1 -right-1`）。這解決使用者原話「一開始只是一個裸的藍色輪椅圖示，跟下面的功能按鈕長得一模一樣，沒有品牌識別度」——組合圖示 + 圓形實心底這兩點,讓 Logo 在視覺上明顯區別於下方方形/圓角矩形的功能按鈕。
-- 互動：**可點擊**，`onClick` 行為＝回到首頁搜尋（`setSheetMode("home")`）並收合任何開啟的面板/AI 助理（見 §5 的統一收合規則）。`aria-label` 用完整 app 名稱（`t("title")`），圖示本身 `aria-hidden`。
-- 明確禁止：不得在其他任何按鈕重複使用「MapPin+Accessibility」組合圖示（見 §3 品牌圖示規則）。
-
-### 4.2 AI 助理 CTA 按鈕
-
-- 尺寸：`h-11 w-11`（44px，與其他 Rail 項目一致，符合最小觸控目標）,`rounded-xl`。
-- 視覺差異化：**恆定實心填色**（`bg-gradient-to-b from-primary to-indigo-600 text-primary-foreground`），不像其他 Rail 項目平常是透明/淡色調、僅 active 時才填色——因為 AI 助理是「啟動一個動作」而非「切換一個篩選檢視」，需要在視覺階層上讀作主要 CTA。當助理面板開啟中（`aria-pressed="true"`）時切換為內縮陰影 + `ring-2 ring-primary/30` 的按下態,而不是換一個完全不同的顏色（維持「這是同一個按鈕，只是狀態不同」的視覺連續性）。
-- 圖示：`Bot`（`h-5 w-5`）。
-- 文字標籤：**沿用其他 Rail 項目的圖示+文字雙重標示**（不做成純圖示按鈕，維持 Rail 整體視覺文法一致），但**強制使用短版翻譯鍵 `assistShort`**，內容上限 **繁中 ≤ 4 字、英文 ≤ 8 字元**（例：`"AI 助理"` 4 字合規；`"Assistant"` 9 字元超標,英文版應改用 `"AI"` 或 `"Assist"`）。標籤 class 與其他 Rail 項目相同：`text-[9px] leading-none font-medium truncate whitespace-nowrap max-w-[48px]`。
-- **絕對禁止**：這顆按鈕（以及所有 44px 寬的 Rail 按鈕）內部文字**永遠不得使用完整 app 名稱翻譯鍵 `t("assist")`**（該字串「無障礙智慧地圖 AI 助理」長達 9 個中文字+英文字母，是導致過去版本文字換行擠成一團的直接原因）。`t("assist")` 只能用在：面板 header（有完整寬度可容納）、`aria-label`（螢幕閱讀器念完整名稱不受版面限制）。任何要塞進 ≤48px 容器的文字，一律先過一次「≤4 字/8 字元」檢查，寧可用短標籤或純圖示，也不可以直接丟完整字串進去賭它「應該還好」。
-
-### 4.3 一般功能按鈕（RAIL_ITEMS：search / a11y / bus / parking / saved / hazard）
-
-沿用現有實作模式（`BottomSheet.tsx` 第 458–490 行），規格不變、僅顏色統一（見 §3 稽核表）：
-
-- 尺寸 `h-11 w-11 rounded-xl`；未啟用態 `text-muted-foreground`，hover `bg-muted`；啟用態 `bg-primary/10` + 左側 3px 高亮條（`layoutId="rail-indicator"` 的 spring 動畫維持）。
-- 圖示 `h-5 w-5`，啟用態才顯示分類色（其餘時候維持中性灰,避免六個高彩度圖示同時常駐造成視覺噪音）。
-- 標籤 `text-[9px]`，同 §4.2 的字數與 truncate 規則（**同樣 ≤4 字/8 字元**，這條規則對整個 Rail 一體適用，不是只有 AI CTA 特例）。
-- 「更多」(`railMore`) 展開的 flyout 選項（route/environment/welfare）維持現有橫向文字列表樣式（此處寬度足夠,不受 44px 限制,可以顯示完整標籤）。
-
----
-
-## 5. AI 助理面板整合規格
-
-### 5.1 呈現方式
-
-**採納** `_wip-ui-audit-reference.diff` 的核心方向：AI 助理不再是獨立的 `fixed z-50` 浮動卡片，改為 BottomSheet/Layer2 的其中一種面板內容，與 `sheetMode`/`activeRailPanel` 共用同一個顯示插槽（同一時間只會顯示一種內容）。
-
-- **桌面**：`chatOpen === true` 時,Layer2 內容面板（`left-[68px] top-3 w-[380px]`）顯示 `AIChatBot` 內容，header 顯示 `BotMessageSquare` + `t("assist")`，關閉鍵行為＝「返回」（`ChevronLeft`），而不是「清空關閉」——因為底下原本開著的搜尋/路線視圖應該還在，回上一層即可看到。
-- **手機**：`chatOpen === true` 時 Bottom Sheet 內容區顯示 `AIChatBot`，並強制吸附到 `half`（38%）高度（不能停在 `peek`，聊天輸入框在 12% 高度下不可用；也不預設跳 `full`，因為地圖脈絡在對話中仍常需要參考）。
-- **移除**：`ClientMap.tsx` 中獨立掛載的 `<AIChatBot />` 與其原本 `fixed bottom-2 right-3 ... z-50` 容器，`MapControlsWrapper.tsx` 中原本位於左下角的 AI FAB 群組（3D/定位/AI 三顆一組）**整組拿掉**——這正是使用者抱怨的「桌面版 AI 助理卡片蓋住左下角地圖控制項」的根源，而不是靠 z-index 去解，是靠「AI 助理本來就不該是獨立浮層」直接消除問題。
-- **手機版 AI 入口**：因為手機沒有 Side Rail，AI 助理的開啟入口保留在 `MapControlsWrapper.tsx` 右下角控制群組中（現有位置：Recenter 與「更多」toggle 之間，恆定可見,不收進「更多」），維持 `bg-primary` 實心圓 44px + `BotMessageSquare` 圖示，不加文字（此處是獨立圓形 FAB，不在 Rail 的圖示文字雙標籤文法內，維持現狀即可，草稿在這點沒有問題）。
-
-### 5.2 【裁決】AI 主動切換面板 vs. 使用者手動切換面板——是否自動關閉 AI 助理
-
-這是本規格被要求明確裁決的衝突點。現況：
-
-- `useAIChat.ts` 現有邏輯：AI 工具呼叫觸發 `show-route` 或 `switch-panel` 時，`useAIChat` 自己在收到結果後呼叫 `setOpen(false)`（第 233–243 行），也就是說**現有 production 行為已經是「AI 觸發的畫面切換會自動關閉助理」**。
-- `_wip-ui-audit-reference.diff` 試圖引入 `setSheetMode(mode, { fromAI: true })`，讓 AI 觸發的切換**不再**自動關閉助理（只有「使用者手動」操作才關），但這個「手動關閉」規則只在 `isMobileViewport()` 為真時生效（`useMapStore.ts` diff 片段），**桌面版完全沒有對應處理**——結果會是：桌面上使用者在 AI 助理開著的狀態下手動點擊 Rail 的其他項目（例如「無障礙設施」），`activeRailPanel` 會變成 `"a11y"`，但因為 `chatOpen` 沒被清掉、且 Layer2 面板的 render 邏輯是「`chatOpen` 為真就無條件顯示 `AIChatBot`」，畫面會卡住不放行使用者剛剛點的動作、繼續顯示聊天室——這是一個真實會發生的 bug，也是這份規格存在的理由之一。
-
-**裁決結果：否決 `fromAI` 例外機制，改用單一、不分來源的規則——**
-
-> **面板插槽同一時間只能顯示一件事。任何會改變「目前該顯示什麼」的動作——不論觸發者是 AI 工具呼叫、Rail 點擊、或 sheetMode 轉換——一律連帶把 `chatOpen` 設回 `false`。沒有例外。**
-
-理由：
-
-1. 這與現有 production 行為（AI 觸發切換即關閉助理）**本來就一致**，不需要為了「保留 AI 觸發時的助理視窗」而發明新狀態，因為使用者從沒抱怨過這件事——會被抱怨的只有「桌面版沒有處理手動切換」這個遺漏,不是「AI 觸發時不該關」這件事本身有問題。
-2. 「AI 幫你規劃好路線，直接把畫面切到路線視圖」本來就是這個功能的價值所在（像 Google 助理：問完問題直接給你看結果，不需要你再手動關掉聊天視窗），保留聊天室蓋在結果上面反而是雜訊。
-3. 統一規則消除了「這次切換是誰觸發的」這種需要在多處程式碼裡追蹤來源的心智負擔，`setSheetMode`/`setActiveRailPanel` 只要在 store 層各自的 setter 裡加一行 `chatOpen: false`（if not already false）就完整涵蓋所有呼叫點，桌面/手機都自動生效,不需要 `isMobileViewport()` 這種平台判斷。
-
-**具體實作規則（供 nav-dev 對照）：**
-
-- `useMapStore.setSheetMode()`、`useMapStore.setActiveRailPanel()`：兩者的 setter 內都加上「若 `chatOpen` 為真則一併設為 `false`」，**不接受 `opts?: { fromAI }` 參數**，移除 wip diff 中曾引入的該參數。
-- `useAIChat.ts` 第 231/243 行原本各自呼叫 `setOpen(false)` 的邏輯**可以拿掉**（因為已經被 `executeAction` 內部呼叫的 `setSheetMode`/相關 setter 統一處理），但保留也不會出錯（幂等）——nav-dev 可自行決定是否順手清理,不是硬性要求。
-- `useMapStore.setChatOpen(true)`：**不**清空 `sheetMode`/`activeRailPanel`（維持它們原本的值），這樣使用者從助理面板點「返回」時能回到原本開著的搜尋/路線畫面，而不是被強制打回首頁。
-
-### 5.3 焦點管理（無障礙驗收項）
-
-- 開啟 AI 助理面板時，焦點需移至面板標題或輸入框（`role="region"` 容器 + 適當 `aria-label`，維持現有 Layer2 面板的 `role="region"`/`aria-label` 寫法）。
-- 關閉/返回時，焦點需回到觸發它的按鈕（Rail 的 AI CTA 或手機版 FAB），不可讓焦點掉到 `document.body`。
-
----
-
-## 6. 地圖控制項規格
-
-### 6.1 版位規則
-
-**永久禁用左下角**（使用者原話：「左下角是 UI 盲區，只要左側面板一多，左下角必被遮擋」）。全部地圖控制項只能出現在以下兩處：
-
-| 位置 | 內容 | 說明 |
+| 位置 | 上限 | 說明 |
 |---|---|---|
-| **右上角** | 環境資訊膠囊（空氣品質/氣溫，可展開卡片） | 唯一允許出現在上半部的控制項，因為它是「資訊揭露」而非「操作」，不需要跟底部的操作型按鈕搶版位 |
-| **右下角** | 3D/2D 切換、定位/Recenter、分享位置、語音導航開關（導航中）、**SOS** | SOS 永遠是這一組裡視覺上最外側/最後一個（貼齊螢幕角落），維持使用者建立的肌肉記憶位置不變 |
+| Side Rail label（桌面圖示下方文字） | **2–4 個中文字** | 例：「搜尋」「無障礙」「公車」「停車」「收藏」「通報」。禁止塞入品牌名稱或完整句子（品牌全名只出現在 mobile header 與 AI 助理面板標題，不出現在 Rail） |
+| 快捷 chip 文字 | **2–6 個中文字** | 例：「捷運無障礙」「通報障礙」「停車資訊」 |
+| 面板/頁面標題 | **≤ 10 個中文字** | 例：「無障礙設施」「路線規劃」 |
+| 按鈕文字 | **≤ 6 個中文字** | 例：「開始導航」「重新規劃」 |
+| Toast / 提示訊息單行 | **≤ 18 個中文字**，超過需換行或改用面板呈現 | — |
 
-桌面版原本位於左下角的「3D + 定位 + AI 助理」三顆按鈕群組**整組移除**：3D 與定位併入右下角控制群組（與分享/SOS 同排，`flex-row gap-2`）；AI 助理入口改為 Side Rail CTA（見 §4.2），不再是獨立浮動按鈕。手機版維持現有「常駐可見（定位、AI）+ 收合在『更多』(+) 裡（3D、分享）」的分層揭露設計，這部分現有實作已經合理，不需要更動。
+### 3.3 行高與截斷
 
-### 6.2 z-index
+- 多行內文一律 `line-clamp-2`（現況 `AIChatBot` 已用在訊息泡泡，維持）；單行必斷字用 `truncate`，避免 `truncate` 前先確認容器 `min-w-0`（現況 bug 常見於 flex 子元素忘記加 `min-w-0` 導致 truncate 失效）。
+- Rail label 的 `max-w-[48px] truncate` 是「上限保護」不是「設計依據」——文案本身必須先符合 §3.2 的字數規則，`truncate` 只防止翻譯字串意外過長時的最壞情況。
 
-見 §1.4：地圖控制項使用 `z-(--z-floating-controls)`（30），高於面板本體 `z-(--z-drawer-panel)`（20），低於 Rail 本體 `z-(--z-drawer-rail)`（40）與 Modal `z-(--z-modal)`（50）。
+### 3.4 Rail label 規則（對應現況落差 #3, #4）
 
-### 6.3 與 Side Rail / Bottom Sheet 的避讓關係
-
-**主要靠版位避讓，z-index 只是保底**——這是本規格對「避讓關係」的核心立場：
-
-- 桌面：Rail（左側 56/64px）與 Layer2 面板（左側 380px 寬,面板開啟時左緣約在 448–460px 處）都固定在螢幕**左側**；控制項固定在**右側**（右上、右下）。兩者的可視版位在正常視窗寬度下本來就不重疊，不需要靠 z-index 決勝負。這也是為什麼 §6.1 要求「整組移除左下角控制項」——只要控制項不再出現在左側,避讓問題直接不存在,不需要動態計算 `left` 偏移量去閃避面板（目前 `MapControlsWrapper.tsx` 用 `!sidebarCollapsed && panelOpen ? "left-[468px]" : "left-[76px]"` 這種動態位移正是因為控制項還留在左側才需要的補丁，改到右側後這段邏輯應可整段刪除）。
-- 手機：Bottom Sheet 從螢幕底部升起，右下角控制項用 `--bottom-sheet-h` CSS 變數（已由 `BottomSheet.tsx` 即時發布）動態貼齊在 sheet 頂緣上方（`MOBILE_BOTTOM_OFFSET = "bottom-[calc(var(--bottom-sheet-h,12dvh)+16px)]"`），這個機制**維持不變**，是現有實作中做得對的部分。
-- **已知邊角案例（需在驗收時檢查）**：手機版使用者手動把 Bottom Sheet 拖到 `full`（92dvh）時,右上角環境膠囊（固定在 `top-24`，約 96px）可能被 sheet 頂緣（約在 `8dvh` 處,多數手機螢幕下小於 96px）蓋住。這是版位重疊而非單純 z 排序能解決的問題——即使把控制項 z 排更高，硬把一顆按鈕懸浮在 sheet 內容之上,觀感也不理想。**建議處理方式**（供 nav-dev 參考,非本規格強制驗收項）：sheet 高度超過 `half`（38%）時,環境膠囊淡出隱藏,收合到 `half` 以下再淡入,如同導航模式隱藏 UI 的既有模式（`navHidesChrome`）。若這次不修，至少要在程式碼留註解說明已知限制，不能悄悄放著不提。
+- 字級固定 `text-[9px]`，`leading-none font-medium`，`mt-0.5` 與 icon 保持 2px 視覺間距。
+- 容器寬度 `max-w-[48px]`，按鈕總寬 `w-11`(44px)、高 `h-11`。
+- 文案來源（i18n key）必須先過 2–4 字檢查，PR/實作前用 §7 驗收清單第 1 條檔。
+- 若某功能的自然中文名稱超過 4 字（例如「復康巴士叫車」），Rail label 用簡稱（「叫車」），完整名稱只出現在該功能自己的面板標題與 `aria-label`（螢幕閱讀器仍讀完整語意，視覺上簡化）。
 
 ---
 
-## 7. 驗收條件
+## 4. 圖示語意系統
 
-### 7.1 Design Tokens
-- [ ] `globals.css` 新增 `--accessibility` / `--accessibility-foreground` / `--accessibility-active`（`:root`、`.dark`、`.high-contrast` 三處都要有對應值，特別是 `.high-contrast` 不可留用預設橙色，需驗證對比率）
-- [ ] `globals.css` 新增 `--z-map-base` / `--z-map-overlay` / `--z-drawer-panel` / `--z-floating-controls` / `--z-drawer-rail` / `--z-modal` / `--z-toast` 七個 z-index token
-- [ ] 專案內不再有寫死的 `z-30` / `z-40` / `z-50`（`BottomSheet.tsx`、`MapControlsWrapper.tsx` 全面替換為 `z-(--z-xxx)`）
-- [ ] `BottomSheet.tsx` 的 `railA11y` 顏色（現為 `text-emerald-500`）與 `HomeContent.tsx` 的 a11y 相關顏色統一改用 `--accessibility`（**除**搜尋列核心 CTA 例外用 `--primary`）
+三種形式，各自對應明確情境，不可混用：
 
-### 7.2 RWD
-- [ ] 桌面/行動判斷全部使用 `lg:` breakpoint 與 `useIsDesktop()` hook，無新增的 `md:` 判斷或獨立 `window.innerWidth` 內聯判斷
+### 4.1 純圖示（Plain Icon）
 
-### 7.3 Icon 語意
-- [ ] 全站無出現「同一語意用不同圖示」或「同一圖示用在互斥語意」的情況（可對照 §3 表格逐一檢查）
-- [ ] 品牌組合圖示（MapPin+Accessibility）只出現在 Side Rail Logo 與 favicon,不出現在任何功能性按鈕上
+**定義**：單一 lucide-react 或動畫圖示元件，套用語意色（`text-primary` / `text-accessibility` / `text-alert` / `text-destructive`），無底色、無徽章、無 pin。
 
-### 7.4 Side Rail
-- [ ] Logo 槽位為 40px 圓形、`MapPin`+`Accessibility` 組合圖示，可點擊回首頁
-- [ ] AI 助理 CTA 為恆定實心填色（非透明底），圖示+短標籤（≤4 中文字/8 英文字元），`aria-pressed` 反映開啟狀態
-- [ ] **全 Rail 檢查**：任何 44px/48px 寬容器內的文字標籤都不是 `t("assist")` 這種完整 app 名稱字串；所有標籤都套用 `truncate whitespace-nowrap max-w-[48px]`
-- [ ] 一般功能按鈕顏色統一改用 `--accessibility`（a11y 項目）,其餘分類色維持不變
+**使用時機**：出現在「文字旁邊的輔助標示」——面板標題前綴、按鈕內圖示、列表項目 icon、Metric 卡片圖示。
 
-### 7.5 AI 助理整合
-- [ ] `ClientMap.tsx` 不再獨立掛載 `<AIChatBot />`；`MapControlsWrapper.tsx` 左下角三顆按鈕群組（3D/定位/AI）整組移除
-- [ ] 桌面：`chatOpen` 為真時 Layer2 面板顯示 AI 助理內容，header 有「返回」語意的關閉鍵（`ChevronLeft`，非 `X`）
-- [ ] 手機：`chatOpen` 為真時 Bottom Sheet 內容顯示 AI 助理內容，且強制吸附至 `half`
-- [ ] `useMapStore.setSheetMode()` / `setActiveRailPanel()` 內部一律連帶清空 `chatOpen`，**不存在** `fromAI` 或任何依賴觸發來源的例外參數
-- [ ] 手動測試：桌面版在 AI 助理開啟狀態下點擊 Rail 的「無障礙設施」，畫面應立即切換到 A11yPanel（AI 助理消失），此為修復 wip 版本遺漏桌面判斷的回歸測試案例
-- [ ] 手動測試：透過 AI 對話請求路線規劃，AI 回應後畫面自動切到路線視圖、助理面板關閉（維持現有行為，不應退化）
-- [ ] 開啟/關閉 AI 助理面板時焦點正確移動與歸位（見 §5.3）
+### 4.2 徽章組合（Badge Composition：pin + icon 或 icon + badge）
 
-### 7.6 地圖控制項
-- [ ] 全站無任何控制項出現在左下角
-- [ ] 右下角控制項順序：3D → 定位 → 分享 → SOS（SOS 恆為最外側）
-- [ ] 桌面版 `MapControlsWrapper.tsx` 不再有依 `panelOpen`/`sidebarCollapsed` 動態計算 `left` 偏移的邏輯（因控制項已不在左側,此邏輯應整段移除而非保留但失效）
-- [ ] 手機版 Bottom Sheet 拖到 `full` 時，人工檢查右上角環境膠囊是否被遮擋，若遮擋需至少留下已知限制註解（見 §6.3）
+**定義**：兩個圖形元素疊加，通常是「容器（pin/圓形底）+ 語意 icon」，代表「地圖上的一個實體地點/物件」。
 
-### 7.7 無障礙驗收（跨所有項目）
-- [ ] 新增/調整顏色的文字與圖示對比率 ≥ 4.5:1（一般文字）／≥ 3:1（大字/圖示），含 `.high-contrast` 模式
-- [ ] 所有可互動元素觸控目標 ≥ 44×44px
-- [ ] 所有圖示按鈕有 `aria-label`；狀態切換按鈕有 `aria-pressed`/`aria-expanded`
-- [ ] 鍵盤 Tab 順序符合視覺閱讀順序，`focus-visible` 樣式在所有新按鈕上可見
-- [ ] 螢幕閱讀器（VoiceOver/TalkBack 任一）走一次「開啟 AI 助理 → 對話 → 返回 → 切換到無障礙設施面板」全流程，語音播報內容與實際畫面一致
+**使用時機**：只在「代表地圖上一個可定位的東西」時使用——地圖上的無障礙設施 pin、搜尋結果卡片的地點類型標示、快捷 chip 裡代表「去到地圖上找無障礙地點」的動作。**不可**用在單純的面板標題或按鈕（那些用純圖示即可，加 pin 底反而暗示「這是地圖上一個點」，造成誤導）。
+
+### 4.3 動畫圖示（Animated Icon，`src/components/ui/*-icon.tsx`）
+
+**定義**：`motion/react` 驅動、hover/active 觸發微動畫的圖示元件（目前已有 `accessibility-icon.tsx`、`map-pin-icon.tsx`、`mic-icon.tsx`、`triangle-alert-icon.tsx`）。內建 `useReducedMotion` 保護。
+
+**使用時機**：只用在「使用者主動觸發、且該次互動是這個畫面的核心動作」的**唯一入口點**——例如 Side Rail 最頂端的品牌 Logo（引導使用者認識這是「無障礙」App）、語音輸入按鈕（按下前 hover 提示「這是麥克風」）、導航中新出現的危險警示卡片（第一次出現時播放一次強調動畫，之後靜止）。**不可**在列表中重複使用（例如 10 筆無障礙設施列表，每個都放動畫圖示會變成視覺噪音，此時應退回 §4.1 純圖示）。
+
+### 4.4 具體場景對照表（拍板決策）
+
+| 場景 | 形式 | 理由 |
+|---|---|---|
+| Side Rail 頂部 Logo | **動畫圖示**（`AccessibilityIcon`，hover 觸發），純色圓底 + `text-primary` | 品牌識別的單一入口，值得用動效建立記憶點；純色圓底而非橙色，因為這是「品牌」不是「無障礙資料語意」——與下面的 chip 區分開 |
+| 搜尋欄「無障礙設施」快捷 chip | **徽章組合**：pin 造型底 + 輪椅 icon，底色 `bg-accessibility/10`，icon `text-accessibility` | 代表「地圖上的無障礙地點集合」，pin 形狀強化「按下去會在地圖上顯示點位」的預期 |
+| A11y 面板 / 列表項目 icon | **純圖示**，`text-accessibility` | 面板內是清單而非地圖標示，避免同畫面出現過多 pin 造型互相干擾 |
+| 導航警示卡片（偏離路線／危險通報首次出現） | **動畫圖示**（`TriangleAlertIcon`）僅首次出現播放一次，之後同一張卡片保持靜止純圖示 | 需要在使用者視線可能不在畫面時間短暫抓住注意力，但持續動畫在導航中會分散對路況的注意力（無障礙使用者尤其是長者/認知负荷考量） |
+| 語音輸入按鈕（AI 助理 / 語音導航） | **動畫圖示**（`MicIcon`），idle 不動、hover 預覽動畫、錄音中另有獨立的錄音態動畫（非本圖示系統範疇，屬狀態指示） | 這是視障使用者的核心操作入口，動效輔助建立「這是可互動麥克風」的即時回饋 |
+| 地點詳情頁的無障礙標籤（「有輪椅坡道」「有無障礙廁所」） | **徽章組合**：小圓底 + icon，`bg-accessibility/10` 底 + `text-accessibility` icon，非 pin 形狀（用簡單圓形即可，因為此處不代表地圖座標） | 代表「這個地點具備的無障礙屬性」，用徽章而非純圖示以在密集資訊列表中提高視覺辨識度；不用 pin 形狀因為它不是地圖上的另一個獨立地點 |
+| Side Rail 一般功能項目（公車/停車/收藏/通報等） | **純圖示** | 是導覽項目而非地圖地點標示或核心品牌動作 |
+
+---
+
+## 5. 空間與層級
+
+### 5.1 z-index scale
+
+新建 `--z-map` / `--z-controls` / `--z-panel` / `--z-dialog` 四層 CSS variable（或對應 Tailwind class 命名慣例 `z-map` / `z-controls` / `z-panel` / `z-dialog`），**取代**目前程式碼裡就地手寫的 `z-10/20/30/40/50` 數字。
+
+| 層級 | Token | 數值建議 | 內容 | 原因 |
+|---|---|---|---|---|
+| Layer 0：地圖本體 | `z-map` | `0` | MapLibre canvas、路線線條、地圖上的 marker/pin | 最底層，一切浮層都疊在它之上 |
+| Layer 1：地圖疊加資訊 | `z-map-overlay` | `10` | NowPin、路線線條圖層 wrapper、公車即時位置疊圖 | 這些是「畫在地圖座標系上」的視覺，邏輯上比地圖本體高一級，但仍是地圖的一部分而非 UI 面板 |
+| Layer 2：內容面板（互斥插槽） | `z-panel` | `20` | Bottom Sheet（mobile）／Side Rail 內容面板（desktop Layer 2）、搜尋/路線/地點/AI 助理/導航步驟列表——這些互斥共用同一層 | 這一層彼此互斥（見 §5.2），不需要互相比大小，統一同層即可 |
+| Layer 3：常駐控制項 | `z-controls` | `30` | 右下角地圖控制項群（3D、定位、SOS、分享、語音）、環境資訊藥丸、Side Rail 圖示列本身 | **必須**高於 Layer 2：控制項是「任何模式下都要能點到」的常駐工具，不能被任何內容面板蓋住——這正是本規範要解決的落差 #1 的根本原因 |
+| Layer 4：Modal / Dialog / Toast | `z-dialog` | `50` | shadcn `Dialog`、`DropdownMenu`、`Popover`、`Select`、SOS 確認彈窗、退出導航確認、Toast 通知 | 全域阻斷式互動，永遠最上層 |
+
+**強制規則**：
+- Layer 3（控制項）必須高於 Layer 2（面板），因為控制項是跨模式共用工具列，若被任一面板蓋住，使用者在該面板開啟時就失去定位/求救等關鍵能力——這是不可接受的無障礙風險，尤其 SOS 按鈕在任何情況都必須可觸及。
+- 新增任何浮層元件時，第一步是判斷它屬於上述哪一層，直接用對應 token，**禁止**手寫數字或「試出來能蓋住鄰居就好」的做法。
+- 若同層內有多個元件需要互相比較（例如 Layer 2 內展開的子選單），用相對定位（`relative`/`absolute` 配合父層 stacking context）處理，不要跳去更高的 z-index token。
+
+### 5.2 面板互斥規則（對應落差 #1）
+
+「內容插槽」同一時間只能顯示一種模式，以下全部視為同一個互斥集合的成員：
+
+`搜尋首頁 | 無障礙設施 | 公車動態 | 停車資訊 | 已收藏 | 通報障礙 | 更多（環境/福利/路線） | 地點詳情 | 路線規劃 | 路線結果 | 導航步驟列表 | AI 助理`
+
+- 開啟其中一個，其餘必須關閉（現況 `sheetMode`/`activeRailPanel` 的 `MODE_PANELS` 互斥邏輯是正確方向，**AI 助理必須併入同一個狀態機**，而不是用獨立的 `chatOpen` boolean 平行存在）。
+- 導航模式（`isNavigating`）啟動時，整個內容插槽讓位給 `NavigationHUD`，只留一個「展開步驟列表」的入口把插槽叫回來（現況已如此，維持）。
+- 常駐控制項（Layer 3）不受此互斥規則約束，任何模式下都顯示（導航模式下控制項精簡為語音/定位/SOS，其餘收合，現況邏輯維持）。
+- AI 助理併入互斥插槽後的具體要求：桌面版比照 Layer 2 面板同一個 380px 容器換內容，不再是獨立 `fixed` 卡片；行動版比照 Bottom Sheet 的 `sheetMode` 新增 `"chat"` 值，而非另一個 `open` state。
+
+### 5.3 圓角 / 陰影 /間距 scale
+
+| Token | 值 | 用途 |
+|---|---|---|
+| `rounded-xl`（`--radius-md`） | ~10px | 按鈕、chip、小卡片 |
+| `rounded-2xl`（`--radius-lg`，`--radius: 0.75rem`） | 12px | 面板、Bottom Sheet 頂角、對話框、控制項的容器卡片 |
+| `rounded-3xl` | 24px | Bottom Sheet 頂部（現況 `rounded-t-3xl`，維持） |
+| `rounded-full` | — | 圖示按鈕、頭像、藥丸型標籤、SOS/FAB 按鈕 |
+| 陰影：`shadow-sm` | 列表項目 hover、次要卡片 |
+| 陰影：`shadow-lg` | 常駐控制項按鈕（Layer 3） |
+| 陰影：`shadow-xl` / `shadow-2xl` | 面板（Layer 2）、對話框（Layer 4）、Bottom Sheet |
+| 間距：組件內 padding | `p-3`（12px）小型、`p-4`（16px）標準面板、`p-5`（20px）強調卡片（HUD 頂部橫幅） | 一致採 4px 倍數 |
+| 間距：元素間 gap | `gap-1.5`〜`gap-2`（icon 與文字）、`gap-2`〜`gap-3`（列表項目/按鈕群） | — |
+| 觸控目標最小尺寸 | `44×44px`（`h-11 w-11`） | 所有可點擊按鈕（含 Rail 項目、控制項、chip）不得小於此值——WCAG 2.5.5 的無障礙硬性下限 |
+
+---
+
+## 6. 核心元件規格
+
+### 6.1 Side Rail（桌面，Layer 3 容器 + 內含 Layer 2 觸發器）
+
+- 尺寸：固定寬 `56px`（`w-[56px]`），高度 `fixed top-3 bottom-3 left-3`，永遠貼齊左側，`z-controls`。
+- 背景：`bg-background/95 backdrop-blur-md`，`border border-border/50`，`rounded-2xl`，`shadow-xl`。
+- 內部結構（由上至下）：Logo（動畫圖示，`h-12 w-12` 容器）→ 分隔線 → 主要項目（最多 6 個，`h-11 w-11` 按鈕）→ 分隔線 → 「更多」→ 彈性空間 → 帳號登入。
+- 狀態：
+  - **Default**：`text-muted-foreground`，無底色。
+  - **Hover**：`hover:bg-muted`，`hover:text-foreground`。
+  - **Active（選中）**：`bg-primary/10 shadow-sm`，icon 套語意色（非全部 primary，依 §4 語意表），左側 `3px` 高亮條（`motion.div layoutId` 動畫，現況已有，維持）。
+  - **Disabled**（例如導航中隱藏）：整個 Rail `hidden`，不做半透明 disabled 態（導航時控制權完全交給 HUD）。
+  - **Focus-visible**：`outline-2 outline-primary outline-offset-2`，鍵盤可達（`aria-pressed`/`aria-label` 現況已具備，維持）。
+- Label：見 §3.4。
+
+### 6.2 Bottom Sheet 三態（行動版）
+
+- 三個 snap 高度：`peek = 12dvh`、`half = 45dvh`、`full = 92dvh`（現況 `SNAP_POINTS` 數值維持）。
+- 容器：`bg-background rounded-t-3xl shadow-2xl border-t border-border/50`，`z-panel`。
+- 拖曳把手：`w-10 h-1 rounded-full bg-muted-foreground/30`，觸控區域含把手上下需 `≥44px` 高（目前 `py-3` 手把容器需檢查是否達標，見 §7）。
+- 狀態切換動畫：`spring stiffness:300 damping:30`（現況維持），拖曳中不套用 spring（`isDragging` 時关闭 animate，維持現況邏輯）。
+- 三態使用時機：
+  - `peek`：導航模式常駐（只留 ETA 摘要），或任何模式下使用者手動收合到最小。
+  - `half`：預設模式（搜尋、面板、地點詳情、路線結果）。
+  - `full`：使用者主動拖到底，或內容過長需要更多可視高度（例如展開的路線步驟列表）。
+- **AI 助理併入此元件後**：`sheetMode` 新增 `"chat"`，預設落在 `half`，不再是獨立 `Card`。
+
+### 6.3 AI 助理面板（併入互斥插槽，取代目前獨立浮動卡片）
+
+- 桌面：作為 Layer 2 內容面板的一種模式，套用與其他面板相同的 380px 容器、header 樣式（icon + 標題 + 關閉鈕），**不再自帶** `Card`/`fixed`/自算 `left` 位移。
+- 行動版：作為 `sheetMode = "chat"` 的內容，遵循 Bottom Sheet 三態。
+- 觸發入口：Layer 3 常駐控制項的 AI FAB（`bg-primary` 圓形按鈕，`BotMessageSquare` 純圖示——不用動畫圖示，因為此按鈕在多數畫面持續可見，動畫圖示應保留給語音按鈕與 Logo 這種「單一入口」）。
+- 對話氣泡、工具結果卡片、語音模式（`VoiceModeView`）等內部細節維持現況實作，僅外層容器改為插槽模式。
+- 狀態：
+  - 開啟中：插槽顯示 AI 助理內容，Rail 對應「無」高亮（AI 助理不是 Rail 項目，是獨立於 Rail 之外、由 Layer 3 FAB 觸發的插槽模式，允許與任何 Rail 項目同時「記住」但不同時顯示——即關閉 AI 助理後應回到使用者離開前的 Rail 面板，而非強制回首頁）。
+  - Loading：`ThinkingIndicator`（現況實作維持）。
+  - 語音會話中：`showVoiceMode` 切換到 `VoiceModeView`（現況維持）。
+
+### 6.4 快捷 Chips（HomeContent 首頁）
+
+- 形狀：`rounded-full`，`px-3 py-2`，`text-sm font-semibold`，icon `h-4 w-4` + 文字，`gap-1.5`。
+- 顏色：**全部改為語意 token**——無障礙相關 chip 用 `bg-accessibility/10 text-accessibility hover:bg-accessibility/20`；一般提醒類（通報障礙）用 `bg-alert/10 text-alert`；其餘（公車、停車、環境、福利）**不再各自配色**，統一用 `bg-primary/10 text-primary hover:bg-primary/20`（現況每個功能各配一色是造成「色彩系統形同虛設」的主因，必須收斂）。
+- 自訂模式（`editingActions`）：選中態 `ring-2 ring-primary/40` 疊加原底色（維持現況機制，但底色改用上述收斂後的語意色）。
+- 橫向捲動＋snap（現況 `overflow-x-auto no-scrollbar snap-x snap-mandatory` 維持），「更多」展開後改為 `flex-wrap`（現況維持）。
+- 觸控目標：整顆 chip 高度需 `≥44px`（目前 `py-2` + 文字約 36px，需在實作時量測補足，見 §7）。
+
+### 6.5 警示卡片（導航 HUD / 通報提示）
+
+- 一般警示（`--alert`）：`bg-alert/95 text-alert-foreground`（現況 `bg-amber-500/95` 需改為 token），`rounded-2xl shadow-lg`，icon + 文字 + 可選操作按鈕（如「重新規劃」），操作按鈕用半透明白底 `bg-white/25 hover:bg-white/35`（維持現況質感，僅色源改 token）。
+- 緊急/不可逆（`--destructive`）：SOS 相關維持 `bg-red-500`→改用 `bg-destructive`；hold-to-trigger 的圓形按鈕動效（`scale:1.15` 倒數態）維持現況實作。
+- 首次出現用動畫圖示（見 §4.4），出現動畫 `initial={{opacity:0,y:8}} animate={{opacity:1,y:0}}`（現況 `AnimatePresence` 用法維持），退場同樣淡出。
+- 導航中的接近提醒 pill（`facilityAlert`/`hazardAlert`）：無障礙設施用 `bg-accessibility/10`+`text-accessibility`（現況 `bg-green-100/95`+`text-green-800` 需改為 token）；危險提醒用 `--alert` token（現況 `bg-amber-100/95` 需改為 token）。
+
+---
+
+## 7. 驗收檢查清單
+
+給 nav-dev 實作完、nav-review 審查用，逐條可打勾，不接受「看起來還可以」這種主觀判斷。
+
+### 7.1 色彩
+
+- [ ] 全專案搜尋 `emerald-|amber-|indigo-|sky-|rose-|orange-` 等語意色類別，確認只出現在 §2.2 明列的「空氣品質六階」例外情境，其餘全部替換為 `--primary` / `--accessibility` / `--alert` / `--destructive` token
+- [ ] `globals.css` 已新增 `--accessibility`、`--alert`（含對應 `-foreground`），並在 `.dark` 與 `.high-contrast` 都有對應覆寫值
+- [ ] 所有語意色文字/圖示在各自底色上的對比度 ≥ WCAG AA（一般文字 4.5:1，大字/icon 3:1），light / dark / high-contrast 三種模式都需各自檢查（可用瀏覽器 devtools contrast checker）
+- [ ] 快捷 chip 顏色收斂至 §6.4 規則，無各功能各配一色的情況
+
+### 7.2 文字排版
+
+- [ ] Side Rail 所有 label 為 2–4 個中文字，無任何一個需要靠 `truncate` 才能顯示完整（即字數本身合規，`truncate` 只是保護網）
+- [ ] 快捷 chip 文案 2–6 字、面板標題 ≤10 字、按鈕文案 ≤6 字（抽查 i18n 檔案逐條核對）
+- [ ] 所有可能溢出的 flex 子元素（label、地點名稱等）容器有 `min-w-0`，`truncate` 實際生效（用瀏覽器縮窄視窗手動驗證，不能只看程式碼）
+- [ ] 高對比模式開啟後，所有互動元素邊框可見（2px）、字重明顯加粗，且無任何文字被邊框壓縮到換行/溢出
+
+### 7.3 圖示語意
+
+- [ ] Side Rail Logo 為動畫圖示（hover 觸發一次性動畫），非其他 Rail 項目誤用動畫圖示
+- [ ] 搜尋快捷 chip 中「無障礙設施」使用 pin+輪椅徽章組合，其餘功能 chip 使用純圖示（不誤用徽章組合）
+- [ ] 地點詳情頁的無障礙屬性標籤使用小圓底徽章（非 pin 形狀），與地圖上的無障礙 pin 視覺可區分但語意色一致（都用 `--accessibility`）
+- [ ] 導航警示卡片動畫圖示只在該卡片首次出現時播放，卡片存續期間不循環播放（避免導航中持續分心）
+- [ ] 列表/多筆重複項目（如無障礙設施清單）一律用純圖示，未出現逐項動畫圖示
+
+### 7.4 空間與層級
+
+- [ ] 全專案 z-index 改用 `z-map` / `z-map-overlay` / `z-panel` / `z-controls` / `z-dialog` 命名 token，無殘留就地手寫的 `z-10/20/30/40/50` 裸數字（`ui/` 內 shadcn 元件庫的 `z-50` 對話框類可維持但需對應到 `z-dialog` 語意，或明確在文件中排除說明）
+- [ ] 開啟任一內容面板（搜尋/AI 助理/路線/導航步驟列表等）時，右下角常駐控制項（3D、定位、SOS、語音、分享）始終可見且可點擊，實測至少涵蓋：桌面 + 面板展開、行動版 + Bottom Sheet `full` 態
+- [ ] AI 助理已併入互斥插槽狀態機（`sheetMode`/`activeRailPanel` 同一機制），開啟 AI 助理會關閉其他面板，反之亦然；不存在 AI 助理與其他面板同時可見的畫面
+- [ ] 所有可點擊區域（按鈕、chip、Rail 項目）觸控尺寸實測 ≥ 44×44px（含 padding，用 devtools 量測 bounding box，不能只看 class 名稱猜測）
+
+### 7.5 核心元件狀態
+
+- [ ] Side Rail 每個項目的 default / hover / active(選中) / focus-visible 四態視覺皆與 §6.1 一致，鍵盤 Tab 可依序到達且有可視 focus ring
+- [ ] Bottom Sheet 三態切換動畫流暢（spring，無跳動），拖曳中即時跟手、放開後正確 snap 到最近的一態
+- [ ] 警示卡片（一般 `--alert` / 緊急 `--destructive`）在三種主題模式下颜色与文字对比皆合规
+- [ ] SOS 按鈕 hold-to-trigger 的倒數視覺與觸發時機在導航模式與一般模式下行為一致
+
+### 7.6 無障礙（螢幕閱讀器 / 鍵盤 / reduced motion）
+
+- [ ] 所有圖示按鈕具備 `aria-label`，狀態切換按鈕（Rail、開關類）具備 `aria-pressed` 或 `aria-expanded`
+- [ ] 面板容器有 `role="region"` 或等效語意標記與 `aria-label`（現況 desktop panel 已具備，需確認新增的 chat 模式沿用）
+- [ ] 動畫圖示與所有 motion 動效在 `prefers-reduced-motion: reduce` 下降級為無動畫或極簡淡入淡出，不強制播放位移/旋轉動畫
+- [ ] 高對比模式與一般模式下，Tab 順序符合視覺順序，不因為 z-index 分層導致 focus 跳到被遮蔽的元素
 
 ---
 
 ## 8. 優先級建議
 
-| 項目 | 優先級 | 理由 |
-|---|---|---|
-| §5.2 AI 助理面板整合 + chatOpen 統一收合規則 | **P0** | 這是唯一有實際 bug（桌面版遺漏）的項目，且是使用者用「災難」形容的痛點源頭，修正後同時解決「浮層互相遮擋」與「操作降低興致」兩項抱怨 |
-| §6.1 地圖控制項移出左下角 | **P0** | 直接對應使用者三條逐字抱怨（1、2、3），且改動範圍集中在 `MapControlsWrapper.tsx` 一個檔案，投入產出比高 |
-| §1.4 Z-index token 化 | **P1** | 本身不修任何可見 bug（因為 P0 項目做完後版位已經不重疊），但能防止未來新增浮層時重蹈覆轍,屬於「打地基」工作，建議跟 P0 一起做 |
-| §4 Side Rail Logo / AI CTA 視覺 | **P1** | 使用者明確提出品牌識別度問題，但目前功能是「堪用但不夠精緻」而非「壞掉」，可以在 P0 穩定後排入 |
-| §2 RWD 斷點定案 | **P2** | 現狀（`lg`）本來就沒有 bug，這份規格只是把既有決策正式寫下來供未來對照，不需要任何程式碼改動 |
-| §3 Icon 語意系統統一（顏色稽核） | **P2** | 屬於一致性打磨，使用者沒有直接抱怨這件事造成困擾，可以跟其他小幅視覺調整一起排入 |
-| §6.3 已知邊角案例（環境膠囊被 sheet 遮擋） | **P3** | 屬於「使用者手動拖到極端狀態才會發生」的邊角案例，非常態使用路徑，可延後但需要留 tracking（至少要有註解或 issue） |
+實作應分批次到位，每一批完成即是一個可獨立驗收、可獨立部署的階段，避免又回到「一次改一個小地方」：
+
+1. **P0 — 色彩 token 與 z-index scale 基礎建設**（§2、§5.1）
+   理由：所有其他元件規格都依賴這兩個底層系統；不先做，後面元件改版會做兩次工。且 z-index 混亂是目前唯一會直接造成「功能不可用」（控制項被蓋住點不到）的問題，優先級最高。
+
+2. **P1 — AI 助理併入互斥插槽 + 面板互斥規則落地**（§5.2、§6.3）
+   理由：這是本次浮層互蓋問題的根源，且涉及狀態管理重構（`chatOpen` 併入 `sheetMode`），越晚做重構成本越高。
+
+3. **P1 — Side Rail 與快捷 chips 視覺/文字規則**（§3.4、§4.4、§6.1、§6.4）
+   理由：使用者已明確反應「不直覺」，且 label 溢出是實際發生過的 bug，直接影響「人人喜歡」這個定位的第一印象（Side Rail 是桌面版任何操作的必經之地）。
+
+4. **P2 — 警示卡片與圖示語意系統全面套用**（§4、§6.5）
+   理由：功能正確性不受影響（現況警示卡片能用），但屬於「拼裝感」的視覺根源，建議與 P1 同批次或緊接其後處理，避免分開改造成兩次視覺不一致的過渡期。
+
+5. **P2 — 驗收清單全面跑過一次**（§7）
+   理由：作為每個批次收尾的把關，但完整六大類清單建議在 P1 全部完成後統一跑一輪整體回歸，而非每個小改動都重新跑一次全清單（效率考量），小改動仍需跑對應章節的子清單。
