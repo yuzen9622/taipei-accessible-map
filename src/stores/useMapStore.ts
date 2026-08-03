@@ -31,7 +31,11 @@ export type RailPanel =
   | "environment"
   | "hazard"
   | "welfare"
-  | "saved";
+  | "saved"
+  // Route-results-only sub-panel (AI 路線說明). Only ever set/read while
+  // sheetMode === "route" (see RouteContent); not reachable from the home
+  // rail, so it's absent from RAIL_ITEMS/RAIL_MORE_ITEMS/RAIL_CONTENT_PANELS.
+  | "explanation";
 
 interface MapState {
   map: maplibregl.Map | null;
@@ -482,7 +486,19 @@ const useMapStore = create<MapStore>((set, get) => ({
     if (v) {
       set({ isNavigating: true, sheetMode: "navigation", is3D: true });
     } else {
-      set({ isNavigating: false, sheetMode: "route", is3D: false });
+      // activeRailPanel: "route" mirrors the reset every other entry point
+      // into sheetMode "route" performs (RoutePlanContent, SosTrackerWrapper,
+      // RoutePreviewHydrator) — without it, a rail sub-panel left active
+      // before navigation started (e.g. "hazard" from a home quick-action
+      // chip, or the voice assistant driving nav start/stop without ever
+      // going through RouteContent) would leak into RouteContent on return
+      // from navigation and show that sub-panel instead of the route list.
+      set({
+        isNavigating: false,
+        sheetMode: "route",
+        activeRailPanel: "route",
+        is3D: false,
+      });
       if (map) {
         const legs = get().selectRoute?.route.legs ?? [];
         const bounds = new LngLatBounds();

@@ -59,6 +59,7 @@ export default function SosTrackerWrapper() {
     setSheetMode,
     setDestinationName,
     setSosNavActive,
+    setActiveRailPanel,
   } = useMapStore(
     useShallow((s) => ({
       map: s.map,
@@ -66,6 +67,7 @@ export default function SosTrackerWrapper() {
       setSheetMode: s.setSheetMode,
       setDestinationName: s.setDestinationName,
       setSosNavActive: s.setSosNavActive,
+      setActiveRailPanel: s.setActiveRailPanel,
     })),
   );
   const { handleComputeRoute } = useComputeRoute();
@@ -189,6 +191,10 @@ export default function SosTrackerWrapper() {
     }
     setSosNavActive(true);
     setDestinationName(session.address ?? t("sosTrackingRequesterLabel"));
+    // Same reset as RoutePlanContent: clears any rail sub-panel left active
+    // from the home screen so RouteContent's explanation / environment /
+    // hazard chips start on the plain route list.
+    setActiveRailPanel("route");
     setSheetMode("route");
     const ok = await handleComputeRoute({
       destination: { lat: session.lat, lng: session.lng },
@@ -201,6 +207,7 @@ export default function SosTrackerWrapper() {
     t,
     setSosNavActive,
     setDestinationName,
+    setActiveRailPanel,
     setSheetMode,
     handleComputeRoute,
   ]);

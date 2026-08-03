@@ -55,6 +55,7 @@ export default function RoutePlanContent() {
     setSheetMode,
     setSearchPlace,
     setPendingSearchQuery,
+    setActiveRailPanel,
   } = useMapStore(
     useShallow((s) => ({
       origin: s.origin,
@@ -69,6 +70,7 @@ export default function RoutePlanContent() {
       setSheetMode: s.setSheetMode,
       setSearchPlace: s.setSearchPlace,
       setPendingSearchQuery: s.setPendingSearchQuery,
+      setActiveRailPanel: s.setActiveRailPanel,
     })),
   );
   const { isLoading, handleComputeRoute } = useComputeRoute();
@@ -306,6 +308,11 @@ export default function RoutePlanContent() {
     });
     if (success) {
       setSearchPlace(null);
+      // Reset any rail sub-panel left active from the home screen (e.g.
+      // "hazard" from a quick-action chip) so RouteContent's own explanation
+      // / environment / hazard chips — which now read the same global
+      // activeRailPanel — always start on the plain route list.
+      setActiveRailPanel("route");
       setSheetMode("route");
     }
   }, [
@@ -320,6 +327,7 @@ export default function RoutePlanContent() {
     waypointRows,
     handleComputeRoute,
     setSearchPlace,
+    setActiveRailPanel,
     setSheetMode,
     t,
     travelMode,
