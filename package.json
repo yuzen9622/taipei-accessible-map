@@ -6,10 +6,11 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
+    "build:mobile": "CAP_BUILD=1 next build --turbopack",
     "start": "next start",
     "lint": "biome check",
     "format": "biome format --write",
-    "mobile:sync": "npm run build && cap sync",
+    "mobile:sync": "rm -rf out && npm run build:mobile && cap sync",
     "android": "npm run mobile:sync && cap open android",
     "ios": "npm run mobile:sync && cap open ios",
     "test": "vitest run",
