@@ -336,7 +336,8 @@ export default function PlaceContent() {
         <button
           type="button"
           onClick={handleBack}
-          className="mt-1 h-8 w-8 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors shrink-0"
+          aria-label={t("back")}
+          className="relative mt-1 h-8 w-8 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors shrink-0 after:absolute after:inset-[-6px] after:content-['']"
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
