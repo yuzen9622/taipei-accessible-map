@@ -10,7 +10,7 @@ import {
   TriangleAlert,
   X,
 } from "lucide-react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 import { useAppTranslation } from "@/i18n/client";
@@ -36,14 +36,33 @@ export default function HazardReportPanel({
   hideHeader?: boolean;
 }) {
   const { t } = useAppTranslation();
-  const { userLocation } = useMapStore(
-    useShallow((s) => ({ userLocation: s.userLocation })),
-  );
+  const hazardTypeLabelId = useId();
+  const descriptionId = useId();
+  const { userLocation, pendingReportContext, setPendingReportContext } =
+    useMapStore(
+      useShallow((s) => ({
+        userLocation: s.userLocation,
+        pendingReportContext: s.pendingReportContext,
+        setPendingReportContext: s.setPendingReportContext,
+      })),
+    );
 
   const [hazardType, setHazardType] = useState<
     "obstacle" | "construction" | "data_error"
   >("obstacle");
   const [description, setDescription] = useState("");
+
+  // A place detail's "我知道 → 回報" link on an unconfirmed a11y item hands
+  // off a pre-filled description this way — consumed once on mount (not a
+  // live subscription) so a later unrelated report doesn't inherit stale
+  // context.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only, see above
+  useEffect(() => {
+    if (!pendingReportContext) return;
+    setDescription(pendingReportContext);
+    setHazardType("data_error");
+    setPendingReportContext("");
+  }, []);
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -116,16 +135,27 @@ export default function HazardReportPanel({
         </div>
       )}
 
-      {/* Hazard Type */}
+      {/* Hazard Type — a single-select group of buttons, not a real <label>
+          target, so it gets the group/radio ARIA pattern instead of
+          `htmlFor` (which has nothing valid to point at here). */}
       <div>
-        <label className="text-sm font-medium text-muted-foreground mb-2 block">
+        <span
+          id={hazardTypeLabelId}
+          className="text-sm font-medium text-muted-foreground mb-2 block"
+        >
           {t("hazardType")}
-        </label>
-        <div className="flex gap-2">
+        </span>
+        <div
+          role="radiogroup"
+          aria-labelledby={hazardTypeLabelId}
+          className="flex gap-2"
+        >
           {HAZARD_TYPES.map((ht) => (
             <button
               key={ht.value}
               type="button"
+              role="radio"
+              aria-checked={hazardType === ht.value}
               onClick={() => setHazardType(ht.value)}
               className={`flex-1 flex flex-col items-center gap-1.5 p-3 rounded-xl text-xs font-medium transition-all border ${
                 hazardType === ht.value
@@ -133,7 +163,7 @@ export default function HazardReportPanel({
                   : "border-transparent bg-muted/40 text-muted-foreground hover:bg-muted/60"
               }`}
             >
-              <ht.Icon className={`h-5 w-5 ${ht.color}`} />
+              <ht.Icon className={`h-5 w-5 ${ht.color}`} aria-hidden="true" />
               {t(ht.value === "data_error" ? "dataError" : ht.value)}
             </button>
           ))}
@@ -142,10 +172,14 @@ export default function HazardReportPanel({
 
       {/* Description */}
       <div>
-        <label className="text-sm font-medium text-muted-foreground mb-2 block">
+        <label
+          htmlFor={descriptionId}
+          className="text-sm font-medium text-muted-foreground mb-2 block"
+        >
           {t("hazardDesc")}
         </label>
         <textarea
+          id={descriptionId}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder={t("hazardDescPlaceholder")}

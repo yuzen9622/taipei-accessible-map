@@ -74,6 +74,10 @@ interface MapState {
   pendingSearchQuery: string;
   /** Set by the unified home-screen input when a query reads as a question rather than a place; `AIChatBot` consumes and sends it once the panel opens. */
   pendingAiQuery: string;
+  /** Set when an unconfirmed a11y checklist item's "我知道 → 回報" link opens
+   * the hazard report panel; `HazardReportPanel` consumes it as the initial
+   * description so the report already names which facility it's about. */
+  pendingReportContext: string;
   chatOpen: boolean;
   aiResultMarkers: AiResultMarker[];
   liveBusPositions: LiveBus[];
@@ -133,6 +137,7 @@ interface MapAction {
   setSidebarCollapsed: (v: boolean) => void;
   setPendingSearchQuery: (query: string) => void;
   setPendingAiQuery: (query: string) => void;
+  setPendingReportContext: (context: string) => void;
   setActiveRailPanel: (panel: RailPanel) => void;
   setChatOpen: (v: boolean) => void;
   setAiResultMarkers: (markers: AiResultMarker[]) => void;
@@ -408,6 +413,8 @@ const useMapStore = create<MapStore>((set, get) => ({
   setPendingSearchQuery: (query) => set({ pendingSearchQuery: query }),
   pendingAiQuery: "",
   setPendingAiQuery: (query) => set({ pendingAiQuery: query }),
+  pendingReportContext: "",
+  setPendingReportContext: (context) => set({ pendingReportContext: context }),
   sidebarCollapsed: false,
   setSidebarCollapsed: (v) => set({ sidebarCollapsed: v }),
   activeRailPanel: "search" as RailPanel,
@@ -422,7 +429,16 @@ const useMapStore = create<MapStore>((set, get) => ({
     set(update);
   },
   chatOpen: false,
-  setChatOpen: (v) => set({ chatOpen: v }),
+  setChatOpen: (v) =>
+    // Also un-collapse the desktop sidebar when opening: the AI panel is
+    // rendered inside Layer 2, which stays `inert`+off-screen while
+    // `sidebarCollapsed` is true (see BottomSheet.tsx) — the rail's own
+    // click handler already does this un-collapse, but the several other
+    // entry points that open chat directly (home screen mic, floating FAB,
+    // onboarding, voice) don't go through that handler, so without this a
+    // desktop user with the sidebar collapsed would tap one of those and
+    // nothing visibly happens.
+    set(v ? { chatOpen: v, sidebarCollapsed: false } : { chatOpen: v }),
   aiResultMarkers: [],
   setAiResultMarkers: (markers) => set({ aiResultMarkers: markers }),
   liveBusPositions: [],

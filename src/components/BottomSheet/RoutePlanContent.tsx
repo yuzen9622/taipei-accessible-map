@@ -105,6 +105,25 @@ export default function RoutePlanContent() {
       setA11yMode(useOnboardingStore.getState().profile.routeMode);
     }
   }, [onboardingHydrated]);
+  // A wheelchair user isn't self-driving or riding a motorcycle; someone in
+  // "visual impaired" mode isn't either. Rather than let both selections
+  // exist and produce a route that contradicts the a11y mode picked right
+  // next to it, the incompatible transport options are disabled outright.
+  const DISALLOWED_TRAVEL_MODES: Record<string, ("drive" | "motorcycle")[]> = {
+    wheelchair: ["drive", "motorcycle"],
+    visual_impaired: ["drive", "motorcycle"],
+  };
+  const disabledTravelModes = DISALLOWED_TRAVEL_MODES[a11yMode] ?? [];
+  // If the a11y mode just changed and stranded the current transport pick
+  // on a now-disabled option, fall back to transit rather than silently
+  // keeping an invalid combination selected.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: only react to
+  // the a11y mode changing, not every render where travelMode/disabledTravelModes differ
+  useEffect(() => {
+    if (disabledTravelModes.includes(travelMode as "drive" | "motorcycle")) {
+      setTravelMode("transit");
+    }
+  }, [a11yMode]);
   const [waypointRows, setWaypointRows] = useState<WaypointRow[]>([]);
   const nextWaypointId = useRef(0);
 
@@ -538,25 +557,56 @@ export default function RoutePlanContent() {
               { id: "drive", icon: Car, label: t("drive", "開車") },
               { id: "motorcycle", icon: Bike, label: t("motorcycle", "機車") },
               { id: "walk", icon: Footprints, label: t("walk", "步行") },
-            ].map((tm) => (
-              <Button
-                key={tm.id}
-                variant={travelMode === tm.id ? "default" : "ghost"}
-                size="sm"
-                className={cn(
-                  "flex-1 h-10 px-3 rounded-xl text-xs flex flex-col items-center justify-center gap-1 transition-all",
-                  travelMode === tm.id
-                    ? "shadow-sm"
-                    : "text-muted-foreground hover:bg-muted/80",
-                )}
-                onClick={() => setTravelMode(tm.id as any)}
-                aria-label={tm.label}
-              >
-                <tm.icon className="h-4 w-4" />
-                <span className="text-[10px] sm:text-xs">{tm.label}</span>
-              </Button>
-            ))}
+            ].map((tm) => {
+              const isDisallowed = disabledTravelModes.includes(
+                tm.id as "drive" | "motorcycle",
+              );
+              return (
+                <Button
+                  key={tm.id}
+                  variant={travelMode === tm.id ? "default" : "ghost"}
+                  size="sm"
+                  disabled={isDisallowed}
+                  aria-disabled={isDisallowed}
+                  className={cn(
+                    "flex-1 h-10 px-3 rounded-xl text-xs flex flex-col items-center justify-center gap-1 transition-all",
+                    travelMode === tm.id
+                      ? "shadow-sm"
+                      : "text-muted-foreground hover:bg-muted/80",
+                  )}
+                  onClick={() => setTravelMode(tm.id as any)}
+                  aria-label={
+                    isDisallowed
+                      ? t("travelModeUnavailableFor", {
+                          mode: tm.label,
+                          a11yMode: t(
+                            a11yMode === "wheelchair"
+                              ? "wheelchairMode"
+                              : "visualImpairedMode",
+                          ),
+                          defaultValue: "{{a11yMode}}模式不支援{{mode}}",
+                        })
+                      : tm.label
+                  }
+                >
+                  <tm.icon className="h-4 w-4" />
+                  <span className="text-xs">{tm.label}</span>
+                </Button>
+              );
+            })}
           </div>
+          {disabledTravelModes.length > 0 && (
+            <p className="text-xs text-muted-foreground ml-1">
+              {t("travelModeGatedHint", {
+                a11yMode: t(
+                  a11yMode === "wheelchair"
+                    ? "wheelchairMode"
+                    : "visualImpairedMode",
+                ),
+                defaultValue: "{{a11yMode}}模式已停用不適用的交通方式",
+              })}
+            </p>
+          )}
         </div>
 
         <div className="flex flex-col gap-2">
@@ -595,7 +645,7 @@ export default function RoutePlanContent() {
                 aria-label={am.label}
               >
                 <am.icon className="h-4 w-4" />
-                <span className="text-[10px] sm:text-xs">{am.label}</span>
+                <span className="text-xs">{am.label}</span>
               </Button>
             ))}
           </div>

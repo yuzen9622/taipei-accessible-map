@@ -65,6 +65,15 @@ export default function NearbyContextBlock() {
     return new Set(categories.map((c) => FACILITY_CATEGORY_TO_A11Y_ENUM[c]));
   }, [situations]);
 
+  // 20km is well past "near you" for a facility list — past that, this is
+  // more likely the user (or their mock GPS) being outside the data
+  // coverage area than a genuine nearby result, and presenting it as "你
+  // 附近" is actively misleading (see the exploratory report's Taichung/579km
+  // example). A real "outside service area" empty state needs the backend
+  // to say what its coverage actually is (⚠️ not available yet) — this is
+  // just the frontend refusing to *pretend* confidence it doesn't have.
+  const MAX_NEARBY_METERS = 20_000;
+
   const nearest = useMemo(() => {
     if (!userLocation || !a11yPlaces?.length) return [];
     return a11yPlaces
@@ -73,6 +82,7 @@ export default function NearbyContextBlock() {
         place: p,
         distance: haversineMeters(userLocation, p.position),
       }))
+      .filter((p) => p.distance <= MAX_NEARBY_METERS)
       .sort((a, b) => a.distance - b.distance)
       .slice(0, 6);
   }, [userLocation, a11yPlaces, relevantTypes]);
@@ -110,7 +120,7 @@ export default function NearbyContextBlock() {
               <span className="text-xs font-medium text-foreground">
                 {labelKey ? t(labelKey) : ""}
               </span>
-              <span className="truncate text-[11px] text-muted-foreground">
+              <span className="truncate text-xs text-muted-foreground">
                 {formatDistance(distance)}
               </span>
             </button>

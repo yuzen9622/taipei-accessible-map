@@ -36,12 +36,17 @@ export async function getAccessToken() {
 export class ApiError extends Error {
   code: number;
   reason?: string;
+  /** Raw `data` payload from the error envelope — e.g. a 400's
+   * `{ errors: [{ path, message }] }` field-validation list, which the
+   * top-level `message`/`reason` don't carry. */
+  data?: unknown;
 
-  constructor(message: string, code: number, reason?: string) {
+  constructor(message: string, code: number, reason?: string, data?: unknown) {
     super(message);
     this.name = "ApiError";
     this.code = code;
     this.reason = reason;
+    this.data = data;
   }
 }
 
@@ -116,6 +121,7 @@ export async function fetchRequest<T>(
       data.message || "Fetch error",
       data.code,
       (data.data as { reason?: string } | undefined)?.reason,
+      data.data,
     );
   }
   if (!isSuccess && data.code !== 401) {
@@ -123,6 +129,7 @@ export async function fetchRequest<T>(
       data.message || "Fetch error",
       data.code,
       (data.data as { reason?: string } | undefined)?.reason,
+      data.data,
     );
   }
   if (data.code === 401 && requireAuth && !skipAuthRetry) {

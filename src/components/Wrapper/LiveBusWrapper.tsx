@@ -58,11 +58,11 @@ function TargetBusMarker({ bus }: { bus: AnimatedBus }) {
         {/* callout */}
         <div className="absolute left-1/2 top-[calc(100%+5px)] z-20 flex -translate-x-1/2 flex-col items-center gap-0.5">
           <div
-            className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-bold text-white shadow ${accentBg}`}
+            className={`whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-bold text-white shadow ${accentBg}`}
           >
             {etaLabel(bus)}
           </div>
-          <div className="flex items-center gap-1 whitespace-nowrap rounded-full border bg-background/90 px-1.5 py-0.5 text-[10px] font-medium text-foreground shadow-sm">
+          <div className="flex items-center gap-1 whitespace-nowrap rounded-full border bg-background/90 px-1.5 py-0.5 text-xs font-medium text-foreground shadow-sm">
             {accessible && <Accessibility className="h-3 w-3 text-blue-600" />}
             {bus.plateNumb}
           </div>

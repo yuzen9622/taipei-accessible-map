@@ -1,8 +1,9 @@
 import { create } from "zustand";
+import { updateConfig } from "@/lib/api/user";
 import { configureAuthState } from "@/lib/authRefresh";
 import { revokeSession } from "@/lib/authTransport";
-import { updateConfig } from "@/lib/api/user";
 import { ColorEnum, FontSizeEnum, LanguageEnum } from "@/lib/config";
+import useChatStore from "@/stores/useChatStore";
 import type { UserConfig, UserDTO } from "@/types/user";
 
 const HIGH_CONTRAST_STORAGE_KEY = "userConfig.highContrast";
@@ -108,6 +109,13 @@ const useAuthStore = create<AuthStore>((set, get) => ({
     // so it can never enter the 401-refresh path.
     const token = get().session?.accessToken;
     set({ user: null, session: null });
+    // The AI chat panel's conversation now survives collapse/reopen and a
+    // page reload (it lives in a store + sessionStorage, not component
+    // state) — without this it would also survive a logout, leaving one
+    // user's chat history (addresses, a11y needs, …) visible to the next
+    // person on a shared device. `clearAll()` also drops the sessionStorage
+    // snapshot, not just the in-memory state.
+    useChatStore.getState().clearAll();
     if (token) {
       revokeSession(token).catch((error) => {
         console.error("[useAuthStore] revokeSession failed", error);

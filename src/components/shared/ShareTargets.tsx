@@ -43,7 +43,7 @@ export default function ShareTargets({ message }: { message: string }) {
       >
         <Image src="/line-icon.svg" alt="LINE" width={28} height={28} />
         <span className="text-sm font-semibold">{t("shareToLine")}</span>
-        <span className="text-[11px] text-muted-foreground">
+        <span className="text-xs text-muted-foreground">
           {t("shareToLineDesc")}
         </span>
       </button>
@@ -54,7 +54,7 @@ export default function ShareTargets({ message }: { message: string }) {
       >
         <Image src="/whatsapp-icon.svg" alt="WhatsApp" width={28} height={28} />
         <span className="text-sm font-semibold">{t("shareToWhatsApp")}</span>
-        <span className="text-[11px] text-muted-foreground">
+        <span className="text-xs text-muted-foreground">
           {t("shareToWhatsAppDesc")}
         </span>
       </button>
@@ -67,7 +67,7 @@ export default function ShareTargets({ message }: { message: string }) {
           <Copy className="h-4 w-4 text-primary" />
         </span>
         <span className="text-sm font-semibold">{t("copyLink")}</span>
-        <span className="text-[11px] text-muted-foreground">
+        <span className="text-xs text-muted-foreground">
           {t("copyLinkDesc")}
         </span>
       </button>

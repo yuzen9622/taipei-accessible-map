@@ -626,8 +626,12 @@ export function formatDuration(minutes: number): string {
 
 export function formatDistance(meters: number): string {
   if (!Number.isFinite(meters)) return "";
+  // >=100km: whole km, a decimal place is false precision at that range.
+  if (meters >= 100_000) return `${Math.round(meters / 1000)} km`;
   if (meters >= 1000) return `${(meters / 1000).toFixed(1)} km`;
-  return `${Math.round(meters)} m`;
+  // Round to the nearest 10m — "583 m" implies GPS accuracy this app
+  // doesn't have; "580 m" reads as the estimate it actually is.
+  return `${Math.round(meters / 10) * 10} m`;
 }
 
 export interface LiveBus {

@@ -384,7 +384,7 @@ export default function BusPanel({
                       }}
                     />
                   </div>
-                  <span className="text-[10px] text-muted-foreground whitespace-nowrap w-8 text-right font-medium">
+                  <span className="text-xs text-muted-foreground whitespace-nowrap w-8 text-right font-medium">
                     {countdown}s
                   </span>
                 </div>

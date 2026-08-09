@@ -102,7 +102,7 @@ export default function VoiceModeView() {
               entry.role === "user" ? "items-end" : "items-start",
             )}
           >
-            <span className="text-[10px] text-muted-foreground px-1">
+            <span className="text-xs text-muted-foreground px-1">
               {entry.role === "user"
                 ? t("chatbot.voice.transcriptUser", "你")
                 : t("chatbot.voice.transcriptModel", "助理")}

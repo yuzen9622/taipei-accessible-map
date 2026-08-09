@@ -10,7 +10,14 @@ import {
   MapPinIcon,
   XIcon,
 } from "@animateicons/react/lucide";
-import { ArrowLeft, DoorOpen, Loader2, Navigation, Share2 } from "lucide-react";
+import {
+  ArrowLeft,
+  DoorOpen,
+  HelpCircle,
+  Loader2,
+  Navigation,
+  Share2,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useAppTranslation } from "@/i18n/client";
@@ -40,7 +47,7 @@ function getAccessibilityStatusLabel(
     case "limited":
       return "部分無障礙";
     default:
-      return "未知";
+      return "無障礙資訊未確認";
   }
 }
 
@@ -58,6 +65,8 @@ export default function PlaceContent() {
     removeSavedPlace,
     isSavedPlace,
     map,
+    setActiveRailPanel,
+    setPendingReportContext,
   } = useMapStore(
     useShallow((s) => ({
       infoShow: s.infoShow,
@@ -71,6 +80,8 @@ export default function PlaceContent() {
       removeSavedPlace: s.removeSavedPlace,
       isSavedPlace: s.isSavedPlace,
       map: s.map,
+      setActiveRailPanel: s.setActiveRailPanel,
+      setPendingReportContext: s.setPendingReportContext,
     })),
   );
 
@@ -230,8 +241,19 @@ export default function PlaceContent() {
   const isPlace = infoShow.kind === "place";
   const place = isPlace ? infoShow.place : null;
 
+  // `available` is a tri-state: `true` (confirmed present), `false`
+  // (confirmed absent), `null` (never surveyed — no data source says
+  // either way). The backend doesn't yet distinguish "surveyed, no
+  // facility" from "never surveyed" for elevator/ramp/toilet (only a
+  // presence signal from nearby POIs / OSM tags), so those two can only
+  // ever resolve to `true` or `null` until it does — showing a confident
+  // ✗ there would tell a wheelchair user a place is impassable when the
+  // truth is just "we don't know yet", which is worse than not answering.
+  // `wheelchair` does carry an explicit OSM/place tag with a real "no"
+  // value, so it gets the full three states.
   const a11yChecklist = useMemo(() => {
-    const items: { key: string; label: string; available: boolean }[] = [];
+    const items: { key: string; label: string; available: boolean | null }[] =
+      [];
     const hasBathroom = nearbyBathrooms.length > 0;
     const hasElevator = nearbyMetro.length > 0;
 
@@ -239,26 +261,19 @@ export default function PlaceContent() {
     const osmTags = osmDetail?.tags;
     const osmFacilities = osmDetail?.facilities;
 
-    if (osmWheelchair) {
-      items.push({
-        key: "wheelchair",
-        label: t("wheelchairAccess"),
-        available: osmWheelchair === "yes" || osmWheelchair === "limited",
-      });
-    } else if (isPlace && place) {
-      const wheelchair = place.accessibility.wheelchair;
-      items.push({
-        key: "wheelchair",
-        label: t("wheelchairAccess"),
-        available: wheelchair === "yes" || wheelchair === "limited",
-      });
-    } else {
-      items.push({
-        key: "wheelchair",
-        label: t("wheelchairAccess"),
-        available: false,
-      });
-    }
+    const wheelchairValue =
+      osmWheelchair ??
+      (isPlace && place ? place.accessibility.wheelchair : undefined);
+    items.push({
+      key: "wheelchair",
+      label: t("wheelchairAccess"),
+      available:
+        wheelchairValue === "yes" || wheelchairValue === "limited"
+          ? true
+          : wheelchairValue === "no"
+            ? false
+            : null,
+    });
 
     const facilityCategories = new Set(osmFacilities?.map((f) => f.category));
     const hasOsmElevator = facilityCategories.has("elevator");
@@ -271,17 +286,17 @@ export default function PlaceContent() {
       {
         key: "elevator",
         label: t("hasElevator"),
-        available: hasElevator || hasOsmElevator,
+        available: hasElevator || hasOsmElevator ? true : null,
       },
       {
         key: "ramp",
         label: t("hasRamp"),
-        available: hasElevator || hasOsmRamp,
+        available: hasElevator || hasOsmRamp ? true : null,
       },
       {
         key: "toilet",
         label: t("hasAccessibleToilet"),
-        available: hasBathroom || hasOsmToilet,
+        available: hasBathroom || hasOsmToilet ? true : null,
       },
     );
 
@@ -550,31 +565,77 @@ export default function PlaceContent() {
         )}
       </section>
 
-      {/* Accessibility Checklist */}
+      {/* Accessibility Checklist — tri-state: confirmed-yes / confirmed-no /
+          never-surveyed. Distinct icon shapes (✓ / ✗ / ?) carry the state,
+          not just color, and a screen reader gets an explicit `sr-only`
+          status word — a "有無障礙廁所" vs "無無障礙廁所" pair that only
+          differed by icon color was read identically by assistive tech. */}
       <section>
         <h2 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
           <AccessibilityIcon size={16} />
           {t("a11yChecklist")}
         </h2>
-        <div className="grid grid-cols-2 gap-2">
-          {a11yChecklist.map((item) => (
-            <div
-              key={item.key}
-              className={`flex items-center gap-2 p-2.5 rounded-xl text-sm ${
-                item.available
-                  ? "bg-green-500/10 text-green-700 dark:text-green-400"
-                  : "bg-muted/40 text-muted-foreground"
-              }`}
-            >
-              {item.available ? (
-                <CheckIcon size={16} className="shrink-0" />
-              ) : (
-                <XIcon size={16} className="shrink-0 opacity-40" />
-              )}
-              <span className="truncate">{item.label}</span>
-            </div>
-          ))}
-        </div>
+        <ul className="grid grid-cols-2 gap-2">
+          {a11yChecklist.map((item) => {
+            const statusText =
+              item.available === true
+                ? t("a11yStatusYes", "有")
+                : item.available === false
+                  ? t("a11yStatusNo", "無")
+                  : t("a11yStatusUnknown", "未確認");
+            return (
+              <li
+                key={item.key}
+                className={`flex flex-col gap-1 p-2.5 rounded-xl text-sm ${
+                  item.available === true
+                    ? "bg-green-500/10 text-green-700 dark:text-green-400"
+                    : item.available === false
+                      ? "bg-red-500/10 text-red-700 dark:text-red-400"
+                      : "bg-amber-500/10 text-amber-800 dark:text-amber-400"
+                }`}
+              >
+                <span className="flex items-center gap-2">
+                  {item.available === true ? (
+                    <CheckIcon size={16} className="shrink-0" />
+                  ) : item.available === false ? (
+                    <XIcon size={16} className="shrink-0" />
+                  ) : (
+                    <HelpCircle size={16} className="shrink-0" />
+                  )}
+                  <span className="truncate">{item.label}</span>
+                  <span className="sr-only">：{statusText}</span>
+                </span>
+                {item.available === null && (
+                  <button
+                    type="button"
+                    className="self-start text-xs font-medium underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-300"
+                    onClick={() => {
+                      const placeName = isPlace && place ? place.name : "";
+                      setPendingReportContext(
+                        t("a11yReportPrefill", {
+                          defaultValue: "{{facility}}：{{place}}",
+                          facility: item.label,
+                          place: placeName,
+                        }),
+                      );
+                      // sheetMode stays "place" (a MODE_PANELS value) after
+                      // opening from a place detail page, and BottomSheet
+                      // renders by sheetMode over activeRailPanel whenever a
+                      // mode panel is active — so setting only
+                      // activeRailPanel here was a silent no-op, the click
+                      // just did nothing. setSheetMode("home") first is the
+                      // same handoff handleRailClick already does elsewhere.
+                      setSheetMode("home");
+                      setActiveRailPanel("hazard");
+                    }}
+                  >
+                    {t("a11yIKnowReport", "我知道 → 回報")}
+                  </button>
+                )}
+              </li>
+            );
+          })}
+        </ul>
       </section>
 
       {/* OSM Accessibility Detail */}

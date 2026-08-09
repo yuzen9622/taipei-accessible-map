@@ -313,7 +313,10 @@ img.adp-marker2 {
   --color-accessibility-foreground: var(--accessibility-foreground);
   --color-accessibility-active: var(--accessibility-active);
   --color-sos: var(--destructive);
-  --color-sos-foreground: var(--destructive-foreground, var(--primary-foreground));
+  --color-sos-foreground: var(
+    --destructive-foreground,
+    var(--primary-foreground)
+  );
 }
 
 :root {
@@ -468,4 +471,12 @@ img.adp-marker2 {
   body {
     @apply bg-background text-foreground font-sans;
   }
+}
+
+/* MapLibre's own zoom in/out buttons ship at 29×29px — under the 44×44
+   touch-target floor everywhere else in the app. MapLibre doesn't expose a
+   size prop for its NavigationControl, so this overrides its stylesheet. */
+.maplibregl-ctrl-group button {
+  width: 44px !important;
+  height: 44px !important;
 }

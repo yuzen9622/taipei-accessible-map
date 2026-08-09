@@ -180,7 +180,7 @@ export default function HomeContent() {
                   type="button"
                   data-coach={def.id === "a11y" ? "a11y" : undefined}
                   onClick={() => setActiveRailPanel(def.id)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm font-semibold bg-muted/60 text-foreground hover:bg-muted transition-colors shrink-0 snap-start"
+                  className="flex items-center gap-1.5 min-h-11 px-3 py-2 rounded-full text-sm font-semibold bg-muted/60 text-foreground hover:bg-muted transition-colors shrink-0 snap-start"
                 >
                   <def.Icon className={cn("h-4 w-4", def.iconClassName)} />
                   {t(def.labelKey)}

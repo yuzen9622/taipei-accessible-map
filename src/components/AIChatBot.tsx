@@ -12,6 +12,7 @@ import {
   Square,
   SquareParking,
   Thermometer,
+  Trash2,
   Wind,
 } from "lucide-react";
 import { motion } from "motion/react";
@@ -30,6 +31,7 @@ import {
 } from "@/lib/toolResultCards";
 import { cn } from "@/lib/utils";
 import useAuthStore from "@/stores/useAuthStore";
+import useChatStore from "@/stores/useChatStore";
 import useMapStore from "@/stores/useMapStore";
 import useVoiceStore from "@/stores/useVoiceStore";
 import MarkdownText from "./shared/MarkdownText";
@@ -100,7 +102,7 @@ function ToolResultCard({
         {item.badge && (
           <Badge
             variant="secondary"
-            className="shrink-0 text-[10px] px-1.5 py-0 rounded-full"
+            className="shrink-0 text-xs px-1.5 py-0 rounded-full"
           >
             {item.badge}
           </Badge>
@@ -302,6 +304,24 @@ export default function AIChatBot({ active = true }: { active?: boolean }) {
     handleSend(pendingAiQuery);
   }, [active, handleSend]);
 
+  // "消失必須是使用者的決定，不是副作用" — the conversation now survives
+  // collapse/reopen and reload, so this is the only way it ever goes away.
+  // Re-seeds the greeting immediately (rather than leaving messages empty
+  // for `useAIChat`'s mount-only effect to notice) since the panel is
+  // already mounted and that effect won't re-fire.
+  const handleClearConversation = () => {
+    useChatStore.getState().clearAll([
+      {
+        role: "assistant",
+        content: t(
+          "assistFirstMessage",
+          "你好！我是無障礙智慧地圖的 AI 助理，有什麼我能幫你的嗎？附近無障礙設施或者是問題回饋？請隨時提出！",
+        ),
+      },
+    ]);
+  };
+  const hasConversation = messages.length > 1;
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     // !isComposing：避免中文輸入法選字時按 Enter 誤送出（與 PlanInput 一致）
     if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
@@ -314,7 +334,32 @@ export default function AIChatBot({ active = true }: { active?: boolean }) {
 
   return (
     <div className="h-full flex flex-col min-h-0">
-      <ScrollArea className="flex-1 overflow-auto pt-1">
+      <div className="flex justify-end px-3 pt-1">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={handleClearConversation}
+          aria-disabled={!hasConversation}
+          className={cn(
+            "h-11 gap-1.5 text-xs text-muted-foreground hover:text-destructive",
+            !hasConversation && "opacity-50 pointer-events-none",
+          )}
+        >
+          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+          {t("chatbot.clearConversation", "清除對話")}
+        </Button>
+      </div>
+      {/* Radix ScrollArea's viewport wraps children in a `display: table`
+          div (needed for its own auto-height logic), which makes a
+          `w-full` child resolve against shrink-to-fit content width instead
+          of the viewport — combined with the horizontal padding here, long
+          message bubbles overflowed past the panel edge. Forcing that
+          wrapper back to `display: block` fixes the width basis. The
+          `overflow-auto` normally on this element is dropped too — Radix's
+          own viewport already owns scrolling, so this was a second,
+          redundant scroll container stacked on top of it. */}
+      <ScrollArea className="flex-1 pt-1 [&>[data-radix-scroll-area-viewport]>div]:!block">
         <CardContent className="min-h-full space-y-3" ref={scrollRef}>
           {messages.map((m, i) => (
             <Fragment key={i}>

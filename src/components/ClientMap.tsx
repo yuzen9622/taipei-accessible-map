@@ -432,6 +432,11 @@ export default function ClientMap() {
       onLoad={handleLoad}
       onStyleData={handleStyleData}
       style={{ position: "relative", flex: 1, overflow: "hidden" }}
+      // Explicit `compact: true` (not relying on MapLibre's width-based
+      // auto-detect) so the OSM/OpenFreeMap/OpenMapTiles/MapLibre credit
+      // links always start collapsed behind a single toggle button instead
+      // of sitting in the tab order as four separate stops on every load.
+      attributionControl={{ compact: true }}
     >
       <NavigationControl position="top-right" showCompass={false} />
       <MapWrapper />

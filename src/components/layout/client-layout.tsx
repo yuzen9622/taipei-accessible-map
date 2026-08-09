@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useCallback, useEffect } from "react";
 import { useShallow } from "zustand/react/shallow";
 import BottomSheet from "@/components/BottomSheet/BottomSheet";
@@ -10,15 +11,33 @@ import { refreshToken } from "@/lib/api/auth";
 import { getUserInfo } from "@/lib/api/user";
 import { migrateLegacyPlaceStorage } from "@/lib/place/adapters";
 import useAuthStore from "@/stores/useAuthStore";
+import useChatStore from "@/stores/useChatStore";
 import useMapStore, { type SavedPlaceCategory } from "@/stores/useMapStore";
 import useOnboardingStore from "@/stores/useOnboardingStore";
 import useQuickActionsStore from "@/stores/useQuickActionsStore";
+
+// Routes that render as a bare, centered page (their own `StatusPage` card)
+// instead of being nested inside the map app shell. These are landed on cold
+// from an external link (a password-reset email) — showing the search
+// panel / side rail / onboarding card behind them made no sense and visually
+// overlapped, since the map app underneath was never actually initialized
+// for this visit (no location, no session context to speak of yet).
+const BARE_ROUTE_SEGMENTS = ["reset-password"];
+
+function isBareRoute(pathname: string) {
+  // pathname is like "/zh-TW/reset-password" — segment [1] is the locale,
+  // [2] is the route we actually care about.
+  const segment = pathname.split("/")[2];
+  return !!segment && BARE_ROUTE_SEGMENTS.includes(segment);
+}
 
 export default function ClientLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const bare = isBareRoute(pathname);
   const { initSearchHistory, initSavedPlaces, initSavedPlaceCategories } =
     useMapStore(
       useShallow((s) => ({
@@ -53,6 +72,14 @@ export default function ClientLayout({
   useEffect(() => {
     initOnboarding();
   }, [initOnboarding]);
+
+  // Restores the AI chat conversation from sessionStorage (if any) before the
+  // chat panel ever mounts — by the time a user opens it, `useAIChat`'s
+  // empty-check for the greeting is reading post-hydration state.
+  const initChat = useChatStore((s) => s.initFromStorage);
+  useEffect(() => {
+    initChat();
+  }, [initChat]);
 
   const initQuickActions = useQuickActionsStore((s) => s.initFromStorage);
   useEffect(() => {
@@ -124,6 +151,13 @@ export default function ClientLayout({
     initSavedPlaceCategories,
     getNewAccessToken,
   ]);
+
+  if (bare) {
+    // `main`/`role="main"` for the landmark a screen reader user expects on
+    // any page — `className="contents"` so it doesn't impose its own layout
+    // on top of the StatusPage card, which already centers itself full-page.
+    return <main className="contents">{children}</main>;
+  }
 
   return (
     <div className="w-full h-dvh flex flex-col">

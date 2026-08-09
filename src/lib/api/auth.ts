@@ -55,7 +55,7 @@ export async function resetPassword(token: string, password: string) {
   return fetchRequest(`${END_POINT}/api/v1/user/auth/password/reset`, {
     method: "POST",
     body: { token, password },
-  }) as Promise<ApiResponse<{ user: UserDTO }>>;
+  }) as Promise<SessionResponse>;
 }
 
 export async function changePassword(

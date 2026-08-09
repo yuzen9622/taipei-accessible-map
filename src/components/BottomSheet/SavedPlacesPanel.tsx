@@ -61,7 +61,7 @@ function SavedPlaceCard({
             <button
               type="button"
               className={cn(
-                "flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium shrink-0 transition-colors",
+                "flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium shrink-0 transition-colors",
                 category
                   ? "bg-primary/10 text-primary hover:bg-primary/20"
                   : "bg-muted text-muted-foreground hover:bg-muted/80",

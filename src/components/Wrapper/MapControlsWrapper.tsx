@@ -120,15 +120,13 @@ function Metric({
         <Icon className={`h-4.5 w-4.5 ${iconClass}`} />
       </div>
       <div className="min-w-0">
-        <p className="text-[11px] leading-tight text-muted-foreground">
-          {label}
-        </p>
+        <p className="text-xs leading-tight text-muted-foreground">{label}</p>
         <p
           className={`text-base font-bold leading-tight tabular-nums ${valueClass ?? ""}`}
         >
           {value}
           {unit && (
-            <span className="text-[11px] font-medium text-muted-foreground ml-0.5">
+            <span className="text-xs font-medium text-muted-foreground ml-0.5">
               {unit}
             </span>
           )}
@@ -389,7 +387,6 @@ export default function MapControlsWrapper() {
           </div>
         )}
 
-
         {/* 3. Bottom-Right Container: map controls, stacked vertically on
              every breakpoint (desktop used to switch to a horizontal row
              here, which spread the buttons wide across the screen and made
@@ -442,9 +439,9 @@ export default function MapControlsWrapper() {
                 type="button"
                 aria-label="SOS"
                 onClick={() => setSosOpen(true)}
-                className="h-11 w-11 rounded-full bg-red-500 text-white shadow-lg hover:bg-red-600 hover:shadow-xl transition-colors flex items-center justify-center select-none shrink-0"
+                className="h-11 w-11 rounded-full bg-red-600 text-white shadow-lg hover:bg-red-700 hover:shadow-xl transition-colors flex items-center justify-center select-none shrink-0"
               >
-                <span className="text-xs font-black">SOS</span>
+                <span className="text-sm font-black">SOS</span>
               </button>
             </div>
           ) : (
@@ -619,9 +616,9 @@ export default function MapControlsWrapper() {
                   data-coach="sos"
                   aria-label="SOS"
                   onClick={() => setSosOpen(true)}
-                  className="h-11 w-11 rounded-full bg-red-500 text-white shadow-lg hover:bg-red-600 hover:shadow-xl transition-colors flex items-center justify-center select-none shrink-0"
+                  className="h-11 w-11 rounded-full bg-red-600 text-white shadow-lg hover:bg-red-700 hover:shadow-xl transition-colors flex items-center justify-center select-none shrink-0"
                 >
-                  <span className="text-xs font-black">SOS</span>
+                  <span className="text-sm font-black">SOS</span>
                 </button>
               </div>
             </>

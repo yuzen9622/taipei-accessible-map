@@ -254,7 +254,7 @@ export default function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
                   <ol className="space-y-2">
                     {feedbackSteps.map((step, i) => (
                       <li key={step} className="flex items-start gap-3">
-                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-semibold text-primary mt-0.5">
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary mt-0.5">
                           {i + 1}
                         </span>
                         <span className="text-[13px] leading-relaxed text-muted-foreground">

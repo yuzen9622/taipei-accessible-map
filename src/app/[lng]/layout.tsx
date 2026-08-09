@@ -42,11 +42,14 @@ export const metadata: Metadata = {
     icon: "/logo.ico",
   },
 };
+// No maximumScale/userScalable lock — that violated WCAG 1.4.4 (low-vision
+// users need pinch-to-zoom). It likely existed to dodge iOS Safari's
+// auto-zoom-on-focus behavior, but the actual fix for that is keeping every
+// input's font-size at 16px+ (see components/ui/input.tsx's `text-base`),
+// not disabling zoom for everyone.
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
 };
 export default async function RootLayout({
   children,

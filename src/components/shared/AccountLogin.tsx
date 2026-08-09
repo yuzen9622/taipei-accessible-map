@@ -23,7 +23,8 @@ import {
   Type,
 } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 import EmergencyContactsDialog from "@/components/Sos/EmergencyContactsDialog";
@@ -77,8 +78,35 @@ export default function AccountLogin() {
   const [feedbackText, setFeedbackText] = useState("");
   const [contactsDialogOpen, setContactsDialogOpen] = useState(false);
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
+  const [authDialogInitialMode, setAuthDialogInitialMode] = useState<
+    "login" | "register" | "forgot"
+  >("login");
   const [lineBindDialogOpen, setLineBindDialogOpen] = useState(false);
   const { t } = useAppTranslation("translation");
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // The reset-password page's "request a new link" button can't open the
+  // login modal directly — it renders on its own bare layout, outside this
+  // component's tree (see ClientLayout), so this component only ever mounts
+  // fresh right as that navigation lands here. Reads location.search
+  // directly (not useSearchParams) so this doesn't require a Suspense
+  // boundary this component isn't wrapped in. One-shot deep-link handoff
+  // read at the moment this component (re)mounts, not a live subscription
+  // to route/pathname changes — hence the mount-only deps below.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: see above
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("authModal") !== "forgot") return;
+    setAuthDialogInitialMode("forgot");
+    setAuthDialogOpen(true);
+    params.delete("authModal");
+    const nextSearch = params.toString();
+    router.replace(nextSearch ? `${pathname}?${nextSearch}` : pathname, {
+      scroll: false,
+    });
+  }, []);
 
   const { user, userConfig, updateUserConfig, logout } = useAuthStore(
     useShallow((s) => ({
@@ -183,6 +211,7 @@ export default function AccountLogin() {
   // dialog directly skips that round trip.
   const goToLoginFromSettings = () => {
     setOpenDialog(null);
+    setAuthDialogInitialMode("login");
     setAuthDialogOpen(true);
   };
 
@@ -218,7 +247,7 @@ export default function AccountLogin() {
         <DropdownMenuTrigger asChild>
           <Button
             aria-label="Account setting"
-            size="icon"
+            size="icon-lg"
             className="text-muted-foreground hover:text-foreground focus:ring-2 bg-muted/60 hover:bg-muted border border-border/50 relative pointer-events-auto focus:ring-primary/30 rounded-full transition-colors duration-200"
           >
             {user?.avatar ? (
@@ -245,7 +274,10 @@ export default function AccountLogin() {
             <>
               <DropdownMenuItem
                 className="text-sm font-medium text-primary hover:bg-primary/10 focus:bg-primary/10 focus:text-primary rounded-md"
-                onClick={() => setAuthDialogOpen(true)}
+                onClick={() => {
+                  setAuthDialogInitialMode("login");
+                  setAuthDialogOpen(true);
+                }}
               >
                 <UserPlusIcon size={16} className="mr-2" />
                 {t("loginRegisterCta")}
@@ -567,6 +599,7 @@ export default function AccountLogin() {
       <AuthDialog
         open={authDialogOpen}
         onOpenChange={setAuthDialogOpen}
+        initialMode={authDialogInitialMode}
         onLoggedIn={(loggedInUser) => {
           if (!loggedInUser.lineUserId) setLineBindDialogOpen(true);
         }}

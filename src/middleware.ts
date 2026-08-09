@@ -26,8 +26,11 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // 否則導向 fallback 或從 userConfig/header 取語言
+  // 否則導向 fallback 或從 userConfig/header 取語言。path 一定要保留 —
+  // 之前這裡漏掉 path,任何不帶 locale 前綴的深連結（例如密碼重設信裡的
+  // /reset-password?token=...）都會被導到首頁，query string 留著但整個
+  // pathname 被吃掉。
   const lng = fallbackLng;
-  const redirectUrl = new URL(`/${lng}${req.nextUrl.search}`, req.url);
+  const redirectUrl = new URL(`/${lng}${path}${req.nextUrl.search}`, req.url);
   return NextResponse.redirect(redirectUrl);
 }

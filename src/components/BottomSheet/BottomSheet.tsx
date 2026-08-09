@@ -537,6 +537,19 @@ export default function BottomSheet() {
                 ? "overflow-y-hidden"
                 : "overflow-y-auto",
             )}
+            role={
+              atPeek && sheetMode === "home" && !showAssistant
+                ? "button"
+                : undefined
+            }
+            tabIndex={
+              atPeek && sheetMode === "home" && !showAssistant ? 0 : undefined
+            }
+            aria-label={
+              atPeek && sheetMode === "home" && !showAssistant
+                ? t("expandPanel", "展開面板")
+                : undefined
+            }
             onClick={
               atPeek && sheetMode === "home" && !showAssistant
                 ? () => {
@@ -545,10 +558,38 @@ export default function BottomSheet() {
                   }
                 : undefined
             }
+            onKeyDown={
+              atPeek && sheetMode === "home" && !showAssistant
+                ? (e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setSnap("half");
+                      setSheetHeight(SNAP_POINTS.half);
+                    }
+                  }
+                : undefined
+            }
           >
-            {showAssistant ? (
+            {/* Both stay mounted — a conditional-render ternary here used to
+                unmount `AIChatBot` every time the assistant closed, which
+                reset its conversation (state now lives in a store so that
+                alone wouldn't lose messages anymore, but remounting still
+                cost the scroll position and a re-render flash). `inert` +
+                `aria-hidden` pull the hidden side out of both the tab order
+                and the a11y tree, matching how the mobile/desktop split of
+                this same component already does it via the `active` prop. */}
+            <div
+              className={cn("h-full", !showAssistant && "hidden")}
+              inert={!showAssistant}
+              aria-hidden={!showAssistant}
+            >
               <AIChatBot active={!isDesktop} />
-            ) : (
+            </div>
+            <div
+              className={cn("h-full", showAssistant && "hidden")}
+              inert={showAssistant}
+              aria-hidden={showAssistant}
+            >
               <AnimatePresence mode="wait">
                 <motion.div
                   key={modePanelActive ? sheetMode : activeRailPanel}
@@ -561,7 +602,7 @@ export default function BottomSheet() {
                   <MobileSheetContent />
                 </motion.div>
               </AnimatePresence>
-            )}
+            </div>
           </div>
         </motion.div>
       </div>
@@ -606,7 +647,7 @@ export default function BottomSheet() {
                 key={item.id}
                 type="button"
                 aria-label={t(item.labelKey)}
-                aria-pressed={isActive}
+                aria-current={isActive ? "page" : undefined}
                 onClick={() => handleRailClick(item.id)}
                 className={cn(
                   "relative flex flex-col items-center justify-center w-11 h-11 rounded-xl transition-all",
@@ -619,7 +660,7 @@ export default function BottomSheet() {
                 <item.Icon
                   className={cn("h-5 w-5", isActive ? item.color : "")}
                 />
-                <span className="text-[9px] mt-0.5 leading-none font-medium truncate max-w-[48px]">
+                <span className="text-xs mt-0.5 leading-none font-medium truncate max-w-[48px]">
                   {t(item.labelKey)}
                 </span>
                 {isActive && (
@@ -651,7 +692,7 @@ export default function BottomSheet() {
               )}
             >
               <Menu className="h-5 w-5" />
-              <span className="text-[9px] mt-0.5 leading-none font-medium">
+              <span className="text-xs mt-0.5 leading-none font-medium">
                 {t("railMore")}
               </span>
             </button>
@@ -670,6 +711,7 @@ export default function BottomSheet() {
                       <button
                         key={item.id}
                         type="button"
+                        aria-current={isActive ? "page" : undefined}
                         onClick={() => handleRailClick(item.id)}
                         className={cn(
                           "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm transition-colors text-left",
@@ -701,8 +743,16 @@ export default function BottomSheet() {
         </nav>
 
         {/* --- Layer 2: Content Panel --- */}
+        {/* `AnimatePresence` still owns the genuine mount/unmount transition
+            (panel appearing/disappearing, or the nav step list opening) —
+            but `collapsed` no longer gates that condition. It used to: the
+            whole panel (including a mounted `AIChatBot`) was removed from
+            the DOM every time the sidebar collapsed, which reset whatever
+            was inside. `collapsed` now only drives the `animate` target
+            below, a prop change on an already-mounted element rather than a
+            removal, so collapsing never costs the chat its history again. */}
         <AnimatePresence>
-          {(isNavigating ? stepListOpen : !collapsed && panelOpen) && (
+          {(isNavigating ? stepListOpen : panelOpen) && (
             <motion.div
               key="desktop-panel"
               role="region"
@@ -714,9 +764,15 @@ export default function BottomSheet() {
                 isNavigating ? "left-3 top-[140px]" : "left-[68px] top-3",
               )}
               initial={{ x: -400, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
+              animate={
+                collapsed && !isNavigating
+                  ? { x: -400, opacity: 0 }
+                  : { x: 0, opacity: 1 }
+              }
               exit={{ x: -400, opacity: 0 }}
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              inert={collapsed && !isNavigating}
+              aria-hidden={collapsed && !isNavigating}
             >
               {/* Panel header */}
               <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
@@ -737,15 +793,15 @@ export default function BottomSheet() {
                 <button
                   type="button"
                   onClick={handlePanelClose}
-                  className="h-7 w-7 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors"
+                  className="h-11 w-11 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors"
                   aria-label={
                     showAssistant || railContentActive ? t("back") : t("close")
                   }
                 >
                   {showAssistant || railContentActive ? (
-                    <ChevronLeft className="h-3.5 w-3.5" />
+                    <ChevronLeft className="h-4 w-4" />
                   ) : (
-                    <X className="h-3.5 w-3.5" />
+                    <X className="h-4 w-4" />
                   )}
                 </button>
               </div>
@@ -757,9 +813,21 @@ export default function BottomSheet() {
                   showAssistant ? "overflow-hidden p-0" : "p-4",
                 )}
               >
-                {showAssistant ? (
+                {/* Both stay mounted (see the mobile side's identical
+                    comment above) instead of a conditional-render ternary
+                    that used to unmount `AIChatBot` on every panel switch. */}
+                <div
+                  className={cn("h-full", !showAssistant && "hidden")}
+                  inert={!showAssistant}
+                  aria-hidden={!showAssistant}
+                >
                   <AIChatBot active={isDesktop} />
-                ) : (
+                </div>
+                <div
+                  className={cn("h-full", showAssistant && "hidden")}
+                  inert={showAssistant}
+                  aria-hidden={showAssistant}
+                >
                   <AnimatePresence mode="wait">
                     <motion.div
                       key={modePanelActive ? sheetMode : activeRailPanel}
@@ -771,7 +839,7 @@ export default function BottomSheet() {
                       <DesktopPanelContent />
                     </motion.div>
                   </AnimatePresence>
-                )}
+                </div>
               </div>
             </motion.div>
           )}
@@ -784,7 +852,7 @@ export default function BottomSheet() {
             aria-label={collapsed ? t("expandSidebar") : t("collapseSidebar")}
             onClick={() => setCollapsed(!collapsed)}
             className={cn(
-              "pointer-events-auto fixed top-1/2 -translate-y-1/2 z-(--z-drawer-rail) h-12 w-6 flex items-center justify-center",
+              "pointer-events-auto fixed top-1/2 -translate-y-1/2 z-(--z-drawer-rail) h-12 w-11 flex items-center justify-center",
               "bg-background border border-border/50 shadow-lg rounded-r-lg border-l-0",
               "hover:bg-muted hover:shadow-xl transition-all duration-300",
               !collapsed ? "left-[456px]" : "left-[64px]",

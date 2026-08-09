@@ -1,29 +1,20 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useAppTranslation } from "@/i18n/client";
 import { executeAction } from "@/lib/ai/actionExecutor";
 import { mapToolToActions } from "@/lib/ai/toolActionMapper";
-import type { ChatMessage } from "@/lib/api/ai";
 import { streamChatWithAgent } from "@/lib/api/ai";
 import useAuthStore from "@/stores/useAuthStore";
+import useChatStore, {
+  type ChatBubble,
+  type ToolActivity,
+} from "@/stores/useChatStore";
 import useMapStore from "@/stores/useMapStore";
 import useOnboardingStore from "@/stores/useOnboardingStore";
 import { describeProfileForAssistant } from "@/types/a11yProfile";
 import useComputeRoute from "./useComputeRoute";
 
-export interface ToolActivity {
-  name: string;
-  args?: unknown;
-  result?: unknown;
-  status: "running" | "done";
-}
-
-export interface ChatBubble {
-  role: "user" | "assistant";
-  content: string;
-  isStreaming?: boolean;
-  toolActivities?: ToolActivity[];
-}
+export type { ChatBubble, ToolActivity };
 
 export const TOOL_LABELS: Record<string, string> = {
   findGooglePlaces: "搜尋周邊地點",
@@ -83,17 +74,54 @@ export default function useAIChat() {
     useShallow((s) => ({ userConfig: s.userConfig })),
   );
 
-  const [messages, setMessages] = useState<ChatBubble[]>([
-    {
-      role: "assistant",
-      content: t(
-        "assistFirstMessage",
-        "你好！我是無障礙智慧地圖的 AI 助理，有什麼我能幫你的嗎？附近無障礙設施或者是問題回饋？請隨時提出！",
-      ),
-    },
-  ]);
-  const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  // Shared across every mount of the AI panel (mobile/desktop copies, and
+  // any remount from the panel being collapsed/closed then reopened) so a
+  // panel toggle no longer wipes the conversation back to the greeting.
+  const {
+    messages,
+    setMessages,
+    input,
+    setInput,
+    isLoading,
+    setIsLoading,
+    hydrated,
+  } = useChatStore(
+    useShallow((s) => ({
+      messages: s.messages,
+      setMessages: s.setMessages,
+      input: s.input,
+      setInput: s.setInput,
+      isLoading: s.isLoading,
+      setIsLoading: s.setIsLoading,
+      hydrated: s.hydrated,
+    })),
+  );
+
+  // Seed the greeting once sessionStorage has been read (gated on
+  // `hydrated`, not just mount). `AIChatBot` now mounts immediately with the
+  // page instead of lazily on first open (Phase 1.4 — the panel toggle no
+  // longer unmounts it), so without this gate its mount effect can win the
+  // race against `ClientLayout`'s storage-restore effect (React fires a
+  // deeply-nested child's effects before an ancestor's, in the same commit)
+  // and seed a fresh greeting *before* the restored conversation loads —
+  // which then overwrites the sessionStorage snapshot with just that
+  // greeting. Waiting for `hydrated` defers this to the next commit, after
+  // the restore has actually landed.
+  useEffect(() => {
+    if (!hydrated) return;
+    if (useChatStore.getState().messages.length === 0) {
+      setMessages([
+        {
+          role: "assistant",
+          content: t(
+            "assistFirstMessage",
+            "你好！我是無障礙智慧地圖的 AI 助理，有什麼我能幫你的嗎？附近無障礙設施或者是問題回饋？請隨時提出！",
+          ),
+        },
+      ]);
+    }
+  }, [hydrated, setMessages, t]);
+
   const {
     userLocation,
     chatOpen: open,
@@ -108,15 +136,11 @@ export default function useAIChat() {
   const { handleComputeRoute } = useComputeRoute();
   const abortRef = useRef<AbortController | null>(null);
 
-  const chatHistory = useRef<ChatMessage[]>([
-    {
-      role: "system",
-      content: `你是「無障礙智慧地圖」的 AI 助理，專門協助使用者查詢無障礙相關資訊、路線規劃、附近設施。請使用${userConfig.language === "en" ? "英文" : "繁體中文"}回答。`,
-    },
-  ]);
-
-  const markDone = (activities: ToolActivity[] | undefined) =>
-    activities?.map((a) => ({ ...a, status: "done" as const }));
+  const markDone = useCallback(
+    (activities: ToolActivity[] | undefined) =>
+      activities?.map((a) => ({ ...a, status: "done" as const })),
+    [],
+  );
 
   const handleSend = useCallback(
     async (text: string) => {
@@ -135,17 +159,29 @@ export default function useAIChat() {
         userConfig.language === "en" ? "en" : "zh-TW",
       );
       const baseSystemPrompt = `你是「無障礙智慧地圖」的 AI 助理，專門協助使用者查詢無障礙相關資訊、路線規劃、附近設施。請使用${userConfig.language === "en" ? "英文" : "繁體中文"}回答。`;
-      chatHistory.current[0] = {
-        role: "system",
-        content: profileNote
-          ? `${baseSystemPrompt}${profileNote}`
-          : baseSystemPrompt,
-      };
+      // Go through `setChatHistory` (immutable, writes sessionStorage) rather
+      // than mutating the array in place — direct mutation bypassed the
+      // store's persistence write and left a "safe only because nobody else
+      // touches this array" assumption baked in.
+      const { setChatHistory } = useChatStore.getState();
+      setChatHistory((prev) => {
+        const next = [...prev];
+        next[0] = {
+          role: "system",
+          content: profileNote
+            ? `${baseSystemPrompt}${profileNote}`
+            : baseSystemPrompt,
+        };
+        return next;
+      });
 
       const userBubble: ChatBubble = { role: "user", content: trimmed };
       setMessages((prev) => [...prev, userBubble]);
 
-      chatHistory.current.push({ role: "user", content: trimmed });
+      setChatHistory((prev) => [...prev, { role: "user", content: trimmed }]);
+      // Read back the now-current history for the request payload — zustand's
+      // `set` is synchronous, so this reflects both writes above.
+      const chatHistory = useChatStore.getState().chatHistory;
 
       const assistantBubble: ChatBubble = {
         role: "assistant",
@@ -163,7 +199,7 @@ export default function useAIChat() {
       try {
         await streamChatWithAgent(
           {
-            messages: chatHistory.current,
+            messages: chatHistory,
             stream: true,
             temperature: 0.7,
             ...(userLocation
@@ -285,7 +321,10 @@ export default function useAIChat() {
           return updated;
         });
 
-        chatHistory.current.push({ role: "assistant", content: fullText });
+        setChatHistory((prev) => [
+          ...prev,
+          { role: "assistant", content: fullText },
+        ]);
         setIsLoading(false);
         abortRef.current = null;
       }
@@ -297,13 +336,17 @@ export default function useAIChat() {
       setOpen,
       t,
       userConfig.language,
+      markDone,
+      setInput,
+      setIsLoading,
+      setMessages,
     ],
   );
 
   const stopStreaming = useCallback(() => {
     abortRef.current?.abort();
     setIsLoading(false);
-  }, []);
+  }, [setIsLoading]);
 
   return {
     messages,

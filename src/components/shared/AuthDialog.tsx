@@ -7,9 +7,9 @@ import {
   EyeOffIcon,
 } from "@animateicons/react/lucide";
 import { GoogleLogin } from "@react-oauth/google";
-import { MailCheck } from "lucide-react";
+import { AlertCircle, MailCheck } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 import { Button } from "@/components/ui/button";
@@ -56,15 +56,33 @@ interface AuthDialogProps {
   onOpenChange: (open: boolean) => void;
   /** Fired after a successful interactive login (Google or email/password). */
   onLoggedIn?: (user: UserDTO) => void;
+  /** Which step to land on when the dialog next opens — e.g. deep-linking
+   * straight to "forgot password" from the reset-password page's "request a
+   * new link" button, instead of always starting at the login tab. */
+  initialMode?: Mode;
 }
 
 export default function AuthDialog({
   open,
   onOpenChange,
   onLoggedIn,
+  initialMode,
 }: AuthDialogProps) {
   const { t } = useAppTranslation("translation");
   const [mode, setMode] = useState<Mode>("login");
+  const nicknameId = useId();
+  const emailId = useId();
+  const passwordId = useId();
+  const forgotEmailId = useId();
+  const errorId = useId();
+  const passwordHintId = useId();
+
+  // Only apply on the transition into `open` (not every render) so a user
+  // manually switching tabs inside an already-open dialog isn't yanked back
+  // to `initialMode` by an unrelated re-render.
+  useEffect(() => {
+    if (open && initialMode) setMode(initialMode);
+  }, [open, initialMode]);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -460,15 +478,36 @@ export default function AuthDialog({
                   void handleForgot();
                 }}
               >
-                <Input
-                  type="email"
-                  placeholder={t("auth.email")}
-                  className="h-11"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-                {error && <p className="text-xs text-destructive">{error}</p>}
+                <div className="space-y-1.5">
+                  <label htmlFor={forgotEmailId} className="sr-only">
+                    {t("auth.email")}
+                  </label>
+                  <Input
+                    id={forgotEmailId}
+                    type="email"
+                    autoComplete="email"
+                    placeholder={t("auth.email")}
+                    className="h-11"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    aria-invalid={!!error}
+                    aria-describedby={error ? errorId : undefined}
+                    required
+                  />
+                </div>
+                {error && (
+                  <p
+                    id={errorId}
+                    role="alert"
+                    className="flex items-center gap-1.5 text-sm text-destructive"
+                  >
+                    <AlertCircle
+                      aria-hidden="true"
+                      className="size-4 shrink-0"
+                    />
+                    {error}
+                  </p>
+                )}
                 <Button
                   type="submit"
                   size="lg"
@@ -495,35 +534,66 @@ export default function AuthDialog({
               }}
             >
               {mode === "register" && (
+                <div className="space-y-1.5">
+                  <label htmlFor={nicknameId} className="sr-only">
+                    {t("auth.nickname")}
+                  </label>
+                  <Input
+                    id={nicknameId}
+                    autoComplete="nickname"
+                    placeholder={t("auth.nickname")}
+                    className="h-11"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                  />
+                </div>
+              )}
+              <div className="space-y-1.5">
+                <label htmlFor={emailId} className="sr-only">
+                  {t("auth.email")}
+                </label>
                 <Input
-                  placeholder={t("auth.nickname")}
+                  id={emailId}
+                  type="email"
+                  autoComplete="email"
+                  placeholder={t("auth.email")}
                   className="h-11"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  aria-invalid={!!error}
                   required
                 />
-              )}
-              <Input
-                type="email"
-                placeholder={t("auth.email")}
-                className="h-11"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+              </div>
               <div className="space-y-1.5">
                 <div className="relative">
+                  <label htmlFor={passwordId} className="sr-only">
+                    {t("auth.password")}
+                  </label>
                   <Input
+                    id={passwordId}
                     type={showPassword ? "text" : "password"}
+                    autoComplete={
+                      mode === "register" ? "new-password" : "current-password"
+                    }
                     placeholder={t("auth.password")}
                     className="h-11 pr-10"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    aria-invalid={!!error}
+                    aria-describedby={
+                      error
+                        ? errorId
+                        : mode === "register" && passwordHint
+                          ? passwordHintId
+                          : undefined
+                    }
                     required
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
+                    aria-pressed={showPassword}
                     aria-label={
                       showPassword
                         ? t("auth.hidePassword")
@@ -540,6 +610,7 @@ export default function AuthDialog({
                 </div>
                 {mode === "register" && passwordHint && (
                   <p
+                    id={passwordHintId}
                     aria-live="polite"
                     className="text-xs text-muted-foreground"
                   >
@@ -561,7 +632,17 @@ export default function AuthDialog({
               </div>
               {error && (
                 <div className="space-y-1.5">
-                  <p className="text-xs text-destructive">{error}</p>
+                  <p
+                    id={errorId}
+                    role="alert"
+                    className="flex items-center gap-1.5 text-sm text-destructive"
+                  >
+                    <AlertCircle
+                      aria-hidden="true"
+                      className="size-4 shrink-0"
+                    />
+                    {error}
+                  </p>
                   {needsVerification && (
                     <button
                       type="button"

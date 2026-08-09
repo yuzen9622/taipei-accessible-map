@@ -23,8 +23,8 @@ import {
   formatDistance,
   type HazardReport,
 } from "@/types/route";
-import { Badge } from "../ui/badge";
 import { AccessibilityIcon } from "../ui/accessibility-icon";
+import { Badge } from "../ui/badge";
 
 export default function A11yPanel({
   onClose,
@@ -166,12 +166,34 @@ export default function A11yPanel({
       </div>
 
       {/* Nearby facilities with distance */}
-      <section>
+      <section aria-busy={a11yPlaces === null}>
         <h3 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-1.5">
           <Accessibility className="h-4 w-4" />
           {t("nearbyA11y")}
         </h3>
-        {nearbyItems.length === 0 ? (
+        {a11yPlaces === null ? (
+          // `a11yPlaces` is `null` until the first fetch resolves (see
+          // useMapStore) — distinct from `[]` ("checked, found none"). Without
+          // this branch, the still-loading state and the genuinely-empty
+          // state rendered the identical "沒有找到附近的無障礙設施" message,
+          // so a slow connection looked exactly like an empty area.
+          <div role="status" className="space-y-2">
+            <span className="sr-only">{t("loading", "載入中…")}</span>
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                aria-hidden="true"
+                className="flex items-center gap-3 p-3 rounded-xl bg-muted/40 animate-pulse"
+              >
+                <div className="h-9 w-9 rounded-full bg-muted shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="h-3.5 w-2/3 rounded bg-muted" />
+                  <div className="h-3 w-1/3 rounded bg-muted" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : nearbyItems.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-6">
             {t("noNearbyA11y")}
           </p>

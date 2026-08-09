@@ -46,5 +46,10 @@ const PLACE_TYPE_MAP: Record<string, { zh: string; en: string }> = {
 export function getPlaceTypeLabel(type: string, lang: string): string {
   const entry = PLACE_TYPE_MAP[type];
   if (entry) return lang === "en" ? entry.en : entry.zh;
-  return type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  // No entry (e.g. an OSM road classification like "tertiary" that was never
+  // meant to be a POI type badge) — title-casing the raw value and showing
+  // it anyway just hands the user unlocalized OSM jargon ("Tertiary") they
+  // have no way to interpret. Callers already guard on this being truthy
+  // before rendering a badge, so returning "" hides it instead.
+  return "";
 }

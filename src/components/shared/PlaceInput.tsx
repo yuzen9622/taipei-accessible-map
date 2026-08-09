@@ -35,6 +35,7 @@ import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import type { PlaceDetail } from "@/types";
 import type { AutocompleteItem, PlaceResult } from "@/types/place";
+import { formatDistance } from "@/types/route";
 import { Command, CommandGroup, CommandItem, CommandList } from "../ui/command";
 import { Input } from "../ui/input";
 
@@ -311,15 +312,18 @@ function PlaceInput({
     <div
       className={cn(
         "relative w-full pointer-events-auto",
+        // min-h-11: the 44px touch-target floor — the input itself is
+        // `h-fit` (sized to its text line-height), so without this the
+        // whole search bar's tappable height was effectively ~28px.
         hideIcon
-          ? "bg-transparent px-1 py-0.5"
+          ? "bg-transparent px-1 py-0.5 min-h-11"
           : cn(
-              "bg-card px-3 py-1 border border-border/50 shadow-sm",
+              "bg-card px-3 py-1 border border-border/50 shadow-sm min-h-11",
               panelOpen ? "rounded-t-3xl" : "rounded-3xl",
             ),
       )}
     >
-      <div className={cn("w-full flex items-center gap-2 px-2")}>
+      <div className={cn("w-full h-full flex items-center gap-2 px-2")}>
         {!hideIcon && (
           <SearchIcon size={16} className="text-muted-foreground shrink-0" />
         )}
@@ -477,7 +481,7 @@ function PlaceInput({
                                 {suggestion.primaryText}
                               </p>
                               {suggestion.typeLabel && (
-                                <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full shrink-0">
+                                <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full shrink-0">
                                   {suggestion.typeLabel}
                                 </span>
                               )}
@@ -489,7 +493,7 @@ function PlaceInput({
                             )}
                             {suggestion.distanceMeters !== null && (
                               <p className="text-xs text-muted-foreground/70">
-                                {Math.round(suggestion.distanceMeters)} m
+                                {formatDistance(suggestion.distanceMeters)}
                               </p>
                             )}
                           </div>
