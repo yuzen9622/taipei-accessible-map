@@ -163,8 +163,6 @@ export default function BottomSheet() {
     requestNavExit,
     chatOpen,
     setChatOpen,
-    pendingSheetSnap,
-    setPendingSheetSnap,
   } = useMapStore(
     useShallow((s) => ({
       sheetMode: s.sheetMode,
@@ -181,8 +179,6 @@ export default function BottomSheet() {
       setInfoShow: s.setInfoShow,
       setSearchPlace: s.setSearchPlace,
       isNavigating: s.isNavigating,
-      pendingSheetSnap: s.pendingSheetSnap,
-      setPendingSheetSnap: s.setPendingSheetSnap,
       requestNavExit: s.requestNavExit,
     })),
   );
@@ -262,19 +258,6 @@ export default function BottomSheet() {
         break;
     }
   }, [sheetMode]);
-
-  // A one-shot override (e.g. closeRouteDrawer landing on the place detail
-  // after a failed route) beats the mode-default snap set above. Split into
-  // its own effect — keyed only on pendingSheetSnap, not sheetMode — so that
-  // clearing it back to null here doesn't re-run the effect above for a
-  // sheetMode that hasn't actually changed and stomp the override right back
-  // to that mode's default before the user ever sees it.
-  useEffect(() => {
-    if (!pendingSheetSnap) return;
-    setSnap(pendingSheetSnap);
-    setSheetHeight(SNAP_POINTS[pendingSheetSnap]);
-    setPendingSheetSnap(null);
-  }, [pendingSheetSnap, setPendingSheetSnap]);
 
   // When sheetMode goes to a mode panel, collapse rail panel
   useEffect(() => {

@@ -66,14 +66,6 @@ interface MapState {
   originName: string;
   destinationName: string;
   sheetMode: SheetMode;
-  /**
-   * One-shot hint consumed by BottomSheet's mobile snap effect: when set,
-   * it overrides that mode's default snap point for the next sheetMode
-   * change, then clears itself. Used by closeRouteDrawer to land directly
-   * on the full-height place detail instead of the usual half-height snap
-   * every other "place" entry point (e.g. tapping a pin) uses.
-   */
-  pendingSheetSnap: "peek" | "half" | "full" | null;
   isNavigating: boolean;
   pendingNavExit: { target: RailPanel | "plan" | "home" } | null;
   is3D: boolean;
@@ -129,7 +121,6 @@ interface MapAction {
     place: PlaceDetail,
     category: SavedPlaceCategory | null,
   ) => void;
-  closeRouteDrawer: () => void;
   /**
    * The panel slot only ever shows one thing at a time (see
    * visual-design-spec.md §5.2): switching to any mode — regardless of
@@ -137,7 +128,6 @@ interface MapAction {
    * closes the AI assistant too. No `fromAI` exception on either platform.
    */
   setSheetMode: (mode: SheetMode) => void;
-  setPendingSheetSnap: (snap: "peek" | "half" | "full" | null) => void;
   setIsNavigating: (v: boolean) => void;
   requestNavExit: (target: RailPanel | "plan" | "home") => void;
   confirmNavExit: () => void;
@@ -408,8 +398,6 @@ const useMapStore = create<MapStore>((set, get) => ({
   destinationName: "",
   setDestinationName: (name) => set({ destinationName: name }),
   sheetMode: "home",
-  pendingSheetSnap: null,
-  setPendingSheetSnap: (snap) => set({ pendingSheetSnap: snap }),
   setSheetMode: (mode) => {
     const update: Partial<MapStore> = { sheetMode: mode };
     if (mode !== "home" && mode !== "navigation") {
@@ -557,47 +545,6 @@ const useMapStore = create<MapStore>((set, get) => ({
       if (v) map.easeTo({ pitch: 60, duration: 600 });
       else map.easeTo({ pitch: 0, bearing: 0, duration: 600 });
     }
-  },
-  closeRouteDrawer: () => {
-    const { destination } = get();
-    const hasDestination =
-      destination &&
-      (destination.kind === "place" || destination.kind === "coordinate");
-    // Route through setSheetMode instead of a raw set() so the "any action
-    // that changes panel content also clears chatOpen" rule (see its jsdoc
-    // above) applies here too, with no special-cased branch — closeRouteDrawer
-    // is just another caller of the same single source of truth.
-    get().setSheetMode(hasDestination ? "place" : "home");
-    set({
-      routeInfoShow: false,
-      selectRoute: null,
-      computeRoutes: null,
-      routeA11y: [],
-      liveBusPositions: [],
-      destination: null,
-      origin: null,
-      originName: "",
-      destinationName: "",
-      // Landing on the place detail after a failed/empty route result should
-      // show the full page immediately, not the half-height snap every other
-      // "place" entry point (tapping a pin) uses — see BottomSheet's snap
-      // effect, which reads and clears this.
-      pendingSheetSnap: hasDestination ? "full" : null,
-      infoShow:
-        destination && destination.kind === "place"
-          ? { isOpen: true, place: destination.place, kind: "place" }
-          : destination && destination.kind === "coordinate"
-            ? { isOpen: true, address: destination.address, kind: "coordinate" }
-            : { isOpen: false, kind: null },
-      searchPlace:
-        destination && destination.kind === "place"
-          ? {
-              place: destination.place,
-              kind: "place",
-              position: destination.position,
-            }
-          : null,
-    });
   },
 }));
 
