@@ -114,6 +114,21 @@ const MODE_PANELS = new Set([
   "station",
 ]);
 
+// Mode panels whose content component renders its own back/close + title
+// header (PlaceContent, RoutePlanContent, RouteContent, StationDetailContent
+// each have a "{/* Header */}" block at the top of their JSX) — the shared
+// desktop chrome header below must stay hidden for these, exactly like the
+// mobile header already does via its own sheetMode check, or the two stack
+// into a visible double header. "navigation" is deliberately excluded:
+// NavigationContent has no header of its own, so the shared chrome one is
+// the only one and must stay.
+const MODE_PANELS_WITH_OWN_HEADER = new Set([
+  "place",
+  "plan",
+  "route",
+  "station",
+]);
+
 // Rail panels that render their own content component. "search" and "none"
 // both fall through to HomeContent, and "route" is only ever a leftover from
 // RoutePreviewHydrator (the rail routes it through sheetMode="plan" instead),
@@ -148,6 +163,8 @@ export default function BottomSheet() {
     requestNavExit,
     chatOpen,
     setChatOpen,
+    pendingSheetSnap,
+    setPendingSheetSnap,
   } = useMapStore(
     useShallow((s) => ({
       sheetMode: s.sheetMode,
@@ -164,6 +181,8 @@ export default function BottomSheet() {
       setInfoShow: s.setInfoShow,
       setSearchPlace: s.setSearchPlace,
       isNavigating: s.isNavigating,
+      pendingSheetSnap: s.pendingSheetSnap,
+      setPendingSheetSnap: s.setPendingSheetSnap,
       requestNavExit: s.requestNavExit,
     })),
   );
@@ -178,6 +197,8 @@ export default function BottomSheet() {
   const containerRef = useRef<HTMLDivElement>(null);
   const startY = useRef(0);
   const startHeight = useRef(0);
+  const mobileContentScrollRef = useRef<HTMLDivElement>(null);
+  const desktopContentScrollRef = useRef<HTMLDivElement>(null);
 
   // Hide the home header at peek so only the search bar is visible,
   // keeping the map maximally exposed (Google Maps-style peek).
@@ -191,6 +212,13 @@ export default function BottomSheet() {
   const modePanelActive = MODE_PANELS.has(sheetMode);
   const railPanelActive = !modePanelActive && activeRailPanel !== "none";
   const panelOpen = modePanelActive || railPanelActive || showAssistant;
+
+  // Identifies "what's currently in the content slot" — shared by the
+  // AnimatePresence keys below and the scroll-reset effect, so a mode/panel
+  // switch always starts scrolled to top instead of inheriting whatever
+  // scrollTop the previous content happened to be left at (which otherwise
+  // makes the new content look like it's missing its top half).
+  const activeContentKey = modePanelActive ? sheetMode : activeRailPanel;
 
   // A rail *sub-panel* (無障礙設施 / 公車 / …) is showing rather than the search
   // home view. Mobile has no rail to render an active indicator on, so this is
@@ -235,6 +263,19 @@ export default function BottomSheet() {
     }
   }, [sheetMode]);
 
+  // A one-shot override (e.g. closeRouteDrawer landing on the place detail
+  // after a failed route) beats the mode-default snap set above. Split into
+  // its own effect — keyed only on pendingSheetSnap, not sheetMode — so that
+  // clearing it back to null here doesn't re-run the effect above for a
+  // sheetMode that hasn't actually changed and stomp the override right back
+  // to that mode's default before the user ever sees it.
+  useEffect(() => {
+    if (!pendingSheetSnap) return;
+    setSnap(pendingSheetSnap);
+    setSheetHeight(SNAP_POINTS[pendingSheetSnap]);
+    setPendingSheetSnap(null);
+  }, [pendingSheetSnap, setPendingSheetSnap]);
+
   // When sheetMode goes to a mode panel, collapse rail panel
   useEffect(() => {
     if (modePanelActive) {
@@ -262,6 +303,16 @@ export default function BottomSheet() {
       setSheetHeight(SNAP_POINTS.half);
     }
   }, [railContentActive, isDesktop]);
+
+  // Reset scroll position whenever the content slot's occupant changes —
+  // the scrollable container itself doesn't remount (only the animated
+  // child inside it does), so without this a leftover scrollTop from the
+  // previous panel silently carries over onto the new one.
+  // biome-ignore lint/correctness/useExhaustiveDependencies(activeContentKey): trigger-only dependency, not read in the body
+  useEffect(() => {
+    mobileContentScrollRef.current?.scrollTo({ top: 0 });
+    desktopContentScrollRef.current?.scrollTo({ top: 0 });
+  }, [activeContentKey]);
 
   // Opening the step list mid-navigation lifts the mobile sheet to half.
   useEffect(() => {
@@ -530,6 +581,7 @@ export default function BottomSheet() {
               sheet up instead of scrolling within a tiny sliver. Tapping
               the content area at peek lifts the sheet to half. */}
           <div
+            ref={mobileContentScrollRef}
             className={cn(
               "flex-1 overflow-x-hidden pb-safe",
               showAssistant ? "overflow-hidden px-0" : "px-4",
@@ -592,7 +644,7 @@ export default function BottomSheet() {
             >
               <AnimatePresence mode="wait">
                 <motion.div
-                  key={modePanelActive ? sheetMode : activeRailPanel}
+                  key={activeContentKey}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
@@ -774,40 +826,50 @@ export default function BottomSheet() {
               inert={collapsed && !isNavigating}
               aria-hidden={collapsed && !isNavigating}
             >
-              {/* Panel header */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
-                <h2 className="text-sm font-bold flex items-center gap-1.5">
-                  {showAssistant ? (
-                    <>
-                      <BotMessageSquare className="h-4 w-4 text-primary" />
-                      {t("assist")}
-                    </>
-                  ) : (
-                    <PanelTitle />
-                  )}
-                </h2>
-                {/* Back when there's a level to go back to (assistant or a
-                    rail sub-panel over the search view), close when this is
-                    the top level — the icon has to match where the click
-                    actually lands, see handlePanelClose. */}
-                <button
-                  type="button"
-                  onClick={handlePanelClose}
-                  className="h-11 w-11 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors"
-                  aria-label={
-                    showAssistant || railContentActive ? t("back") : t("close")
-                  }
-                >
-                  {showAssistant || railContentActive ? (
-                    <ChevronLeft className="h-4 w-4" />
-                  ) : (
-                    <X className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
+              {/* Panel header — suppressed when the content below already
+                  renders its own (see MODE_PANELS_WITH_OWN_HEADER), otherwise
+                  the two stack into a double header. Close/back button is
+                  44px (WCAG touch-target floor), not the original 28px. */}
+              {!(
+                modePanelActive && MODE_PANELS_WITH_OWN_HEADER.has(sheetMode)
+              ) && (
+                <div className="flex items-center justify-between px-4 py-3 border-b border-border/30">
+                  <h2 className="text-sm font-bold flex items-center gap-1.5">
+                    {showAssistant ? (
+                      <>
+                        <BotMessageSquare className="h-4 w-4 text-primary" />
+                        {t("assist")}
+                      </>
+                    ) : (
+                      <PanelTitle />
+                    )}
+                  </h2>
+                  {/* Back when there's a level to go back to (assistant or a
+                      rail sub-panel over the search view), close when this is
+                      the top level — the icon has to match where the click
+                      actually lands, see handlePanelClose. */}
+                  <button
+                    type="button"
+                    onClick={handlePanelClose}
+                    className="h-11 w-11 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors"
+                    aria-label={
+                      showAssistant || railContentActive
+                        ? t("back")
+                        : t("close")
+                    }
+                  >
+                    {showAssistant || railContentActive ? (
+                      <ChevronLeft className="h-4 w-4" />
+                    ) : (
+                      <X className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              )}
 
               {/* Panel content */}
               <div
+                ref={desktopContentScrollRef}
                 className={cn(
                   "flex-1 overflow-y-auto overflow-x-hidden",
                   showAssistant ? "overflow-hidden p-0" : "p-4",
@@ -830,7 +892,7 @@ export default function BottomSheet() {
                 >
                   <AnimatePresence mode="wait">
                     <motion.div
-                      key={modePanelActive ? sheetMode : activeRailPanel}
+                      key={activeContentKey}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, x: 10 }}

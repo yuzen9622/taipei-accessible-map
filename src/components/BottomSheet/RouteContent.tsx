@@ -103,7 +103,8 @@ export default function RouteContent() {
         <button
           type="button"
           onClick={handleBack}
-          className="h-8 w-8 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors shrink-0"
+          aria-label={t("back")}
+          className="relative h-8 w-8 rounded-full bg-muted/60 flex items-center justify-center hover:bg-muted transition-colors shrink-0 after:absolute after:inset-[-6px] after:content-['']"
         >
           <ArrowLeft className="h-4 w-4" />
         </button>

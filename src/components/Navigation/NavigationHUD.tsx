@@ -479,8 +479,8 @@ export default function NavigationHUD() {
       {/* ===== Bottom dashboard — white bar ===== */}
       <div className="absolute bottom-3 left-3 right-3 lg:left-1/2 lg:right-auto lg:-translate-x-1/2 lg:w-[560px] xl:w-[640px] z-40">
         <div className="bg-background/95 backdrop-blur-md border border-border/50 rounded-2xl shadow-2xl px-5 py-4 flex items-center gap-4">
-          <div className="min-w-0 shrink-0">
-            <p className="text-3xl font-black leading-tight text-green-600 dark:text-green-400 tabular-nums">
+          <div className="flex-1 min-w-0 lg:flex-none">
+            <p className="text-3xl font-black leading-tight text-green-600 dark:text-green-400 tabular-nums truncate">
               {remainMinutes != null
                 ? t("minutesLeft", { count: remainMinutes })
                 : "…"}
@@ -535,10 +535,11 @@ export default function NavigationHUD() {
             <button
               type="button"
               onClick={() => setIsNavigating(false)}
-              className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white rounded-full px-6 h-12 text-sm font-bold transition-colors shadow-lg"
+              aria-label={t("endNav")}
+              className="flex items-center justify-center gap-2 bg-red-500 hover:bg-red-600 text-white rounded-full h-12 w-12 sm:w-auto sm:px-6 text-sm font-bold transition-colors shadow-lg"
             >
-              <Square className="h-4 w-4" />
-              {t("endNav")}
+              <Square className="h-4 w-4 shrink-0" />
+              <span className="hidden sm:inline">{t("endNav")}</span>
             </button>
           </div>
         </div>

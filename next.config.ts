@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
+const isCapacitorBuild = process.env.CAP_BUILD === "1";
+
 const nextConfig: NextConfig = {
-  output: "standalone",
+  output: isCapacitorBuild ? "export" : "standalone",
   /* config options here */ trailingSlash: true,
 
   images: {
