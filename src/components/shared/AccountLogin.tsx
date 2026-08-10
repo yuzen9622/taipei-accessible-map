@@ -60,7 +60,7 @@ import {
 } from "@/lib/config";
 import { QUICK_ACTION_DEFS } from "@/lib/quickActions";
 import { cn } from "@/lib/utils";
-import useAuthStore from "@/stores/useAuthStore";
+import useAuthStore, { type SettingsTab } from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
 import useOnboardingStore from "@/stores/useOnboardingStore";
 import useQuickActionsStore from "@/stores/useQuickActionsStore";
@@ -68,10 +68,8 @@ import { Button } from "../ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "../ui/select";
 import { ThemeSwitcher } from "../ui/shadcn-io/theme-switcher";
 
-export default function AccountLogin() {
-  const [settingsTab, setSettingsTab] = useState<
-    "general" | "safety" | "account" | "memory" | "data"
-  >("general");
+export default function AccountLogin({ active = true }: { active?: boolean }) {
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>("general");
   const [openDialog, setOpenDialog] = useState<
     null | "settings" | "feedback" | "help"
   >(null);
@@ -94,8 +92,13 @@ export default function AccountLogin() {
   // boundary this component isn't wrapped in. One-shot deep-link handoff
   // read at the moment this component (re)mounts, not a live subscription
   // to route/pathname changes — hence the mount-only deps below.
+  // `BottomSheet` mounts both a mobile and a desktop copy of this component
+  // simultaneously (CSS-toggled, not conditionally rendered) — `active`
+  // marks which one is actually visible, so only that copy reacts to a
+  // cross-component signal like this deep link and opens its own Dialog.
   // biome-ignore lint/correctness/useExhaustiveDependencies: see above
   useEffect(() => {
+    if (!active) return;
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     if (params.get("authModal") !== "forgot") return;
@@ -115,6 +118,8 @@ export default function AccountLogin() {
     logout,
     authDialogRequested,
     clearAuthDialogRequest,
+    settingsDialogRequested,
+    clearSettingsDialogRequest,
   } = useAuthStore(
     useShallow((s) => ({
       user: s.user,
@@ -123,18 +128,35 @@ export default function AccountLogin() {
       logout: s.logout,
       authDialogRequested: s.authDialogRequested,
       clearAuthDialogRequest: s.clearAuthDialogRequest,
+      settingsDialogRequested: s.settingsDialogRequested,
+      clearSettingsDialogRequest: s.clearSettingsDialogRequest,
     })),
   );
 
   // Any feature that needs an inline "please log in" prompt (e.g.
   // PlaceReviewSection's login CTA for anonymous visitors) sets this flag
-  // instead of needing its own copy of AuthDialog's open state.
+  // instead of needing its own copy of AuthDialog's open state. Gated on
+  // `active` for the same dual-mount reason as the deep-link effect above —
+  // without it, both the mobile and desktop copy would open their own
+  // AuthDialog off a single request, since only one of them clears the flag
+  // fast enough to matter (zustand `set` is synchronous, but React batches
+  // both components' effect runs off the same store update).
   useEffect(() => {
-    if (!authDialogRequested) return;
+    if (!active || !authDialogRequested) return;
     setAuthDialogInitialMode("login");
     setAuthDialogOpen(true);
     clearAuthDialogRequest();
-  }, [authDialogRequested, clearAuthDialogRequest]);
+  }, [active, authDialogRequested, clearAuthDialogRequest]);
+
+  // Same pattern for the Settings dialog — e.g. HomeContent's quick-actions
+  // "編輯" button jumps straight to a specific tab instead of the user
+  // having to find Settings in the account menu themselves.
+  useEffect(() => {
+    if (!active || !settingsDialogRequested) return;
+    setSettingsTab(settingsDialogRequested);
+    setOpenDialog("settings");
+    clearSettingsDialogRequest();
+  }, [active, settingsDialogRequested, clearSettingsDialogRequest]);
   const resetGuides = useOnboardingStore((s) => s.resetGuides);
   const { enabledActions, toggleAction } = useQuickActionsStore(
     useShallow((s) => ({

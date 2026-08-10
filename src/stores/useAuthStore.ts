@@ -46,6 +46,8 @@ function readStoredDarkMode(): "light" | "dark" | "system" {
   }
 }
 
+export type SettingsTab = "general" | "safety" | "account" | "memory" | "data";
+
 interface AuthState {
   user: UserDTO | null;
   userConfig: UserConfig;
@@ -57,6 +59,12 @@ interface AuthState {
    * clears it back. Avoids threading dialog-open state through every
    * feature that might need to prompt a login. */
   authDialogRequested: boolean;
+  /** Same "please open a dialog you don't own" pattern as
+   * `authDialogRequested`, for the Settings dialog: e.g. HomeContent's
+   * quick-actions "編輯" button jumps straight to Settings → 一般 instead of
+   * making the user find it in the account menu themselves. Non-null tab
+   * also picks which Settings section opens on. */
+  settingsDialogRequested: SettingsTab | null;
 }
 
 interface AuthAction {
@@ -67,6 +75,8 @@ interface AuthAction {
   logout: () => void;
   requestAuthDialog: () => void;
   clearAuthDialogRequest: () => void;
+  requestSettingsDialog: (tab?: SettingsTab) => void;
+  clearSettingsDialogRequest: () => void;
 }
 
 type AuthStore = AuthState & AuthAction;
@@ -84,6 +94,10 @@ const useAuthStore = create<AuthStore>((set, get) => ({
   authDialogRequested: false,
   requestAuthDialog: () => set({ authDialogRequested: true }),
   clearAuthDialogRequest: () => set({ authDialogRequested: false }),
+  settingsDialogRequested: null,
+  requestSettingsDialog: (tab = "general") =>
+    set({ settingsDialogRequested: tab }),
+  clearSettingsDialogRequest: () => set({ settingsDialogRequested: null }),
   setSession: (session) =>
     set((state) => ({ session: { ...state.session, ...session } })),
   setUser: (user) => set({ user }),

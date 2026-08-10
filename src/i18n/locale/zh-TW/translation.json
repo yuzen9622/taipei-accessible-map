@@ -370,6 +370,7 @@
   "a11yLoadFailed": "無障礙設施資料載入失敗，請稍後再試",
   "loadingA11yData": "載入無障礙設施中…",
   "quickActions": "快捷功能",
+  "editQuickActions": "編輯",
   "quickActionsScrollHint": "快捷功能，共 {{count}} 項，可左右滑動",
   "nearbyContextTitle": "你附近",
   "homeShortcutsSettingsTitle": "首頁快捷方式",

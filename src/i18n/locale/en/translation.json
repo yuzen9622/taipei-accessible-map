@@ -369,6 +369,7 @@
   "a11yLoadFailed": "Failed to load accessibility facilities, please try again later",
   "loadingA11yData": "Loading accessibility facilities…",
   "quickActions": "Quick Actions",
+  "editQuickActions": "Edit",
   "quickActionsScrollHint": "Quick actions, {{count}} items, swipe to see more",
   "nearbyContextTitle": "Near you",
   "homeShortcutsSettingsTitle": "Home screen shortcuts",

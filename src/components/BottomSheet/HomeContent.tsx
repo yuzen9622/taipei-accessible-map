@@ -1,7 +1,7 @@
 "use client";
 
 import { BookmarkIcon, ClockIcon, MicIcon } from "@animateicons/react/lucide";
-import { Accessibility, Navigation } from "lucide-react";
+import { Accessibility, Navigation, Pencil } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -207,19 +207,33 @@ export default function HomeContent() {
       <NearbyContextBlock />
 
       {/* Quick actions — §S5 item 4: neutral chrome, colored icon only.
-          Which ones show is configured in Settings now (item 5), not here. */}
-      {enabledActions.length > 0 && (
-        <div className="space-y-2">
+          Which ones show/their order used to only be reachable via Settings
+          → 一般 (buried behind the account menu); the "編輯" button here jumps
+          straight there instead. The heading row (and edit entry) stays
+          visible even with zero enabled actions — otherwise turning every
+          chip off from Settings would silently delete the only way back in. */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
             {t("quickActions")}
           </h2>
-          {/* Horizontal scroll strip: keeps the row to a single line on
-              narrow screens instead of wrapping/overlapping neighbouring
-              content, with snap points for a clean swipe stop. The right-edge
-              fade + count are the only cue that there's more to scroll to —
-              `no-scrollbar` hides the native scrollbar entirely, so without
-              this a chip cut off mid-button (e.g. "公車到站" on a wide
-              desktop panel) just looked truncated, not scrollable. */}
+          <button
+            type="button"
+            onClick={() => useAuthStore.getState().requestSettingsDialog()}
+            className="flex min-h-11 items-center gap-1 rounded-full px-3 py-2 text-xs font-medium text-muted-foreground hover:bg-accent/40 hover:text-foreground transition-colors"
+          >
+            <Pencil className="h-3 w-3" />
+            {t("editQuickActions", "編輯")}
+          </button>
+        </div>
+        {enabledActions.length > 0 && (
+          /* Horizontal scroll strip: keeps the row to a single line on
+             narrow screens instead of wrapping/overlapping neighbouring
+             content, with snap points for a clean swipe stop. The right-edge
+             fade + count are the only cue that there's more to scroll to —
+             `no-scrollbar` hides the native scrollbar entirely, so without
+             this a chip cut off mid-button (e.g. "公車到站" on a wide
+             desktop panel) just looked truncated, not scrollable. */
           <div className="relative">
             <div
               role="group"
@@ -253,8 +267,8 @@ export default function HomeContent() {
               className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-background to-transparent"
             />
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Saved Places */}
       {savedPlaces.length > 0 && (

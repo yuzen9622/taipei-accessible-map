@@ -599,7 +599,7 @@ export default function BottomSheet() {
                     )}
                   </h1>
                 </div>
-                <AccountLogin />
+                <AccountLogin active={!isDesktop} />
               </div>
             )}
 
@@ -817,7 +817,7 @@ export default function BottomSheet() {
 
           {/* Account login at bottom */}
           <div className="mb-1">
-            <AccountLogin />
+            <AccountLogin active={isDesktop} />
           </div>
         </nav>
 
