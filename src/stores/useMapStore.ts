@@ -56,6 +56,17 @@ interface MapState {
   } | null;
   routeA11y: Marker[];
   selectedA11yTypes: Set<A11yEnum>;
+  /** §6.1 of the UX audit: "無障礙" used to be simultaneously a rail item, a
+   * quick-action chip, a route mode, and a place-detail section — none of
+   * which agreed on what state they were reading, so there was no single
+   * answer to "is accessibility filtering on right now". This is that
+   * answer — a global mode, not a per-category detail (that's still
+   * `selectedA11yTypes`) — synced to the `?a11y=1` URL query so it survives
+   * a reload and is shareable. Read by the AI system prompt (see
+   * `useAIChat.ts`) so far; wiring it into search results and route
+   * planning needs backend support this app doesn't have yet (see
+   * PROJECTS.md's 給後端的需求清單). */
+  a11yFilterEnabled: boolean;
   a11yDrawerOpen: boolean;
   selectA11yPlace: Marker | null;
   a11yPlaces: Marker[] | null;
@@ -102,6 +113,7 @@ interface MapAction {
   ) => void;
   toggleA11yType: (type: A11yEnum) => void;
   setSelectedA11yTypes: (types: Set<A11yEnum>) => void;
+  setA11yFilterEnabled: (enabled: boolean) => void;
   setA11yDrawerOpen: (open: boolean) => void;
   setA11yPlaces: (places: Marker[] | null) => void;
   initSearchHistory: (history: PlaceDetail[]) => void;
@@ -260,6 +272,8 @@ const useMapStore = create<MapStore>((set, get) => ({
   setSelectedA11yTypes: (types: Set<A11yEnum>) => {
     set({ selectedA11yTypes: types, a11yDrawerOpen: types.size > 0 });
   },
+  a11yFilterEnabled: false,
+  setA11yFilterEnabled: (enabled) => set({ a11yFilterEnabled: enabled }),
   a11yDrawerOpen: false,
   setA11yDrawerOpen: (open) => set({ a11yDrawerOpen: open }),
   a11yPlaces: null,

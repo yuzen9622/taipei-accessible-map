@@ -1,7 +1,8 @@
 "use client";
 
 import { BookmarkIcon, ClockIcon, MicIcon } from "@animateicons/react/lucide";
-import { Navigation } from "lucide-react";
+import { Accessibility, Navigation } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
@@ -31,6 +32,8 @@ export default function HomeContent() {
     setPendingSearchQuery,
     setPendingAiQuery,
     setChatOpen,
+    a11yFilterEnabled,
+    setA11yFilterEnabled,
   } = useMapStore(
     useShallow((s) => ({
       setSearchPlace: s.setSearchPlace,
@@ -44,10 +47,29 @@ export default function HomeContent() {
       setPendingSearchQuery: s.setPendingSearchQuery,
       setPendingAiQuery: s.setPendingAiQuery,
       setChatOpen: s.setChatOpen,
+      a11yFilterEnabled: s.a11yFilterEnabled,
+      setA11yFilterEnabled: s.setA11yFilterEnabled,
     })),
   );
   const enabledActions = useQuickActionsStore((s) => s.enabledActions);
   const [input, setInput] = useState("");
+  const router = useRouter();
+  const pathname = usePathname();
+
+  // Toggling writes `?a11y=1` back to the URL (dropped entirely when off,
+  // not `?a11y=0`) so the filter state round-trips through a reload or a
+  // shared link — ClientLayout is what reads it back on mount.
+  const toggleA11yFilter = useCallback(() => {
+    const next = !a11yFilterEnabled;
+    setA11yFilterEnabled(next);
+    const params = new URLSearchParams(window.location.search);
+    if (next) params.set("a11y", "1");
+    else params.delete("a11y");
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, {
+      scroll: false,
+    });
+  }, [a11yFilterEnabled, setA11yFilterEnabled, router, pathname]);
 
   useEffect(() => {
     if (pendingSearchQuery) {
@@ -140,6 +162,28 @@ export default function HomeContent() {
         >
           <MicIcon size={16} />
         </button>
+        {/* §6.1 of the UX audit: one global switch for "only show me
+            accessible stuff", instead of the same concept living
+            separately (and disagreeing) across a rail item, a route mode,
+            and a place-detail section. Search results and route planning
+            don't read this yet — that needs a backend filter param this
+            app doesn't have (see PROJECTS.md) — today it flows into the AI
+            assistant's system prompt (useAIChat.ts) and is shareable via
+            `?a11y=1`. */}
+        <button
+          type="button"
+          onClick={toggleA11yFilter}
+          aria-pressed={a11yFilterEnabled}
+          aria-label={t("a11yFilterToggle", "只顯示無障礙友善的地點與路線")}
+          className={cn(
+            "flex h-11 w-11 shrink-0 items-center justify-center rounded-full border shadow-sm transition-colors",
+            a11yFilterEnabled
+              ? "border-accessibility bg-accessibility/15 text-accessibility"
+              : "border-border/50 bg-card text-muted-foreground hover:bg-accent/40 hover:text-foreground",
+          )}
+        >
+          <Accessibility className="h-4 w-4" />
+        </button>
       </div>
 
       {/* Route Planning Entry */}
@@ -171,10 +215,25 @@ export default function HomeContent() {
           </h2>
           {/* Horizontal scroll strip: keeps the row to a single line on
               narrow screens instead of wrapping/overlapping neighbouring
-              content, with snap points for a clean swipe stop. */}
-          <div className="flex gap-2 overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-4 px-4 pb-0.5">
-            {QUICK_ACTION_DEFS.filter((d) => enabledActions.includes(d.id)).map(
-              (def) => (
+              content, with snap points for a clean swipe stop. The right-edge
+              fade + count are the only cue that there's more to scroll to —
+              `no-scrollbar` hides the native scrollbar entirely, so without
+              this a chip cut off mid-button (e.g. "公車到站" on a wide
+              desktop panel) just looked truncated, not scrollable. */}
+          <div className="relative">
+            <div
+              role="group"
+              className="flex gap-2 overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-4 px-4 pb-0.5"
+              aria-label={t("quickActionsScrollHint", {
+                count: QUICK_ACTION_DEFS.filter((d) =>
+                  enabledActions.includes(d.id),
+                ).length,
+                defaultValue: "快捷功能，共 {{count}} 項，可左右滑動",
+              })}
+            >
+              {QUICK_ACTION_DEFS.filter((d) =>
+                enabledActions.includes(d.id),
+              ).map((def) => (
                 <button
                   key={def.id}
                   type="button"
@@ -185,8 +244,14 @@ export default function HomeContent() {
                   <def.Icon className={cn("h-4 w-4", def.iconClassName)} />
                   {t(def.labelKey)}
                 </button>
-              ),
-            )}
+              ))}
+            </div>
+            {/* Fade hint, not interactive — purely decorative so it must
+                never intercept clicks meant for the chip underneath it. */}
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-background to-transparent"
+            />
           </div>
         </div>
       )}

@@ -73,6 +73,19 @@ export default function ClientLayout({
     initOnboarding();
   }, [initOnboarding]);
 
+  // §6.1 of the UX audit: the global a11y filter is shareable via
+  // `?a11y=1` — read it once on mount (window.location.search directly,
+  // not useSearchParams, so this doesn't need a Suspense boundary). The
+  // toggle itself (HomeContent) is what writes the query param back when
+  // the user flips it, this only ever reads.
+  const setA11yFilterEnabled = useMapStore((s) => s.setA11yFilterEnabled);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: mount-only URL read, see comment above
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("a11y") === "1") {
+      setA11yFilterEnabled(true);
+    }
+  }, []);
+
   // Restores the AI chat conversation from sessionStorage (if any) before the
   // chat panel ever mounts — by the time a user opens it, `useAIChat`'s
   // empty-check for the greeting is reading post-hydration state.

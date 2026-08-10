@@ -108,14 +108,33 @@ export default function AccountLogin() {
     });
   }, []);
 
-  const { user, userConfig, updateUserConfig, logout } = useAuthStore(
+  const {
+    user,
+    userConfig,
+    updateUserConfig,
+    logout,
+    authDialogRequested,
+    clearAuthDialogRequest,
+  } = useAuthStore(
     useShallow((s) => ({
       user: s.user,
       userConfig: s.userConfig,
       updateUserConfig: s.updateUserConfig,
       logout: s.logout,
+      authDialogRequested: s.authDialogRequested,
+      clearAuthDialogRequest: s.clearAuthDialogRequest,
     })),
   );
+
+  // Any feature that needs an inline "please log in" prompt (e.g.
+  // PlaceReviewSection's login CTA for anonymous visitors) sets this flag
+  // instead of needing its own copy of AuthDialog's open state.
+  useEffect(() => {
+    if (!authDialogRequested) return;
+    setAuthDialogInitialMode("login");
+    setAuthDialogOpen(true);
+    clearAuthDialogRequest();
+  }, [authDialogRequested, clearAuthDialogRequest]);
   const resetGuides = useOnboardingStore((s) => s.resetGuides);
   const { enabledActions, toggleAction } = useQuickActionsStore(
     useShallow((s) => ({

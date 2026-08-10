@@ -50,6 +50,13 @@ interface AuthState {
   user: UserDTO | null;
   userConfig: UserConfig;
   session: { accessToken: string } | null;
+  /** Set by any component that needs an inline "please log in" prompt to
+   * open the login modal directly — e.g. PlaceReviewSection's "登入/註冊"
+   * button. `AccountLogin` (the only place that actually owns AuthDialog's
+   * open state) watches this and opens the dialog when it flips true, then
+   * clears it back. Avoids threading dialog-open state through every
+   * feature that might need to prompt a login. */
+  authDialogRequested: boolean;
 }
 
 interface AuthAction {
@@ -58,6 +65,8 @@ interface AuthAction {
   setSession: (session: { accessToken: string }) => void;
   updateUserConfig: (config: Partial<UserConfig>) => void;
   logout: () => void;
+  requestAuthDialog: () => void;
+  clearAuthDialogRequest: () => void;
 }
 
 type AuthStore = AuthState & AuthAction;
@@ -72,6 +81,9 @@ const useAuthStore = create<AuthStore>((set, get) => ({
     language: LanguageEnum.Chinese,
   },
   session: null,
+  authDialogRequested: false,
+  requestAuthDialog: () => set({ authDialogRequested: true }),
+  clearAuthDialogRequest: () => set({ authDialogRequested: false }),
   setSession: (session) =>
     set((state) => ({ session: { ...state.session, ...session } })),
   setUser: (user) => set({ user }),

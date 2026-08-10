@@ -19,6 +19,7 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useShallow } from "zustand/react/shallow";
 import AIChatBot from "@/components/AIChatBot";
 import ExitNavDialog from "@/components/Navigation/ExitNavDialog";
@@ -58,20 +59,20 @@ interface RailItem {
   color: string;
 }
 
+// §6.2 of the UX audit: the rail used to mix three different kinds of
+// things at the same level — actions (search, report), data categories
+// (a11y/bus/parking), and personal data (saved) — with "route", one of the
+// two or three things people actually open this app to do, buried in the
+// "更多" overflow. Down to the four actual actions; data categories moved
+// into RAIL_MORE_ITEMS below (still one tap away, and still reachable from
+// HomeContent's quick-action chips either way).
 const RAIL_ITEMS: RailItem[] = [
   { id: "search", Icon: Search, labelKey: "railSearch", color: "text-primary" },
   {
-    id: "a11y",
-    Icon: Accessibility,
-    labelKey: "railA11y",
-    color: "text-accessibility",
-  },
-  { id: "bus", Icon: Bus, labelKey: "railBus", color: "text-emerald-600" },
-  {
-    id: "parking",
-    Icon: CircleParking,
-    labelKey: "railParking",
-    color: "text-indigo-500",
+    id: "route",
+    Icon: Navigation,
+    labelKey: "railRoute",
+    color: "text-blue-500",
   },
   {
     id: "saved",
@@ -87,14 +88,22 @@ const RAIL_ITEMS: RailItem[] = [
   },
 ];
 
-// Superset of the quick actions in the search panel, so everything reachable
-// from 快捷功能 is also reachable from 更多.
+// Covers every 快捷功能 (home quick-action chip) except "hazard" — that one
+// moved into RAIL_ITEMS above (回報 is one of the 4 core actions now), still
+// reachable, just via the main rail instead of here.
 const RAIL_MORE_ITEMS: RailItem[] = [
   {
-    id: "route",
-    Icon: Navigation,
-    labelKey: "railRoute",
-    color: "text-blue-500",
+    id: "a11y",
+    Icon: Accessibility,
+    labelKey: "railA11y",
+    color: "text-accessibility",
+  },
+  { id: "bus", Icon: Bus, labelKey: "railBus", color: "text-emerald-600" },
+  {
+    id: "parking",
+    Icon: CircleParking,
+    labelKey: "railParking",
+    color: "text-indigo-500",
   },
   {
     id: "environment",
@@ -190,11 +199,62 @@ export default function BottomSheet() {
   const [sheetHeight, setSheetHeight] = useState(SNAP_POINTS.peek);
   const [isDragging, setIsDragging] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
+  const moreFlyoutRef = useRef<HTMLDivElement>(null);
+  const moreButtonRef = useRef<HTMLButtonElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const startY = useRef(0);
   const startHeight = useRef(0);
   const mobileContentScrollRef = useRef<HTMLDivElement>(null);
   const desktopContentScrollRef = useRef<HTMLDivElement>(null);
+
+  // `HomeContent` (and the search input inside it) used to be rendered
+  // directly from both `MobileSheetContent` and `DesktopPanelContent`,
+  // producing two separately-mounted copies (one always `inert`) — same as
+  // every other rail panel here, but this one holds a real form control, so
+  // "there are two `<input>`s with the same accessible name in the DOM" was
+  // an actual latent risk, not just duplicated markup. It's mounted once
+  // here and portaled into whichever of these two marker slots is currently
+  // live, based on breakpoint — state (not a plain ref) because the marker
+  // div doesn't exist in the DOM yet on the render that creates it.
+  const [mobileHomeSlot, setMobileHomeSlot] = useState<HTMLDivElement | null>(
+    null,
+  );
+  const [desktopHomeSlot, setDesktopHomeSlot] = useState<HTMLDivElement | null>(
+    null,
+  );
+  const homeSlot = isDesktop ? desktopHomeSlot : mobileHomeSlot;
+
+  // The "更多" flyout is a plain custom popover (not a Radix primitive), so
+  // it doesn't get Radix's built-in outside-click/Escape dismissal for
+  // free — without this it stayed open (just visually stranded behind
+  // whatever opened on top of it, like the account dropdown or the login
+  // dialog) since nothing here ever told it to close. Listening at the
+  // document level also catches clicks inside those other overlays, which
+  // render into a portal outside this component's own DOM subtree.
+  useEffect(() => {
+    if (!moreOpen) return;
+    const handlePointerDown = (e: PointerEvent) => {
+      if (!moreFlyoutRef.current?.contains(e.target as Node)) {
+        setMoreOpen(false);
+      }
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      // Escape unmounts whatever was focused inside the flyout, dropping
+      // focus back to <body> — return it to the trigger so keyboard users
+      // don't lose their place in the page.
+      if (moreFlyoutRef.current?.contains(document.activeElement)) {
+        moreButtonRef.current?.focus();
+      }
+      setMoreOpen(false);
+    };
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [moreOpen]);
 
   // Hide the home header at peek so only the search bar is visible,
   // keeping the map maximally exposed (Google Maps-style peek).
@@ -434,10 +494,17 @@ export default function BottomSheet() {
   // actually displaying the AI assistant, which is exactly the "rail says one
   // thing, content shows another" desync this refactor is meant to eliminate.
   // Shared by the main rail and the 更多 flyout so the two can't drift.
+  // "route" is a special case: clicking it lands on sheetMode "plan" (a
+  // MODE_PANELS entry, handled by handleRailClick above), not
+  // activeRailPanel — so the general `!modePanelActive` check below would
+  // never light it up even while the user is looking straight at the route
+  // planning screen.
   const isRailItemActive = useCallback(
-    (id: RailPanel) =>
-      !modePanelActive && !showAssistant && activeRailPanel === id,
-    [modePanelActive, showAssistant, activeRailPanel],
+    (id: RailPanel) => {
+      if (id === "route") return sheetMode === "plan" && !showAssistant;
+      return !modePanelActive && !showAssistant && activeRailPanel === id;
+    },
+    [modePanelActive, showAssistant, activeRailPanel, sheetMode],
   );
 
   const handlePanelClose = useCallback(() => {
@@ -634,7 +701,7 @@ export default function BottomSheet() {
                   transition={{ duration: 0.15 }}
                   className="h-full"
                 >
-                  <MobileSheetContent />
+                  <MobileSheetContent onHomeSlotRef={setMobileHomeSlot} />
                 </motion.div>
               </AnimatePresence>
             </div>
@@ -713,8 +780,9 @@ export default function BottomSheet() {
           <div className="w-8 h-px bg-border/50 my-1" />
 
           {/* More button + flyout */}
-          <div className="relative">
+          <div className="relative" ref={moreFlyoutRef}>
             <button
+              ref={moreButtonRef}
               type="button"
               aria-label={t("railMore")}
               aria-expanded={moreOpen}
@@ -881,7 +949,7 @@ export default function BottomSheet() {
                       exit={{ opacity: 0, x: 10 }}
                       transition={{ duration: 0.12 }}
                     >
-                      <DesktopPanelContent />
+                      <DesktopPanelContent onHomeSlotRef={setDesktopHomeSlot} />
                     </motion.div>
                   </AnimatePresence>
                 </div>
@@ -914,6 +982,12 @@ export default function BottomSheet() {
 
       {/* Navigation exit confirmation dialog */}
       <ExitNavDialog />
+
+      {/* Single real mount of the home screen (search box included) —
+          portaled into whichever of the two marker slots below is live for
+          the current breakpoint, instead of being rendered twice (once per
+          breakpoint) like every other rail panel here still is. */}
+      {homeSlot && createPortal(<HomeContent />, homeSlot)}
     </>
   );
 }
@@ -1022,7 +1096,11 @@ function PanelTitle() {
 // both desktop and mobile so a quick-action click has exactly one code path
 // to render through, instead of desktop reading this switch while mobile
 // fell back to HomeContent's own local subPanel copy of the same logic. ---
-function RailPanelOrHome() {
+function RailPanelOrHome({
+  onHomeSlotRef,
+}: {
+  onHomeSlotRef: (el: HTMLDivElement | null) => void;
+}) {
   const { activeRailPanel, setActiveRailPanel } = useMapStore(
     useShallow((s) => ({
       activeRailPanel: s.activeRailPanel,
@@ -1052,14 +1130,19 @@ function RailPanelOrHome() {
     // "search" / "none" are the home view itself, and "route" only ever lands
     // here as a leftover from RoutePreviewHydrator once sheetMode has already
     // gone back to "home" — all three mean "no sub-panel". Keep this list in
-    // sync with RAIL_CONTENT_PANELS.
+    // sync with RAIL_CONTENT_PANELS. This marker div is a portal *target*,
+    // not `HomeContent` itself — see the single real mount in `BottomSheet`.
     default:
-      return <HomeContent />;
+      return <div ref={onHomeSlotRef} className="contents" />;
   }
 }
 
 // --- Desktop panel content switcher ---
-function DesktopPanelContent() {
+function DesktopPanelContent({
+  onHomeSlotRef,
+}: {
+  onHomeSlotRef: (el: HTMLDivElement | null) => void;
+}) {
   const { sheetMode } = useMapStore(
     useShallow((s) => ({ sheetMode: s.sheetMode })),
   );
@@ -1080,17 +1163,21 @@ function DesktopPanelContent() {
     }
   }
 
-  return <RailPanelOrHome />;
+  return <RailPanelOrHome onHomeSlotRef={onHomeSlotRef} />;
 }
 
 // --- Mobile sheet content ---
-function MobileSheetContent() {
+function MobileSheetContent({
+  onHomeSlotRef,
+}: {
+  onHomeSlotRef: (el: HTMLDivElement | null) => void;
+}) {
   const { sheetMode } = useMapStore(
     useShallow((s) => ({ sheetMode: s.sheetMode })),
   );
   switch (sheetMode) {
     case "home":
-      return <RailPanelOrHome />;
+      return <RailPanelOrHome onHomeSlotRef={onHomeSlotRef} />;
     case "place":
       return <PlaceContent />;
     case "plan":
@@ -1102,6 +1189,6 @@ function MobileSheetContent() {
     case "station":
       return <StationDetailContent />;
     default:
-      return <RailPanelOrHome />;
+      return <RailPanelOrHome onHomeSlotRef={onHomeSlotRef} />;
   }
 }

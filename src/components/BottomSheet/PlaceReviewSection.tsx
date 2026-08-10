@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { useShallow } from "zustand/react/shallow";
 import { useAppTranslation } from "@/i18n/client";
 import {
   createReview,
@@ -109,7 +110,12 @@ export default function PlaceReviewSection({
   placeType: PlaceReviewType;
 }) {
   const { t } = useAppTranslation();
-  const user = useAuthStore((s) => s.user);
+  const { user, requestAuthDialog } = useAuthStore(
+    useShallow((s) => ({
+      user: s.user,
+      requestAuthDialog: s.requestAuthDialog,
+    })),
+  );
 
   const [reviews, setReviews] = useState<ReviewItem[]>([]);
   const [summary, setSummary] = useState<ReviewSummaryResult | null>(null);
@@ -340,9 +346,18 @@ export default function PlaceReviewSection({
 
       {/* Write / edit review button + form */}
       {!user ? (
-        <p className="text-sm text-muted-foreground rounded-xl bg-muted/30 p-3 mb-3 text-center">
-          {t("reviewLoginRequired")}
-        </p>
+        <div className="flex flex-col items-center gap-2 rounded-xl bg-muted/30 p-3 mb-3 text-center">
+          <p className="text-sm text-muted-foreground">
+            {t("reviewLoginRequired")}
+          </p>
+          <Button
+            size="sm"
+            className="rounded-full"
+            onClick={requestAuthDialog}
+          >
+            {t("loginRegisterCta")}
+          </Button>
+        </div>
       ) : !showForm ? (
         <Button
           variant="outline"

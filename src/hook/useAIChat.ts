@@ -159,6 +159,15 @@ export default function useAIChat() {
         userConfig.language === "en" ? "en" : "zh-TW",
       );
       const baseSystemPrompt = `你是「無障礙智慧地圖」的 AI 助理，專門協助使用者查詢無障礙相關資訊、路線規劃、附近設施。請使用${userConfig.language === "en" ? "英文" : "繁體中文"}回答。`;
+      // §6.1 of the UX audit's global a11y filter — re-read live (not
+      // subscribed) for the same reason `profileNote` is re-derived every
+      // send: toggling it mid-conversation should affect the next message
+      // without needing the chat to remount.
+      const a11yFilterNote = useMapStore.getState().a11yFilterEnabled
+        ? userConfig.language === "en"
+          ? " The user has turned on the accessibility filter — only recommend places and routes that are wheelchair/step-free accessible."
+          : "使用者已開啟無障礙篩選，請只推薦無障礙（輪椅可通行、無階梯）的地點與路線。"
+        : "";
       // Go through `setChatHistory` (immutable, writes sessionStorage) rather
       // than mutating the array in place — direct mutation bypassed the
       // store's persistence write and left a "safe only because nobody else
@@ -168,9 +177,7 @@ export default function useAIChat() {
         const next = [...prev];
         next[0] = {
           role: "system",
-          content: profileNote
-            ? `${baseSystemPrompt}${profileNote}`
-            : baseSystemPrompt,
+          content: `${baseSystemPrompt}${profileNote ?? ""}${a11yFilterNote}`,
         };
         return next;
       });

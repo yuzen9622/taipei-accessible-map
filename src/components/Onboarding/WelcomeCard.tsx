@@ -39,7 +39,13 @@ export default function WelcomeCard() {
     !hydrated ||
     onboarding === null ||
     welcomeCardDismissed ||
-    coachMarksActive
+    coachMarksActive ||
+    // The full 4-step onboarding (intro → needs → location → done) already
+    // ends on its own "here's what to try" screen — showing this card
+    // immediately after that felt like a second, near-identical welcome
+    // back to back. Only someone who skipped straight past onboarding
+    // (never saw any of that) gets this as their first orientation.
+    !onboarding.skipped
   ) {
     return null;
   }

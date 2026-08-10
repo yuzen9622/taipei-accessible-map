@@ -15,6 +15,9 @@ import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 import { useAppTranslation } from "@/i18n/client";
 import { createHazardReport } from "@/lib/api/a11y";
+import { haversineMeters } from "@/lib/geo";
+import { formatNominatimPlace } from "@/lib/utils";
+import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
 import { Button } from "../ui/button";
 
@@ -35,7 +38,7 @@ export default function HazardReportPanel({
   onClose: () => void;
   hideHeader?: boolean;
 }) {
-  const { t } = useAppTranslation();
+  const { t, i18n } = useAppTranslation();
   const hazardTypeLabelId = useId();
   const descriptionId = useId();
   const { userLocation, pendingReportContext, setPendingReportContext } =
@@ -46,6 +49,12 @@ export default function HazardReportPanel({
         setPendingReportContext: s.setPendingReportContext,
       })),
     );
+  const { user, requestAuthDialog } = useAuthStore(
+    useShallow((s) => ({
+      user: s.user,
+      requestAuthDialog: s.requestAuthDialog,
+    })),
+  );
 
   const [hazardType, setHazardType] = useState<
     "obstacle" | "construction" | "data_error"
@@ -66,6 +75,58 @@ export default function HazardReportPanel({
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [address, setAddress] = useState<string | null>(null);
+  const [addressFailed, setAddressFailed] = useState(false);
+
+  // Raw lat/lng told the user nothing about whether this is actually the
+  // spot they meant to report — reverse-geocode to a readable address (same
+  // Nominatim call MapControlsWrapper's share dialog already makes) and
+  // show that as the primary line, coordinates demoted to a secondary line.
+  //
+  // `userLocation` is a fresh object on every GPS fix (watchPosition can tick
+  // roughly once a second), so re-querying on every change would hammer
+  // Nominatim's public instance well past its ~1 req/sec usage policy and
+  // risk getting the origin rate-limited. Only re-query once the user has
+  // actually moved a meaningful distance.
+  const lastQueriedRef = useRef<{ lat: number; lng: number } | null>(null);
+  useEffect(() => {
+    if (!userLocation) return;
+    const last = lastQueriedRef.current;
+    if (last) {
+      const moved = haversineMeters(last, userLocation);
+      if (moved < 30) return;
+    }
+    lastQueriedRef.current = { lat: userLocation.lat, lng: userLocation.lng };
+    const controller = new AbortController();
+    const lang = i18n.language === "zh-TW" ? "zh-TW" : "en";
+    setAddressFailed(false);
+    fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLocation.lat}&lon=${userLocation.lng}&accept-language=${lang}&zoom=16&addressdetails=1`,
+      { signal: controller.signal },
+    )
+      .then((res) => res.json())
+      .then((data) => {
+        const formatted = formatNominatimPlace(data, i18n.language);
+        const a = formatted?.address;
+        if (!a) {
+          setAddressFailed(true);
+          return;
+        }
+        const composed = [
+          a.city || a.county || "",
+          a.suburb || a.city_district || a.town || "",
+          a.road || a.neighbourhood || "",
+        ]
+          .filter(Boolean)
+          .join(i18n.language === "zh-TW" ? "" : ", ");
+        setAddress(composed || formatted.display_name || null);
+      })
+      .catch((err) => {
+        if ((err as Error).name === "AbortError") return;
+        setAddressFailed(true);
+      });
+    return () => controller.abort();
+  }, [userLocation, i18n.language]);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -125,13 +186,39 @@ export default function HazardReportPanel({
         </div>
       )}
 
-      {/* Location */}
+      {/* Not blocking the form — anonymous submission may still work — but
+          telling the user upfront instead of only finding out after they've
+          filled everything in and hit send. */}
+      {!user && (
+        <div className="flex items-center justify-between gap-2 rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-800 dark:text-amber-400">
+          <span>{t("reportLoginHint", "登入後回報會記在你的帳號下")}</span>
+          <button
+            type="button"
+            onClick={requestAuthDialog}
+            className="shrink-0 font-medium underline underline-offset-2 hover:text-amber-900 dark:hover:text-amber-300"
+          >
+            {t("loginRegisterCta")}
+          </button>
+        </div>
+      )}
+
+      {/* Location — readable address first (so the user can actually
+          confirm this is the right spot), raw coordinates demoted to a
+          secondary line rather than being the only thing shown. */}
       {userLocation && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/40 px-3 py-2 rounded-lg">
           <MapPin className="h-3.5 w-3.5 shrink-0" />
-          <span>
-            {userLocation.lat.toFixed(5)}, {userLocation.lng.toFixed(5)}
-          </span>
+          <div className="min-w-0">
+            <p className="truncate text-foreground">
+              {address ??
+                (addressFailed
+                  ? t("addressLookupFailed", "無法取得地址，仍可送出回報")
+                  : t("locating", "定位中…"))}
+            </p>
+            <p className="tabular-nums">
+              {userLocation.lat.toFixed(5)}, {userLocation.lng.toFixed(5)}
+            </p>
+          </div>
         </div>
       )}
 
