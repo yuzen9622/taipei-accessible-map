@@ -59,39 +59,15 @@ interface RailItem {
   color: string;
 }
 
-// §6.2 of the UX audit: the rail used to mix three different kinds of
-// things at the same level — actions (search, report), data categories
-// (a11y/bus/parking), and personal data (saved) — with "route", one of the
-// two or three things people actually open this app to do, buried in the
-// "更多" overflow. Down to the four actual actions; data categories moved
-// into RAIL_MORE_ITEMS below (still one tap away, and still reachable from
-// HomeContent's quick-action chips either way).
+// §6.2 revision: "route" is dropped from the rail entirely (not even into
+// "更多") — HomeContent already has its own "規劃路線" entry right below the
+// search bar, so a second route-planning door on the rail duplicated that
+// responsibility instead of adding one. Only the two lowest-frequency
+// actions (hazard report, welfare directory) move into RAIL_MORE_ITEMS;
+// everything else people reach for while looking at the map stays one tap
+// away on the visible rail.
 const RAIL_ITEMS: RailItem[] = [
   { id: "search", Icon: Search, labelKey: "railSearch", color: "text-primary" },
-  {
-    id: "route",
-    Icon: Navigation,
-    labelKey: "railRoute",
-    color: "text-blue-500",
-  },
-  {
-    id: "saved",
-    Icon: Bookmark,
-    labelKey: "savedPlaces",
-    color: "text-amber-500",
-  },
-  {
-    id: "hazard",
-    Icon: AlertTriangle,
-    labelKey: "reportHazard",
-    color: "text-amber-500",
-  },
-];
-
-// Covers every 快捷功能 (home quick-action chip) except "hazard" — that one
-// moved into RAIL_ITEMS above (回報 is one of the 4 core actions now), still
-// reachable, just via the main rail instead of here.
-const RAIL_MORE_ITEMS: RailItem[] = [
   {
     id: "a11y",
     Icon: Accessibility,
@@ -106,10 +82,25 @@ const RAIL_MORE_ITEMS: RailItem[] = [
     color: "text-indigo-500",
   },
   {
+    id: "saved",
+    Icon: Bookmark,
+    labelKey: "savedPlaces",
+    color: "text-amber-500",
+  },
+  {
     id: "environment",
     Icon: Cloud,
     labelKey: "environment",
     color: "text-sky-500",
+  },
+];
+
+const RAIL_MORE_ITEMS: RailItem[] = [
+  {
+    id: "hazard",
+    Icon: AlertTriangle,
+    labelKey: "reportHazard",
+    color: "text-amber-500",
   },
   { id: "welfare", Icon: Heart, labelKey: "welfare", color: "text-rose-500" },
 ];
@@ -426,29 +417,21 @@ export default function BottomSheet() {
   const handleRailClick = useCallback(
     (panel: RailPanel) => {
       if (isNavigating) {
-        requestNavExit(panel === "route" ? "plan" : panel);
+        requestNavExit(panel);
         return;
       }
       if (collapsed) {
         setCollapsed(false);
-        if (panel === "route") {
-          setSheetMode("plan");
-        } else {
-          if (modePanelActive) {
-            setSheetMode("home");
-            setComputeRoutes(null);
-            setRouteA11y([]);
-            setRouteSelect(null);
-            setInfoShow({ isOpen: false, kind: null });
-            setSearchPlace(null);
-          }
-          setActiveRailPanel(panel);
+        if (modePanelActive) {
+          setSheetMode("home");
+          setComputeRoutes(null);
+          setRouteA11y([]);
+          setRouteSelect(null);
+          setInfoShow({ isOpen: false, kind: null });
+          setSearchPlace(null);
         }
+        setActiveRailPanel(panel);
         setMoreOpen(false);
-        return;
-      }
-      if (panel === "route") {
-        setSheetMode("plan");
         return;
       }
       // Re-clicking the active item keeps the panel open — closing on the
@@ -494,17 +477,10 @@ export default function BottomSheet() {
   // actually displaying the AI assistant, which is exactly the "rail says one
   // thing, content shows another" desync this refactor is meant to eliminate.
   // Shared by the main rail and the 更多 flyout so the two can't drift.
-  // "route" is a special case: clicking it lands on sheetMode "plan" (a
-  // MODE_PANELS entry, handled by handleRailClick above), not
-  // activeRailPanel — so the general `!modePanelActive` check below would
-  // never light it up even while the user is looking straight at the route
-  // planning screen.
   const isRailItemActive = useCallback(
-    (id: RailPanel) => {
-      if (id === "route") return sheetMode === "plan" && !showAssistant;
-      return !modePanelActive && !showAssistant && activeRailPanel === id;
-    },
-    [modePanelActive, showAssistant, activeRailPanel, sheetMode],
+    (id: RailPanel) =>
+      !modePanelActive && !showAssistant && activeRailPanel === id,
+    [modePanelActive, showAssistant, activeRailPanel],
   );
 
   const handlePanelClose = useCallback(() => {

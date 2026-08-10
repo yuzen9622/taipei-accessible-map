@@ -15,6 +15,7 @@ import {
   FACILITY_CATEGORY_TO_A11Y_ENUM,
 } from "@/types/a11yProfile";
 import { formatDistance } from "@/types/route";
+import PlaceCard from "../shared/PlaceCard";
 
 const CATEGORY_ICON: Record<
   A11yEnum,
@@ -100,9 +101,12 @@ export default function NearbyContextBlock() {
           const Icon = CATEGORY_ICON[place.a11yType];
           const labelKey = CATEGORY_LABEL_KEY[place.a11yType];
           return (
-            <button
+            <PlaceCard
               key={place.id}
-              type="button"
+              variant="compact"
+              icon={<Icon className="h-4 w-4" />}
+              title={labelKey ? t(labelKey) : ""}
+              subtitle={formatDistance(distance)}
               onClick={() => {
                 // Same tap contract as A11yFacilityPin on the map: fly to
                 // it, then open the facility detail sheet rather than just
@@ -112,18 +116,7 @@ export default function NearbyContextBlock() {
                 setA11yDrawerOpen(true);
                 setSheetMode("station");
               }}
-              className="flex w-[132px] shrink-0 snap-start flex-col items-start gap-1 rounded-2xl border border-border/60 bg-card/50 p-3 text-left transition-colors hover:bg-accent/30"
-            >
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
-                <Icon className="h-4 w-4" />
-              </span>
-              <span className="text-xs font-medium text-foreground">
-                {labelKey ? t(labelKey) : ""}
-              </span>
-              <span className="truncate text-xs text-muted-foreground">
-                {formatDistance(distance)}
-              </span>
-            </button>
+            />
           );
         })}
       </div>

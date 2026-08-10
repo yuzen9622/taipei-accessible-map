@@ -1,99 +1,95 @@
 "use client";
-import { useShallow } from "zustand/react/shallow";
-import useComputeRoute from "@/hook/useComputeRoute";
-import useMapStore from "@/stores/useMapStore";
-import type { GooglePlaceResult } from "@/types/transit";
+
+import { cn } from "@/lib/utils";
 import { Badge } from "../ui/badge";
-import { Button } from "../ui/button";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-} from "../ui/card";
+
+type PlaceCardProps = {
+  title: string;
+  subtitle?: string;
+  /** "result" 用於 AI 工具結果的橫向卡片（標題列右側徽章）；"compact" 用於
+   * 頂部圖示的小卡（NearbyContextBlock 的「你附近」列）。 */
+  variant?: "result" | "compact";
+  badge?: string;
+  icon?: React.ReactNode;
+  onClick?: () => void;
+  className?: string;
+};
 
 export default function PlaceCard({
-  name,
-  formatted_address,
-  rating,
-  location,
-}: GooglePlaceResult) {
-  const {
-    setInfoShow,
-    setDestination,
-    setA11yDrawerOpen,
-    setSearchPlace,
-    map,
-  } = useMapStore(
-    useShallow((s) => ({
-      setInfoShow: s.setInfoShow,
-      setDestination: s.setDestination,
-      setA11yDrawerOpen: s.setA11yDrawerOpen,
-      setSearchPlace: s.setSearchPlace,
-      map: s.map,
-    })),
+  title,
+  subtitle,
+  variant = "result",
+  badge,
+  icon,
+  onClick,
+  className,
+}: PlaceCardProps) {
+  const clickable = !!onClick;
+
+  if (variant === "compact") {
+    const compactClassName = cn(
+      "flex w-[132px] shrink-0 snap-start flex-col items-start gap-1 rounded-2xl border border-border/60 bg-card/50 p-3 text-left transition-colors",
+      clickable && "hover:bg-accent/30",
+      className,
+    );
+    const compactInner = (
+      <>
+        {icon && (
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+            {icon}
+          </span>
+        )}
+        <span className="text-xs font-medium text-foreground">{title}</span>
+        {subtitle && (
+          <span className="truncate text-xs text-muted-foreground">
+            {subtitle}
+          </span>
+        )}
+      </>
+    );
+    return clickable ? (
+      <button type="button" onClick={onClick} className={compactClassName}>
+        {compactInner}
+      </button>
+    ) : (
+      <div className={compactClassName}>{compactInner}</div>
+    );
+  }
+
+  const resultClassName = cn(
+    "shrink-0 snap-start flex flex-col items-start text-left p-3 rounded-xl bg-card border border-border/60 shadow-sm w-[200px] transition-all",
+    clickable &&
+      "cursor-pointer hover:border-primary/40 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
+    className,
   );
-  const { handleComputeRoute } = useComputeRoute();
-  return (
-    <Card className="hover:bg-muted/50">
-      <CardHeader className="flex justify-between">
-        <div>
-          <h1>{name}</h1>
-          <CardDescription>{formatted_address}</CardDescription>
+  const resultInner = (
+    <>
+      <div className="w-full flex items-center gap-1.5 mb-1">
+        <span className="flex-1 font-semibold text-[14px] text-foreground leading-tight truncate">
+          {title}
+        </span>
+        {badge && (
+          <Badge
+            variant="secondary"
+            className="shrink-0 text-xs px-1.5 py-0 rounded-full"
+          >
+            {badge}
+          </Badge>
+        )}
+      </div>
+      {subtitle && (
+        <div className="w-full text-[12px] text-muted-foreground line-clamp-2">
+          {subtitle}
         </div>
-        <Badge className="text-sm shrink-0 bg-yellow-500 text-white">
-          評分: {rating}
-        </Badge>
-      </CardHeader>
-      <CardContent>
-        <CardAction className="flex w-full  justify-between">
-          <Button
-            onClick={() => {
-              if (!map) return;
-              const position = {
-                lat: location.latitude,
-                lng: location.longitude,
-              };
-              map.setCenter([position.lng, position.lat]);
-              map.setZoom(16);
-              setInfoShow({
-                isOpen: true,
-                kind: "coordinate",
-                address: formatted_address,
-              });
-              setSearchPlace({
-                kind: "coordinate",
-                address: formatted_address,
-                position,
-              });
-            }}
-          >
-            查看詳情
-          </Button>
-          <Button
-            onClick={async () => {
-              const position = {
-                lat: location.latitude,
-                lng: location.longitude,
-              };
-              setDestination({
-                kind: "coordinate",
-                address: formatted_address,
-                position,
-              });
-              await handleComputeRoute({
-                destination: position,
-              });
-              setA11yDrawerOpen(false);
-            }}
-            variant={"secondary"}
-            className="border"
-          >
-            規劃路線
-          </Button>
-        </CardAction>
-      </CardContent>
-    </Card>
+      )}
+    </>
+  );
+
+  return clickable ? (
+    <button type="button" onClick={onClick} className={resultClassName}>
+      {resultInner}
+    </button>
+  ) : (
+    <div className={resultClassName}>{resultInner}</div>
   );
 }

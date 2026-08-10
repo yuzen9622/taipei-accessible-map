@@ -35,6 +35,7 @@ import useChatStore from "@/stores/useChatStore";
 import useMapStore from "@/stores/useMapStore";
 import useVoiceStore from "@/stores/useVoiceStore";
 import MarkdownText from "./shared/MarkdownText";
+import PlaceCard from "./shared/PlaceCard";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { CardContent, CardFooter } from "./ui/card";
@@ -87,41 +88,13 @@ function ToolResultCard({
   item: ToolResultItem;
   onClick?: () => void;
 }) {
-  const clickable = !!onClick;
-  const className = cn(
-    "shrink-0 snap-start flex flex-col items-start text-left p-3 rounded-xl bg-card border border-border/60 shadow-sm w-[200px] transition-all",
-    clickable &&
-      "cursor-pointer hover:border-primary/40 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
-  );
-  const inner = (
-    <>
-      <div className="w-full flex items-center gap-1.5 mb-1">
-        <span className="flex-1 font-semibold text-[14px] text-foreground leading-tight truncate">
-          {item.title}
-        </span>
-        {item.badge && (
-          <Badge
-            variant="secondary"
-            className="shrink-0 text-xs px-1.5 py-0 rounded-full"
-          >
-            {item.badge}
-          </Badge>
-        )}
-      </div>
-      {item.subtitle && (
-        <div className="w-full text-[12px] text-muted-foreground line-clamp-2">
-          {item.subtitle}
-        </div>
-      )}
-    </>
-  );
-
-  return clickable ? (
-    <button type="button" onClick={onClick} className={className}>
-      {inner}
-    </button>
-  ) : (
-    <div className={className}>{inner}</div>
+  return (
+    <PlaceCard
+      title={item.title}
+      subtitle={item.subtitle}
+      badge={item.badge}
+      onClick={onClick}
+    />
   );
 }
 
