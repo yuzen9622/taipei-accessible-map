@@ -123,7 +123,12 @@ const useAuthStore = create<AuthStore>((set, get) => ({
     );
 
     if (user && Object.keys(remoteConfig).length > 0) {
-      updateConfig({ user_id: user._id, ...remoteConfig });
+      // Must NOT send user_id: the backend derives identity from the
+      // Authorization token and its UpdateConfigBodySchema is .strict() —
+      // any unknown key (incl. user_id) is rejected with 400.
+      updateConfig(remoteConfig).catch((error) => {
+        console.error("[useAuthStore] updateConfig failed", error);
+      });
     }
     set((state) => ({ userConfig: { ...state.userConfig, ...config } }));
   },
