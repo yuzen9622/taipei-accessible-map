@@ -790,5 +790,11 @@
   "resetGuidesButton": "重新開始",
   "loginRegisterCta": "立即登入 / 註冊",
   "goToLoginRegister": "前往登入 / 註冊",
-  "statusErrorCode": "錯誤代碼：{{code}}"
+  "statusErrorCode": "錯誤代碼：{{code}}",
+  "transitAlerts": "營運公告",
+  "alertCount": "共 {{count}} 則",
+  "alertStatusActive": "實施中",
+  "alertStatusUpcoming": "尚未實施",
+  "affectedStations": "影響站點",
+  "alertUpdatedTime": "更新 {{time}}"
 }

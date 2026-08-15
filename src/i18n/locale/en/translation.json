@@ -797,5 +797,12 @@
   "resetGuidesButton": "Restart",
   "loginRegisterCta": "Log in / Sign up",
   "goToLoginRegister": "Go to login / Sign up",
-  "statusErrorCode": "Error code: {{code}}"
+  "statusErrorCode": "Error code: {{code}}",
+  "alertCount_one": "{{count}} alert",
+  "alertCount_other": "{{count}} alerts",
+  "transitAlerts": "Transit alerts",
+  "alertStatusActive": "In effect",
+  "alertStatusUpcoming": "Upcoming",
+  "affectedStations": "Affected stations",
+  "alertUpdatedTime": "Updated {{time}}"
 }

@@ -57,6 +57,26 @@ export interface SlimOsmA11y {
   location: GeoPoint;
 }
 
+// --- Transit operating alerts (from /transit/alerts; optional on route responses) ---
+export interface MetroAlert {
+  alertId: string;
+  title: string;
+  description: string;
+  /** TDX alert status: 1 = 尚未實施 (upcoming), 2 = 實施中 (active). */
+  status: number;
+  stations: Array<{ id: string; name: string | null }>;
+  lines: string[];
+  publishTime: string;
+  updateTime: string;
+}
+
+/** Top-level `metroAlerts` on the route response, grouped by ridden rail system. */
+export interface MetroAlertResult {
+  railSystem: string;
+  updatedAt: string;
+  alerts: MetroAlert[];
+}
+
 // --- Wait info for transit legs ---
 export interface WaitInfo {
   time: number | string | null;
@@ -145,6 +165,8 @@ export interface MetroLeg {
   facilityHighlights: string[];
   a11yRefs?: string[];
   intermediateStops?: IntermediateStop[];
+  /** Present only when this leg's stations/lines have active operating alerts. */
+  alerts?: MetroAlert[];
 }
 
 export interface ThsrLeg {
@@ -265,6 +287,8 @@ export interface AccessibleRouteData {
   travelMode?: "transit" | "drive" | "motorcycle" | "walk";
   routes: AccessibleRoute[];
   intent?: RouteIntent;
+  /** System-level operating alerts for the ridden metro systems (optional, absent when all clear). */
+  metroAlerts?: MetroAlertResult[];
 }
 
 // --- Request body ---

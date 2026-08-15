@@ -25,6 +25,7 @@ export default function useComputeRoute() {
 
   const {
     setComputeRoutes,
+    setMetroAlerts,
     map,
     setRouteSelect,
     setRouteInfoShow,
@@ -34,6 +35,7 @@ export default function useComputeRoute() {
   } = useMapStore(
     useShallow((s) => ({
       setComputeRoutes: s.setComputeRoutes,
+      setMetroAlerts: s.setMetroAlerts,
       map: s.map,
       setRouteSelect: s.setRouteSelect,
       setRouteInfoShow: s.setRouteInfoShow,
@@ -117,6 +119,7 @@ export default function useComputeRoute() {
 
         const routes = response.data.routes;
         setComputeRoutes(routes);
+        setMetroAlerts(response.data.metroAlerts ?? null);
         setRouteSelect({ index: 0, route: routes[0] });
 
         const apiWaypoints: LatLng[] = (response.data.waypoints ?? [])
@@ -179,6 +182,7 @@ export default function useComputeRoute() {
     [
       map,
       setComputeRoutes,
+      setMetroAlerts,
       setRouteSelect,
       setRouteInfoShow,
       setRouteWaypoints,

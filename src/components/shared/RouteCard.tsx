@@ -42,6 +42,7 @@ import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import RouteReasonSummary from "./RouteReasonSummary";
+import { LegAlertNotice } from "./TransitAlerts";
 
 type RouteCardProps = {
   route: AccessibleRoute;
@@ -653,6 +654,7 @@ function LegDetail({
             </div>
           </div>
           <FacilityHighlights items={leg.facilityHighlights} />
+          {leg.alerts && <LegAlertNotice alerts={leg.alerts} />}
         </div>
       );
     case "THSR":
@@ -825,7 +827,7 @@ export const RouteCard = memo(function RouteCard({
       ? LABEL_TO_SCORE[route.accessibilityLabel]
       : undefined);
   const stars = effectiveScore != null ? scoreToStars(effectiveScore) : null;
-  const starColor = stars ? STAR_COLOR[stars] ?? STAR_COLOR[1] : null;
+  const starColor = stars ? (STAR_COLOR[stars] ?? STAR_COLOR[1]) : null;
 
   const confidenceLabelKey = getConfidenceLabelKey(route.dataConfidence);
   const confidenceLabelText = confidenceLabelKey
@@ -1057,46 +1059,46 @@ export const RouteCard = memo(function RouteCard({
                   )}
 
                   {route.scoreComponents && (
-                  <div className="grid grid-cols-3 gap-2">
-                  {(
-                    [
-                      "facilityScore",
-                      "timeScore",
-                      "criticalFeatureScore",
-                    ] as const
-                  ).map((key) => {
-                    const val = route.scoreComponents?.[key] ?? 0;
-                    return (
-                      <div
-                        key={key}
-                        className="text-center p-2 rounded-lg bg-muted/40 space-y-1"
-                      >
-                        <p className="text-lg font-bold tabular-nums leading-none pt-1">
-                          {val}
-                        </p>
-                        <div
-                          aria-hidden="true"
-                          className="h-1 rounded-full bg-muted overflow-hidden mx-1"
-                        >
+                    <div className="grid grid-cols-3 gap-2">
+                      {(
+                        [
+                          "facilityScore",
+                          "timeScore",
+                          "criticalFeatureScore",
+                        ] as const
+                      ).map((key) => {
+                        const val = route.scoreComponents?.[key] ?? 0;
+                        return (
                           <div
-                            className="h-full rounded-full transition-[width] duration-500 ease-out"
-                            style={{
-                              width: `${Math.max(0, Math.min(100, val))}%`,
-                              backgroundColor: scoreBarColor(val),
-                            }}
-                          />
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {key === "facilityScore"
-                            ? (t("facilityScore") ?? "設施")
-                            : key === "timeScore"
-                              ? (t("timeScore") ?? "時間")
-                              : (t("criticalScore") ?? "關鍵")}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
+                            key={key}
+                            className="text-center p-2 rounded-lg bg-muted/40 space-y-1"
+                          >
+                            <p className="text-lg font-bold tabular-nums leading-none pt-1">
+                              {val}
+                            </p>
+                            <div
+                              aria-hidden="true"
+                              className="h-1 rounded-full bg-muted overflow-hidden mx-1"
+                            >
+                              <div
+                                className="h-full rounded-full transition-[width] duration-500 ease-out"
+                                style={{
+                                  width: `${Math.max(0, Math.min(100, val))}%`,
+                                  backgroundColor: scoreBarColor(val),
+                                }}
+                              />
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {key === "facilityScore"
+                                ? (t("facilityScore") ?? "設施")
+                                : key === "timeScore"
+                                  ? (t("timeScore") ?? "時間")
+                                  : (t("criticalScore") ?? "關鍵")}
+                            </p>
+                          </div>
+                        );
+                      })}
+                    </div>
                   )}
                 </div>
               )}

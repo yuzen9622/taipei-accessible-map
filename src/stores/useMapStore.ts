@@ -10,7 +10,7 @@ import type {
   PlaceDetail,
 } from "@/types";
 import { A11yEnum } from "@/types/index";
-import type { AccessibleRoute, LiveBus } from "@/types/route";
+import type { AccessibleRoute, LiveBus, MetroAlertResult } from "@/types/route";
 
 // 無障礙設施 used to be a sheetMode of its own; it's a rail panel now
 // (RailPanel below), so nothing sets a "a11y" sheet mode any more.
@@ -49,6 +49,8 @@ interface MapState {
   setSosNavActive: (active: boolean) => void;
   searchPlace: PlaceDetail | null;
   computeRoutes: AccessibleRoute[] | null;
+  /** System-level metro operating alerts that came with the current route response (absent when all clear). */
+  metroAlerts: MetroAlertResult[] | null;
   routeWaypoints: LatLng[];
   selectRoute: {
     index: number;
@@ -102,6 +104,7 @@ interface MapAction {
   setInfoShow: (infoShow: Partial<InfoShow>) => void;
   setSearchPlace: (place: PlaceDetail | null) => void;
   setComputeRoutes: (routes: AccessibleRoute[] | null) => void;
+  setMetroAlerts: (alerts: MetroAlertResult[] | null) => void;
   setRouteWaypoints: (waypoints: LatLng[]) => void;
   setRouteInfoShow: (show: boolean) => void;
   setSelectA11yPlace: (place: Marker | null) => void;
@@ -236,13 +239,15 @@ const useMapStore = create<MapStore>((set, get) => ({
   searchPlace: null,
   setSearchPlace: (place) => set({ searchPlace: place }),
   computeRoutes: null,
+  metroAlerts: null,
   routeWaypoints: [],
   setComputeRoutes: (routes) =>
     set(
       routes
         ? { computeRoutes: routes }
-        : { computeRoutes: null, routeWaypoints: [] },
+        : { computeRoutes: null, metroAlerts: null, routeWaypoints: [] },
     ),
+  setMetroAlerts: (alerts) => set({ metroAlerts: alerts }),
   setRouteWaypoints: (waypoints) => set({ routeWaypoints: waypoints }),
   selectRoute: null,
   setRouteSelect: (route) => {
