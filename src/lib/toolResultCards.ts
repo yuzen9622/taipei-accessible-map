@@ -187,17 +187,19 @@ export function getToolResultGroup(
         : null;
     }
 
-    // DisabledParking[]: { placeName, quantity, latitude, longitude, city, district, spaceLabel, chargeType }
+    // 停車格 / 停車場混合（ParkingSpaceNearby | ParkingLotNearby）：
+    // 格位用 placeName/district/quantity，停車場用 name/address/disabledSpaces。
     case "findNearbyParking": {
       const items = locationItems(asArray(res.parkingSpots), {
         prefix: "parking",
         title: (p) => str(p.placeName) || str(p.name) || "身障停車位",
         subtitle: (p) =>
-          [str(p.district) || str(p.city), str(p.spaceLabel)]
+          [str(p.address) || str(p.district) || str(p.city), str(p.spaceLabel)]
             .filter(Boolean)
             .join(" · ") || str(p.chargeType),
         badge: (p) => {
-          const q = str(p.quantity ?? p.availableSpaces);
+          const n = p.disabledSpaces ?? p.quantity ?? p.availableSpaces;
+          const q = str(n);
           return q != null ? `${q} 位` : undefined;
         },
         requirePosition: true,

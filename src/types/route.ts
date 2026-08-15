@@ -502,6 +502,44 @@ export interface DisabledParking {
   importedAt: string;
 }
 
+// --- Nearby parking union (GET /a11y/parking/nearby) ---
+// The endpoint returns a mix of two shapes, discriminated by `type`:
+//  - "disabled"/"standard": on-street parking spaces (DisabledParking shape)
+//  - "lot": parking lots imported from TDX (name/address/position, …)
+
+/** On-street parking space (身障/一般路邊停車格). */
+export interface ParkingSpaceNearby extends DisabledParking {
+  type: "disabled" | "standard";
+  /** 一般停車格所屬路段代碼（僅 standard）。 */
+  segmentId?: string;
+  /** 一般停車格車格類型代碼（僅 standard）。 */
+  spaceType?: number;
+  /** 一般停車格是否附充電座（僅 standard）。 */
+  hasChargingPoint?: boolean;
+}
+
+/** Parking lot imported from TDX (停車場，如城市車旅/捷運轉乘站). */
+export interface ParkingLotNearby {
+  type: "lot";
+  _id: string;
+  carParkId: string;
+  name: string;
+  address?: string;
+  city: string;
+  district?: string;
+  /** 1 平面 / 2 立體 / 3 地下 / 4 停車塔 / 5 機械式。 */
+  carParkType?: number;
+  /** 收費方式：1 計時 / 2 計次 / 3 月租 / 4 免費（255 未知）。 */
+  chargeTypes?: number[];
+  wheelchairAccessible?: boolean;
+  disabledSpaces?: number;
+  totalCarSpaces?: number;
+  position: GeoPoint;
+  importedAt: string;
+}
+
+export type ParkingNearbyItem = ParkingSpaceNearby | ParkingLotNearby;
+
 // --- OSM Place Detail (from /a11y/place) ---
 export interface OsmPlaceDetail {
   osmId: string;

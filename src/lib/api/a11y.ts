@@ -10,12 +10,12 @@ import type {
   A11yFacility,
   AccessibleRouteData,
   AccessibleRouteRequest,
-  DisabledParking,
   EnvironmentData,
   HazardReport,
   NavInstructionsData,
   NavInstructionsRequest,
   OsmPlaceDetail,
+  ParkingNearbyItem,
   WelfareInstitution,
 } from "@/types/route";
 
@@ -144,5 +144,5 @@ export async function getNearbyParking(lat: number, lng: number) {
   const response = await fetchRequest(
     `${END_POINT}/api/v1/a11y/parking/nearby?lat=${lat}&lng=${lng}`,
   );
-  return response as ApiResponse<DisabledParking[]>;
+  return response as ApiResponse<ParkingNearbyItem[]>;
 }

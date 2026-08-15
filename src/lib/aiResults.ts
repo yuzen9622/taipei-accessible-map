@@ -54,6 +54,7 @@ export function getLatLng(item: AnyRec | null | undefined): LatLng | null {
     pair(item.StopPosition?.PositionLat, item.StopPosition?.PositionLon) ??
     pair(item.BusPosition?.PositionLat, item.BusPosition?.PositionLon) ??
     coords(item.location?.coordinates) ??
+    coords(item.position?.coordinates) ??
     coords(item.reportedLocation?.coordinates) ??
     coords(item.geometry?.coordinates) ??
     coords(item.coordinates) ??

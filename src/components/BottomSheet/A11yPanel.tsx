@@ -15,13 +15,14 @@ import { useShallow } from "zustand/react/shallow";
 import { useAppTranslation } from "@/i18n/client";
 import { getNearbyHazardReports, getNearbyParking } from "@/lib/api/a11y";
 import { haversineMeters } from "@/lib/geo";
+import { useFetchLocation } from "@/hook/useFetchLocation";
 import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import { A11yEnum } from "@/types";
 import {
-  type DisabledParking,
   formatDistance,
   type HazardReport,
+  type ParkingNearbyItem,
 } from "@/types/route";
 import { AccessibilityIcon } from "../ui/accessibility-icon";
 import { Badge } from "../ui/badge";
@@ -45,30 +46,29 @@ export default function A11yPanel({
       })),
     );
   const [nearbyHazards, setNearbyHazards] = useState<HazardReport[]>([]);
-  const [nearbyParking, setNearbyParking] = useState<DisabledParking[]>([]);
+  const [nearbyParking, setNearbyParking] = useState<ParkingNearbyItem[]>([]);
+
+  // 距離門檻 gate：GPS 每 1~3 秒抖動一次，位移 < 100m 不重新 fetch
+  // （見 hook/useFetchLocation.ts）——停車與回報查詢共用同一個基準點。
+  const fetchLoc = useFetchLocation(userLocation);
 
   useEffect(() => {
-    if (!userLocation) return;
+    if (!fetchLoc) return;
     const controller = new AbortController();
-    getNearbyHazardReports(
-      userLocation.lat,
-      userLocation.lng,
-      500,
-      controller.signal,
-    )
+    getNearbyHazardReports(fetchLoc.lat, fetchLoc.lng, 500, controller.signal)
       .then((res) => {
         if (!controller.signal.aborted && res.ok && res.data?.reports)
           setNearbyHazards(res.data.reports);
       })
       .catch(() => {});
-    getNearbyParking(userLocation.lat, userLocation.lng)
+    getNearbyParking(fetchLoc.lat, fetchLoc.lng)
       .then((res) => {
         if (!controller.signal.aborted && res.ok && res.data)
           setNearbyParking(res.data);
       })
       .catch(() => {});
     return () => controller.abort();
-  }, [userLocation]);
+  }, [fetchLoc]);
 
   const a11yChips = [
     { type: A11yEnum.ELEVATOR, Icon: ArrowUpDown, label: t("elevator") },
@@ -87,16 +87,41 @@ export default function A11yPanel({
       position: p.position,
       distance: haversineMeters(userLocation, p.position),
     }));
-    const parking = nearbyParking.map((p) => {
+    const parking = nearbyParking.flatMap((p) => {
+      if (p.type === "lot") {
+        const [lng, lat] = p.position.coordinates;
+        if (!Number.isFinite(lng) || !Number.isFinite(lat)) return [];
+        const position = { lat, lng };
+        return [
+          {
+            key: `p_${p._id}`,
+            kind: "parking" as const,
+            title: p.name,
+            desc:
+              [
+                p.address,
+                p.wheelchairAccessible ? t("wheelchairFriendly") : null,
+              ]
+                .filter(Boolean)
+                .join(" · ") || undefined,
+            position,
+            distance: haversineMeters(userLocation, position),
+          },
+        ];
+      }
       const position = { lat: p.latitude, lng: p.longitude };
-      return {
-        key: `p_${p._id}`,
-        kind: "parking" as const,
-        title: p.placeName,
-        desc: `${p.district ?? ""} · ${t("spots", { count: p.quantity })}`,
-        position,
-        distance: haversineMeters(userLocation, position),
-      };
+      if (!Number.isFinite(position.lat) || !Number.isFinite(position.lng))
+        return [];
+      return [
+        {
+          key: `p_${p._id}`,
+          kind: "parking" as const,
+          title: p.placeName,
+          desc: `${p.district ?? ""} · ${t("spots", { count: p.quantity })}`,
+          position,
+          distance: haversineMeters(userLocation, position),
+        },
+      ];
     });
     return [...facilities, ...parking]
       .filter((e) => e.distance < 2000)

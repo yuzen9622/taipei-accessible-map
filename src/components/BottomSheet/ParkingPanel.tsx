@@ -1,80 +1,221 @@
 "use client";
 
 import {
+  ArrowUpRight,
   Car,
   CircleParking,
-  ExternalLink,
   Loader2,
   MapPin,
+  Users,
   X,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useAppTranslation } from "@/i18n/client";
 import { getNearbyParking } from "@/lib/api/a11y";
+import { haversineMeters } from "@/lib/geo";
+import { useFetchLocation } from "@/hook/useFetchLocation";
 import useMapStore from "@/stores/useMapStore";
-import type { DisabledParking } from "@/types/route";
+import { formatDistance, type ParkingNearbyItem } from "@/types/route";
 import { Badge } from "../ui/badge";
+
+/** TDX CarParkType：1 平面 / 2 立體 / 3 地下 / 4 停車塔 / 5 機械式。 */
+export function carParkTypeLabel(
+  t: (key: string, opts?: Record<string, unknown>) => string,
+  type?: number,
+): string | null {
+  switch (type) {
+    case 1:
+      return t("parkingTypeSurface");
+    case 2:
+      return t("parkingTypeMultiStory");
+    case 3:
+      return t("parkingTypeUnderground");
+    case 4:
+      return t("parkingTypeTower");
+    case 5:
+      return t("parkingTypeMechanical");
+    default:
+      return null;
+  }
+}
+
+/**
+ * TDX ChargeTypes：1 計時 / 2 計次 / 3 月租 / 4 免費。
+ * 其它值（如 TDX 未知 sentinel 255）沒有實際資訊，直接略過不顯示。
+ */
+export function chargeTypesLabels(
+  t: (key: string, opts?: Record<string, unknown>) => string,
+  types?: number[],
+): { code: number; label: string }[] {
+  if (!types?.length) return [];
+  return types.flatMap((code) => {
+    let label: string | null;
+    switch (code) {
+      case 1:
+        label = t("chargeTypeHourly");
+        break;
+      case 2:
+        label = t("chargeTypePerEntry");
+        break;
+      case 3:
+        label = t("chargeTypeMonthly");
+        break;
+      case 4:
+        label = t("chargeTypeFree");
+        break;
+      default:
+        label = null;
+    }
+    return label ? [{ code, label }] : [];
+  });
+}
+
+/** 取出任一種停車項目的 [lng, lat]（lot 用 position、格位用 latitude/longitude）。 */
+export function parkingItemLngLat(item: ParkingNearbyItem): {
+  lng: number;
+  lat: number;
+} | null {
+  if (item.type === "lot") {
+    const [lng, lat] = item.position.coordinates;
+    return Number.isFinite(lng) && Number.isFinite(lat) ? { lng, lat } : null;
+  }
+  return Number.isFinite(item.longitude) && Number.isFinite(item.latitude)
+    ? { lng: item.longitude, lat: item.latitude }
+    : null;
+}
 
 function ParkingCard({
   item,
-  onNavigate,
+  distance,
+  onSelect,
 }: {
-  item: DisabledParking;
-  onNavigate: (item: DisabledParking) => void;
+  item: ParkingNearbyItem;
+  distance: number;
+  onSelect: (item: ParkingNearbyItem) => void;
 }) {
   const { t } = useAppTranslation();
 
-  return (
-    <div className="p-3 rounded-xl bg-muted/40 border border-border/30 space-y-2">
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold truncate">{item.placeName}</p>
-          <p className="text-xs text-muted-foreground truncate">
-            {item.district}
-          </p>
-        </div>
-        {item.isMarked && (
-          <Badge
-            variant="secondary"
-            className="text-xs shrink-0 text-indigo-600 bg-indigo-500/10"
-          >
-            {t("marked")}
-          </Badge>
-        )}
-      </div>
+  const title = item.type === "lot" ? item.name : item.placeName;
+  const subtitle =
+    item.type === "lot"
+      ? (item.address ?? undefined)
+      : item.district || undefined;
 
-      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <Car className="h-3 w-3 shrink-0" />
-        <span>{t("spots", { count: item.quantity })}</span>
-      </div>
-
-      {item.chargeType && (
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <MapPin className="h-3 w-3 shrink-0" />
-          <span>
-            {t("chargeType")}: {item.chargeType}
-          </span>
-        </div>
-      )}
-
-      {item.spaceLabel && (
-        <p className="text-xs text-muted-foreground truncate">
-          {item.spaceLabel}
-        </p>
-      )}
-
-      <div className="flex items-center gap-2 pt-1">
-        <button
-          type="button"
-          onClick={() => onNavigate(item)}
-          className="flex items-center gap-1 text-xs text-primary hover:underline"
+  const badges: React.ReactNode[] = [];
+  if (item.type === "lot") {
+    const typeLabel = carParkTypeLabel(t, item.carParkType);
+    if (typeLabel) {
+      badges.push(
+        <Badge key="type" variant="outline" className="text-xs">
+          {typeLabel}
+        </Badge>,
+      );
+    }
+    chargeTypesLabels(t, item.chargeTypes).forEach(({ code, label }) => {
+      badges.push(
+        <Badge key={`charge_${code}`} variant="outline" className="text-xs">
+          {label}
+        </Badge>,
+      );
+    });
+    if (item.wheelchairAccessible) {
+      badges.push(
+        <Badge
+          key="wheelchair"
+          className="border-transparent bg-emerald-500/10 text-emerald-600"
         >
-          <ExternalLink className="h-3 w-3" />
-          {t("viewOnMap")}
-        </button>
+          {t("wheelchairFriendly")}
+        </Badge>,
+      );
+    }
+  } else if (item.isMarked) {
+    badges.push(
+      <Badge
+        key="marked"
+        variant="secondary"
+        className="text-xs text-indigo-600 bg-indigo-500/10"
+      >
+        {t("marked")}
+      </Badge>,
+    );
+  }
+
+  const infoLines: React.ReactNode[] = [];
+  if (item.type === "lot") {
+    if (item.disabledSpaces != null || item.totalCarSpaces != null) {
+      infoLines.push(
+        <span key="spaces" className="flex items-center gap-1.5">
+          <Users className="h-3 w-3 shrink-0" />
+          <span>
+            {item.disabledSpaces != null
+              ? t("disabledSpaces", { count: item.disabledSpaces })
+              : null}
+            {item.disabledSpaces != null && item.totalCarSpaces != null
+              ? " · "
+              : null}
+            {item.totalCarSpaces != null
+              ? t("totalCarSpaces", { count: item.totalCarSpaces })
+              : null}
+          </span>
+        </span>,
+      );
+    }
+  } else {
+    infoLines.push(
+      <span key="spots" className="flex items-center gap-1.5">
+        <Car className="h-3 w-3 shrink-0" />
+        {t("spots", { count: item.quantity })}
+      </span>,
+    );
+    if (item.chargeType) {
+      infoLines.push(
+        <span key="charge" className="flex items-center gap-1.5">
+          <MapPin className="h-3 w-3 shrink-0" />
+          {t("chargeType")}: {item.chargeType}
+        </span>,
+      );
+    }
+  }
+  if (item.type !== "lot" && item.spaceLabel) {
+    infoLines.push(<span key="spaceLabel">{item.spaceLabel}</span>);
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(item)}
+      aria-label={`${t("viewOnMap")} ${title}`}
+      className="w-full text-left p-3 rounded-xl bg-muted/40 border border-border/30 hover:bg-muted/70 transition-colors space-y-2 cursor-pointer"
+    >
+      <div className="flex items-start gap-3">
+        <div className="h-9 w-9 rounded-full bg-indigo-500/10 flex items-center justify-center shrink-0">
+          <CircleParking className="h-4 w-4 text-indigo-500" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold truncate">{title}</p>
+          {subtitle && (
+            <p className="text-xs text-muted-foreground truncate">{subtitle}</p>
+          )}
+        </div>
+        <div className="flex items-center gap-1 shrink-0">
+          <span className="text-xs text-muted-foreground tabular-nums">
+            {formatDistance(distance)}
+          </span>
+          <ArrowUpRight className="h-4 w-4 text-muted-foreground/50" />
+        </div>
       </div>
-    </div>
+
+      {badges.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 pl-12">{badges}</div>
+      )}
+
+      {infoLines.length > 0 && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground pl-12">
+          {infoLines}
+        </div>
+      )}
+    </button>
   );
 }
 
@@ -89,12 +230,16 @@ export default function ParkingPanel({
   const { userLocation, map } = useMapStore(
     useShallow((s) => ({ userLocation: s.userLocation, map: s.map })),
   );
-  const [data, setData] = useState<DisabledParking[]>([]);
+  const [data, setData] = useState<ParkingNearbyItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // 距離門檻 gate：GPS 每 1~3 秒抖動一次，位移 < 100m 不重新 fetch
+  // （見 hook/useFetchLocation.ts），避免一分鐘打爆 per-IP rate limit。
+  const fetchLoc = useFetchLocation(userLocation);
+
   useEffect(() => {
-    if (!userLocation) {
+    if (!fetchLoc) {
       setLoading(false);
       setError(t("noLocation"));
       return;
@@ -102,7 +247,7 @@ export default function ParkingPanel({
     setLoading(true);
     setError(null);
 
-    getNearbyParking(userLocation.lat, userLocation.lng)
+    getNearbyParking(fetchLoc.lat, fetchLoc.lng)
       .then((res) => {
         if (res.ok && res.data) {
           setData(res.data);
@@ -114,11 +259,13 @@ export default function ParkingPanel({
         setError(t("networkError"));
       })
       .finally(() => setLoading(false));
-  }, [userLocation, t]);
+  }, [fetchLoc, t]);
 
-  const handleNavigate = (item: DisabledParking) => {
+  const handleSelect = (item: ParkingNearbyItem) => {
     if (!map) return;
-    map.flyTo({ center: [item.longitude, item.latitude], zoom: 17 });
+    const pos = parkingItemLngLat(item);
+    if (!pos) return;
+    map.flyTo({ center: [pos.lng, pos.lat], zoom: 17 });
   };
 
   return (
@@ -160,13 +307,24 @@ export default function ParkingPanel({
           <p className="text-xs text-muted-foreground">
             {t("foundNearbyParking", { count: data.length })}
           </p>
-          {data.map((item) => (
-            <ParkingCard
-              key={item._id}
-              item={item}
-              onNavigate={handleNavigate}
-            />
-          ))}
+          {data.map((item) => {
+            const pos = parkingItemLngLat(item);
+            const distance =
+              userLocation && pos
+                ? haversineMeters(userLocation, {
+                    lat: pos.lat,
+                    lng: pos.lng,
+                  })
+                : Number.NaN;
+            return (
+              <ParkingCard
+                key={item._id}
+                item={item}
+                distance={distance}
+                onSelect={handleSelect}
+              />
+            );
+          })}
         </div>
       )}
     </div>
