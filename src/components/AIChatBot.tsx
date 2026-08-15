@@ -328,11 +328,14 @@ export default function AIChatBot({ active = true }: { active?: boolean }) {
           `w-full` child resolve against shrink-to-fit content width instead
           of the viewport — combined with the horizontal padding here, long
           message bubbles overflowed past the panel edge. Forcing that
-          wrapper back to `display: block` fixes the width basis. The
-          `overflow-auto` normally on this element is dropped too — Radix's
-          own viewport already owns scrolling, so this was a second,
-          redundant scroll container stacked on top of it. */}
-      <ScrollArea className="flex-1 pt-1 [&>[data-radix-scroll-area-viewport]>div]:!block">
+          wrapper back to `display: block` fixes the width basis.
+          `overflow-hidden` is required here (not just cosmetic): as a
+          `flex-1` item this element's default flexbox `min-height` is
+          `auto`, which resolves to its content height and defeats `flex-1`
+          entirely unless `overflow` is non-`visible` — Radix's Root sets no
+          `overflow` of its own, so without this the panel grows to fit all
+          messages instead of scrolling internally. */}
+      <ScrollArea className="flex-1 overflow-hidden pt-1 [&>[data-radix-scroll-area-viewport]>div]:!block">
         <CardContent className="min-h-full space-y-3" ref={scrollRef}>
           {messages.map((m, i) => (
             <Fragment key={i}>
