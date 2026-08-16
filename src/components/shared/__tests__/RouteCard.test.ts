@@ -47,6 +47,7 @@ const baseUserConfig = {
   fontSize: FontSizeEnum.Medium,
   notifications: false,
   highContrast: false,
+  memoryEnabled: true,
 };
 
 // --- Pure helper tests -----------------------------------------------------

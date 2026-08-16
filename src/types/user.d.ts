@@ -23,6 +23,7 @@ export interface UserConfig {
   fontSize: FontSizeEnum;
   notifications: boolean;
   highContrast: boolean;
+  memoryEnabled: boolean;
   user_id?: string;
 }
 

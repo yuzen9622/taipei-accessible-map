@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useShallow } from "zustand/react/shallow";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -30,13 +31,8 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useAppTranslation } from "@/i18n/client";
-import {
-  createMemory,
-  getMemorySettings,
-  listMemories,
-  updateMemory,
-  updateMemorySettings,
-} from "@/lib/api/memory";
+import { createMemory, listMemories, updateMemory } from "@/lib/api/memory";
+import useAuthStore from "@/stores/useAuthStore";
 import type {
   MemoryCategory,
   MemorySensitivity,
@@ -83,8 +79,13 @@ export default function AIMemoryPanel({
   loggedIn: boolean;
 }) {
   const { t, i18n } = useAppTranslation();
+  const { memoryEnabled, updateUserConfig } = useAuthStore(
+    useShallow((s) => ({
+      memoryEnabled: s.userConfig.memoryEnabled ?? true,
+      updateUserConfig: s.updateUserConfig,
+    })),
+  );
   const [memories, setMemories] = useState<UserMemory[]>([]);
-  const [memoryEnabled, setMemoryEnabled] = useState(false);
   const [loading, setLoading] = useState(false);
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [formSaving, setFormSaving] = useState(false);
@@ -106,11 +107,7 @@ export default function AIMemoryPanel({
     if (!loggedIn) return;
     setLoading(true);
     try {
-      const [settingsRes, memoriesRes] = await Promise.all([
-        getMemorySettings(),
-        listMemories(),
-      ]);
-      setMemoryEnabled(settingsRes.data?.memoryEnabled ?? true);
+      const memoriesRes = await listMemories();
       setMemories(memoriesRes.data?.memories ?? []);
       setLoaded(true);
     } catch (err) {
@@ -128,8 +125,7 @@ export default function AIMemoryPanel({
   const handleToggleMemory = async (checked: boolean) => {
     setSettingsSaving(true);
     try {
-      const res = await updateMemorySettings(checked);
-      setMemoryEnabled(res.data?.memoryEnabled ?? checked);
+      updateUserConfig({ memoryEnabled: checked });
       toast.success(t("aiMemorySettingSaved"));
     } catch (err) {
       toast.error((err as Error).message);

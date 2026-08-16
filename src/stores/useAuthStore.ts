@@ -13,6 +13,7 @@ const REMOTE_CONFIG_KEYS = [
   "themeColor",
   "fontSize",
   "notifications",
+  "memoryEnabled",
 ] as const;
 
 function readStoredHighContrast() {
@@ -89,6 +90,7 @@ const useAuthStore = create<AuthStore>((set, get) => ({
     notifications: false,
     highContrast: readStoredHighContrast(),
     language: LanguageEnum.Chinese,
+    memoryEnabled: true,
   },
   session: null,
   authDialogRequested: false,

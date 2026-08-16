@@ -4,25 +4,11 @@ import type {
   CreateMemoryBody,
   MemoryListResult,
   MemoryResult,
-  MemorySettingsResult,
   UpdateMemoryBody,
 } from "@/types/memory";
 import type { ApiResponse } from "@/types/response";
 
 const MEMORY_BASE = `${END_POINT}/api/v1/ai/memories`;
-
-export async function getMemorySettings() {
-  return authenticatedRequest(`${MEMORY_BASE}/settings`, {
-    method: "GET",
-  }) as Promise<ApiResponse<MemorySettingsResult>>;
-}
-
-export async function updateMemorySettings(memoryEnabled: boolean) {
-  return authenticatedRequest(`${MEMORY_BASE}/settings`, {
-    method: "PATCH",
-    body: { memoryEnabled },
-  }) as Promise<ApiResponse<MemorySettingsResult>>;
-}
 
 export async function listMemories(limit = 100) {
   return authenticatedRequest(`${MEMORY_BASE}?limit=${limit}`, {

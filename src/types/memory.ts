@@ -20,10 +20,6 @@ export interface MemoryResult {
   memory: UserMemory;
 }
 
-export interface MemorySettingsResult {
-  memoryEnabled: boolean;
-}
-
 export interface CreateMemoryBody {
   content: string;
   category: MemoryCategory;

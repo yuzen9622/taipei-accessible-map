@@ -36,6 +36,7 @@ describe("useAuthStore.updateUserConfig", () => {
         fontSize: FontSizeEnum.Medium,
         notifications: false,
         highContrast: false,
+        memoryEnabled: true,
       },
     });
   });
@@ -69,5 +70,14 @@ describe("useAuthStore.updateUserConfig", () => {
     useAuthStore.getState().setUser(USER);
     useAuthStore.getState().updateUserConfig({ highContrast: true });
     expect(mockUpdateConfig).not.toHaveBeenCalled();
+  });
+
+  it("sends memoryEnabled when updated while logged in", () => {
+    useAuthStore.getState().setUser(USER);
+    useAuthStore.getState().updateUserConfig({ memoryEnabled: false });
+
+    expect(mockUpdateConfig).toHaveBeenCalledTimes(1);
+    expect(mockUpdateConfig.mock.calls[0][0]).toEqual({ memoryEnabled: false });
+    expect(useAuthStore.getState().userConfig.memoryEnabled).toBe(false);
   });
 });
