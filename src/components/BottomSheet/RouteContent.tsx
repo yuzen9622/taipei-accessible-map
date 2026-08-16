@@ -13,7 +13,7 @@ import useMapStore from "@/stores/useMapStore";
 import useNavStore from "@/stores/useNavStore";
 import LoadingDrawer from "../shared/LoadingDrawer";
 import { RouteCard } from "../shared/RouteCard";
-import { MetroAlertsBanner } from "../shared/TransitAlerts";
+import { TransitAlertsBanner } from "../shared/TransitAlerts";
 import { Button } from "../ui/button";
 import EnvironmentPanel from "./EnvironmentPanel";
 import HazardReportPanel from "./HazardReportPanel";
@@ -32,6 +32,7 @@ export default function RouteContent() {
     activeRailPanel,
     setActiveRailPanel,
     metroAlerts,
+    transitAlerts,
   } = useMapStore(
     useShallow((s) => ({
       computeRoutes: s.computeRoutes,
@@ -44,6 +45,7 @@ export default function RouteContent() {
       activeRailPanel: s.activeRailPanel,
       setActiveRailPanel: s.setActiveRailPanel,
       metroAlerts: s.metroAlerts,
+      transitAlerts: s.transitAlerts,
     })),
   );
 
@@ -158,8 +160,13 @@ export default function RouteContent() {
         </div>
       )}
 
-      {/* System-level metro operating alerts (present only when a ridden system has announcements) */}
-      {metroAlerts && <MetroAlertsBanner alerts={metroAlerts} />}
+      {/* System-level & transit operating alerts (present only when announcements exist) */}
+      {(metroAlerts || transitAlerts) && (
+        <TransitAlertsBanner
+          metroAlerts={metroAlerts}
+          transitAlerts={transitAlerts}
+        />
+      )}
 
       {/* Route Cards */}
       <div className="space-y-3">

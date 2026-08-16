@@ -1,22 +1,45 @@
 "use client";
 
-import { AlertTriangle, ChevronDown, Clock, Info } from "lucide-react";
+import {
+  AlertTriangle,
+  ChevronDown,
+  Clock,
+  ExternalLink,
+  Info,
+} from "lucide-react";
 import { useId, useState } from "react";
 import { useAppTranslation } from "@/i18n/client";
 import { cn } from "@/lib/utils";
-import type { MetroAlert, MetroAlertResult } from "@/types/route";
+import type { MetroAlertResult } from "@/types/route";
+import type {
+  MatchKind,
+  MatchedAlert,
+  MetroAlert,
+  TransitAlert,
+} from "@/types/transit-alert";
 
 // ── Pure helpers (exported for unit tests) ───────────────────────────────────
 
 /**
- * TDX metro alert status → presentation tier.
- * 2 = 實施中 (active), 1 = 尚未實施 (upcoming), anything else is unknown.
+ * Transit alert status → presentation tier.
+ * 2 / "2" / "active" / "in_effect" = 實施中 (active)
+ * 1 / "1" / "upcoming" = 尚未實施 (upcoming)
+ * anything else is unknown.
  */
 export type AlertTier = "active" | "upcoming" | "unknown";
 
-export function getAlertTier(status: number): AlertTier {
-  if (status === 2) return "active";
-  if (status === 1) return "upcoming";
+export function getAlertTier(status?: number | string | null): AlertTier {
+  if (
+    status === 2 ||
+    status === "2" ||
+    status === "active" ||
+    status === "in_effect"
+  ) {
+    return "active";
+  }
+  if (status === 1 || status === "1" || status === "upcoming") {
+    return "upcoming";
+  }
   return "unknown";
 }
 
@@ -32,6 +55,26 @@ export function getAlertStatusLabelKey(tier: AlertTier): string | null {
   }
 }
 
+/** i18n key for the matchKind chip; null when absent or unknown. */
+export function getMatchKindLabelKey(matchKind?: MatchKind): string | null {
+  switch (matchKind) {
+    case "route":
+      return "alertMatchRoute";
+    case "stop":
+      return "alertMatchStop";
+    case "station":
+      return "alertMatchStation";
+    case "line":
+      return "alertMatchLine";
+    case "train":
+      return "alertMatchTrain";
+    case "section":
+      return "alertMatchSection";
+    default:
+      return null;
+  }
+}
+
 /** Compact update-time: "10:45" when today, "8/15 10:45" otherwise. */
 export function formatAlertTime(iso: string): string {
   const d = new Date(iso);
@@ -42,6 +85,36 @@ export function formatAlertTime(iso: string): string {
   return sameDay
     ? `${hh}:${mm}`
     : `${d.getMonth() + 1}/${d.getDate()} ${hh}:${mm}`;
+}
+
+export function formatAlertDate(iso?: string | null): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  const mm = d.getMonth() + 1;
+  const dd = d.getDate();
+  const hh = String(d.getHours()).padStart(2, "0");
+  const min = String(d.getMinutes()).padStart(2, "0");
+  if (d.getHours() === 0 && d.getMinutes() === 0 && d.getSeconds() === 0) {
+    return `${mm}/${dd}`;
+  }
+  return `${mm}/${dd} ${hh}:${min}`;
+}
+
+export function formatAlertDateRange(
+  startTime?: string | null,
+  endTime?: string | null,
+): string | null {
+  const startStr = formatAlertDate(startTime);
+  const endStr = formatAlertDate(endTime);
+  if (startStr && endStr) return `${startStr} ~ ${endStr}`;
+  if (startStr) return `${startStr} 起`;
+  if (endStr) return `至 ${endStr}`;
+  return null;
+}
+
+export function isMetroAlert(alert: TransitAlert): alert is MetroAlert {
+  return "stations" in alert || "lines" in alert;
 }
 
 // ── Shared pieces ────────────────────────────────────────────────────────────
@@ -70,7 +143,7 @@ const TIER_STYLE: Record<
 const DISCLOSURE_CLS =
   "grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none";
 
-function AlertStatusChip({ alert }: { alert: MetroAlert }) {
+export function AlertStatusChip({ alert }: { alert: TransitAlert }) {
   const { t } = useAppTranslation();
   const tier = getAlertTier(alert.status);
   const labelKey = getAlertStatusLabelKey(tier);
@@ -88,37 +161,93 @@ function AlertStatusChip({ alert }: { alert: MetroAlert }) {
 }
 
 /** Full detail row for a single alert (used by both the banner and the leg notice). */
-function AlertDetailRow({ alert }: { alert: MetroAlert }) {
+export function AlertDetailRow({ alert }: { alert: TransitAlert }) {
   const { t } = useAppTranslation();
   const tier = getAlertTier(alert.status);
   const { icon: Icon, iconColor } = TIER_STYLE[tier];
-  const stationNames = alert.stations
-    .map((s) => s.name ?? s.id)
-    .filter(Boolean)
-    .join("、");
+
+  const metro = isMetroAlert(alert) ? alert : null;
+  const matched = !isMetroAlert(alert) ? (alert as MatchedAlert) : null;
+
+  const stationNames = metro?.stations
+    ?.map((s) => s.name ?? s.id)
+    ?.filter(Boolean)
+    ?.join("、");
+  const lineNames = metro?.lines?.filter(Boolean)?.join("、");
+
+  const matchKindKey = matched?.matchKind
+    ? getMatchKindLabelKey(matched.matchKind)
+    : null;
+  const matchKindText = matchKindKey ? t(matchKindKey) : matched?.matchKind;
+
+  const timeRangeText = formatAlertDateRange(
+    matched?.startTime,
+    matched?.endTime,
+  );
+  const updateTimeText = metro?.updateTime && formatAlertTime(metro.updateTime);
 
   return (
     <div className="space-y-1">
-      <div className="flex items-center gap-1.5 min-w-0">
+      <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
         <Icon className={cn("h-3.5 w-3.5 shrink-0", iconColor)} aria-hidden />
         <p className="text-xs font-semibold text-foreground truncate min-w-0">
           {alert.title}
         </p>
         <AlertStatusChip alert={alert} />
+        {matchKindText && (
+          <span className="inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium bg-foreground/10 text-muted-foreground shrink-0">
+            {matchKindText}
+          </span>
+        )}
       </div>
+
       {alert.description && (
         <p className="text-xs text-muted-foreground leading-relaxed pl-5">
           {alert.description}
         </p>
       )}
-      {(stationNames || alert.updateTime) && (
-        <p className="text-[11px] text-muted-foreground/80 pl-5">
-          {stationNames &&
-            `${t("affectedStations") ?? "影響站點"}: ${stationNames}`}
-          {stationNames && alert.updateTime && " · "}
-          {alert.updateTime &&
-            `${t("alertUpdatedTime") ?? "更新"}: ${formatAlertTime(alert.updateTime)}`}
+
+      {matched?.reason && (
+        <p className="text-[11px] text-muted-foreground/90 pl-5">
+          {t("alertReason") ? `${t("alertReason")}: ` : "原因: "}
+          {matched.reason}
         </p>
+      )}
+
+      {(stationNames ||
+        lineNames ||
+        updateTimeText ||
+        timeRangeText ||
+        matched?.alertUrl) && (
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground/80 pl-5">
+          {stationNames && (
+            <span>
+              {`${t("affectedStations") ?? "影響站點"}: ${stationNames}`}
+            </span>
+          )}
+          {lineNames && !stationNames && (
+            <span>{`${t("affectedLines") ?? "影響路線"}: ${lineNames}`}</span>
+          )}
+          {timeRangeText && (
+            <span>{`${t("alertTimeRange") ?? "期間"}: ${timeRangeText}`}</span>
+          )}
+          {updateTimeText && (
+            <span>
+              {`${t("alertUpdatedTime") ?? "更新"}: ${updateTimeText}`}
+            </span>
+          )}
+          {matched?.alertUrl && (
+            <a
+              href={matched.alertUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary hover:underline inline-flex items-center gap-0.5"
+            >
+              <span>{t("alertDetailLink") ?? "詳細公告"}</span>
+              <ExternalLink className="h-2.5 w-2.5" />
+            </a>
+          )}
+        </div>
       )}
     </div>
   );
@@ -126,15 +255,31 @@ function AlertDetailRow({ alert }: { alert: MetroAlert }) {
 
 // ── Top-level system banner (route results header) ───────────────────────────
 
-export function MetroAlertsBanner({ alerts }: { alerts: MetroAlertResult[] }) {
+export function TransitAlertsBanner({
+  metroAlerts,
+  transitAlerts,
+}: {
+  metroAlerts?: MetroAlertResult[] | null;
+  transitAlerts?: MatchedAlert[] | null;
+}) {
   const { t } = useAppTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const listId = useId();
 
-  if (!alerts?.length) return null;
+  const metroCount =
+    metroAlerts?.reduce((n, r) => n + (r.alerts?.length ?? 0), 0) ?? 0;
+  const transitCount = transitAlerts?.length ?? 0;
+  const totalCount = metroCount + transitCount;
 
-  const count = alerts.reduce((n, r) => n + r.alerts.length, 0);
-  const systems = alerts.map((r) => r.railSystem).join("、");
+  if (totalCount === 0) return null;
+
+  const metroSystems = metroAlerts?.map((r) => r.railSystem) ?? [];
+  const systemLabels = [
+    ...metroSystems,
+    ...(transitCount > 0 && metroSystems.length === 0
+      ? [t("generalTransitAlerts") ?? "營運通阻"]
+      : []),
+  ].join("、");
 
   return (
     <div className="rounded-xl border border-amber-500/30 bg-amber-500/10">
@@ -143,7 +288,7 @@ export function MetroAlertsBanner({ alerts }: { alerts: MetroAlertResult[] }) {
         onClick={() => setIsOpen(!isOpen)}
         aria-expanded={isOpen}
         aria-controls={listId}
-        aria-label={`${t("transitAlerts")} ${count}`}
+        aria-label={`${t("transitAlerts")} ${totalCount}`}
         className="flex w-full items-center gap-2 px-3 py-2.5 lg:py-2 rounded-xl text-left transition-colors hover:bg-amber-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
       >
         <AlertTriangle
@@ -154,9 +299,8 @@ export function MetroAlertsBanner({ alerts }: { alerts: MetroAlertResult[] }) {
           {t("transitAlerts")}
           <span className="text-amber-700/80 dark:text-amber-400/80">
             {" · "}
-            {t("alertCount", { count })}
-            {" · "}
-            {systems}
+            {t("alertCount", { count: totalCount })}
+            {systemLabels && ` · ${systemLabels}`}
           </span>
         </span>
         <ChevronDown
@@ -178,7 +322,7 @@ export function MetroAlertsBanner({ alerts }: { alerts: MetroAlertResult[] }) {
       >
         <div className="overflow-hidden">
           <div className="px-3 pb-3 space-y-3">
-            {alerts.map((group) => (
+            {metroAlerts?.map((group) => (
               <div key={group.railSystem} className="space-y-1.5">
                 <p className="text-[11px] font-bold text-amber-700/90 dark:text-amber-400/90">
                   {group.railSystem}
@@ -188,6 +332,19 @@ export function MetroAlertsBanner({ alerts }: { alerts: MetroAlertResult[] }) {
                 ))}
               </div>
             ))}
+
+            {transitAlerts && transitAlerts.length > 0 && (
+              <div className="space-y-1.5">
+                {metroAlerts && metroAlerts.length > 0 && (
+                  <p className="text-[11px] font-bold text-amber-700/90 dark:text-amber-400/90">
+                    {t("generalTransitAlerts") ?? "各運具通阻"}
+                  </p>
+                )}
+                {transitAlerts.map((alert) => (
+                  <AlertDetailRow key={alert.alertId} alert={alert} />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -195,9 +352,22 @@ export function MetroAlertsBanner({ alerts }: { alerts: MetroAlertResult[] }) {
   );
 }
 
-// ── Per-leg notice (inside a METRO leg detail) ───────────────────────────────
+/** Legacy alias for backward compatibility. */
+export function MetroAlertsBanner({
+  alerts,
+  transitAlerts,
+}: {
+  alerts?: MetroAlertResult[] | null;
+  transitAlerts?: MatchedAlert[] | null;
+}) {
+  return (
+    <TransitAlertsBanner metroAlerts={alerts} transitAlerts={transitAlerts} />
+  );
+}
 
-export function LegAlertNotice({ alerts }: { alerts?: MetroAlert[] }) {
+// ── Per-leg notice (inside a transit leg detail) ─────────────────────────────
+
+export function LegAlertNotice({ alerts }: { alerts?: TransitAlert[] }) {
   const [isOpen, setIsOpen] = useState(false);
   const listId = useId();
 
@@ -216,7 +386,7 @@ export function LegAlertNotice({ alerts }: { alerts?: MetroAlert[] }) {
           ? "border-amber-500/30 bg-amber-500/10"
           : tier === "upcoming"
             ? "border-sky-500/30 bg-sky-500/10"
-            : "border-border bg-muted/40",
+            : "border-amber-500/30 bg-amber-500/10",
       )}
     >
       <button

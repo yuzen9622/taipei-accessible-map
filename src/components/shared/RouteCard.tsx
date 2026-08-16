@@ -81,6 +81,48 @@ export function getConfidenceLabelKey(
   return confidence ? (CONFIDENCE_LABEL_KEY[confidence] ?? null) : null;
 }
 
+export function getRouteAlertsCount(route: AccessibleRoute): number {
+  if (!route?.legs) return 0;
+  const seenAlertIds = new Set<string>();
+  let count = 0;
+
+  for (const leg of route.legs) {
+    if ("alerts" in leg && Array.isArray(leg.alerts)) {
+      for (const alert of leg.alerts) {
+        if (alert && typeof alert === "object") {
+          const id = (alert as { alertId?: string }).alertId;
+          if (id) {
+            if (!seenAlertIds.has(id)) {
+              seenAlertIds.add(id);
+              count++;
+            }
+          } else {
+            count++;
+          }
+        }
+      }
+    }
+  }
+
+  if (route.transitAlerts && Array.isArray(route.transitAlerts)) {
+    for (const alert of route.transitAlerts) {
+      if (alert && typeof alert === "object") {
+        const id = alert.alertId;
+        if (id) {
+          if (!seenAlertIds.has(id)) {
+            seenAlertIds.add(id);
+            count++;
+          }
+        } else {
+          count++;
+        }
+      }
+    }
+  }
+
+  return count;
+}
+
 // Order-preserving, first-seen-wins de-duplication of a11y facility
 // categories, used to render one icon per distinct category instead of one
 // per facility.
@@ -624,6 +666,7 @@ function LegDetail({
                 : t("nearestBusApproaching")}
             </p>
           )}
+          {leg.alerts && <LegAlertNotice alerts={leg.alerts} />}
         </div>
       );
     case "METRO":
@@ -691,6 +734,7 @@ function LegDetail({
             </div>
           </div>
           <FacilityHighlights items={leg.facilityHighlights} />
+          {leg.alerts && <LegAlertNotice alerts={leg.alerts} />}
         </div>
       );
     }
@@ -834,6 +878,8 @@ export const RouteCard = memo(function RouteCard({
     ? (t(confidenceLabelKey) ?? route.dataConfidence)
     : route.dataConfidence;
 
+  const alertsCount = useMemo(() => getRouteAlertsCount(route), [route]);
+
   const routeSummary = useMemo(() => {
     const types = route.legs
       .filter((l) => l.type !== "WALK")
@@ -887,12 +933,27 @@ export const RouteCard = memo(function RouteCard({
       {/* ── Level 1: Scan layer (always visible) ── */}
       <CardHeader className="grid-cols-1">
         <CardTitle className="flex justify-between items-center gap-2">
-          <h2
-            className="text-lg font-bold truncate min-w-0"
-            title={route.routeName}
-          >
-            {route.routeName}
-          </h2>
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <h2
+              className="text-lg font-bold truncate min-w-0"
+              title={route.routeName}
+            >
+              {route.routeName}
+            </h2>
+            {alertsCount > 0 && (
+              <span
+                className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30 px-2 py-0.5 text-xs font-semibold shrink-0"
+                title={
+                  t("routeTransitAlertsBadge", { count: alertsCount }) ??
+                  `包含營運通阻 (${alertsCount})`
+                }
+              >
+                <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden />
+                {t("routeTransitAlertsBadge", { count: alertsCount }) ??
+                  `包含營運通阻 (${alertsCount})`}
+              </span>
+            )}
+          </div>
           <div className="flex items-center gap-1.5 text-muted-foreground shrink-0">
             <Clock className="h-4 w-4" />
             <span className="font-bold text-sm tabular-nums">
@@ -928,6 +989,16 @@ export const RouteCard = memo(function RouteCard({
       {isSelected && (
         <CardContent className="space-y-3 pt-0">
           <div className="flex items-center gap-2 flex-wrap">
+            {alertsCount > 0 && (
+              <Badge
+                variant="destructive"
+                className="bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/30 gap-1 text-xs font-semibold hover:bg-amber-500/20"
+              >
+                <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden />
+                {t("routeTransitAlertsBadge", { count: alertsCount }) ??
+                  `包含營運通阻 (${alertsCount})`}
+              </Badge>
+            )}
             {route.transferCount > 0 && (
               <Badge variant="outline" className="text-xs">
                 {t("transferCount", { count: route.transferCount })}

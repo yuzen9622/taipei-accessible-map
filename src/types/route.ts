@@ -1,3 +1,12 @@
+import type {
+  MatchKind,
+  MatchedAlert,
+  MetroAlert,
+  TransitAlert,
+} from "./transit-alert";
+
+export type { MatchKind, MatchedAlert, MetroAlert, TransitAlert };
+
 // Types aligned with backend OpenAPI spec (POST /a11y/accessible-route)
 
 // --- GeoJSON ---
@@ -58,18 +67,6 @@ export interface SlimOsmA11y {
 }
 
 // --- Transit operating alerts (from /transit/alerts; optional on route responses) ---
-export interface MetroAlert {
-  alertId: string;
-  title: string;
-  description: string;
-  /** TDX alert status: 1 = 尚未實施 (upcoming), 2 = 實施中 (active). */
-  status: number;
-  stations: Array<{ id: string; name: string | null }>;
-  lines: string[];
-  publishTime: string;
-  updateTime: string;
-}
-
 /** Top-level `metroAlerts` on the route response, grouped by ridden rail system. */
 export interface MetroAlertResult {
   railSystem: string;
@@ -140,6 +137,8 @@ export interface BusLeg {
   nearestBus?: NearestBus;
   a11yRefs?: string[];
   intermediateStops?: IntermediateStop[];
+  /** Present only when this bus route/stop has active operating alerts. */
+  alerts?: MatchedAlert[];
 }
 
 export interface MetroLeg {
@@ -187,6 +186,8 @@ export interface ThsrLeg {
   facilityHighlights: string[];
   a11yRefs?: string[];
   intermediateStops?: IntermediateStop[];
+  /** Present only when this THSR train/station has active operating alerts. */
+  alerts?: MatchedAlert[];
 }
 
 export interface TraLeg {
@@ -208,6 +209,8 @@ export interface TraLeg {
   facilityHighlights: string[];
   a11yRefs?: string[];
   intermediateStops?: IntermediateStop[];
+  /** Present only when this TRA train/station has active operating alerts. */
+  alerts?: MatchedAlert[];
 }
 
 export interface DriveLeg {
@@ -264,6 +267,8 @@ export interface AccessibleRoute {
   totalWalkDistanceM?: number;
   facilities?: Record<string, SlimOsmA11y>;
   attribution?: string;
+  /** Top-level summary of transit alerts affecting this route. */
+  transitAlerts?: MatchedAlert[];
 }
 
 // --- Route intent (from /ai/intent) ---
@@ -289,6 +294,8 @@ export interface AccessibleRouteData {
   intent?: RouteIntent;
   /** System-level operating alerts for the ridden metro systems (optional, absent when all clear). */
   metroAlerts?: MetroAlertResult[];
+  /** Top-level summary of transit operating alerts across all legs/routes (optional). */
+  transitAlerts?: MatchedAlert[];
 }
 
 // --- Request body ---

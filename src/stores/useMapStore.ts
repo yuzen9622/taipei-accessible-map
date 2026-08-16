@@ -10,7 +10,12 @@ import type {
   PlaceDetail,
 } from "@/types";
 import { A11yEnum } from "@/types/index";
-import type { AccessibleRoute, LiveBus, MetroAlertResult } from "@/types/route";
+import type {
+  AccessibleRoute,
+  LiveBus,
+  MatchedAlert,
+  MetroAlertResult,
+} from "@/types/route";
 
 // 無障礙設施 used to be a sheetMode of its own; it's a rail panel now
 // (RailPanel below), so nothing sets a "a11y" sheet mode any more.
@@ -51,6 +56,8 @@ interface MapState {
   computeRoutes: AccessibleRoute[] | null;
   /** System-level metro operating alerts that came with the current route response (absent when all clear). */
   metroAlerts: MetroAlertResult[] | null;
+  /** Transit operating alerts across routes/legs from the current route response. */
+  transitAlerts: MatchedAlert[] | null;
   routeWaypoints: LatLng[];
   selectRoute: {
     index: number;
@@ -105,6 +112,7 @@ interface MapAction {
   setSearchPlace: (place: PlaceDetail | null) => void;
   setComputeRoutes: (routes: AccessibleRoute[] | null) => void;
   setMetroAlerts: (alerts: MetroAlertResult[] | null) => void;
+  setTransitAlerts: (alerts: MatchedAlert[] | null) => void;
   setRouteWaypoints: (waypoints: LatLng[]) => void;
   setRouteInfoShow: (show: boolean) => void;
   setSelectA11yPlace: (place: Marker | null) => void;
@@ -240,14 +248,21 @@ const useMapStore = create<MapStore>((set, get) => ({
   setSearchPlace: (place) => set({ searchPlace: place }),
   computeRoutes: null,
   metroAlerts: null,
+  transitAlerts: null,
   routeWaypoints: [],
   setComputeRoutes: (routes) =>
     set(
       routes
         ? { computeRoutes: routes }
-        : { computeRoutes: null, metroAlerts: null, routeWaypoints: [] },
+        : {
+            computeRoutes: null,
+            metroAlerts: null,
+            transitAlerts: null,
+            routeWaypoints: [],
+          },
     ),
   setMetroAlerts: (alerts) => set({ metroAlerts: alerts }),
+  setTransitAlerts: (alerts) => set({ transitAlerts: alerts }),
   setRouteWaypoints: (waypoints) => set({ routeWaypoints: waypoints }),
   selectRoute: null,
   setRouteSelect: (route) => {

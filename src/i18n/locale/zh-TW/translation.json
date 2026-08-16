@@ -796,5 +796,18 @@
   "alertStatusActive": "實施中",
   "alertStatusUpcoming": "尚未實施",
   "affectedStations": "影響站點",
-  "alertUpdatedTime": "更新 {{time}}"
+  "affectedLines": "影響路線",
+  "alertUpdatedTime": "更新 {{time}}",
+  "routeTransitAlertsBadge": "包含營運通阻 ({{count}})",
+  "alertReason": "原因",
+  "alertDescription": "說明",
+  "alertTimeRange": "期間",
+  "alertDetailLink": "詳細公告",
+  "generalTransitAlerts": "各運具通阻",
+  "alertMatchRoute": "路線",
+  "alertMatchStop": "站牌",
+  "alertMatchStation": "車站",
+  "alertMatchLine": "路線",
+  "alertMatchTrain": "車次",
+  "alertMatchSection": "區間"
 }

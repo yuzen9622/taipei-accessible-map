@@ -29,6 +29,7 @@ vi.mock("@/stores/useAuthStore", () => ({
 import {
   dedupeA11yCategories,
   getConfidenceLabelKey,
+  getRouteAlertsCount,
   RouteCard,
   shouldAppendExitNumber,
 } from "@/components/shared/RouteCard";
@@ -115,6 +116,79 @@ describe("dedupeA11yCategories", () => {
       },
     ];
     expect(dedupeA11yCategories(items)).toEqual(["elevator", "toilet"]);
+  });
+});
+
+describe("getRouteAlertsCount", () => {
+  it("returns 0 for routes with no alerts", () => {
+    const route = buildRoute();
+    expect(getRouteAlertsCount(route)).toBe(0);
+  });
+
+  it("counts distinct alerts across legs and top-level transitAlerts", () => {
+    const route = buildRoute();
+    route.legs[1] = {
+      ...route.legs[1],
+      alerts: [
+        {
+          alertId: "BUS-1",
+          title: "公車改道",
+          description: "施工不停靠",
+          status: "active",
+          matchKind: "route",
+        },
+      ],
+    } as any;
+    route.legs[2] = {
+      ...route.legs[2],
+      alerts: [
+        {
+          alertId: "METRO-1",
+          title: "電梯維修",
+          description: "板橋站電梯維修",
+          status: 2,
+          stations: [{ id: "BL07", name: "板橋站" }],
+          lines: ["BL"],
+          publishTime: "",
+          updateTime: "",
+        },
+      ],
+    } as any;
+
+    expect(getRouteAlertsCount(route)).toBe(2);
+  });
+
+  it("deduplicates alerts with the same alertId", () => {
+    const route = buildRoute();
+    route.legs[1] = {
+      ...route.legs[1],
+      alerts: [
+        {
+          alertId: "ALERT-SHARED",
+          title: "豪雨特報",
+          description: "減速行駛",
+          status: 2,
+          matchKind: "route",
+        },
+      ],
+    } as any;
+    route.legs[2] = {
+      ...route.legs[2],
+      alerts: [
+        {
+          alertId: "ALERT-SHARED",
+          title: "豪雨特報",
+          description: "減速行駛",
+          status: 2,
+          stations: [],
+          lines: [],
+          publishTime: "",
+          updateTime: "",
+        },
+      ],
+    } as any;
+
+    expect(getRouteAlertsCount(route)).toBe(1);
   });
 });
 
@@ -391,5 +465,48 @@ describe("RouteCard", () => {
 
     // Attribution footer.
     expect(html).toContain("資料來源：台北市政府開放資料");
+  });
+
+  it("renders route-level warning badge and leg alert notices when alerts exist", () => {
+    const routeWithAlerts = buildRoute();
+    routeWithAlerts.legs[1] = {
+      ...routeWithAlerts.legs[1],
+      alerts: [
+        {
+          alertId: "BUS-101",
+          title: "配合施工改道",
+          description: "8/27~8/30 施工改道，不停靠中正路站。",
+          status: "active",
+          matchKind: "route",
+          reason: "道路施工",
+        },
+      ],
+    } as any;
+    routeWithAlerts.legs[2] = {
+      ...routeWithAlerts.legs[2],
+      alerts: [
+        {
+          alertId: "METRO-202",
+          title: "板橋站 3 號出口電梯維修中",
+          description: "設施維護作業",
+          status: 2,
+          stations: [{ id: "BL07", name: "板橋站" }],
+          lines: ["BL"],
+          publishTime: "",
+          updateTime: "",
+        },
+      ],
+    } as any;
+
+    // Scan layer (unselected): route-level warning badge is visible
+    const unselectedHtml = renderRoute(routeWithAlerts, 0, false);
+    expect(unselectedHtml).toContain("包含營運通阻 (2)");
+
+    // Selected layer: route-level warning badge and leg notices are visible
+    const selectedHtml = renderRoute(routeWithAlerts, 0, true);
+    expect(selectedHtml).toContain("包含營運通阻 (2)");
+    expect(selectedHtml).toContain("配合施工改道");
+    expect(selectedHtml).toContain("8/27~8/30 施工改道，不停靠中正路站。");
+    expect(selectedHtml).toContain("板橋站 3 號出口電梯維修中");
   });
 });

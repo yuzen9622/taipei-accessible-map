@@ -11,6 +11,13 @@ export type {
   PlaceSource,
 } from "./place";
 
+export type {
+  MatchKind,
+  MatchedAlert,
+  MetroAlert,
+  TransitAlert,
+} from "./transit-alert";
+
 export type LatLng = { lat: number; lng: number };
 
 export type NominatimPlace = {

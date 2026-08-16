@@ -804,5 +804,20 @@
   "alertStatusActive": "In effect",
   "alertStatusUpcoming": "Upcoming",
   "affectedStations": "Affected stations",
-  "alertUpdatedTime": "Updated {{time}}"
+  "affectedLines": "Affected lines",
+  "alertUpdatedTime": "Updated {{time}}",
+  "routeTransitAlertsBadge": "Transit alerts ({{count}})",
+  "routeTransitAlertsBadge_one": "{{count}} transit alert",
+  "routeTransitAlertsBadge_other": "{{count}} transit alerts",
+  "alertReason": "Reason",
+  "alertDescription": "Description",
+  "alertTimeRange": "Period",
+  "alertDetailLink": "Official announcement",
+  "generalTransitAlerts": "Transit alerts",
+  "alertMatchRoute": "Route",
+  "alertMatchStop": "Stop",
+  "alertMatchStation": "Station",
+  "alertMatchLine": "Line",
+  "alertMatchTrain": "Train",
+  "alertMatchSection": "Section"
 }
