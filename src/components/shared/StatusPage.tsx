@@ -145,7 +145,12 @@ export default function StatusPage({
   const Icon = icon ?? config.Icon;
 
   return (
-    <div className="flex min-h-dvh w-full items-center justify-center p-6">
+    <div
+      role={status === "error" ? "alert" : undefined}
+      aria-live={status === "error" ? "assertive" : undefined}
+      aria-atomic={status === "error" ? "true" : undefined}
+      className="flex min-h-dvh w-full items-center justify-center p-6"
+    >
       <Card className={cn("w-full max-w-md text-center", className)}>
         <CardHeader>
           {!hideIcon && (
