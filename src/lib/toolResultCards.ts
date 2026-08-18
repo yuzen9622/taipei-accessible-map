@@ -118,6 +118,7 @@ function locationItems(
   items: AnyRec[],
   opts: {
     prefix: string;
+    id?: (it: AnyRec, index: number) => string | undefined;
     title: (it: AnyRec) => string | undefined;
     subtitle?: (it: AnyRec) => string | undefined;
     badge?: (it: AnyRec) => string | undefined;
@@ -128,8 +129,19 @@ function locationItems(
   items.slice(0, MAX_ITEMS).forEach((it, i) => {
     const position = getLatLng(it);
     if (opts.requirePosition && !position) return;
+    const rawId =
+      opts.id?.(it, i) ??
+      it.id ??
+      it._id ??
+      it.osmId ??
+      it.plateNumb ??
+      it.PlateNumb ??
+      it.stopUid ??
+      it.StopUID ??
+      it.name ??
+      i;
     out.push({
-      id: `${opts.prefix}_${it.id ?? it._id ?? it.osmId ?? i}`,
+      id: `${opts.prefix}_${rawId}`,
       title: opts.title(it) || "項目",
       subtitle: opts.subtitle?.(it),
       badge: opts.badge?.(it),
@@ -241,10 +253,17 @@ export function getToolResultGroup(
     case "trackBuses": {
       const items = locationItems(asArray(res.buses), {
         prefix: "bus",
-        title: (b) => str(b.plateNumb) || str(b.routeName) || "公車",
+        id: (b, i) => str(b.plateNumb) || str(b.PlateNumb) || String(i),
+        title: (b) => {
+          const route = str(b.routeName);
+          const plate = str(b.plateNumb);
+          if (route && plate && route !== plate) {
+            return `${route} · ${plate}`;
+          }
+          return route || plate || "公車";
+        },
         subtitle: (b) =>
           [
-            str(b.routeName),
             str(b.directionLabel),
             b.stopsAway != null ? `還有 ${b.stopsAway} 站` : str(b.statusLabel),
           ]
@@ -286,6 +305,13 @@ export function getToolResultGroup(
       }
       const items = locationItems(stops, {
         prefix: "stop",
+        id: (s, i) =>
+          str(s.StopUID) ||
+          str(s.stopUid) ||
+          str(s.StopID) ||
+          str(s.stopId) ||
+          localName(s.StopName) ||
+          String(i),
         title: (s) =>
           localName(s.StopName) || str(s.stopName) || str(s.name) || "站牌",
         subtitle: (s) => {
@@ -309,19 +335,21 @@ export function getToolResultGroup(
       const schedules = asArray(res.schedules);
       const items: ToolResultItem[] = schedules
         .slice(0, MAX_ITEMS)
-        .map((s, i) => ({
-          id: `sched_${i}`,
-          title:
+        .map((s, i) => {
+          const rawTime =
             str(s.time) ||
             str(s.DepartureTime) ||
             str(s.departureTime) ||
-            str(s.ArrivalTime) ||
-            "班次",
-          subtitle:
-            [localName(s.destination ?? s.DestinationStop), str(s.note)]
-              .filter(Boolean)
-              .join(" · ") || undefined,
-        }))
+            str(s.ArrivalTime);
+          return {
+            id: `sched_${i}`,
+            title: rawTime || "班次",
+            subtitle:
+              [localName(s.destination ?? s.DestinationStop), str(s.note)]
+                .filter(Boolean)
+                .join(" · ") || undefined,
+          };
+        })
         .filter((it) => it.title !== "班次" || it.subtitle);
       const routeName = localName(res.routeName);
       return items.length
@@ -440,4 +468,78 @@ export function getToolResultGroup(
     default:
       return null;
   }
+}
+
+const MAX_DISPLAY_ITEMS_PER_GROUP = 12;
+
+function mergeIntoExistingGroup(
+  existing: ToolResultGroup,
+  incoming: ToolResultGroup,
+): ToolResultGroup {
+  const seenIds = new Set(existing.items.map((it) => it.id));
+  const seenKeys = new Set(
+    existing.items.map((it) => `${it.title}_${it.subtitle ?? ""}`),
+  );
+
+  const mergedItems = [...existing.items];
+  for (const it of incoming.items) {
+    const key = `${it.title}_${it.subtitle ?? ""}`;
+    if (!seenIds.has(it.id) && !seenKeys.has(key)) {
+      seenIds.add(it.id);
+      seenKeys.add(key);
+      mergedItems.push(it);
+    }
+  }
+
+  let mergedNote = existing.note;
+  if (incoming.note && incoming.note !== existing.note) {
+    mergedNote = existing.note
+      ? `${existing.note} · ${incoming.note}`
+      : incoming.note;
+  }
+
+  return {
+    ...existing,
+    items: mergedItems.slice(0, MAX_DISPLAY_ITEMS_PER_GROUP),
+    note: mergedNote,
+  };
+}
+
+/**
+ * 將一則訊息內的多個 ToolActivity 聚合為去重且整理過的 ToolResultGroup 列表。
+ * - 相同 heading/icon 的群組自動合併並依據 id 去重
+ * - 單一群組限制最多顯示項目數，避免畫面過度膨脹
+ */
+export function getAggregatedToolResults(
+  activities:
+    | Array<{ name: string; result?: unknown; status?: string }>
+    | undefined,
+): ToolResultGroup[] {
+  if (!activities || !activities.length) return [];
+
+  const groups: ToolResultGroup[] = [];
+
+  for (const act of activities) {
+    if (act.status === "running") continue;
+    const group = getToolResultGroup(act.name, act.result);
+    if (!group || !group.items.length) continue;
+
+    const existingIndex = groups.findIndex(
+      (g) => g.icon === group.icon && g.heading === group.heading,
+    );
+
+    if (existingIndex !== -1) {
+      groups[existingIndex] = mergeIntoExistingGroup(
+        groups[existingIndex],
+        group,
+      );
+    } else {
+      groups.push({
+        ...group,
+        items: group.items.slice(0, MAX_DISPLAY_ITEMS_PER_GROUP),
+      });
+    }
+  }
+
+  return groups;
 }
