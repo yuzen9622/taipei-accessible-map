@@ -11,6 +11,22 @@ import {
 } from "@/lib/mapCamera";
 import useMapStore from "@/stores/useMapStore";
 import type { LatLng } from "@/types";
+import type { AccessibleRoute } from "@/types/route";
+
+type CoordLike = {
+  lat?: number;
+  latitude?: number;
+  lng?: number;
+  longitude?: number;
+};
+
+function getCoordLat(c: CoordLike | undefined): number | undefined {
+  return c?.lat ?? c?.latitude;
+}
+
+function getCoordLng(c: CoordLike | undefined): number | undefined {
+  return c?.lng ?? c?.longitude;
+}
 
 // Past this, a straight-line distance is well beyond any plausible
 // domestic trip (Taipei–Kaohsiung is ~300km) and almost certainly means
@@ -126,9 +142,9 @@ export default function useComputeRoute() {
         setRouteSelect({ index: 0, route: routes[0] });
 
         const apiWaypoints: LatLng[] = (response.data.waypoints ?? [])
-          .map((w) => ({
-            lat: w.lat ?? (w as any).latitude,
-            lng: w.lng ?? (w as any).longitude,
+          .map((w: CoordLike) => ({
+            lat: getCoordLat(w) ?? 0,
+            lng: getCoordLng(w) ?? 0,
           }))
           .filter((w) => Number.isFinite(w.lat) && Number.isFinite(w.lng));
         setRouteWaypoints(apiWaypoints);
@@ -141,26 +157,24 @@ export default function useComputeRoute() {
             response.data.origin &&
             response.data.destination
           ) {
-            const oLat =
-              response.data.origin.lat ??
-              (response.data.origin as any).latitude;
-            const oLng =
-              response.data.origin.lng ??
-              (response.data.origin as any).longitude;
-            const dLat =
-              response.data.destination.lat ??
-              (response.data.destination as any).latitude;
-            const dLng =
-              response.data.destination.lng ??
-              (response.data.destination as any).longitude;
-            extendBounds(bounds, oLng, oLat);
-            extendBounds(bounds, dLng, dLat);
+            const oLat = getCoordLat(response.data.origin as CoordLike);
+            const oLng = getCoordLng(response.data.origin as CoordLike);
+            const dLat = getCoordLat(response.data.destination as CoordLike);
+            const dLng = getCoordLng(response.data.destination as CoordLike);
+            if (oLat !== undefined && oLng !== undefined) {
+              extendBounds(bounds, oLng, oLat);
+            }
+            if (dLat !== undefined && dLng !== undefined) {
+              extendBounds(bounds, dLng, dLat);
+            }
           }
 
           for (const w of response.data.waypoints ?? []) {
-            const wLat = w.lat ?? (w as any).latitude;
-            const wLng = w.lng ?? (w as any).longitude;
-            extendBounds(bounds, wLng, wLat);
+            const wLat = getCoordLat(w as CoordLike);
+            const wLng = getCoordLng(w as CoordLike);
+            if (wLat !== undefined && wLng !== undefined) {
+              extendBounds(bounds, wLng, wLat);
+            }
           }
 
           fitRouteBounds(map, bounds);
@@ -211,7 +225,11 @@ export default function useComputeRoute() {
   );
 
   const setComputedRouteData = useCallback(
-    (origin: any, destination: any, routes: any[]) => {
+    (
+      origin: CoordLike | null | undefined,
+      destination: CoordLike | null | undefined,
+      routes: AccessibleRoute[],
+    ) => {
       if (!routes?.length) return;
       setComputeRoutes(routes);
       setRouteSelect({ index: 0, route: routes[0] });
@@ -222,16 +240,16 @@ export default function useComputeRoute() {
           const bounds = routeBoundsFromLegs(routes[0].legs);
 
           if (bounds.isEmpty() && origin && destination) {
-            extendBounds(
-              bounds,
-              origin.lng ?? origin.longitude,
-              origin.lat ?? origin.latitude,
-            );
-            extendBounds(
-              bounds,
-              destination.lng ?? destination.longitude,
-              destination.lat ?? destination.latitude,
-            );
+            const oLng = getCoordLng(origin);
+            const oLat = getCoordLat(origin);
+            const dLng = getCoordLng(destination);
+            const dLat = getCoordLat(destination);
+            if (oLng !== undefined && oLat !== undefined) {
+              extendBounds(bounds, oLng, oLat);
+            }
+            if (dLng !== undefined && dLat !== undefined) {
+              extendBounds(bounds, dLng, dLat);
+            }
           }
 
           fitRouteBounds(map, bounds);

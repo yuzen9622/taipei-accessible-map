@@ -32,7 +32,7 @@ import { useAppTranslation } from "@/i18n/client";
 import { getPlaceAutocomplete, getPlaceDetails } from "@/lib/api/placeSearch";
 import { toApiLang } from "@/lib/place/lang";
 import { cn } from "@/lib/utils";
-import useMapStore from "@/stores/useMapStore";
+import useMapStore, { placeKey } from "@/stores/useMapStore";
 import type { PlaceDetail } from "@/types";
 import type { AutocompleteItem, PlaceResult } from "@/types/place";
 import { formatDistance } from "@/types/route";
@@ -414,7 +414,7 @@ function PlaceInput({
                       <span className="text-base font-medium">你的位置</span>
                     </span>
                   </CommandItem>
-                  {searchHistory.map((history, idx) => {
+                  {searchHistory.map((history) => {
                     if (history.kind === "place") {
                       const { place } = history;
                       return (
@@ -423,7 +423,7 @@ function PlaceInput({
                           onSelect={() => {
                             handleHistoryClick(history);
                           }}
-                          key={`${place.id}-${idx}`}
+                          key={placeKey(history)}
                           className="flex items-start gap-3 rounded-3xl p-2 cursor-pointer transition-colors"
                         >
                           <div className="mt-1 h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">

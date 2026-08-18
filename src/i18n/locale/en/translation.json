@@ -819,5 +819,14 @@
   "alertMatchStation": "Station",
   "alertMatchLine": "Line",
   "alertMatchTrain": "Train",
-  "alertMatchSection": "Section"
+  "alertMatchSection": "Section",
+  "errorTitle": "Something went wrong",
+  "errorDescription": "The application encountered an unexpected issue. Please try reloading or return to the home page.",
+  "errorRetry": "Try again",
+  "errorGoHome": "Back to Home",
+  "errorDetails": "Error details",
+  "errorBoundaryFallbackTitle": "Failed to load section",
+  "errorBoundaryFallbackDesc": "This component encountered an error and cannot be displayed. Please try reloading.",
+  "errorGlobalTitle": "System Error",
+  "errorGlobalDescription": "A critical error occurred in the application. Please try reloading the page."
 }

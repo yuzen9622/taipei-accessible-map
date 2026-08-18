@@ -324,7 +324,7 @@ const useMapStore = create<MapStore>((set, get) => ({
       searchTerm.kind === "place"
         ? searchTerm.place.name || searchTerm.place.fullAddress || ""
         : searchTerm.address;
-    if (!name || !name.trim()) return;
+    if (!name?.trim()) return;
     const { searchHistory } = get();
     const deduped = searchHistory.filter((item) => {
       const itemName =
@@ -376,7 +376,7 @@ const useMapStore = create<MapStore>((set, get) => ({
       place.kind === "place"
         ? place.place.name || place.place.fullAddress || ""
         : place.address;
-    if (!name || !name.trim()) return;
+    if (!name?.trim()) return;
     const { savedPlaces, savedPlaceKeys } = get();
     const key = placeKey(place);
     if (savedPlaceKeys.has(key)) return;
@@ -531,7 +531,7 @@ const useMapStore = create<MapStore>((set, get) => ({
     set({ pendingNavExit: null });
   },
   setIsNavigating: (v) => {
-    const { map, userLocation: loc } = get();
+    const { map } = get();
     if (v) {
       set({ isNavigating: true, sheetMode: "navigation", is3D: true });
     } else {

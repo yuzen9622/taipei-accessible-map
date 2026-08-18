@@ -223,9 +223,9 @@ function IntermediateStops({
       >
         <div className="overflow-hidden">
           <div className="pl-3.5 my-2 space-y-2 border-l border-muted-foreground/30 ml-3.5">
-            {stops.map((stop, idx) => (
+            {stops.map((stop) => (
               <div
-                key={`${stop.stationUid || stop.name}-${idx}`}
+                key={stop.stationUid || stop.name}
                 className="flex items-center gap-2.5 text-xs text-muted-foreground relative"
               >
                 <div
@@ -514,9 +514,9 @@ function WalkStepsList({ steps }: { steps?: WalkStep[] }) {
       >
         <div className="overflow-hidden">
           <ul className="pl-3.5 my-2 space-y-1.5 border-l border-muted-foreground/30 ml-3.5">
-            {steps.map((step, idx) => (
+            {steps.map((step) => (
               <li
-                key={`${step.streetName || step.instruction || "step"}-${idx}`}
+                key={`${step.instruction || step.streetName || "step"}-${step.distanceM ?? 0}`}
                 className="text-xs text-muted-foreground"
               >
                 <span className="text-foreground">
@@ -570,9 +570,9 @@ function DriveStepsList({ steps }: { steps?: DriveStep[] }) {
       >
         <div className="overflow-hidden">
           <ul className="pl-3.5 my-2 space-y-1.5 border-l border-muted-foreground/30 ml-3.5">
-            {steps.map((step, idx) => (
+            {steps.map((step) => (
               <li
-                key={`${step.instruction || "step"}-${idx}`}
+                key={`${step.instruction || "step"}-${step.distanceM ?? 0}-${step.durationMin ?? 0}`}
                 className="text-xs text-muted-foreground"
               >
                 <span className="text-foreground">{step.instruction}</span>
@@ -804,13 +804,13 @@ function StarRating({
 }) {
   return (
     <span className="inline-flex gap-0.5" role="img" aria-label={ariaLabel}>
-      {Array.from({ length: 5 }, (_, i) => (
+      {[1, 2, 3, 4, 5].map((star) => (
         <svg
-          key={i}
+          key={star}
           viewBox="0 0 20 20"
           className={cn(
             "h-4 w-4",
-            i < filled ? colorClass : "text-muted-foreground/25",
+            star <= filled ? colorClass : "text-muted-foreground/25",
           )}
           aria-hidden
         >
@@ -822,6 +822,26 @@ function StarRating({
       ))}
     </span>
   );
+}
+
+function getLegKey(leg: RouteLeg): string {
+  switch (leg.type) {
+    case "WALK":
+      return `walk-${leg.from}-${leg.to}-${leg.distanceM}`;
+    case "BUS":
+      return `bus-${leg.routeName}-${leg.departureStop}-${leg.arrivalStop}`;
+    case "METRO":
+      return `metro-${leg.lineName}-${leg.departureStation}-${leg.arrivalStation}`;
+    case "THSR":
+      return `thsr-${leg.trainNo}-${leg.departureStation}-${leg.arrivalStation}`;
+    case "TRA":
+      return `tra-${leg.trainNo}-${leg.departureStation}-${leg.arrivalStation}`;
+    case "DRIVE":
+    case "MOTORCYCLE":
+      return `drive-${leg.from}-${leg.to}-${leg.distanceM}`;
+    default:
+      return `leg-${(leg as { type: string }).type}`;
+  }
 }
 
 export const RouteCard = memo(function RouteCard({
@@ -898,8 +918,9 @@ export const RouteCard = memo(function RouteCard({
             return (
               l.label ?? (l.type === "DRIVE" ? t("drive") : t("motorcycle"))
             );
+          default:
+            return "";
         }
-        return "";
       });
     return types.join(" → ");
   }, [route.legs, t]);
@@ -1034,7 +1055,7 @@ export const RouteCard = memo(function RouteCard({
             {route.legs.map((leg, index) => {
               const color = getLegColor(leg);
               return (
-                <div key={`${leg.type}-${index}`} className="relative pl-8">
+                <div key={getLegKey(leg)} className="relative pl-8">
                   {index !== route.legs.length - 1 && (
                     <div
                       className="absolute left-3.5 top-11 bottom-0 w-0.5 rounded-full"

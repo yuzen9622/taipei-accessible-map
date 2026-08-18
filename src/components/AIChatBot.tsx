@@ -138,8 +138,10 @@ function ToolResultsBox({ activities }: { activities: ToolActivity[] }) {
       className="flex flex-col gap-1.5 mt-2 w-full max-w-[88vw] sm:max-w-[440px] rounded-2xl border border-border/50 bg-card/70 dark:bg-card/50 backdrop-blur-md p-2.5 shadow-2xs transition-all"
     >
       {/* 頂部 Header：摘要與折疊按鈕 */}
-      <div
-        className="flex items-center justify-between gap-2 px-1 cursor-pointer select-none"
+      <button
+        type="button"
+        aria-expanded={!isCollapsed}
+        className="flex w-full items-center justify-between gap-2 px-1 cursor-pointer select-none text-left rounded-md hover:bg-muted/40 transition-colors"
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
         <div className="flex items-center gap-1.5 min-w-0">
@@ -157,15 +159,9 @@ function ToolResultsBox({ activities }: { activities: ToolActivity[] }) {
           </Badge>
         </div>
 
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setIsCollapsed(!isCollapsed);
-          }}
-          className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors px-1.5 py-0.5 rounded-md hover:bg-muted/60"
-          aria-expanded={!isCollapsed}
-          aria-label={isCollapsed ? "展開卡片" : "收起卡片"}
+        <span
+          className="flex items-center gap-1 text-[11px] text-muted-foreground transition-colors px-1.5 py-0.5 rounded-md"
+          aria-hidden="true"
         >
           <span>{isCollapsed ? "展開" : "收起"}</span>
           {isCollapsed ? (
@@ -173,8 +169,8 @@ function ToolResultsBox({ activities }: { activities: ToolActivity[] }) {
           ) : (
             <ChevronUp className="h-3.5 w-3.5" />
           )}
-        </button>
-      </div>
+        </span>
+      </button>
 
       {/* 展開後的內容 */}
       <AnimatePresence initial={false}>
@@ -191,7 +187,7 @@ function ToolResultsBox({ activities }: { activities: ToolActivity[] }) {
               <div className="flex gap-1.5 overflow-x-auto pb-1 px-0.5 scrollbar-none snap-x">
                 {groups.map((g, idx) => (
                   <button
-                    key={`${g.heading}-${idx}`}
+                    key={`${g.heading}-${g.icon}`}
                     type="button"
                     onClick={() => setActiveTab(idx)}
                     className={cn(
@@ -339,8 +335,10 @@ export default function AIChatBot({ active = true }: { active?: boolean }) {
   ];
 
   useEffect(() => {
-    scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages]);
+    if (messages.length > 0) {
+      scrollRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+  }, [messages.length]);
 
   // The unified home-screen input hands off a question-shaped query via the
   // store instead of calling `handleSend` directly: this component owns its
@@ -420,6 +418,7 @@ export default function AIChatBot({ active = true }: { active?: boolean }) {
       <ScrollArea className="flex-1 overflow-hidden pt-1 [&>[data-radix-scroll-area-viewport]>div]:!block">
         <CardContent className="min-h-full space-y-3" ref={scrollRef}>
           {messages.map((m, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: chat messages are an append-only stream without persistent IDs
             <Fragment key={i}>
               <MessageBubble message={m} />
             </Fragment>

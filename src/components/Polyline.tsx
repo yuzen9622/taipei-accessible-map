@@ -1,6 +1,6 @@
 "use client";
-import { Layer, Source } from "react-map-gl/maplibre";
 import type { LineLayerSpecification } from "maplibre-gl";
+import { Layer, Source } from "react-map-gl/maplibre";
 
 type PolylineProps = {
   id: string;

@@ -23,30 +23,36 @@ export function mapToolToActions(
   }
 }
 
-function extractLatLng(
-  primary: unknown,
-  fallback: unknown,
-): LatLng | null {
+function extractLatLng(primary: unknown, fallback: unknown): LatLng | null {
   for (const src of [primary, fallback]) {
     if (!src || typeof src !== "object") continue;
     const o = src as Record<string, unknown>;
-    const lat = (o.lat ?? o.latitude) as number | undefined;
-    const lng = (o.lng ?? o.longitude) as number | undefined;
-    if (Number.isFinite(lat) && Number.isFinite(lng)) {
-      return { lat: lat!, lng: lng! };
+    const lat = o.lat ?? o.latitude;
+    const lng = o.lng ?? o.longitude;
+    if (
+      typeof lat === "number" &&
+      typeof lng === "number" &&
+      Number.isFinite(lat) &&
+      Number.isFinite(lng)
+    ) {
+      return { lat, lng };
     }
   }
   return null;
 }
 
 function mapRouteResult(result: unknown, args: unknown): UIAction[] {
-  const res = (result ?? {}) as Record<string, any>;
+  const res = (result ?? {}) as Record<string, unknown>;
   const parsed = (() => {
     if (typeof args === "string") {
-      try { return JSON.parse(args || "{}"); } catch { return {}; }
+      try {
+        return JSON.parse(args || "{}");
+      } catch {
+        return {};
+      }
     }
-    return args ?? {};
-  })() as Record<string, any>;
+    return (args ?? {}) as Record<string, unknown>;
+  })() as Record<string, unknown>;
 
   const origin = extractLatLng(res.origin, parsed.origin);
   const destination = extractLatLng(res.destination, parsed.destination);
@@ -55,8 +61,18 @@ function mapRouteResult(result: unknown, args: unknown): UIAction[] {
   const drawable =
     Array.isArray(aiRoutes) &&
     aiRoutes.length > 0 &&
-    aiRoutes.some((r: any) =>
-      r?.legs?.some((l: any) => l?.polyline?.length),
+    aiRoutes.some(
+      (r: unknown) =>
+        r &&
+        typeof r === "object" &&
+        Array.isArray((r as { legs?: unknown[] }).legs) &&
+        (r as { legs: unknown[] }).legs.some(
+          (l: unknown) =>
+            l &&
+            typeof l === "object" &&
+            Array.isArray((l as { polyline?: unknown[] }).polyline) &&
+            (l as { polyline: unknown[] }).polyline.length > 0,
+        ),
     );
 
   const actions: UIAction[] = [];

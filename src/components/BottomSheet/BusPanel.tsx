@@ -44,12 +44,15 @@ const CityNameMap: Record<string, string> = {
 function RouteStopCard({ stop }: { stop: RouteDetailStop }) {
   const hasEstimate =
     stop.estimateMinutes !== null && stop.estimateMinutes >= 0;
-  const isArrivingSoon = hasEstimate && stop.estimateMinutes! < 3;
+  const isArrivingSoon =
+    hasEstimate &&
+    typeof stop.estimateMinutes === "number" &&
+    stop.estimateMinutes < 3;
 
   let badgeText = stop.statusLabel || "尚未發車";
   let badgeColor = "text-muted-foreground bg-muted/60";
 
-  if (hasEstimate) {
+  if (hasEstimate && typeof stop.estimateMinutes === "number") {
     if (isArrivingSoon) {
       badgeText = stop.estimateMinutes === 0 ? "進站中" : "即將到站";
       badgeColor =
@@ -61,14 +64,14 @@ function RouteStopCard({ stop }: { stop: RouteDetailStop }) {
   }
 
   return (
-    <div className="p-3 rounded-xl bg-muted/40 border border-border/30">
+    <li className="p-3 rounded-xl bg-muted/40 border border-border/30 list-none">
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-semibold truncate flex-1">{stop.name}</p>
         <Badge variant="secondary" className={`text-xs shrink-0 ${badgeColor}`}>
           {badgeText}
         </Badge>
       </div>
-    </div>
+    </li>
   );
 }
 
@@ -341,14 +344,10 @@ export default function BusPanel({
 
           {direction !== null && routeDetails.length > 0 && (
             <div className="space-y-3">
-              <div
-                className="flex rounded-lg bg-muted/60 border border-border/30 p-0.5 text-sm"
-                role="radiogroup"
-              >
+              <div className="flex rounded-lg bg-muted/60 border border-border/30 p-0.5 text-sm">
                 <button
                   type="button"
-                  role="radio"
-                  aria-checked={direction === 0}
+                  aria-pressed={direction === 0}
                   onClick={() => setDirection(0)}
                   className={`flex-1 px-3 py-1.5 rounded-md transition-all duration-200 truncate ${
                     direction === 0
@@ -360,8 +359,7 @@ export default function BusPanel({
                 </button>
                 <button
                   type="button"
-                  role="radio"
-                  aria-checked={direction === 1}
+                  aria-pressed={direction === 1}
                   onClick={() => setDirection(1)}
                   className={`flex-1 px-3 py-1.5 rounded-md transition-all duration-200 truncate ${
                     direction === 1
@@ -402,14 +400,11 @@ export default function BusPanel({
               <p className="text-sm text-muted-foreground">{error}</p>
             </div>
           ) : currentDirectionDetails?.stops ? (
-            <div
-              className="space-y-2 flex-1 overflow-y-auto pr-2 pb-4"
-              role="list"
-            >
-              {currentDirectionDetails.stops.map((stop, idx) => (
-                <RouteStopCard key={`${stop.seq}-${idx}`} stop={stop} />
+            <ul className="space-y-2 flex-1 overflow-y-auto pr-2 pb-4">
+              {currentDirectionDetails.stops.map((stop) => (
+                <RouteStopCard key={`${stop.seq}-${stop.name}`} stop={stop} />
               ))}
-            </div>
+            </ul>
           ) : null}
         </div>
       ) : selectedStop ? (
@@ -526,9 +521,9 @@ export default function BusPanel({
                             heading={city}
                             className="px-1"
                           >
-                            {routes.map((r, i) => (
+                            {routes.map((r) => (
                               <CommandItem
-                                key={`${r.city}-${r.routeName}-${i}`}
+                                key={`${r.city}-${r.routeName}-${r.departure}-${r.destination}`}
                                 onSelect={() => handleRouteSelect(r)}
                                 className="flex flex-col items-start px-3 py-2 cursor-pointer"
                               >

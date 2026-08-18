@@ -53,7 +53,9 @@ export default function A11yFacilityPin({ place }: { place: MarkerType }) {
               setOpen(true);
             }}
           >
-            <div
+            <button
+              type="button"
+              aria-label={place.content?.title || "設施"}
               onMouseEnter={() => setOpen(true)}
               onMouseLeave={() => setOpen(false)}
               className={cn(
@@ -63,7 +65,7 @@ export default function A11yFacilityPin({ place }: { place: MarkerType }) {
               )}
             >
               {A11yIcon()}
-            </div>
+            </button>
           </Marker>
         </div>
       </HoverCardTrigger>

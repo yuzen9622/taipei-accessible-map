@@ -12,10 +12,10 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
+import { useFetchLocation } from "@/hook/useFetchLocation";
 import { useAppTranslation } from "@/i18n/client";
 import { getNearbyHazardReports, getNearbyParking } from "@/lib/api/a11y";
 import { haversineMeters } from "@/lib/geo";
-import { useFetchLocation } from "@/hook/useFetchLocation";
 import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import { A11yEnum } from "@/types";

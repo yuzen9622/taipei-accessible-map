@@ -232,17 +232,12 @@ export default function HazardReportPanel({
         >
           {t("hazardType")}
         </span>
-        <div
-          role="radiogroup"
-          aria-labelledby={hazardTypeLabelId}
-          className="flex gap-2"
-        >
+        <div className="flex gap-2">
           {HAZARD_TYPES.map((ht) => (
             <button
               key={ht.value}
               type="button"
-              role="radio"
-              aria-checked={hazardType === ht.value}
+              aria-pressed={hazardType === ht.value}
               onClick={() => setHazardType(ht.value)}
               className={`flex-1 flex flex-col items-center gap-1.5 p-3 rounded-xl text-xs font-medium transition-all border ${
                 hazardType === ht.value
@@ -287,6 +282,7 @@ export default function HazardReportPanel({
         />
         {photoPreview ? (
           <div className="relative">
+            {/* biome-ignore lint/performance/noImgElement: local data URL preview from file picker */}
             <img
               src={photoPreview}
               alt="preview"

@@ -12,8 +12,8 @@ export type {
 } from "./place";
 
 export type {
-  MatchKind,
   MatchedAlert,
+  MatchKind,
   MetroAlert,
   TransitAlert,
 } from "./transit-alert";

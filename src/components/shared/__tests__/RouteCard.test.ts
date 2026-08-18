@@ -36,7 +36,12 @@ import {
 import { ColorEnum, FontSizeEnum, LanguageEnum } from "@/lib/config";
 import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
-import type { AccessibleRoute, SlimOsmA11y } from "@/types/route";
+import type {
+  AccessibleRoute,
+  BusLeg,
+  MetroLeg,
+  SlimOsmA11y,
+} from "@/types/route";
 
 const mockUseMapStore = vi.mocked(useMapStore);
 const mockUseAuthStore = vi.mocked(useAuthStore);
@@ -138,7 +143,7 @@ describe("getRouteAlertsCount", () => {
           matchKind: "route",
         },
       ],
-    } as any;
+    } as BusLeg;
     route.legs[2] = {
       ...route.legs[2],
       alerts: [
@@ -153,7 +158,7 @@ describe("getRouteAlertsCount", () => {
           updateTime: "",
         },
       ],
-    } as any;
+    } as MetroLeg;
 
     expect(getRouteAlertsCount(route)).toBe(2);
   });
@@ -171,7 +176,7 @@ describe("getRouteAlertsCount", () => {
           matchKind: "route",
         },
       ],
-    } as any;
+    } as BusLeg;
     route.legs[2] = {
       ...route.legs[2],
       alerts: [
@@ -186,7 +191,7 @@ describe("getRouteAlertsCount", () => {
           updateTime: "",
         },
       ],
-    } as any;
+    } as MetroLeg;
 
     expect(getRouteAlertsCount(route)).toBe(1);
   });
@@ -481,7 +486,7 @@ describe("RouteCard", () => {
           reason: "道路施工",
         },
       ],
-    } as any;
+    } as BusLeg;
     routeWithAlerts.legs[2] = {
       ...routeWithAlerts.legs[2],
       alerts: [
@@ -496,7 +501,7 @@ describe("RouteCard", () => {
           updateTime: "",
         },
       ],
-    } as any;
+    } as MetroLeg;
 
     // Scan layer (unselected): route-level warning badge is visible
     const unselectedHtml = renderRoute(routeWithAlerts, 0, false);

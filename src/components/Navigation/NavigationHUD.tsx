@@ -38,12 +38,12 @@ import {
   type NavInstruction,
   type SlimOsmA11y,
 } from "@/types/route";
-import RecalculateOverlay from "./RecalculateOverlay";
-import type { RecalculateContext } from "./RecalculateOverlay";
 import {
   TriangleAlertIcon,
   type TriangleAlertIconHandle,
 } from "../ui/triangle-alert-icon";
+import type { RecalculateContext } from "./RecalculateOverlay";
+import RecalculateOverlay from "./RecalculateOverlay";
 
 const FACILITY_ALERT_M = 250;
 const HAZARD_ALERT_M = 200;
@@ -59,7 +59,12 @@ function AlertPulseIcon() {
     ref.current?.startAnimation();
   }, []);
   return (
-    <TriangleAlertIcon ref={ref} size={20} className="shrink-0" isAnimated={false} />
+    <TriangleAlertIcon
+      ref={ref}
+      size={20}
+      className="shrink-0"
+      isAnimated={false}
+    />
   );
 }
 
@@ -302,7 +307,7 @@ export default function NavigationHUD() {
     void Promise.all([minTimer, routePromise]).then(() =>
       setRecalcOverlay(false),
     );
-  }, [destination, handleComputeRoute, t]);
+  }, [destination, handleComputeRoute, t, recalcOverlay]);
 
   useEffect(() => {
     return () => {
@@ -363,11 +368,18 @@ export default function NavigationHUD() {
               </div>
               <div className="flex-1 min-w-0">
                 {distanceToNextM != null && (
-                  <p className="text-5xl font-black leading-none mb-2 tabular-nums tracking-tight" aria-hidden="true">
+                  <p
+                    className="text-5xl font-black leading-none mb-2 tabular-nums tracking-tight"
+                    aria-hidden="true"
+                  >
                     {formatDistance(distanceToNextM)}
                   </p>
                 )}
-                <p aria-live="assertive" aria-atomic="true" className="text-base font-medium leading-snug text-white/90 line-clamp-2">
+                <p
+                  aria-live="assertive"
+                  aria-atomic="true"
+                  className="text-base font-medium leading-snug text-white/90 line-clamp-2"
+                >
                   {step?.text ?? t("preparingNav")}
                 </p>
               </div>
@@ -396,7 +408,10 @@ export default function NavigationHUD() {
 
         {/* Off-route strip */}
         {isOffRoute && !arrived && (
-          <div role="alert" className="flex items-center gap-3 p-3 rounded-2xl bg-amber-500/95 text-white shadow-lg">
+          <div
+            role="alert"
+            className="flex items-center gap-3 p-3 rounded-2xl bg-amber-500/95 text-white shadow-lg"
+          >
             <AlertPulseIcon />
             <p className="flex-1 text-sm font-semibold">{t("offRoute")}</p>
             <button

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createPlayback, type CreatePlaybackDeps } from "../audioPlayback";
+import { type CreatePlaybackDeps, createPlayback } from "../audioPlayback";
 
 interface FakeAudioBuffer {
   duration: number;

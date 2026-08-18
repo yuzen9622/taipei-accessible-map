@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useRef } from "react";
 import { Marker } from "react-map-gl/maplibre";
 import { useShallow } from "zustand/react/shallow";
-import { MapPinIcon, type MapPinIconHandle } from "@/components/ui/map-pin-icon";
+import {
+  MapPinIcon,
+  type MapPinIconHandle,
+} from "@/components/ui/map-pin-icon";
 import useMapStore from "@/stores/useMapStore";
 import type { PlaceDetail } from "@/types";
 
@@ -39,9 +42,13 @@ export default function SearchPin({
   }, [map, setInfoShow, destination]);
 
   const iconRef = useRef<MapPinIconHandle>(null);
+  const destLat = destination?.position.lat;
+  const destLng = destination?.position.lng;
   useEffect(() => {
-    iconRef.current?.startAnimation();
-  }, [destination?.position.lat, destination?.position.lng]);
+    if (destLat !== undefined && destLng !== undefined) {
+      iconRef.current?.startAnimation();
+    }
+  }, [destLat, destLng]);
 
   if (!destination) return null;
 
