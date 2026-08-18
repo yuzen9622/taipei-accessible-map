@@ -18,6 +18,7 @@ import {
   Navigation,
   Share2,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useAppTranslation } from "@/i18n/client";
@@ -31,7 +32,23 @@ import { checklistPriorityOrder } from "@/types/a11yProfile";
 import type { OsmPlaceDetail } from "@/types/route";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
-import PlaceReviewSection from "./PlaceReviewSection";
+import { Skeleton } from "../ui/skeleton";
+
+const PlaceReviewSection = dynamic(() => import("./PlaceReviewSection"), {
+  loading: () => (
+    <div
+      role="status"
+      aria-busy="true"
+      aria-live="polite"
+      className="space-y-3 pt-4 border-t border-border/40 animate-pulse"
+    >
+      <Skeleton className="h-6 w-28" />
+      <Skeleton className="h-20 w-full rounded-2xl" />
+      <Skeleton className="h-20 w-full rounded-2xl" />
+    </div>
+  ),
+  ssr: false,
+});
 
 function getOsmIdFromPlaceId(placeId: string): string | null {
   const match = /^osm:(node|way|relation):(\d+)$/.exec(placeId);
