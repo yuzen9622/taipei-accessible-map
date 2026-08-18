@@ -611,7 +611,7 @@ export default function BottomSheet() {
             role="img"
             aria-label={t("title")}
           >
-            <Image src="/logo.png" alt="" width={36} height={36} priority />
+            <Image src="/logo.webp" alt="" width={36} height={36} priority />
           </div>
 
           {/* Divider */}
