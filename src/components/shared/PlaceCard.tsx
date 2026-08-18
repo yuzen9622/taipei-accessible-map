@@ -57,28 +57,28 @@ export default function PlaceCard({
   }
 
   const resultClassName = cn(
-    "shrink-0 snap-start flex flex-col items-start text-left p-3 rounded-xl bg-card border border-border/60 shadow-sm w-[200px] transition-all",
+    "shrink-0 snap-start flex flex-col items-start text-left p-2.5 sm:p-3 rounded-xl bg-card border border-border/60 shadow-2xs w-[170px] sm:w-[190px] transition-all",
     clickable &&
-      "cursor-pointer hover:border-primary/40 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
+      "cursor-pointer hover:border-primary/40 hover:shadow-xs focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 active:scale-[0.98]",
     className,
   );
   const resultInner = (
     <>
       <div className="w-full flex items-center gap-1.5 mb-1">
-        <span className="flex-1 font-semibold text-[14px] text-foreground leading-tight truncate">
+        <span className="flex-1 font-semibold text-[13px] sm:text-[14px] text-foreground leading-tight truncate">
           {title}
         </span>
         {badge && (
           <Badge
             variant="secondary"
-            className="shrink-0 text-xs px-1.5 py-0 rounded-full"
+            className="shrink-0 text-[10px] px-1.5 py-0 rounded-full font-medium"
           >
             {badge}
           </Badge>
         )}
       </div>
       {subtitle && (
-        <div className="w-full text-[12px] text-muted-foreground line-clamp-2">
+        <div className="w-full text-[11px] sm:text-[12px] text-muted-foreground line-clamp-2 leading-snug">
           {subtitle}
         </div>
       )}

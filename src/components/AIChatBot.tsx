@@ -8,6 +8,8 @@ import {
 } from "@animateicons/react/lucide";
 import {
   Bus,
+  ChevronDown,
+  ChevronUp,
   Navigation,
   Square,
   SquareParking,
@@ -15,8 +17,8 @@ import {
   Trash2,
   Wind,
 } from "lucide-react";
-import { motion } from "motion/react";
-import { Fragment, useEffect, useRef } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { ThinkingOrb } from "thinking-orbs";
 import type { ChatBubble, ToolActivity } from "@/hook/useAIChat";
@@ -25,7 +27,7 @@ import useOpenAiResult from "@/hook/useOpenAiResult";
 import { useAppTranslation } from "@/i18n/client";
 import { toolToOrbState } from "@/lib/ai/orbState";
 import {
-  getToolResultGroup,
+  getAggregatedToolResults,
   type ToolCardIcon,
   type ToolResultItem,
 } from "@/lib/toolResultCards";
@@ -98,10 +100,21 @@ function ToolResultCard({
   );
 }
 
-function ToolResultView({ activity }: { activity: ToolActivity }) {
+function ToolResultsBox({ activities }: { activities: ToolActivity[] }) {
   const { openAiResult, flyTo } = useOpenAiResult();
-  const group = getToolResultGroup(activity.name, activity.result);
-  if (!group) return null;
+  const [activeTab, setActiveTab] = useState(0);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  const groups = useMemo(
+    () => getAggregatedToolResults(activities),
+    [activities],
+  );
+
+  if (!groups.length) return null;
+
+  const totalItems = groups.reduce((acc, g) => acc + g.items.length, 0);
+  const safeActiveTab = Math.min(activeTab, groups.length - 1);
+  const currentGroup = groups[safeActiveTab];
 
   const handleClick = (item: ToolResultItem) => {
     if (!item.position) return;
@@ -122,26 +135,102 @@ function ToolResultView({ activity }: { activity: ToolActivity }) {
     <motion.div
       initial={{ opacity: 0, y: 5 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col gap-2 mt-2 w-full"
+      className="flex flex-col gap-1.5 mt-2 w-full max-w-[88vw] sm:max-w-[440px] rounded-2xl border border-border/50 bg-card/70 dark:bg-card/50 backdrop-blur-md p-2.5 shadow-2xs transition-all"
     >
-      <div className="text-xs font-semibold text-muted-foreground px-1 flex items-center gap-1.5">
-        {CARD_ICONS[group.icon]}
-        {group.heading} ({group.items.length})
-      </div>
-      {group.note && (
-        <div className="text-[12px] text-muted-foreground px-1 -mt-1">
-          {group.note}
+      {/* 頂部 Header：摘要與折疊按鈕 */}
+      <div
+        className="flex items-center justify-between gap-2 px-1 cursor-pointer select-none"
+        onClick={() => setIsCollapsed(!isCollapsed)}
+      >
+        <div className="flex items-center gap-1.5 min-w-0">
+          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+            {CARD_ICONS[currentGroup.icon]}
+          </span>
+          <span className="text-xs font-semibold text-foreground truncate">
+            {groups.length === 1 ? currentGroup.heading : "相關查詢結果"}
+          </span>
+          <Badge
+            variant="secondary"
+            className="text-[10px] px-1.5 py-0 h-4 font-normal text-muted-foreground"
+          >
+            共 {totalItems} 筆
+          </Badge>
         </div>
-      )}
-      <div className="flex gap-2.5 overflow-x-auto pb-3 pt-1 px-1 snap-x w-full max-w-[85vw] sm:max-w-[420px] [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/40 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent">
-        {group.items.map((item) => (
-          <ToolResultCard
-            key={item.id}
-            item={item}
-            onClick={item.position ? () => handleClick(item) : undefined}
-          />
-        ))}
+
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsCollapsed(!isCollapsed);
+          }}
+          className="flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors px-1.5 py-0.5 rounded-md hover:bg-muted/60"
+          aria-expanded={!isCollapsed}
+          aria-label={isCollapsed ? "展開卡片" : "收起卡片"}
+        >
+          <span>{isCollapsed ? "展開" : "收起"}</span>
+          {isCollapsed ? (
+            <ChevronDown className="h-3.5 w-3.5" />
+          ) : (
+            <ChevronUp className="h-3.5 w-3.5" />
+          )}
+        </button>
       </div>
+
+      {/* 展開後的內容 */}
+      <AnimatePresence initial={false}>
+        {!isCollapsed && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="flex flex-col gap-2 pt-0.5 overflow-hidden"
+          >
+            {/* 多 Group 分頁 Pills / Tabs */}
+            {groups.length > 1 && (
+              <div className="flex gap-1.5 overflow-x-auto pb-1 px-0.5 scrollbar-none snap-x">
+                {groups.map((g, idx) => (
+                  <button
+                    key={`${g.heading}-${idx}`}
+                    type="button"
+                    onClick={() => setActiveTab(idx)}
+                    className={cn(
+                      "flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium transition-all shrink-0 snap-start",
+                      safeActiveTab === idx
+                        ? "bg-primary text-primary-foreground shadow-2xs font-semibold"
+                        : "bg-muted/70 text-muted-foreground hover:bg-muted hover:text-foreground",
+                    )}
+                  >
+                    <span className="shrink-0">{CARD_ICONS[g.icon]}</span>
+                    <span>{g.heading}</span>
+                    <span className="text-[10px] opacity-80">
+                      ({g.items.length})
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Group 備註說明 */}
+            {currentGroup.note && (
+              <div className="text-[11px] text-muted-foreground px-1">
+                {currentGroup.note}
+              </div>
+            )}
+
+            {/* 橫向滑動卡片清單 */}
+            <div className="flex gap-2.5 overflow-x-auto pb-1.5 pt-0.5 px-0.5 snap-x w-full [&::-webkit-scrollbar]:h-1.5 [&::-webkit-scrollbar-thumb]:bg-muted-foreground/20 hover:[&::-webkit-scrollbar-thumb]:bg-muted-foreground/40 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent">
+              {currentGroup.items.map((item) => (
+                <ToolResultCard
+                  key={item.id}
+                  item={item}
+                  onClick={item.position ? () => handleClick(item) : undefined}
+                />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }
@@ -200,14 +289,7 @@ function MessageBubble({ message }: { message: ChatBubble }) {
 
       {/* Render done results only after streaming is finished, below the content */}
       {!message.isStreaming && !isUser && doneActivities.length > 0 && (
-        <div className="flex flex-col gap-3 w-full mt-1 overflow-hidden">
-          {doneActivities.map((activity, idx) => (
-            <ToolResultView
-              key={`${activity.name}-${idx}-done`}
-              activity={activity}
-            />
-          ))}
-        </div>
+        <ToolResultsBox activities={doneActivities} />
       )}
     </motion.div>
   );
