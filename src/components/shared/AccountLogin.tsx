@@ -22,19 +22,12 @@ import {
   SlidersHorizontal,
   Type,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
-import EmergencyContactsDialog from "@/components/Sos/EmergencyContactsDialog";
-import EmergencyContactsManager from "@/components/Sos/EmergencyContactsManager";
-import AccountSecurityPanel from "@/components/settings/AccountSecurityPanel";
-import AIMemoryPanel from "@/components/settings/AIMemoryPanel";
-import DataManagementPanel from "@/components/settings/DataManagementPanel";
-import AuthDialog from "@/components/shared/AuthDialog";
-import HelpDialog from "@/components/shared/HelpDialog";
-import LineBindDialog from "@/components/shared/LineBindDialog";
 import {
   Dialog,
   DialogContent,
@@ -67,6 +60,37 @@ import useQuickActionsStore from "@/stores/useQuickActionsStore";
 import { Button } from "../ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger } from "../ui/select";
 import { ThemeSwitcher } from "../ui/shadcn-io/theme-switcher";
+
+const EmergencyContactsDialog = dynamic(
+  () => import("@/components/Sos/EmergencyContactsDialog"),
+  { ssr: false },
+);
+const EmergencyContactsManager = dynamic(
+  () => import("@/components/Sos/EmergencyContactsManager"),
+  { ssr: false },
+);
+const AccountSecurityPanel = dynamic(
+  () => import("@/components/settings/AccountSecurityPanel"),
+  { ssr: false },
+);
+const AIMemoryPanel = dynamic(
+  () => import("@/components/settings/AIMemoryPanel"),
+  { ssr: false },
+);
+const DataManagementPanel = dynamic(
+  () => import("@/components/settings/DataManagementPanel"),
+  { ssr: false },
+);
+const AuthDialog = dynamic(() => import("@/components/shared/AuthDialog"), {
+  ssr: false,
+});
+const HelpDialog = dynamic(() => import("@/components/shared/HelpDialog"), {
+  ssr: false,
+});
+const LineBindDialog = dynamic(
+  () => import("@/components/shared/LineBindDialog"),
+  { ssr: false },
+);
 
 export default function AccountLogin({ active = true }: { active?: boolean }) {
   const [settingsTab, setSettingsTab] = useState<SettingsTab>("general");

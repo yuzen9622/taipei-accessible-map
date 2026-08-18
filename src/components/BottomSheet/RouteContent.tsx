@@ -7,6 +7,7 @@ import {
   Navigation,
   Sparkles,
 } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useShallow } from "zustand/react/shallow";
 import { useAppTranslation } from "@/i18n/client";
 import useMapStore from "@/stores/useMapStore";
@@ -15,9 +16,24 @@ import LoadingDrawer from "../shared/LoadingDrawer";
 import { RouteCard } from "../shared/RouteCard";
 import { TransitAlertsBanner } from "../shared/TransitAlerts";
 import { Button } from "../ui/button";
-import EnvironmentPanel from "./EnvironmentPanel";
-import HazardReportPanel from "./HazardReportPanel";
-import RouteExplanationPanel from "./RouteExplanationPanel";
+import {
+  EnvironmentSkeleton,
+  HazardReportSkeleton,
+  PanelSkeleton,
+} from "./PanelSkeletons";
+
+const EnvironmentPanel = dynamic(() => import("./EnvironmentPanel"), {
+  loading: () => <EnvironmentSkeleton />,
+  ssr: false,
+});
+const HazardReportPanel = dynamic(() => import("./HazardReportPanel"), {
+  loading: () => <HazardReportSkeleton />,
+  ssr: false,
+});
+const RouteExplanationPanel = dynamic(() => import("./RouteExplanationPanel"), {
+  loading: () => <PanelSkeleton />,
+  ssr: false,
+});
 
 export default function RouteContent() {
   const { t } = useAppTranslation();

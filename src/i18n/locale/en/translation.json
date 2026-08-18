@@ -299,6 +299,8 @@
   "reportSuccess": "Report submitted! Thank you for your contribution",
   "reportFailed": "Report failed, please try again later",
   "reportLoginHint": "Logging in attributes this report to your account",
+  "imageTooLarge": "Image size cannot exceed 5MB",
+  "invalidImageType": "Only JPG, PNG, and WebP image formats are supported",
   "nearbyHazards": "Nearby Hazard Reports",
   "confirmed": "Confirmed",
   "pending": "Pending",

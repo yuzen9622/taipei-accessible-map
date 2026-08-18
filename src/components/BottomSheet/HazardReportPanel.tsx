@@ -15,11 +15,39 @@ import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 import { useAppTranslation } from "@/i18n/client";
 import { createHazardReport } from "@/lib/api/a11y";
+import { reverseGeocode } from "@/lib/api/placeSearch";
 import { haversineMeters } from "@/lib/geo";
-import { formatNominatimPlace } from "@/lib/utils";
 import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
 import { Button } from "../ui/button";
+
+export const MAX_REPORT_PHOTO_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+export const ALLOWED_REPORT_PHOTO_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/heic",
+  "image/heif",
+];
+
+export function validateHazardPhoto(file: {
+  size: number;
+  type: string;
+}):
+  | { valid: true }
+  | { valid: false; error: "IMAGE_TOO_LARGE" | "INVALID_IMAGE_TYPE" } {
+  if (
+    !ALLOWED_REPORT_PHOTO_TYPES.includes(file.type) &&
+    !file.type.startsWith("image/")
+  ) {
+    return { valid: false, error: "INVALID_IMAGE_TYPE" };
+  }
+  if (file.size > MAX_REPORT_PHOTO_SIZE_BYTES) {
+    return { valid: false, error: "IMAGE_TOO_LARGE" };
+  }
+  return { valid: true };
+}
 
 const HAZARD_TYPES = [
   { value: "obstacle" as const, Icon: TriangleAlert, color: "text-amber-500" },
@@ -100,13 +128,16 @@ export default function HazardReportPanel({
     const controller = new AbortController();
     const lang = i18n.language === "zh-TW" ? "zh-TW" : "en";
     setAddressFailed(false);
-    fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLocation.lat}&lon=${userLocation.lng}&accept-language=${lang}&zoom=16&addressdetails=1`,
-      { signal: controller.signal },
+    reverseGeocode(
+      {
+        lat: userLocation.lat,
+        lng: userLocation.lng,
+        lang,
+        zoom: 16,
+      },
+      controller.signal,
     )
-      .then((res) => res.json())
-      .then((data) => {
-        const formatted = formatNominatimPlace(data, i18n.language);
+      .then((formatted) => {
         const a = formatted?.address;
         if (!a) {
           setAddressFailed(true);
@@ -118,11 +149,11 @@ export default function HazardReportPanel({
           a.road || a.neighbourhood || "",
         ]
           .filter(Boolean)
-          .join(i18n.language === "zh-TW" ? "" : ", ");
+          .join(lang === "zh-TW" ? "" : ", ");
         setAddress(composed || formatted.display_name || null);
       })
       .catch((err) => {
-        if ((err as Error).name === "AbortError") return;
+        if ((err as Error)?.name === "AbortError") return;
         setAddressFailed(true);
       });
     return () => controller.abort();
@@ -132,6 +163,18 @@ export default function HazardReportPanel({
   const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    const validation = validateHazardPhoto(file);
+    if (!validation.valid) {
+      if (validation.error === "INVALID_IMAGE_TYPE") {
+        toast.error(t("invalidImageType", "僅支援 JPG、PNG、WebP 等圖片格式"));
+      } else if (validation.error === "IMAGE_TOO_LARGE") {
+        toast.error(t("imageTooLarge", "圖片大小不能超過 5MB"));
+      }
+      if (fileRef.current) fileRef.current.value = "";
+      return;
+    }
+
     setPhoto(file);
     const reader = new FileReader();
     reader.onload = () => setPhotoPreview(reader.result as string);
@@ -275,7 +318,7 @@ export default function HazardReportPanel({
         <input
           ref={fileRef}
           type="file"
-          accept="image/*"
+          accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,image/*"
           capture="environment"
           onChange={handlePhoto}
           className="hidden"
@@ -293,6 +336,7 @@ export default function HazardReportPanel({
               onClick={() => {
                 setPhoto(null);
                 setPhotoPreview(null);
+                if (fileRef.current) fileRef.current.value = "";
               }}
               className="absolute top-2 right-2 h-6 w-6 rounded-full bg-black/60 flex items-center justify-center"
             >

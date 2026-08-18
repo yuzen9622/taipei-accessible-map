@@ -19,10 +19,10 @@ import {
   Wind,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
-import SosDialog from "@/components/Sos/SosDialog";
 import ShareTargets from "@/components/shared/ShareTargets";
 import { Button } from "@/components/ui/button";
 import {
@@ -35,10 +35,15 @@ import useIsDesktop from "@/hook/useIsDesktop";
 import usePin from "@/hook/usePin";
 import { useAppTranslation } from "@/i18n/client";
 import { getEnvironmentInfo } from "@/lib/api/a11y";
-import { cn, formatNominatimPlace } from "@/lib/utils";
+import { reverseGeocode } from "@/lib/api/placeSearch";
+import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import useNavStore from "@/stores/useNavStore";
 import type { AirQualityLevel, EnvironmentData } from "@/types/route";
+
+const SosDialog = dynamic(() => import("@/components/Sos/SosDialog"), {
+  ssr: false,
+});
 
 // SOS is now a single tap — no hold required for accessibility
 
@@ -200,13 +205,16 @@ export default function MapControlsWrapper() {
     if (!shareOpen || !userLocation) return;
     const controller = new AbortController();
     const lang = i18n.language === "zh-TW" ? "zh-TW" : "en";
-    fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLocation.lat}&lon=${userLocation.lng}&accept-language=${lang}&zoom=16&addressdetails=1`,
-      { signal: controller.signal },
+    reverseGeocode(
+      {
+        lat: userLocation.lat,
+        lng: userLocation.lng,
+        lang,
+        zoom: 16,
+      },
+      controller.signal,
     )
-      .then((res) => res.json())
-      .then((data) => {
-        const formatted = formatNominatimPlace(data, i18n.language);
+      .then((formatted) => {
         const a = formatted?.address;
         if (!a) return;
         const composed = [

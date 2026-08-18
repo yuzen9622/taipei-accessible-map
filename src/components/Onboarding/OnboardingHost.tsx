@@ -1,9 +1,13 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import useOnboardingStore from "@/stores/useOnboardingStore";
-import OnboardingFlow from "./OnboardingFlow";
+
+const OnboardingFlow = dynamic(() => import("./OnboardingFlow"), {
+  ssr: false,
+});
 
 /**
  * URL parameters that mean the user arrived with a specific intent rather than

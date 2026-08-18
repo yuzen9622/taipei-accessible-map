@@ -17,12 +17,11 @@ import {
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useShallow } from "zustand/react/shallow";
-import AIChatBot from "@/components/AIChatBot";
-import ExitNavDialog from "@/components/Navigation/ExitNavDialog";
 import AccountLogin from "@/components/shared/AccountLogin";
 import useIsDesktop from "@/hook/useIsDesktop";
 import { useAppTranslation } from "@/i18n/client";
@@ -31,19 +30,79 @@ import type { RailPanel } from "@/stores/useMapStore";
 import useMapStore from "@/stores/useMapStore";
 import useNavStore from "@/stores/useNavStore";
 import useOnboardingStore from "@/stores/useOnboardingStore";
-import A11yPanel from "./A11yPanel";
-import BusPanel from "./BusPanel";
-import EnvironmentPanel from "./EnvironmentPanel";
-import HazardReportPanel from "./HazardReportPanel";
 import HomeContent from "./HomeContent";
-import NavigationContent from "./NavigationContent";
-import ParkingPanel from "./ParkingPanel";
-import PlaceContent from "./PlaceContent";
-import RouteContent from "./RouteContent";
-import RoutePlanContent from "./RoutePlanContent";
-import SavedPlacesPanel from "./SavedPlacesPanel";
-import StationDetailContent from "./StationDetailContent";
-import WelfarePanel from "./WelfarePanel";
+import {
+  A11yPanelSkeleton,
+  BusPanelSkeleton,
+  ChatSkeleton,
+  EnvironmentSkeleton,
+  HazardReportSkeleton,
+  NavigationSkeleton,
+  ParkingPanelSkeleton,
+  PlaceSkeleton,
+  RouteContentSkeleton,
+  RoutePlanSkeleton,
+  SavedPlacesSkeleton,
+  StationDetailSkeleton,
+  WelfareSkeleton,
+} from "./PanelSkeletons";
+
+const AIChatBot = dynamic(() => import("@/components/AIChatBot"), {
+  loading: () => <ChatSkeleton />,
+  ssr: false,
+});
+const ExitNavDialog = dynamic(
+  () => import("@/components/Navigation/ExitNavDialog"),
+  { ssr: false },
+);
+const A11yPanel = dynamic(() => import("./A11yPanel"), {
+  loading: () => <A11yPanelSkeleton />,
+  ssr: false,
+});
+const BusPanel = dynamic(() => import("./BusPanel"), {
+  loading: () => <BusPanelSkeleton />,
+  ssr: false,
+});
+const EnvironmentPanel = dynamic(() => import("./EnvironmentPanel"), {
+  loading: () => <EnvironmentSkeleton />,
+  ssr: false,
+});
+const HazardReportPanel = dynamic(() => import("./HazardReportPanel"), {
+  loading: () => <HazardReportSkeleton />,
+  ssr: false,
+});
+const ParkingPanel = dynamic(() => import("./ParkingPanel"), {
+  loading: () => <ParkingPanelSkeleton />,
+  ssr: false,
+});
+const SavedPlacesPanel = dynamic(() => import("./SavedPlacesPanel"), {
+  loading: () => <SavedPlacesSkeleton />,
+  ssr: false,
+});
+const WelfarePanel = dynamic(() => import("./WelfarePanel"), {
+  loading: () => <WelfareSkeleton />,
+  ssr: false,
+});
+const PlaceContent = dynamic(() => import("./PlaceContent"), {
+  loading: () => <PlaceSkeleton />,
+  ssr: false,
+});
+const RoutePlanContent = dynamic(() => import("./RoutePlanContent"), {
+  loading: () => <RoutePlanSkeleton />,
+  ssr: false,
+});
+const RouteContent = dynamic(() => import("./RouteContent"), {
+  loading: () => <RouteContentSkeleton />,
+  ssr: false,
+});
+const NavigationContent = dynamic(() => import("./NavigationContent"), {
+  loading: () => <NavigationSkeleton />,
+  ssr: false,
+});
+const StationDetailContent = dynamic(() => import("./StationDetailContent"), {
+  loading: () => <StationDetailSkeleton />,
+  ssr: false,
+});
 
 const SNAP_POINTS = {
   peek: 0.12,

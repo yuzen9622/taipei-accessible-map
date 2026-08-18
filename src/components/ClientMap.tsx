@@ -1,6 +1,7 @@
 "use client";
 
 import type maplibregl from "maplibre-gl";
+import dynamic from "next/dynamic";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { MapLayerMouseEvent } from "react-map-gl/maplibre";
@@ -13,22 +14,25 @@ import MapWrapper from "@/components/Wrapper/MapWrapper";
 import RoutePreviewHydrator from "@/components/Wrapper/RoutePreviewHydrator";
 import RouteLine from "@/components/Wrapper/RouteWrapper";
 import { useAppTranslation } from "@/i18n/client";
-import { getPlaceDetails } from "@/lib/api/placeSearch";
+import { getPlaceDetails, reverseGeocode } from "@/lib/api/placeSearch";
 import { applyMapDimension, type MapTheme } from "@/lib/map/basemap3d";
+import { createGpsErrorTracker } from "@/lib/map/gpsErrorHandler";
 import { nominatimToPlaceResult } from "@/lib/place/adapters";
 import { toApiLang } from "@/lib/place/lang";
-import { formatNominatimPlace } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
 import useNavStore from "@/stores/useNavStore";
 import NavigationController from "./NavigationController";
 import SearchPin from "./shared/SearchPin";
-import VoiceSessionHost from "./Voice/VoiceSessionHost";
 import AIResultWrapper from "./Wrapper/AIResultWrapper";
 import HazardWrapper from "./Wrapper/HazardWrapper";
 import LiveBusWrapper from "./Wrapper/LiveBusWrapper";
 import MapControlsWrapper from "./Wrapper/MapControlsWrapper";
 import SosTrackerWrapper from "./Wrapper/SosTrackerWrapper";
 import TransitWrapper from "./Wrapper/TransitWrapper";
+
+const VoiceSessionHost = dynamic(() => import("./Voice/VoiceSessionHost"), {
+  ssr: false,
+});
 
 const MAP_STYLES = {
   light: "https://tiles.openfreemap.org/styles/liberty",
@@ -113,7 +117,7 @@ export default function ClientMap() {
     })),
   );
   const { resolvedTheme } = useTheme();
-  const { i18n } = useAppTranslation();
+  const { i18n, t } = useAppTranslation();
   const [mounted, setMounted] = useState(false);
 
   // Shared-location links (?loc=lat,lng) start the camera on the shared point.
@@ -132,7 +136,9 @@ export default function ClientMap() {
         const { lat, lng } = JSON.parse(cached);
         if (Number.isFinite(lat) && Number.isFinite(lng)) return { lat, lng };
       }
-    } catch {}
+    } catch (_err) {
+      // Ignore corrupted localStorage cache
+    }
     return null;
   });
 
@@ -151,6 +157,7 @@ export default function ClientMap() {
 
   const pointerDownTime = useRef(0);
   const pointerDownPos = useRef<[number, number]>([0, 0]);
+  const locationErrorTracker = useRef(createGpsErrorTracker());
 
   // The OpenFreeMap sprite lacks some POI icons (gate, bollard, …); register
   // a transparent 1×1 stand-in so MapLibre stops warning on every tile
@@ -221,12 +228,19 @@ export default function ClientMap() {
       setUserLocation(loc);
       try {
         localStorage.setItem("lastUserLocation", JSON.stringify(loc));
-      } catch {}
-      const t = setInterval(() => setUserLocation(loc), 2000);
-      return () => clearInterval(t);
+      } catch (_err) {
+        // localStorage write failure is non-fatal.
+      }
+      const tId = setInterval(() => setUserLocation(loc), 2000);
+      return () => clearInterval(tId);
     }
 
+    if (typeof navigator === "undefined" || !navigator.geolocation) return;
+
+    const tracker = locationErrorTracker.current;
+
     const onPos = (pos: GeolocationPosition) => {
+      tracker.recordSuccess();
       const loc = {
         lat: pos.coords.latitude,
         lng: pos.coords.longitude,
@@ -234,11 +248,19 @@ export default function ClientMap() {
       setUserLocation(loc);
       try {
         localStorage.setItem("lastUserLocation", JSON.stringify(loc));
-      } catch {}
+      } catch (_err) {
+        // localStorage write failure is non-fatal.
+      }
       const h = pos.coords.heading;
       useNavStore
         .getState()
         .setGpsHeading(typeof h === "number" && !Number.isNaN(h) ? h : null);
+    };
+
+    const onPosError = () => {
+      tracker.recordError(() => {
+        toast.error(t("noLocation", "無法取得目前位置"));
+      });
     };
 
     // Fast coarse fix so the map centers on the user immediately, then
@@ -249,15 +271,12 @@ export default function ClientMap() {
       timeout: 5_000,
     });
 
-    const watchId = navigator.geolocation.watchPosition(
-      onPos,
-      () => {
-        toast.error("無法取得目前位置");
-      },
-      { enableHighAccuracy: true, maximumAge: 1000 },
-    );
+    const watchId = navigator.geolocation.watchPosition(onPos, onPosError, {
+      enableHighAccuracy: true,
+      maximumAge: 1000,
+    });
     return () => navigator.geolocation.clearWatch(watchId);
-  }, [setUserLocation]);
+  }, [setUserLocation, t]);
 
   // Cold-load with no share link: recenter the camera on the user's first GPS
   // fix instead of leaving it on the hardcoded Taipei fallback. Fires once so
@@ -294,12 +313,8 @@ export default function ClientMap() {
     const position = { lat, lng };
     const lang = i18n.language === "zh-TW" ? "zh-TW" : "en";
     setSheetMode("place");
-    fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=${lang}&zoom=18&addressdetails=1`,
-    )
-      .then((res) => res.json())
-      .then((data) => {
-        const formatted = formatNominatimPlace(data, i18n.language);
+    reverseGeocode({ lat, lng, lang, zoom: 18 })
+      .then((formatted) => {
         if (!formatted) throw new Error("Reverse geocoding failed");
 
         const place = nominatimToPlaceResult(formatted);
@@ -386,11 +401,7 @@ export default function ClientMap() {
       setSheetMode("place");
 
       try {
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=${lang}&zoom=18&addressdetails=1`,
-        );
-        const data = await res.json();
-        const formatted = formatNominatimPlace(data, i18n.language);
+        const formatted = await reverseGeocode({ lat, lng, lang, zoom: 18 });
 
         if (formatted) {
           const place = nominatimToPlaceResult(formatted);
@@ -408,7 +419,7 @@ export default function ClientMap() {
         } else {
           setInfoShow({ isOpen: false, kind: null });
         }
-      } catch {
+      } catch (_err) {
         setInfoShow({ isOpen: false, kind: null });
       }
     },

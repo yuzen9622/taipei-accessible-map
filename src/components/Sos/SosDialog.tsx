@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { useSosLifecycle } from "@/hook/useSosLifecycle";
 import { useAppTranslation } from "@/i18n/client";
+import { reverseGeocode } from "@/lib/api/placeSearch";
 import {
   createSosSession,
   getEmergencyContacts,
@@ -35,7 +36,6 @@ import {
 } from "@/lib/api/sos";
 import { ApiError } from "@/lib/fetch";
 import { clearActiveSos, loadActiveSos, saveActiveSos } from "@/lib/sosSession";
-import { formatNominatimPlace } from "@/lib/utils";
 import useAuthStore from "@/stores/useAuthStore";
 import useMapStore from "@/stores/useMapStore";
 import type {
@@ -355,13 +355,16 @@ export default function SosDialog({
     if (step !== "active" || !userLocation) return;
     const controller = new AbortController();
     const lang = i18n.language === "zh-TW" ? "zh-TW" : "en";
-    fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLocation.lat}&lon=${userLocation.lng}&accept-language=${lang}&zoom=16&addressdetails=1`,
-      { signal: controller.signal },
+    reverseGeocode(
+      {
+        lat: userLocation.lat,
+        lng: userLocation.lng,
+        lang,
+        zoom: 16,
+      },
+      controller.signal,
     )
-      .then((res) => res.json())
-      .then((data) => {
-        const formatted = formatNominatimPlace(data, i18n.language);
+      .then((formatted) => {
         setAddress(formatted?.display_name ?? null);
       })
       .catch(() => {});
