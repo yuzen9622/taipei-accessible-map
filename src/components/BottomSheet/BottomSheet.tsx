@@ -607,7 +607,7 @@ export default function BottomSheet() {
               MapControlsWrapper.tsx) — it's an independent floating button
               next to SOS/locate, not living in this fixed 56px column. */}
           <div
-            className="flex items-center justify-center h-9 w-9 mb-2 rounded-xl overflow-hidden shrink-0"
+            className="flex items-center justify-center h-9 w-9 mb-2  overflow-hidden shrink-0"
             role="img"
             aria-label={t("title")}
           >
