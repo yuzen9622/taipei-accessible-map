@@ -24,6 +24,7 @@ import { ThinkingOrb } from "thinking-orbs";
 import type { ChatBubble, ToolActivity } from "@/hook/useAIChat";
 import useAIChat, { TOOL_LABELS, TOOL_LOADING_TEXT } from "@/hook/useAIChat";
 import useOpenAiResult from "@/hook/useOpenAiResult";
+import useIsDesktop from "@/hook/useIsDesktop";
 import { useAppTranslation } from "@/i18n/client";
 import { toolToOrbState } from "@/lib/ai/orbState";
 import {
@@ -311,6 +312,8 @@ function MessageBubble({ message }: { message: ChatBubble }) {
  */
 export default function AIChatBot({ active = true }: { active?: boolean }) {
   const { t } = useAppTranslation();
+  const isDesktop = useIsDesktop();
+  const setMobileSheetSnap = useMapStore((s) => s.setMobileSheetSnap);
   const { messages, handleSend, input, setInput, isLoading, stopStreaming } =
     useAIChat();
 
@@ -450,6 +453,11 @@ export default function AIChatBot({ active = true }: { active?: boolean }) {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
+            onFocus={() => {
+              if (!isDesktop) {
+                setMobileSheetSnap("full");
+              }
+            }}
             onKeyDown={handleKeyPress}
             placeholder={t("chatbot.placeholder", "輸入問題...")}
             className="flex-1"

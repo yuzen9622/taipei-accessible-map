@@ -26,6 +26,7 @@ export type SheetMode =
   | "route"
   | "navigation"
   | "station";
+export type MobileSheetSnap = "peek" | "half" | "full";
 export type RailPanel =
   | "none"
   | "search"
@@ -86,6 +87,7 @@ interface MapState {
   originName: string;
   destinationName: string;
   sheetMode: SheetMode;
+  mobileSheetSnap: MobileSheetSnap;
   isNavigating: boolean;
   pendingNavExit: { target: RailPanel | "plan" | "home" } | null;
   is3D: boolean;
@@ -134,6 +136,7 @@ interface MapAction {
   addRouteA11y: (a11y: Marker[]) => void;
   setOriginName: (name: string) => void;
   setDestinationName: (name: string) => void;
+  setMobileSheetSnap: (snap: MobileSheetSnap) => void;
   initSavedPlaces: (places: PlaceDetail[]) => void;
   initSavedPlaceCategories: (cats: Record<string, SavedPlaceCategory>) => void;
   addSavedPlace: (place: PlaceDetail) => void;
@@ -431,6 +434,8 @@ const useMapStore = create<MapStore>((set, get) => ({
   setOriginName: (name) => set({ originName: name }),
   destinationName: "",
   setDestinationName: (name) => set({ destinationName: name }),
+  mobileSheetSnap: "peek" as MobileSheetSnap,
+  setMobileSheetSnap: (snap) => set({ mobileSheetSnap: snap }),
   sheetMode: "home",
   setSheetMode: (mode) => {
     const update: Partial<MapStore> = { sheetMode: mode };

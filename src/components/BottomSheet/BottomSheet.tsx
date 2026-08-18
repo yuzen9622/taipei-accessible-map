@@ -163,6 +163,8 @@ export default function BottomSheet() {
     requestNavExit,
     chatOpen,
     setChatOpen,
+    mobileSheetSnap,
+    setMobileSheetSnap,
   } = useMapStore(
     useShallow((s) => ({
       sheetMode: s.sheetMode,
@@ -180,13 +182,14 @@ export default function BottomSheet() {
       setSearchPlace: s.setSearchPlace,
       isNavigating: s.isNavigating,
       requestNavExit: s.requestNavExit,
+      mobileSheetSnap: s.mobileSheetSnap,
+      setMobileSheetSnap: s.setMobileSheetSnap,
     })),
   );
   const isDesktop = useIsDesktop();
   const coachMarksActive = useOnboardingStore((s) => s.coachMarksActive);
   const stepListOpen = useNavStore((s) => s.stepListOpen);
   const setStepListOpen = useNavStore((s) => s.setStepListOpen);
-  const [snap, setSnap] = useState<"peek" | "half" | "full">("peek");
   const [sheetHeight, setSheetHeight] = useState(SNAP_POINTS.peek);
   const [isDragging, setIsDragging] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -293,22 +296,19 @@ export default function BottomSheet() {
   useEffect(() => {
     switch (sheetMode) {
       case "home":
-        setSnap("peek");
-        setSheetHeight(SNAP_POINTS.peek);
+        setMobileSheetSnap("peek");
         break;
       case "place":
       case "plan":
       case "route":
       case "station":
-        setSnap("half");
-        setSheetHeight(SNAP_POINTS.half);
+        setMobileSheetSnap("half");
         break;
       case "navigation":
-        setSnap("peek");
-        setSheetHeight(SNAP_POINTS.peek);
+        setMobileSheetSnap("peek");
         break;
     }
-  }, [sheetMode]);
+  }, [sheetMode, setMobileSheetSnap]);
 
   // When sheetMode goes to a mode panel, collapse rail panel
   useEffect(() => {
@@ -322,10 +322,9 @@ export default function BottomSheet() {
   // instead of leaving it collapsed at peek where the chat would be unusable.
   useEffect(() => {
     if (showAssistant && !isDesktop) {
-      setSnap("half");
-      setSheetHeight(SNAP_POINTS.half);
+      setMobileSheetSnap("half");
     }
-  }, [showAssistant, isDesktop]);
+  }, [showAssistant, isDesktop, setMobileSheetSnap]);
 
   // Same treatment for rail sub-panels: sheetMode stays "home" when a quick
   // action chip (or 已存地點管理 from the account menu) opens one, so the
@@ -333,10 +332,9 @@ export default function BottomSheet() {
   // as a peek-height sliver with its header hidden.
   useEffect(() => {
     if (railContentActive && !isDesktop) {
-      setSnap("half");
-      setSheetHeight(SNAP_POINTS.half);
+      setMobileSheetSnap("half");
     }
-  }, [railContentActive, isDesktop]);
+  }, [railContentActive, isDesktop, setMobileSheetSnap]);
 
   // Reset scroll position whenever the content slot's occupant changes —
   // the scrollable container itself doesn't remount (only the animated
@@ -351,10 +349,9 @@ export default function BottomSheet() {
   // Opening the step list mid-navigation lifts the mobile sheet to half.
   useEffect(() => {
     if (isNavigating && stepListOpen) {
-      setSnap("half");
-      setSheetHeight(SNAP_POINTS.half);
+      setMobileSheetSnap("half");
     }
-  }, [isNavigating, stepListOpen]);
+  }, [isNavigating, stepListOpen, setMobileSheetSnap]);
 
   // Coach marks' 2nd step targets the a11y quick-action chip, which sits well
   // below the fold at peek height (content there doesn't even scroll — only
@@ -362,27 +359,32 @@ export default function BottomSheet() {
   // rect and the tour looks broken. Same treatment as the other panel lifts.
   useEffect(() => {
     if (coachMarksActive && !isDesktop) {
-      setSnap("half");
-      setSheetHeight(SNAP_POINTS.half);
+      setMobileSheetSnap("half");
     }
-  }, [coachMarksActive, isDesktop]);
+  }, [coachMarksActive, isDesktop, setMobileSheetSnap]);
 
-  const snapToNearest = useCallback((ratio: number) => {
-    const points = [SNAP_POINTS.peek, SNAP_POINTS.half, SNAP_POINTS.full];
-    let closest = points[0];
-    let minDist = Math.abs(ratio - points[0]);
-    for (const p of points) {
-      const dist = Math.abs(ratio - p);
-      if (dist < minDist) {
-        minDist = dist;
-        closest = p;
+  // Sync sheetHeight whenever mobileSheetSnap changes
+  useEffect(() => {
+    setSheetHeight(SNAP_POINTS[mobileSheetSnap]);
+  }, [mobileSheetSnap]);
+
+  const snapToNearest = useCallback(
+    (ratio: number) => {
+      const points: Array<"peek" | "half" | "full"> = ["peek", "half", "full"];
+      let closest: "peek" | "half" | "full" = "peek";
+      let minDist = Math.abs(ratio - SNAP_POINTS.peek);
+      for (const p of points) {
+        const dist = Math.abs(ratio - SNAP_POINTS[p]);
+        if (dist < minDist) {
+          minDist = dist;
+          closest = p;
+        }
       }
-    }
-    setSheetHeight(closest);
-    if (closest === SNAP_POINTS.peek) setSnap("peek");
-    else if (closest === SNAP_POINTS.half) setSnap("half");
-    else setSnap("full");
-  }, []);
+      setSheetHeight(SNAP_POINTS[closest]);
+      setMobileSheetSnap(closest);
+    },
+    [setMobileSheetSnap],
+  );
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
@@ -630,9 +632,15 @@ export default function BottomSheet() {
             }
             onClick={
               atPeek && sheetMode === "home" && !showAssistant
-                ? () => {
-                    setSnap("half");
-                    setSheetHeight(SNAP_POINTS.half);
+                ? (e) => {
+                    if (
+                      (e.target as HTMLElement).closest(
+                        "input, textarea, button",
+                      )
+                    ) {
+                      return;
+                    }
+                    setMobileSheetSnap("half");
                   }
                 : undefined
             }
@@ -641,8 +649,7 @@ export default function BottomSheet() {
                 ? (e) => {
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
-                      setSnap("half");
-                      setSheetHeight(SNAP_POINTS.half);
+                      setMobileSheetSnap("half");
                     }
                   }
                 : undefined

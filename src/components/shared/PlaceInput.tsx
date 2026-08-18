@@ -27,6 +27,7 @@ import type { InputHTMLAttributes } from "react";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
+import useIsDesktop from "@/hook/useIsDesktop";
 import usePlacePredictions from "@/hook/usePlacePredictions";
 import { useAppTranslation } from "@/i18n/client";
 import { getPlaceAutocomplete, getPlaceDetails } from "@/lib/api/placeSearch";
@@ -175,13 +176,21 @@ function PlaceInput({
 }: InputProps) {
   const { t, i18n } = useAppTranslation("translation");
   const lang = toApiLang(i18n.language);
+  const isDesktop = useIsDesktop();
   const [open, setOpen] = useState(false);
-  const { searchHistory, addSearchHistory, userLocation, map } = useMapStore(
+  const {
+    searchHistory,
+    addSearchHistory,
+    userLocation,
+    map,
+    setMobileSheetSnap,
+  } = useMapStore(
     useShallow((s) => ({
       searchHistory: s.searchHistory,
       addSearchHistory: s.addSearchHistory,
       userLocation: s.userLocation,
       map: s.map,
+      setMobileSheetSnap: s.setMobileSheetSnap,
     })),
   );
   const { suggestions, loading, sessionToken, resetSession } =
@@ -349,6 +358,7 @@ function PlaceInput({
             type={type}
             placeholder={placeholder}
             tabIndex={0}
+            {...props}
             className={cn(
               "  shadow-none  bg-transparent! h-fit ring-transparent focus-visible:ring-transparent",
               className,
@@ -358,15 +368,19 @@ function PlaceInput({
               onChange?.(e);
               setOpen(true);
             }}
-            onFocus={() => {
+            onFocus={(e) => {
               setOpen(true);
+              if (!isDesktop) {
+                setMobileSheetSnap("full");
+              }
+              props.onFocus?.(e);
             }}
-            onBlur={() => {
+            onBlur={(e) => {
               setTimeout(() => {
                 setOpen(false);
               }, 100);
+              props.onBlur?.(e);
             }}
-            {...props}
           />
         </form>
         {loading && (

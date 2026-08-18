@@ -14,6 +14,7 @@ import {
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useShallow } from "zustand/react/shallow";
 import useComputeRoute from "@/hook/useComputeRoute";
+import useIsDesktop from "@/hook/useIsDesktop";
 import { useAppTranslation } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 import useMapStore from "@/stores/useMapStore";
@@ -46,6 +47,8 @@ export default function RoutePlanInput() {
 
   const { handleComputeRoute, isLoading } = useComputeRoute();
   const { t } = useAppTranslation();
+  const isDesktop = useIsDesktop();
+  const setMobileSheetSnap = useMapStore((s) => s.setMobileSheetSnap);
 
   const [queryInput, setQueryInput] = useState("");
   const [mode, setMode] = useState<"structured" | "natural">("natural");
@@ -215,6 +218,11 @@ export default function RoutePlanInput() {
               type="text"
               value={queryInput}
               onChange={(e) => setQueryInput(e.target.value)}
+              onFocus={() => {
+                if (!isDesktop) {
+                  setMobileSheetSnap("full");
+                }
+              }}
               onKeyDown={handleKeyDown}
               placeholder={t(
                 "routeQueryPlaceholder",
