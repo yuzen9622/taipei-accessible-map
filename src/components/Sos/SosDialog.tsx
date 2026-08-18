@@ -564,9 +564,9 @@ export default function SosDialog({
                     </button>
                     {timelineExpanded && (
                       <ol className="mt-2 space-y-1.5">
-                        {timeline.map((entry, i) => (
+                        {timeline.map((entry) => (
                           <li
-                            key={`${entry.type}-${entry.at}-${i}`}
+                            key={`${entry.type}-${entry.at}-${entry.actorName ?? ""}-${entry.note ?? ""}`}
                             className="flex items-start gap-2 text-xs"
                           >
                             <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-red-500/60" />

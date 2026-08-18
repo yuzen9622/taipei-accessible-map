@@ -289,10 +289,10 @@ export default function HelpDialog({ open, onOpenChange }: HelpDialogProps) {
                   type="multiple"
                   className="rounded-xl border border-border/60 bg-card/50 overflow-hidden"
                 >
-                  {faqItems.map((item, i) => (
+                  {faqItems.map((item) => (
                     <AccordionItem
-                      key={i}
-                      value={`faq-${i}`}
+                      key={item.question}
+                      value={item.question}
                       className="border-border/40"
                     >
                       <AccordionTrigger className="px-4 py-3 text-sm font-medium text-primary hover:no-underline hover:bg-accent/30">

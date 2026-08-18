@@ -109,7 +109,7 @@ export default function NavigationContent() {
           const passed = i < currentStep;
           return (
             <button
-              key={`${i}-${step.text}`}
+              key={`${step.type}-${step.text}-${step.distanceM ?? 0}-${step.polylineIndex ?? 0}`}
               ref={active ? currentRef : undefined}
               type="button"
               onClick={() => setStepIndex(i)}

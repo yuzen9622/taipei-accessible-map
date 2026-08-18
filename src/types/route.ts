@@ -1,11 +1,11 @@
 import type {
-  MatchKind,
   MatchedAlert,
+  MatchKind,
   MetroAlert,
   TransitAlert,
 } from "./transit-alert";
 
-export type { MatchKind, MatchedAlert, MetroAlert, TransitAlert };
+export type { MatchedAlert, MatchKind, MetroAlert, TransitAlert };
 
 // Types aligned with backend OpenAPI spec (POST /a11y/accessible-route)
 

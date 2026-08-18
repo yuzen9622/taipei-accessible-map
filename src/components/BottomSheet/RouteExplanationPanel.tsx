@@ -66,8 +66,8 @@ export default function RouteExplanationPanel({
           {/* Highlights */}
           {explanation.accessibilityHighlights.length > 0 && (
             <div className="space-y-1.5">
-              {explanation.accessibilityHighlights.map((h, i) => (
-                <div key={i} className="flex items-start gap-2 text-sm">
+              {explanation.accessibilityHighlights.map((h) => (
+                <div key={h} className="flex items-start gap-2 text-sm">
                   <Lightbulb className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
                   <span>{h}</span>
                 </div>
@@ -82,8 +82,8 @@ export default function RouteExplanationPanel({
                 <AlertCircle className="h-4 w-4" />
                 {t("warnings")}
               </h3>
-              {explanation.warnings.map((w, i) => (
-                <p key={i} className="text-sm text-muted-foreground ml-5.5">
+              {explanation.warnings.map((w) => (
+                <p key={w} className="text-sm text-muted-foreground ml-5.5">
                   {w}
                 </p>
               ))}

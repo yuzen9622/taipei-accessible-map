@@ -186,7 +186,7 @@ export default function BottomSheet() {
   const coachMarksActive = useOnboardingStore((s) => s.coachMarksActive);
   const stepListOpen = useNavStore((s) => s.stepListOpen);
   const setStepListOpen = useNavStore((s) => s.setStepListOpen);
-  const [snap, setSnap] = useState<"peek" | "half" | "full">("peek");
+  const [, setSnap] = useState<"peek" | "half" | "full">("peek");
   const [sheetHeight, setSheetHeight] = useState(SNAP_POINTS.peek);
   const [isDragging, setIsDragging] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
@@ -609,45 +609,24 @@ export default function BottomSheet() {
           <div
             ref={mobileContentScrollRef}
             className={cn(
-              "flex-1 overflow-x-hidden pb-safe",
+              "flex-1 overflow-x-hidden pb-safe relative",
               showAssistant ? "overflow-hidden px-0" : "px-4",
               atPeek && !showAssistant
                 ? "overflow-y-hidden"
                 : "overflow-y-auto",
             )}
-            role={
-              atPeek && sheetMode === "home" && !showAssistant
-                ? "button"
-                : undefined
-            }
-            tabIndex={
-              atPeek && sheetMode === "home" && !showAssistant ? 0 : undefined
-            }
-            aria-label={
-              atPeek && sheetMode === "home" && !showAssistant
-                ? t("expandPanel", "展開面板")
-                : undefined
-            }
-            onClick={
-              atPeek && sheetMode === "home" && !showAssistant
-                ? () => {
-                    setSnap("half");
-                    setSheetHeight(SNAP_POINTS.half);
-                  }
-                : undefined
-            }
-            onKeyDown={
-              atPeek && sheetMode === "home" && !showAssistant
-                ? (e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      setSnap("half");
-                      setSheetHeight(SNAP_POINTS.half);
-                    }
-                  }
-                : undefined
-            }
           >
+            {atPeek && sheetMode === "home" && !showAssistant && (
+              <button
+                type="button"
+                className="absolute inset-0 z-10 w-full h-full opacity-0 cursor-pointer"
+                aria-label={t("expandPanel", "展開面板")}
+                onClick={() => {
+                  setSnap("half");
+                  setSheetHeight(SNAP_POINTS.half);
+                }}
+              />
+            )}
             {/* Both stay mounted — a conditional-render ternary here used to
                 unmount `AIChatBot` every time the assistant closed, which
                 reset its conversation (state now lives in a store so that

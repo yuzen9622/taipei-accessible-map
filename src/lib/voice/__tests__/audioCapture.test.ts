@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createCapture, type CreateCaptureDeps } from "../audioCapture";
+import { type CreateCaptureDeps, createCapture } from "../audioCapture";
 
 interface FakeTrack {
   stop: ReturnType<typeof vi.fn>;

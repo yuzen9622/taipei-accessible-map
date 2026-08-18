@@ -1,6 +1,6 @@
-import type { LatLng, AiResultMarker } from "@/types";
-import type { AccessibleRoute } from "@/types/route";
 import type { SheetMode } from "@/stores/useMapStore";
+import type { AiResultMarker, LatLng } from "@/types";
+import type { AccessibleRoute } from "@/types/route";
 
 // ── Map ──
 
