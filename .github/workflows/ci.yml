@@ -20,6 +20,8 @@ jobs:
   check:
     name: Lint, Typecheck & Test
     runs-on: ubuntu-latest
+    env:
+      TZ: Asia/Taipei
     steps:
       # v4.2.2
       - name: Check out repository
