@@ -1,0 +1,56 @@
+# 臺北無障礙導航系統 完整規格導覽 - Taipei Accessible Navigation System (Full Guide)
+
+## 專案概要 (Project Summary)
+- 專案名稱：臺北無障礙導航系統 (Taipei Accessible Navigation System / Accessible Smart Map)
+- 網址：https://map.yuzen.dev/
+- 核心目標：針對輪椅使用者、長者、推嬰兒車者等行動不便族群，提供結合無障礙設施、即時大眾運輸動態、安全無障礙路網的智慧導航平台。
+
+---
+
+## 支援語系與路由 (Supported Locales & Routing)
+- `https://map.yuzen.dev/` : 根網址（自動依據語系或偏好轉導至 `/zh-TW/` 或 `/en/`）
+- `https://map.yuzen.dev/zh-TW/` : 繁體中文主要地圖與導航介面
+- `https://map.yuzen.dev/en/` : 英文主要地圖與導航介面
+- `https://map.yuzen.dev/zh-TW/verify-email/` : 電子郵件驗證頁面
+- `https://map.yuzen.dev/zh-TW/reset-password/` : 密碼重設頁面
+
+---
+
+## 核心功能清單 (Features & Capabilities)
+
+### 1. 無障礙路網規劃 (Accessible Routing)
+- 避開障礙：全面避開人行天橋（無升降梯者）、地下道（無坡道者）、高階梯步道。
+- 設施優先：優先引導經由具有無障礙斜坡、電梯、低地板公車停靠站之路線。
+- 輪椅友善權重：考量坡度（斜率）、路面平整度、人行道寬度與鋪面材質。
+
+### 2. 捷運與公共設施無障礙圖資 (Metro & Facility Accessibility)
+- 捷運站電梯分佈：精確標示站體各出入口之無障礙電梯位置與狀態。
+- 專用設施：包含無障礙閘門、無障礙廁所、充電插座、輪椅升降設備與輪椅充電區。
+- 站內換乘引導：提供站內電梯連通動線資訊。
+
+### 3. 即時大眾運輸 (Real-time Public Transit)
+- 串接台灣交通部 TDX (Transport Data eXchange) 開放資料平台。
+- 即時公車動態：提供公車路線、預估到站時間（ETA）、低地板公車 (Low-floor Bus) 標記。
+- 捷運即時營運狀況與異常事件通報。
+
+### 4. AI 智慧無障礙諮詢 (AI Accessibility Assistant)
+- 結合大型語言模型提供自然語言對話介面。
+- 支援查詢站點設施狀況、最佳無障礙路線推薦、身障福利與友善店家資訊。
+
+### 5. 語音導航與輔助互動 (Voice Navigation & A11y UI)
+- 支援語音輸入與語音提示功能。
+- 遵循 W3C WCAG 2.1 AA 規範、無障礙色彩對比、ARIA 標籤支援螢幕閱讀器操作。
+
+### 6. SOS 緊急通報 (SOS Emergency Assistance)
+- 單鍵快速定位自身 GPS 座標。
+- 支援快速撥打緊急聯絡電話與即時發送定位求助。
+
+---
+
+## 技術規格與架構 (Technical Stack & Standards)
+- 前端架構：Next.js 15 (App Router), React 19, TypeScript
+- UI / Styling：Tailwind CSS 4, Radix UI, Lucide Icons, Framer Motion
+- 地圖核心：MapLibre GL / Google Maps JavaScript API
+- 國際化 (i18n)：i18next, react-i18next
+- 跨平台支援：Capacitor 8 (iOS & Android 原生打包)
+- 授權條款：MIT License

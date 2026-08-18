@@ -35,11 +35,39 @@ export function generateStaticParams() {
 }
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://map.yuzen.dev"),
   title: "無障礙智慧地圖 - Accessible Smart Map",
   description:
     "無障礙智慧地圖 - Accessible Smart Map 一款專為無障礙設計的地圖，並且支援路線規劃，讓身障人士也能輕鬆找到適合自己的路線。",
   icons: {
     icon: "/logo.ico",
+  },
+  alternates: {
+    canonical: "/",
+    languages: {
+      "zh-TW": "/zh-TW/",
+      en: "/en/",
+    },
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  openGraph: {
+    title: "無障礙智慧地圖 - Accessible Smart Map",
+    description:
+      "無障礙智慧地圖 - Accessible Smart Map 一款專為無障礙設計的地圖，支援無障礙設施查詢、即時公車動態與無障礙路線規劃。",
+    url: "https://map.yuzen.dev",
+    siteName: "臺北無障礙導航系統",
+    locale: "zh_TW",
+    type: "website",
   },
 };
 // No maximumScale/userScalable lock — that violated WCAG 1.4.4 (low-vision

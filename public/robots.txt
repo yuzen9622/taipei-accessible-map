@@ -1,0 +1,13 @@
+# Robots.txt for Taipei Accessible Navigation System
+# https://map.yuzen.dev/
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /zh-TW/verify-email
+Disallow: /en/verify-email
+Disallow: /zh-TW/reset-password
+Disallow: /en/reset-password
+
+# Sitemaps
+Sitemap: https://map.yuzen.dev/sitemap.xml

@@ -1,0 +1,30 @@
+# 臺北無障礙導航系統 - Taipei Accessible Navigation System
+
+> 專為行動不便者、輪椅使用者、推嬰兒車者與高齡長者打造的智慧無障礙地圖與導航平台。整合台北捷運無障礙電梯與出入口設施、交通部 TDX 即時大眾運輸動態、語音導航與 AI 智慧助理，提供最友善、平權且無障礙的出行路線規劃。
+
+臺北無障礙導航系統（Taipei Accessible Navigation System）是一個致力於實踐「平等出行權」的智慧地圖平台。傳統導航往往忽略階梯、人行道高低差、施工阻礙或無電梯出入口，本系統專門針對無障礙需求，提供即時無障礙設施導引、即時公車動態、無障礙步行與轉乘路徑規劃。
+
+## 核心頁面 (Core Pages)
+
+- [首頁 / 地圖 (繁體中文)](https://map.yuzen.dev/zh-TW/): 繁體中文主要地圖探索、無障礙路徑規劃、捷運設施查詢與即時公車資訊。
+- [Home / Map (English)](https://map.yuzen.dev/en/): English accessible map exploration, route planning, metro accessibility info, and transit updates.
+
+## 主要功能與特性 (Core Features)
+
+- [無障礙路徑規劃 (Accessible Route Planning)](https://map.yuzen.dev/zh-TW/): 自動避開階梯、天橋與地下道障礙，優先規劃包含坡道、電梯與無障礙人行道的安全步行與轉乘路線。
+- [無障礙設施圖資 (Accessibility Facilities)](https://map.yuzen.dev/zh-TW/): 整合台北捷運全線各站點之無障礙電梯位置、輪椅升降設備、無障礙廁所與專用出入口資訊。
+- [即時大眾運輸資訊 (Real-time Transit Data)](https://map.yuzen.dev/zh-TW/): 串接交通部 TDX 運輸資料流通平台，提供低地板公車動態、預估到站時間與即時營運狀態。
+- [AI 智慧無障礙助理 (AI Assistant)](https://map.yuzen.dev/zh-TW/): 支援自然語言對話與無障礙出行諮詢，快速回答站點設施、無障礙建議與周邊交通。
+- [語音互動與導航 (Voice Navigation & Assistant)](https://map.yuzen.dev/zh-TW/): 提供即時語音提示與語音輸入指令，方便視障或手部不便之使用者操作。
+- [SOS 緊急通報與協助 (SOS Emergency Assistance)](https://map.yuzen.dev/zh-TW/): 快速定位當前位置並發送緊急聯絡人求助與座標資訊。
+
+## 系統架構與開放資料 (Architecture & Open Data)
+
+- 前端技術：Next.js 15 (App Router)、React 19、Tailwind CSS、MapLibre GL / Google Maps API、Capacitor (支援 iOS / Android 跨平台)。
+- 後端資料：串接交通部 TDX (Transport Data eXchange) 運輸開放資料庫及台北市政府開放資料平台。
+- 無障礙設計標準：遵循 W3C WCAG 2.1 AA 規範，支援螢幕報讀器（Screen Reader）與高對比顯示。
+
+## 擴充文檔 (Optional)
+
+- [完整機器可讀導覽 (llms-full.txt)](https://map.yuzen.dev/llms-full.txt): 包含系統完整資料綱要、API 介面架構與無障礙路網規劃邏輯詳細規格。
+- [網站地圖 (Sitemap)](https://map.yuzen.dev/sitemap.xml): XML 網站地圖與多語系頁面清單。
