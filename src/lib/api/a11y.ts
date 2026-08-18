@@ -1,5 +1,6 @@
 ﻿import { END_POINT } from "@/lib/config";
 import {
+  ApiError,
   authenticatedRequest,
   fetchRequest,
   getAccessToken,
@@ -86,7 +87,38 @@ export async function createHazardReport(formData: FormData) {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
     body: formData,
   });
-  return response.json() as Promise<ApiResponse<HazardReport>>;
+
+  const hasBody = response.status !== 204 && response.status !== 205;
+  let data: ApiResponse<HazardReport>;
+  if (hasBody) {
+    try {
+      data = (await response.json()) as ApiResponse<HazardReport>;
+    } catch {
+      throw new ApiError(
+        response.statusText || "Failed to submit hazard report",
+        response.status,
+      );
+    }
+  } else {
+    data = {
+      ok: response.ok,
+      status: response.ok ? "success" : "error",
+      code: response.status,
+      message: response.statusText,
+    } as ApiResponse<HazardReport>;
+  }
+
+  const isSuccess = data.ok === true || data.success === true;
+  if (!isSuccess) {
+    throw new ApiError(
+      data.message || "Failed to submit hazard report",
+      data.code || response.status,
+      (data.data as { reason?: string } | undefined)?.reason,
+      data.data,
+    );
+  }
+
+  return data;
 }
 
 export async function getNearbyHazardReports(

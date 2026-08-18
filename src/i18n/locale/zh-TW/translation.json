@@ -300,6 +300,8 @@
   "reportSuccess": "回報成功！感謝您的貢獻",
   "reportFailed": "回報失敗，請稍後再試",
   "reportLoginHint": "登入後回報會記在你的帳號下",
+  "imageTooLarge": "圖片大小不能超過 5MB",
+  "invalidImageType": "僅支援 JPG、PNG、WebP 等圖片格式",
   "nearbyHazards": "附近障礙物回報",
   "confirmed": "已確認",
   "pending": "待確認",
