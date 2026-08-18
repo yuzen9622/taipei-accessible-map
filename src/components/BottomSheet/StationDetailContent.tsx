@@ -52,7 +52,7 @@ export default function StationDetailContent() {
     for (const m of nearbyMetro) {
       const exit = m.出入口編號 || "其他";
       if (!groups.has(exit)) groups.set(exit, []);
-      groups.get(exit)!.push(m);
+      groups.get(exit)?.push(m);
     }
     return Array.from(groups.entries()).sort(([a], [b]) => a.localeCompare(b));
   }, [nearbyMetro]);

@@ -11,8 +11,15 @@
   }
 }
 
-body {
-  pointer-events: auto !important;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    pointer-events: auto;
+  }
 }
 
 .material-symbols-outlined {
@@ -453,30 +460,20 @@ img.adp-marker2 {
 }
 
 .high-contrast * {
-  font-weight: 500 !important;
+  font-weight: 500;
 }
 
 .high-contrast button,
 .high-contrast a,
 .high-contrast [role="button"] {
-  font-weight: 600 !important;
-  border-width: 2px !important;
-}
-
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-
-  body {
-    @apply bg-background text-foreground font-sans;
-  }
+  font-weight: 600;
+  border-width: 2px;
 }
 
 /* MapLibre's own zoom in/out buttons ship at 29×29px — under the 44×44
    touch-target floor everywhere else in the app. MapLibre doesn't expose a
    size prop for its NavigationControl, so this overrides its stylesheet. */
-.maplibregl-ctrl-group button {
-  width: 44px !important;
-  height: 44px !important;
+.maplibregl-ctrl.maplibregl-ctrl-group button {
+  width: 44px;
+  height: 44px;
 }

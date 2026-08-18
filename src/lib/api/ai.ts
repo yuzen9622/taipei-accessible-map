@@ -35,7 +35,7 @@ export async function streamChatWithAgent(
     name: string,
     args: string,
     isDone: boolean,
-    result?: any,
+    result?: unknown,
   ) => void,
   signal?: AbortSignal,
 ): Promise<void> {
@@ -144,7 +144,9 @@ export async function streamChatWithAgent(
           } else if (delta?.content) {
             onChunk(delta.content);
           }
-        } catch {}
+        } catch (_err) {
+          // Ignore partial or non-JSON chunk in stream
+        }
       }
     }
   }

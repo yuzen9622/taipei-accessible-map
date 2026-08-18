@@ -6,7 +6,6 @@ import {
   type IBathroom,
   type Marker,
   type metroA11yData,
-  type NominatimPlace,
 } from "@/types";
 
 export function cn(...inputs: ClassValue[]) {

@@ -515,14 +515,14 @@ export function getAggregatedToolResults(
     | Array<{ name: string; result?: unknown; status?: string }>
     | undefined,
 ): ToolResultGroup[] {
-  if (!activities || !activities.length) return [];
+  if (!activities?.length) return [];
 
   const groups: ToolResultGroup[] = [];
 
   for (const act of activities) {
     if (act.status === "running") continue;
     const group = getToolResultGroup(act.name, act.result);
-    if (!group || !group.items.length) continue;
+    if (!group?.items.length) continue;
 
     const existingIndex = groups.findIndex(
       (g) => g.icon === group.icon && g.heading === group.heading,

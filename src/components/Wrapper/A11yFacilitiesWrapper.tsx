@@ -90,17 +90,15 @@ export default function A11yFacilitiesWrapper() {
     return () => controller.abort();
   }, [setA11yPlaces, t]);
 
-  const updateBounds = () => {
-    if (!map) return;
-    const b = map.getBounds();
-    if (b) {
-      setBounds([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()]);
-      setZoom(map.getZoom());
-    }
-  };
-
   useEffect(() => {
     if (!map) return;
+    const updateBounds = () => {
+      const b = map.getBounds();
+      if (b) {
+        setBounds([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()]);
+        setZoom(map.getZoom());
+      }
+    };
     updateBounds();
     map.on("move", updateBounds);
     map.on("zoom", updateBounds);
@@ -160,8 +158,13 @@ export default function A11yFacilitiesWrapper() {
       )}
       {clusters.map((cluster) => {
         const [longitude, latitude] = cluster.geometry.coordinates;
-        const properties = cluster.properties as any;
-        const { cluster: isCluster, point_count: pointCount } = properties;
+        const properties = cluster.properties as {
+          cluster?: boolean;
+          point_count?: number;
+          placeId?: string;
+          place?: MarkerType;
+        };
+        const { cluster: isCluster, point_count: pointCount = 0 } = properties;
 
         if (isCluster) {
           const size = Math.min(30 + (pointCount / points.length) * 40, 60);

@@ -150,10 +150,18 @@ export default function RoutePlanInput() {
         {/* Transportation Mode */}
         <div className="flex gap-1 bg-muted/30 p-1 rounded-2xl w-fit">
           {[
-            { id: "transit", icon: Bus, label: t("transit", "大眾運輸") },
-            { id: "drive", icon: Car, label: t("drive", "開車") },
-            { id: "motorcycle", icon: Bike, label: t("motorcycle", "機車") },
-            { id: "walk", icon: Footprints, label: t("walk", "步行") },
+            {
+              id: "transit" as const,
+              icon: Bus,
+              label: t("transit", "大眾運輸"),
+            },
+            { id: "drive" as const, icon: Car, label: t("drive", "開車") },
+            {
+              id: "motorcycle" as const,
+              icon: Bike,
+              label: t("motorcycle", "機車"),
+            },
+            { id: "walk" as const, icon: Footprints, label: t("walk", "步行") },
           ].map((tm) => (
             <Button
               key={tm.id}
@@ -165,7 +173,7 @@ export default function RoutePlanInput() {
                   ? "shadow-sm"
                   : "text-muted-foreground hover:bg-muted/80",
               )}
-              onClick={() => setTravelMode(tm.id as any)}
+              onClick={() => setTravelMode(tm.id)}
               aria-label={tm.label}
             >
               <tm.icon className="h-4 w-4" />
@@ -177,15 +185,23 @@ export default function RoutePlanInput() {
         {/* Accessibility Mode */}
         <div className="flex gap-1 bg-muted/30 p-1 rounded-2xl w-fit">
           {[
-            { id: "normal", icon: User, label: t("normalMode", "一般") },
             {
-              id: "wheelchair",
+              id: "normal" as const,
+              icon: User,
+              label: t("normalMode", "一般"),
+            },
+            {
+              id: "wheelchair" as const,
               icon: Accessibility,
               label: t("wheelchairMode", "輪椅"),
             },
-            { id: "elderly", icon: User, label: t("elderlyMode", "長者") },
             {
-              id: "visual_impaired",
+              id: "elderly" as const,
+              icon: User,
+              label: t("elderlyMode", "長者"),
+            },
+            {
+              id: "visual_impaired" as const,
               icon: EyeOff,
               label: t("visualImpairedMode", "視障"),
             },
@@ -200,7 +216,7 @@ export default function RoutePlanInput() {
                   ? "shadow-sm"
                   : "text-muted-foreground hover:bg-muted/80",
               )}
-              onClick={() => setA11yMode(am.id as any)}
+              onClick={() => setA11yMode(am.id)}
               aria-label={am.label}
             >
               <am.icon className="h-4 w-4" />

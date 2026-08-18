@@ -608,6 +608,8 @@ export default function BottomSheet() {
           {/* Mobile Content — overflow hidden at peek so users drag the
               sheet up instead of scrolling within a tiny sliver. Tapping
               the content area at peek lifts the sheet to half. */}
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: tapping empty space at peek expands sheet */}
+          {/* biome-ignore lint/a11y/useAriaPropsSupportedByRole: dynamic button role when at peek */}
           <div
             ref={mobileContentScrollRef}
             className={cn(

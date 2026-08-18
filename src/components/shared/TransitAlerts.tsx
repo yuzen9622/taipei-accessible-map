@@ -12,8 +12,8 @@ import { useAppTranslation } from "@/i18n/client";
 import { cn } from "@/lib/utils";
 import type { MetroAlertResult } from "@/types/route";
 import type {
-  MatchKind,
   MatchedAlert,
+  MatchKind,
   MetroAlert,
   TransitAlert,
 } from "@/types/transit-alert";

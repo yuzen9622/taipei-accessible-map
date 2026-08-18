@@ -338,10 +338,10 @@ export default function PlaceContent() {
   }
 
   const name = isPlace
-    ? place!.name || place!.fullAddress || ""
+    ? place?.name || place?.fullAddress || ""
     : infoShow.address;
-  const address = isPlace ? place!.fullAddress : infoShow.address;
-  const addressParts = isPlace ? place!.addressComponents : null;
+  const address = isPlace ? place?.fullAddress : infoShow.address;
+  const addressParts = isPlace ? place?.addressComponents : null;
   const hasA11y = nearbyBathrooms.length > 0 || nearbyMetro.length > 0;
 
   return (
@@ -364,7 +364,7 @@ export default function PlaceContent() {
           <h1 className="text-lg font-bold leading-tight line-clamp-2">
             {name}
           </h1>
-          {isPlace && place!.name && (
+          {isPlace && place?.name && (
             <p className="text-sm text-muted-foreground mt-0.5 line-clamp-2">
               {address}
             </p>
@@ -374,34 +374,36 @@ export default function PlaceContent() {
 
       {/* Badges */}
       <div className="flex flex-wrap gap-2">
-        {isPlace && place!.typeLabel && (
+        {isPlace && place?.typeLabel && (
           <Badge variant="secondary" className="rounded-full">
-            {place!.typeLabel}
+            {place?.typeLabel}
           </Badge>
         )}
-        {isPlace && !place!.typeLabel && place!.placeType && (
+        {isPlace && !place?.typeLabel && place?.placeType && (
           <Badge variant="secondary" className="rounded-full">
-            {getPlaceTypeLabel(place!.placeType, i18n.language)}
+            {getPlaceTypeLabel(place?.placeType, i18n.language)}
           </Badge>
         )}
         {isPlace && (
           <Badge
             variant={
-              place!.accessibility.status === "accessible"
+              place?.accessibility.status === "accessible"
                 ? "default"
-                : place!.accessibility.status === "limited"
+                : place?.accessibility.status === "limited"
                   ? "secondary"
                   : "outline"
             }
             className="rounded-full gap-1"
           >
             <AccessibilityIcon size={12} />
-            {getAccessibilityStatusLabel(place!.accessibility.status)}
+            {getAccessibilityStatusLabel(
+              place?.accessibility.status ?? "unknown",
+            )}
           </Badge>
         )}
-        {isPlace && place!.externalLinks.osm && (
+        {isPlace && place?.externalLinks.osm && (
           <a
-            href={place!.externalLinks.osm}
+            href={place?.externalLinks.osm}
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -414,9 +416,9 @@ export default function PlaceContent() {
             </Badge>
           </a>
         )}
-        {isPlace && place!.externalLinks.google && (
+        {isPlace && place?.externalLinks.google && (
           <a
-            href={place!.externalLinks.google}
+            href={place?.externalLinks.google}
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -430,8 +432,8 @@ export default function PlaceContent() {
           </a>
         )}
       </div>
-      {isPlace && place!.attribution && (
-        <p className="text-xs text-muted-foreground">{place!.attribution}</p>
+      {isPlace && place?.attribution && (
+        <p className="text-xs text-muted-foreground">{place?.attribution}</p>
       )}
 
       {/* Actions */}

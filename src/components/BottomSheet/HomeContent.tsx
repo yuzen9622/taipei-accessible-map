@@ -12,7 +12,7 @@ import { useAppTranslation } from "@/i18n/client";
 import { QUICK_ACTION_DEFS } from "@/lib/quickActions";
 import { cn } from "@/lib/utils";
 import useAuthStore from "@/stores/useAuthStore";
-import useMapStore from "@/stores/useMapStore";
+import useMapStore, { placeKey } from "@/stores/useMapStore";
 import useQuickActionsStore from "@/stores/useQuickActionsStore";
 import useVoiceStore from "@/stores/useVoiceStore";
 import type { PlaceDetail } from "@/types";
@@ -235,16 +235,7 @@ export default function HomeContent() {
              this a chip cut off mid-button (e.g. "公車到站" on a wide
              desktop panel) just looked truncated, not scrollable. */
           <div className="relative">
-            <div
-              role="group"
-              className="flex gap-2 overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-4 px-4 pb-0.5"
-              aria-label={t("quickActionsScrollHint", {
-                count: QUICK_ACTION_DEFS.filter((d) =>
-                  enabledActions.includes(d.id),
-                ).length,
-                defaultValue: "快捷功能，共 {{count}} 項，可左右滑動",
-              })}
-            >
+            <div className="flex gap-2 overflow-x-auto no-scrollbar snap-x snap-mandatory -mx-4 px-4 pb-0.5">
               {QUICK_ACTION_DEFS.filter((d) =>
                 enabledActions.includes(d.id),
               ).map((def) => (
@@ -289,14 +280,14 @@ export default function HomeContent() {
             )}
           </div>
           <div className="space-y-1">
-            {savedPlaces.slice(0, 5).map((item, idx) => {
+            {savedPlaces.slice(0, 5).map((item) => {
               const name =
                 item.kind === "place"
                   ? item.place.name || item.place.fullAddress
                   : item.address;
               return (
                 <button
-                  key={idx}
+                  key={placeKey(item)}
                   type="button"
                   onClick={() => handlePlaceChange(item)}
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted/60 transition-colors text-left"
@@ -318,14 +309,14 @@ export default function HomeContent() {
             {t("recentSearches")}
           </h2>
           <div className="space-y-1">
-            {searchHistory.slice(0, 5).map((item, idx) => {
+            {searchHistory.slice(0, 5).map((item) => {
               const name =
                 item.kind === "place"
                   ? item.place.name || item.place.fullAddress
                   : item.address;
               return (
                 <button
-                  key={idx}
+                  key={placeKey(item)}
                   type="button"
                   onClick={() => handlePlaceChange(item)}
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-muted/60 transition-colors text-left"

@@ -40,6 +40,11 @@ interface WaypointRow {
   input: string;
 }
 
+const DISALLOWED_TRAVEL_MODES: Record<string, ("drive" | "motorcycle")[]> = {
+  wheelchair: ["drive", "motorcycle"],
+  visual_impaired: ["drive", "motorcycle"],
+};
+
 export default function RoutePlanContent() {
   const { t } = useAppTranslation();
   const {
@@ -105,25 +110,13 @@ export default function RoutePlanContent() {
       setA11yMode(useOnboardingStore.getState().profile.routeMode);
     }
   }, [onboardingHydrated]);
-  // A wheelchair user isn't self-driving or riding a motorcycle; someone in
-  // "visual impaired" mode isn't either. Rather than let both selections
-  // exist and produce a route that contradicts the a11y mode picked right
-  // next to it, the incompatible transport options are disabled outright.
-  const DISALLOWED_TRAVEL_MODES: Record<string, ("drive" | "motorcycle")[]> = {
-    wheelchair: ["drive", "motorcycle"],
-    visual_impaired: ["drive", "motorcycle"],
-  };
   const disabledTravelModes = DISALLOWED_TRAVEL_MODES[a11yMode] ?? [];
-  // If the a11y mode just changed and stranded the current transport pick
-  // on a now-disabled option, fall back to transit rather than silently
-  // keeping an invalid combination selected.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: only react to
-  // the a11y mode changing, not every render where travelMode/disabledTravelModes differ
   useEffect(() => {
-    if (disabledTravelModes.includes(travelMode as "drive" | "motorcycle")) {
+    const disallowed = DISALLOWED_TRAVEL_MODES[a11yMode] ?? [];
+    if (disallowed.includes(travelMode as "drive" | "motorcycle")) {
       setTravelMode("transit");
     }
-  }, [a11yMode]);
+  }, [a11yMode, travelMode]);
   const [waypointRows, setWaypointRows] = useState<WaypointRow[]>([]);
   const nextWaypointId = useRef(0);
 
@@ -554,10 +547,22 @@ export default function RoutePlanContent() {
           </span>
           <div className="flex gap-1 bg-muted/30 p-1 rounded-2xl w-full overflow-x-auto no-scrollbar">
             {[
-              { id: "transit", icon: Bus, label: t("transit", "大眾運輸") },
-              { id: "drive", icon: Car, label: t("drive", "開車") },
-              { id: "motorcycle", icon: Bike, label: t("motorcycle", "機車") },
-              { id: "walk", icon: Footprints, label: t("walk", "步行") },
+              {
+                id: "transit" as const,
+                icon: Bus,
+                label: t("transit", "大眾運輸"),
+              },
+              { id: "drive" as const, icon: Car, label: t("drive", "開車") },
+              {
+                id: "motorcycle" as const,
+                icon: Bike,
+                label: t("motorcycle", "機車"),
+              },
+              {
+                id: "walk" as const,
+                icon: Footprints,
+                label: t("walk", "步行"),
+              },
             ].map((tm) => {
               const isDisallowed = disabledTravelModes.includes(
                 tm.id as "drive" | "motorcycle",
@@ -575,7 +580,7 @@ export default function RoutePlanContent() {
                       ? "shadow-sm"
                       : "text-muted-foreground hover:bg-muted/80",
                   )}
-                  onClick={() => setTravelMode(tm.id as any)}
+                  onClick={() => setTravelMode(tm.id)}
                   aria-label={
                     isDisallowed
                       ? t("travelModeUnavailableFor", {
@@ -616,15 +621,23 @@ export default function RoutePlanContent() {
           </span>
           <div className="flex gap-1 bg-muted/30 p-1 rounded-2xl w-full overflow-x-auto no-scrollbar">
             {[
-              { id: "normal", icon: User, label: t("normalMode", "一般") },
               {
-                id: "wheelchair",
+                id: "normal" as const,
+                icon: User,
+                label: t("normalMode", "一般"),
+              },
+              {
+                id: "wheelchair" as const,
                 icon: Accessibility,
                 label: t("wheelchairMode", "輪椅"),
               },
-              { id: "elderly", icon: User, label: t("elderlyMode", "長者") },
               {
-                id: "visual_impaired",
+                id: "elderly" as const,
+                icon: User,
+                label: t("elderlyMode", "長者"),
+              },
+              {
+                id: "visual_impaired" as const,
                 icon: EyeOff,
                 label: t("visualImpairedMode", "視障"),
               },
@@ -641,7 +654,7 @@ export default function RoutePlanContent() {
                 )}
                 onClick={() => {
                   userPickedModeRef.current = true;
-                  setA11yMode(am.id as any);
+                  setA11yMode(am.id);
                 }}
                 aria-label={am.label}
               >

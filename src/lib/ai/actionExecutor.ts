@@ -1,10 +1,10 @@
-import useMapStore from "@/stores/useMapStore";
 import {
   extendBounds,
   fitRouteBounds,
   routeBoundsFromLegs,
 } from "@/lib/mapCamera";
-import type { UIAction, ActionResult } from "./uiAction";
+import useMapStore from "@/stores/useMapStore";
+import type { ActionResult, UIAction } from "./uiAction";
 
 export function executeAction(action: UIAction): ActionResult {
   const s = useMapStore.getState();
@@ -58,7 +58,7 @@ export function executeAction(action: UIAction): ActionResult {
     default:
       return {
         ok: false,
-        skipped: `unknown action: ${(action as any).type}`,
+        skipped: `unknown action: ${(action as { type?: string }).type ?? "unknown"}`,
       };
   }
 }

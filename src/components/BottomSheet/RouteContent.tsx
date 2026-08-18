@@ -172,7 +172,7 @@ export default function RouteContent() {
       <div className="space-y-3">
         {computeRoutes.map((route, index) => (
           <RouteCard
-            key={`${index}-${route.routeId ?? ""}`}
+            key={route.routeId || `${route.routeName}-${route.totalMinutes}`}
             idx={index}
             route={route}
           />
