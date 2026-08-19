@@ -159,11 +159,23 @@ export async function searchBusRoutes(
   return data;
 }
 
-export async function searchBusStops(keyword: string) {
+export async function searchBusStops(
+  keyword: string,
+  location?: LatLng | { lat: number; lng: number } | null,
+) {
+  const params = new URLSearchParams();
+  params.set("keyword", keyword.trim());
+  if (
+    location &&
+    typeof location.lat === "number" &&
+    typeof location.lng === "number"
+  ) {
+    params.set("location", `${location.lat},${location.lng}`);
+  }
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10_000);
   const data = (await fetchRequest(
-    `${END_POINT}/api/v1/transit/bus/search-stops?keyword=${encodeURIComponent(keyword)}`,
+    `${END_POINT}/api/v1/transit/bus/search-stops?${params.toString()}`,
     { signal: controller.signal },
   )) as ApiResponse<{ stops: BusStopSearchResult[] }>;
   clearTimeout(timeout);

@@ -107,7 +107,7 @@ describe("searchBusRoutes", () => {
 });
 
 describe("searchBusStops", () => {
-  it("requests search-stops endpoint with keyword", async () => {
+  it("requests search-stops endpoint with keyword only when location is omitted", async () => {
     let capturedUrl = "";
 
     const fetchMock = vi.fn(async (url: string | URL | Request) => {
@@ -134,7 +134,44 @@ describe("searchBusStops", () => {
     const parsedUrl = new URL(capturedUrl);
     expect(parsedUrl.pathname).toBe("/api/v1/transit/bus/search-stops");
     expect(parsedUrl.searchParams.get("keyword")).toBe("台北車站");
+    expect(parsedUrl.searchParams.has("location")).toBe(false);
     expect(res.ok).toBe(true);
     expect(res.data?.stops[0].stopName).toBe("台北車站(忠孝)");
+  });
+
+  it("includes location query parameter when location is provided", async () => {
+    let capturedUrl = "";
+
+    const fetchMock = vi.fn(async (url: string | URL | Request) => {
+      capturedUrl = String(url);
+      return jsonResponse({
+        ok: true,
+        data: {
+          stops: [
+            {
+              stopUid: "TXG456",
+              stopName: "台中車站(台灣大道)",
+              city: "Taichung",
+              coordinates: [120.686, 24.137],
+              routes: ["300"],
+            },
+          ],
+        },
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const res = await searchBusStops("車站", {
+      lat: 24.137,
+      lng: 120.686,
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const parsedUrl = new URL(capturedUrl);
+    expect(parsedUrl.pathname).toBe("/api/v1/transit/bus/search-stops");
+    expect(parsedUrl.searchParams.get("keyword")).toBe("車站");
+    expect(parsedUrl.searchParams.get("location")).toBe("24.137,120.686");
+    expect(res.ok).toBe(true);
+    expect(res.data?.stops[0].stopName).toBe("台中車站(台灣大道)");
   });
 });

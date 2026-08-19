@@ -17,8 +17,8 @@ export default function useBusSearch(
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    setResults([]);
     if (!keyword.trim()) {
-      setResults([]);
       setLoading(false);
       setError(null);
       return;
@@ -27,19 +27,24 @@ export default function useBusSearch(
     setLoading(true);
     setError(null);
 
+    const currentMode = mode;
+    let active = true;
+
     const handler = setTimeout(async () => {
       try {
-        if (mode === "route") {
+        if (currentMode === "route") {
           const res = await searchBusRoutes(keyword.trim(), location);
-          if (res.ok && res.data?.routes) {
+          if (!active) return;
+          if (res.ok && Array.isArray(res.data?.routes)) {
             setResults(res.data.routes);
           } else {
             setResults([]);
             setError((res as { message?: string }).message || "No data");
           }
         } else {
-          const res = await searchBusStops(keyword.trim());
-          if (res.ok && res.data?.stops) {
+          const res = await searchBusStops(keyword.trim(), location);
+          if (!active) return;
+          if (res.ok && Array.isArray(res.data?.stops)) {
             setResults(res.data.stops);
           } else {
             setResults([]);
@@ -47,14 +52,20 @@ export default function useBusSearch(
           }
         }
       } catch (err) {
+        if (!active) return;
         setResults([]);
         setError(err instanceof Error ? err.message : "Error fetching data");
       } finally {
-        setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
     }, 400);
 
-    return () => clearTimeout(handler);
+    return () => {
+      active = false;
+      clearTimeout(handler);
+    };
   }, [keyword, mode, location]);
 
   return { results, loading, error };
