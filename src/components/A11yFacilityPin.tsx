@@ -15,14 +15,16 @@ export default function A11yFacilityPin({ place }: { place: MarkerType }) {
   const {
     selectA11yPlace,
     setSelectA11yPlace,
-    setA11yDrawerOpen,
     setSheetMode,
+    setInfoShow,
+    setSearchPlace,
   } = useMapStore(
     useShallow((s) => ({
       selectA11yPlace: s.selectA11yPlace,
       setSelectA11yPlace: s.setSelectA11yPlace,
-      setA11yDrawerOpen: s.setA11yDrawerOpen,
       setSheetMode: s.setSheetMode,
+      setInfoShow: s.setInfoShow,
+      setSearchPlace: s.setSearchPlace,
     })),
   );
   const { handlePinClick } = usePin();
@@ -37,6 +39,27 @@ export default function A11yFacilityPin({ place }: { place: MarkerType }) {
     }
   };
 
+  const handleClick = () => {
+    handlePinClick(place.position);
+    setSelectA11yPlace(place);
+    const title = place.content?.title || "無障礙設施";
+    const desc = place.content?.desc;
+    const fullAddress = desc ? `${title} (${desc})` : title;
+    setInfoShow({
+      isOpen: true,
+      kind: "coordinate",
+      address: fullAddress,
+      position: place.position,
+    });
+    setSearchPlace({
+      kind: "coordinate",
+      address: fullAddress,
+      position: place.position,
+    });
+    setSheetMode("place");
+    setOpen(true);
+  };
+
   return (
     <HoverCard open={open} onOpenChange={setOpen} key={place.id}>
       <HoverCardTrigger asChild>
@@ -45,12 +68,9 @@ export default function A11yFacilityPin({ place }: { place: MarkerType }) {
             longitude={place.position.lng}
             latitude={place.position.lat}
             anchor="center"
-            onClick={() => {
-              handlePinClick(place.position);
-              setSelectA11yPlace(place);
-              setA11yDrawerOpen(true);
-              setSheetMode("station");
-              setOpen(true);
+            onClick={(e) => {
+              e.originalEvent.stopPropagation();
+              handleClick();
             }}
           >
             <button
@@ -58,6 +78,10 @@ export default function A11yFacilityPin({ place }: { place: MarkerType }) {
               aria-label={place.content?.title || "設施"}
               onMouseEnter={() => setOpen(true)}
               onMouseLeave={() => setOpen(false)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleClick();
+              }}
               className={cn(
                 "bg-background p-1 text-muted-foreground ring-2 ring-ring rounded-full cursor-pointer",
                 selectA11yPlace?.id === place.id &&

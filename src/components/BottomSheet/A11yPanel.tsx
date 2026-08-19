@@ -35,16 +35,23 @@ export default function A11yPanel({
   hideHeader?: boolean;
 }) {
   const { t } = useAppTranslation();
-  const { map, userLocation, a11yPlaces, selectedA11yTypes, toggleA11yType } =
-    useMapStore(
-      useShallow((s) => ({
-        map: s.map,
-        userLocation: s.userLocation,
-        a11yPlaces: s.a11yPlaces,
-        selectedA11yTypes: s.selectedA11yTypes,
-        toggleA11yType: s.toggleA11yType,
-      })),
-    );
+  const {
+    map,
+    userLocation,
+    a11yPlaces,
+    selectedA11yTypes,
+    toggleA11yType,
+    setStoreNearbyParking,
+  } = useMapStore(
+    useShallow((s) => ({
+      map: s.map,
+      userLocation: s.userLocation,
+      a11yPlaces: s.a11yPlaces,
+      selectedA11yTypes: s.selectedA11yTypes,
+      toggleA11yType: s.toggleA11yType,
+      setStoreNearbyParking: s.setNearbyParking,
+    })),
+  );
   const [nearbyHazards, setNearbyHazards] = useState<HazardReport[]>([]);
   const [nearbyParking, setNearbyParking] = useState<ParkingNearbyItem[]>([]);
 
@@ -63,12 +70,14 @@ export default function A11yPanel({
       .catch(() => {});
     getNearbyParking(fetchLoc.lat, fetchLoc.lng)
       .then((res) => {
-        if (!controller.signal.aborted && res.ok && res.data)
+        if (!controller.signal.aborted && res.ok && res.data) {
           setNearbyParking(res.data);
+          setStoreNearbyParking(res.data);
+        }
       })
       .catch(() => {});
     return () => controller.abort();
-  }, [fetchLoc]);
+  }, [fetchLoc, setStoreNearbyParking]);
 
   const a11yChips = [
     { type: A11yEnum.ELEVATOR, Icon: ArrowUpDown, label: t("elevator") },

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import useSupercluster from "use-supercluster";
 import { useShallow } from "zustand/react/shallow";
 import A11yFacilityPin from "@/components/A11yFacilityPin";
+import { useMapBoundsAndZoom } from "@/hook/useMapBoundsAndZoom";
 import { useAppTranslation } from "@/i18n/client";
 import { getAllA11yFacilities } from "@/lib/api/a11y";
 import useMapStore from "@/stores/useMapStore";
@@ -54,10 +55,7 @@ export default function A11yFacilitiesWrapper() {
       })),
     );
   const { current: map } = useMap();
-  const [bounds, setBounds] = useState<[number, number, number, number] | null>(
-    null,
-  );
-  const [zoom, setZoom] = useState<number>(15);
+  const { bounds, zoom } = useMapBoundsAndZoom(map);
   // a11yPlaces lives in the store and survives remounts (route changes, dev
   // HMR); the deployed /all-facilities payload is ~5MB and can take >15s, so
   // fetch it at most once per browser session.
@@ -90,47 +88,30 @@ export default function A11yFacilitiesWrapper() {
     return () => controller.abort();
   }, [setA11yPlaces, t]);
 
-  useEffect(() => {
-    if (!map) return;
-    const updateBounds = () => {
-      const b = map.getBounds();
-      if (b) {
-        setBounds([b.getWest(), b.getSouth(), b.getEast(), b.getNorth()]);
-        setZoom(map.getZoom());
-      }
-    };
-    updateBounds();
-    map.on("move", updateBounds);
-    map.on("zoom", updateBounds);
-    return () => {
-      map.off("move", updateBounds);
-      map.off("zoom", updateBounds);
-    };
-  }, [map]);
-
-  // Pins appear only for explicitly selected facility types — an unfiltered
-  // map drowning in clusters was unusable (user feedback).
+  // Pins appear ONLY for explicitly selected facility types — if user hasn't selected any, do not show.
+  const isFilterActive = selectedA11yTypes.size > 0;
   const filteredPlaces = useMemo(
     () =>
-      selectedA11yTypes.size === 0
+      !isFilterActive
         ? []
         : (a11yPlaces?.filter((place) =>
             selectedA11yTypes.has(place.a11yType),
           ) ?? []),
-    [selectedA11yTypes, a11yPlaces],
+    [isFilterActive, selectedA11yTypes, a11yPlaces],
   );
 
   // Toggling a filter with zero matching results used to render nothing with
   // no explanation ("looked broken"); confirm the empty result explicitly.
   useEffect(() => {
     if (isLoading) return;
-    if (selectedA11yTypes.size === 0) return;
+    if (!isFilterActive) return;
     if (filteredPlaces.length === 0) {
       toast(t("noNearbyA11y"));
     }
-  }, [selectedA11yTypes, isLoading, filteredPlaces.length, t]);
+  }, [isFilterActive, isLoading, filteredPlaces.length, t]);
 
   const points = useMemo(() => {
+    if (!isFilterActive || filteredPlaces.length === 0) return [];
     return filteredPlaces.map((place) => ({
       type: "Feature" as const,
       properties: { cluster: false, placeId: place.id, place },
@@ -139,7 +120,7 @@ export default function A11yFacilitiesWrapper() {
         coordinates: [place.position.lng, place.position.lat],
       },
     }));
-  }, [filteredPlaces]);
+  }, [isFilterActive, filteredPlaces]);
 
   const { clusters, supercluster } = useSupercluster({
     points,
@@ -147,6 +128,10 @@ export default function A11yFacilitiesWrapper() {
     zoom,
     options: { radius: 75, maxZoom: 16 },
   });
+
+  if (!isFilterActive && routeA11y.length === 0) {
+    return null;
+  }
 
   return (
     <>
