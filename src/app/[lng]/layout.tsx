@@ -37,6 +37,7 @@ export function generateStaticParams() {
 export const metadata: Metadata = {
   metadataBase: new URL("https://map.yuzen.dev"),
   title: "無障礙智慧地圖 - Accessible Smart Map",
+
   description:
     "無障礙智慧地圖 - Accessible Smart Map 一款專為無障礙設計的地圖，並且支援路線規劃，讓身障人士也能輕鬆找到適合自己的路線。",
   icons: {
@@ -78,6 +79,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
+  interactiveWidget: "resizes-content",
 };
 export default async function RootLayout({
   children,
