@@ -88,10 +88,12 @@ export function parkingItemLngLat(item: ParkingNearbyItem): {
 function ParkingCard({
   item,
   distance,
+  isSelected,
   onSelect,
 }: {
   item: ParkingNearbyItem;
   distance: number;
+  isSelected?: boolean;
   onSelect: (item: ParkingNearbyItem) => void;
 }) {
   const { t } = useAppTranslation();
@@ -186,7 +188,11 @@ function ParkingCard({
       type="button"
       onClick={() => onSelect(item)}
       aria-label={`${t("viewOnMap")} ${title}`}
-      className="w-full text-left p-3 rounded-xl bg-muted/40 border border-border/30 hover:bg-muted/70 transition-colors space-y-2 cursor-pointer"
+      className={`w-full text-left p-3 rounded-xl border transition-all space-y-2 cursor-pointer ${
+        isSelected
+          ? "bg-indigo-500/10 border-indigo-500/50 shadow-sm"
+          : "bg-muted/40 border-border/30 hover:bg-muted/70"
+      }`}
     >
       <div className="flex items-start gap-3">
         <div className="h-9 w-9 rounded-full bg-indigo-500/10 flex items-center justify-center shrink-0">
@@ -227,11 +233,25 @@ export default function ParkingPanel({
   hideHeader?: boolean;
 }) {
   const { t } = useAppTranslation();
-  const { userLocation, map } = useMapStore(
-    useShallow((s) => ({ userLocation: s.userLocation, map: s.map })),
+  const {
+    userLocation,
+    map,
+    nearbyParking,
+    setNearbyParking,
+    selectedParking,
+    setSelectedParking,
+  } = useMapStore(
+    useShallow((s) => ({
+      userLocation: s.userLocation,
+      map: s.map,
+      nearbyParking: s.nearbyParking,
+      setNearbyParking: s.setNearbyParking,
+      selectedParking: s.selectedParking,
+      setSelectedParking: s.setSelectedParking,
+    })),
   );
-  const [data, setData] = useState<ParkingNearbyItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<ParkingNearbyItem[]>(() => nearbyParking);
+  const [loading, setLoading] = useState(() => nearbyParking.length === 0);
   const [error, setError] = useState<string | null>(null);
 
   // 距離門檻 gate：GPS 每 1~3 秒抖動一次，位移 < 100m 不重新 fetch
@@ -251,6 +271,7 @@ export default function ParkingPanel({
       .then((res) => {
         if (res.ok && res.data) {
           setData(res.data);
+          setNearbyParking(res.data);
         } else {
           setError(t("noData"));
         }
@@ -259,9 +280,10 @@ export default function ParkingPanel({
         setError(t("networkError"));
       })
       .finally(() => setLoading(false));
-  }, [fetchLoc, t]);
+  }, [fetchLoc, setNearbyParking, t]);
 
   const handleSelect = (item: ParkingNearbyItem) => {
+    setSelectedParking(item);
     if (!map) return;
     const pos = parkingItemLngLat(item);
     if (!pos) return;
@@ -321,6 +343,7 @@ export default function ParkingPanel({
                 key={item._id}
                 item={item}
                 distance={distance}
+                isSelected={selectedParking?._id === item._id}
                 onSelect={handleSelect}
               />
             );
