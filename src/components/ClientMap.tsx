@@ -27,6 +27,7 @@ import AIResultWrapper from "./Wrapper/AIResultWrapper";
 import HazardWrapper from "./Wrapper/HazardWrapper";
 import LiveBusWrapper from "./Wrapper/LiveBusWrapper";
 import MapControlsWrapper from "./Wrapper/MapControlsWrapper";
+import ParkingWrapper from "./Wrapper/ParkingWrapper";
 import SosTrackerWrapper from "./Wrapper/SosTrackerWrapper";
 import TransitWrapper from "./Wrapper/TransitWrapper";
 
@@ -460,6 +461,7 @@ export default function ClientMap() {
         <SearchPin destination={destination} />
       ) : null}
       <TransitWrapper />
+      <ParkingWrapper />
       <LiveBusWrapper />
       <HazardWrapper />
       <VoiceSessionHost />

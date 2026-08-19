@@ -2,6 +2,7 @@
 
 import { Bus, ChevronLeft, Loader2, MapPin, Search, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useShallow } from "zustand/react/shallow";
 import useBusSearch, { type BusSearchMode } from "@/hook/useBusSearch";
 import { useAppTranslation } from "@/i18n/client";
 import {
@@ -41,7 +42,15 @@ const CityNameMap: Record<string, string> = {
   InterCity: "公路公車",
 };
 
-function RouteStopCard({ stop }: { stop: RouteDetailStop }) {
+function RouteStopCard({
+  stop,
+  isSelected,
+  onSelect,
+}: {
+  stop: RouteDetailStop;
+  isSelected?: boolean;
+  onSelect?: () => void;
+}) {
   const hasEstimate =
     stop.estimateMinutes !== null && stop.estimateMinutes >= 0;
   const isArrivingSoon =
@@ -64,13 +73,26 @@ function RouteStopCard({ stop }: { stop: RouteDetailStop }) {
   }
 
   return (
-    <li className="p-3 rounded-xl bg-muted/40 border border-border/30 list-none">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-semibold truncate flex-1">{stop.name}</p>
-        <Badge variant="secondary" className={`text-xs shrink-0 ${badgeColor}`}>
-          {badgeText}
-        </Badge>
-      </div>
+    <li className="list-none">
+      <button
+        type="button"
+        onClick={onSelect}
+        className={`w-full text-left p-3 rounded-xl border transition-all cursor-pointer ${
+          isSelected
+            ? "bg-emerald-500/10 border-emerald-500/50 shadow-sm"
+            : "bg-muted/40 border-border/30 hover:bg-muted/70"
+        }`}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-sm font-semibold truncate flex-1">{stop.name}</p>
+          <Badge
+            variant="secondary"
+            className={`text-xs shrink-0 ${badgeColor}`}
+          >
+            {badgeText}
+          </Badge>
+        </div>
+      </button>
     </li>
   );
 }
@@ -88,10 +110,28 @@ export default function BusPanel({
   const [open, setOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const userLocation = useMapStore((state) => state.userLocation);
+  const {
+    userLocation,
+    map,
+    nearbyBusStops,
+    setNearbyBusStops,
+    setBusRouteStops,
+    selectedBusStop,
+    setSelectedBusStop,
+  } = useMapStore(
+    useShallow((s) => ({
+      userLocation: s.userLocation,
+      map: s.map,
+      nearbyBusStops: s.nearbyBusStops,
+      setNearbyBusStops: s.setNearbyBusStops,
+      setBusRouteStops: s.setBusRouteStops,
+      selectedBusStop: s.selectedBusStop,
+      setSelectedBusStop: s.setSelectedBusStop,
+    })),
+  );
   const [nearbyStops, setNearbyStops] = useState<
     (BusStopSearchResult & { distance?: number })[]
-  >([]);
+  >(() => nearbyBusStops);
   const [nearbyLoading, setNearbyLoading] = useState(false);
   const [nearbyError, setNearbyError] = useState<string | null>(null);
 
@@ -106,6 +146,7 @@ export default function BusPanel({
         if (active) {
           if (res.ok && res.data?.stops) {
             setNearbyStops(res.data.stops);
+            setNearbyBusStops(res.data.stops);
           } else {
             setNearbyError("無法載入附近站牌");
           }
@@ -133,7 +174,7 @@ export default function BusPanel({
     return () => {
       active = false;
     };
-  }, [userLocation]);
+  }, [userLocation, setNearbyBusStops]);
 
   const { results, loading: searchLoading } = useBusSearch(
     keyword,
@@ -142,11 +183,26 @@ export default function BusPanel({
   );
 
   const routeResults = useMemo(
-    () => (mode === "route" ? (results as BusSearchResult[]) : []),
+    () =>
+      mode === "route"
+        ? (results.filter((r): r is BusSearchResult =>
+            Boolean(
+              r &&
+                typeof r === "object" &&
+                "routeName" in r &&
+                !("stopUid" in r),
+            ),
+          ) as BusSearchResult[])
+        : [],
     [results, mode],
   );
   const stopResults = useMemo(
-    () => (mode === "stop" ? (results as BusStopSearchResult[]) : []),
+    () =>
+      mode === "stop"
+        ? (results.filter((r): r is BusStopSearchResult =>
+            Boolean(r && typeof r === "object" && "stopUid" in r),
+          ) as BusStopSearchResult[])
+        : [],
     [results, mode],
   );
 
@@ -245,53 +301,6 @@ export default function BusPanel({
     return () => clearInterval(intervalId);
   }, [selectedRoute, fetchRouteDetail]);
 
-  const handleRouteSelect = (route: BusSearchResult) => {
-    setSelectedRoute(route);
-    setOpen(false);
-    setKeyword("");
-    setDirection(null);
-    setRouteDetails([]);
-    setError(null);
-    setCountdown(REFRESH_INTERVAL);
-  };
-
-  const resetSelection = () => {
-    setSelectedRoute(null);
-    setDirection(null);
-    setRouteDetails([]);
-    setError(null);
-    setTimeout(() => {
-      inputRef.current?.focus();
-      setOpen(true);
-    }, 100);
-  };
-
-  const handleStopSelect = (stop: BusStopSearchResult) => {
-    setSelectedStop(stop);
-    setOpen(false);
-    setKeyword("");
-  };
-
-  const backToSearch = () => {
-    setSelectedStop(null);
-    setTimeout(() => {
-      inputRef.current?.focus();
-      setOpen(true);
-    }, 100);
-  };
-
-  // Open the existing route-detail flow from a stop's route list. We only have
-  // the route name + city here (no departure/destination), so synthesize a
-  // BusSearchResult; the direction labels fall back to route-detail terminals.
-  const handleStopRouteSelect = (routeName: string, city: string) => {
-    setSelectedStop(null);
-    setSelectedRoute({ routeName, city, departure: "", destination: "" });
-    setDirection(null);
-    setRouteDetails([]);
-    setError(null);
-    setCountdown(REFRESH_INTERVAL);
-  };
-
   const currentDirectionDetails = routeDetails.find(
     (d) => d.direction === direction,
   );
@@ -306,6 +315,80 @@ export default function BusPanel({
     selectedRoute?.departure ||
     routeDetails.find((d) => d.direction === 1)?.stops.at(-1)?.name ||
     "返程";
+
+  useEffect(() => {
+    if (mode === "stop" && stopResults.length > 0) {
+      setNearbyBusStops(stopResults);
+    } else if (mode === "route" && !selectedRoute) {
+      setNearbyBusStops(nearbyStops);
+    }
+  }, [mode, stopResults, selectedRoute, nearbyStops, setNearbyBusStops]);
+
+  useEffect(() => {
+    if (currentDirectionDetails?.stops) {
+      setBusRouteStops(currentDirectionDetails.stops);
+    }
+  }, [currentDirectionDetails, setBusRouteStops]);
+
+  const handleRouteSelect = (route: BusSearchResult) => {
+    setSelectedRoute(route);
+    setOpen(false);
+    setKeyword("");
+    setDirection(null);
+    setRouteDetails([]);
+    setError(null);
+    setCountdown(REFRESH_INTERVAL);
+  };
+
+  const resetSelection = () => {
+    setSelectedRoute(null);
+    setDirection(null);
+    setRouteDetails([]);
+    setBusRouteStops([]);
+    setSelectedBusStop(null);
+    setNearbyBusStops(nearbyStops);
+    setError(null);
+    setTimeout(() => {
+      inputRef.current?.focus();
+      setOpen(true);
+    }, 100);
+  };
+
+  const handleStopSelect = (stop: BusStopSearchResult) => {
+    setSelectedStop(stop);
+    setSelectedBusStop(stop);
+    setOpen(false);
+    setKeyword("");
+    if (map) {
+      map.flyTo({
+        center: [stop.coordinates[0], stop.coordinates[1]],
+        zoom: 17,
+      });
+    }
+  };
+
+  const backToSearch = () => {
+    setSelectedStop(null);
+    setSelectedBusStop(null);
+    setNearbyBusStops(nearbyStops);
+    setTimeout(() => {
+      inputRef.current?.focus();
+      setOpen(true);
+    }, 100);
+  };
+
+  // Open the existing route-detail flow from a stop's route list. We only have
+  // the route name + city here (no departure/destination), so synthesize a
+  // BusSearchResult; the direction labels fall back to route-detail terminals.
+  const handleStopRouteSelect = (routeName: string, city: string) => {
+    setSelectedStop(null);
+    setSelectedRoute({ routeName, city, departure: "", destination: "" });
+    setDirection(null);
+    setRouteDetails([]);
+    setBusRouteStops([]);
+    setError(null);
+    setCountdown(REFRESH_INTERVAL);
+  };
 
   return (
     <div className="flex flex-col h-full space-y-4">
@@ -406,7 +489,20 @@ export default function BusPanel({
           ) : currentDirectionDetails?.stops ? (
             <ul className="space-y-2 flex-1 overflow-y-auto pr-2 pb-4">
               {currentDirectionDetails.stops.map((stop) => (
-                <RouteStopCard key={`${stop.seq}-${stop.name}`} stop={stop} />
+                <RouteStopCard
+                  key={`${stop.seq}-${stop.name}`}
+                  stop={stop}
+                  isSelected={
+                    (selectedBusStop as RouteDetailStop)?.seq === stop.seq &&
+                    (selectedBusStop as RouteDetailStop)?.name === stop.name
+                  }
+                  onSelect={() => {
+                    setSelectedBusStop(stop);
+                    if (map) {
+                      map.flyTo({ center: [stop.lng, stop.lat], zoom: 17 });
+                    }
+                  }}
+                />
               ))}
             </ul>
           ) : null}
@@ -434,7 +530,7 @@ export default function BusPanel({
             </div>
           </div>
 
-          {selectedStop.routes.length === 0 ? (
+          {!selectedStop.routes || selectedStop.routes.length === 0 ? (
             <div className="text-center py-8 space-y-2">
               <Bus className="h-8 w-8 mx-auto text-muted-foreground/40" />
               <p className="text-sm text-muted-foreground">此站牌無經過路線</p>
@@ -445,7 +541,7 @@ export default function BusPanel({
                 經過此站牌的路線
               </p>
               <div className="flex flex-wrap gap-2">
-                {selectedStop.routes.map((routeName) => (
+                {(selectedStop.routes || []).map((routeName) => (
                   <button
                     key={routeName}
                     type="button"
@@ -466,7 +562,12 @@ export default function BusPanel({
           <div className="flex rounded-lg bg-muted/60 border border-border/30 p-0.5 text-xs shrink-0">
             <button
               type="button"
-              onClick={() => setMode("route")}
+              onClick={() => {
+                if (mode !== "route") {
+                  setMode("route");
+                  setKeyword("");
+                }
+              }}
               className={`flex-1 py-1.5 rounded-md transition-colors ${
                 mode === "route"
                   ? "bg-background shadow-sm font-medium"
@@ -477,7 +578,12 @@ export default function BusPanel({
             </button>
             <button
               type="button"
-              onClick={() => setMode("stop")}
+              onClick={() => {
+                if (mode !== "stop") {
+                  setMode("stop");
+                  setKeyword("");
+                }
+              }}
               className={`flex-1 py-1.5 rounded-md transition-colors ${
                 mode === "stop"
                   ? "bg-background shadow-sm font-medium"
@@ -553,24 +659,29 @@ export default function BusPanel({
                           heading={city}
                           className="px-1"
                         >
-                          {stops.map((s) => (
-                            <CommandItem
-                              key={s.stopUid}
-                              value={`${s.stopUid}-${s.stopName}`}
-                              onSelect={() => handleStopSelect(s)}
-                              className="flex flex-col items-start px-3 py-2 cursor-pointer"
-                            >
-                              <span className="font-semibold text-sm">
-                                {s.stopName}
-                              </span>
-                              <span className="text-xs text-muted-foreground truncate max-w-full">
-                                {s.routes.length > 0
-                                  ? s.routes.slice(0, 8).join(" · ") +
-                                    (s.routes.length > 8 ? " …" : "")
-                                  : "無經過路線"}
-                              </span>
-                            </CommandItem>
-                          ))}
+                          {stops.map((s) => {
+                            const stopRoutes = Array.isArray(s.routes)
+                              ? s.routes
+                              : [];
+                            return (
+                              <CommandItem
+                                key={s.stopUid}
+                                value={`${s.stopUid}-${s.stopName}`}
+                                onSelect={() => handleStopSelect(s)}
+                                className="flex flex-col items-start px-3 py-2 cursor-pointer"
+                              >
+                                <span className="font-semibold text-sm">
+                                  {s.stopName}
+                                </span>
+                                <span className="text-xs text-muted-foreground truncate max-w-full">
+                                  {stopRoutes.length > 0
+                                    ? stopRoutes.slice(0, 8).join(" · ") +
+                                      (stopRoutes.length > 8 ? " …" : "")
+                                    : "無經過路線"}
+                                </span>
+                              </CommandItem>
+                            );
+                          })}
                         </CommandGroup>
                       ))
                     ) : !searchLoading ? (
@@ -614,30 +725,35 @@ export default function BusPanel({
                 </p>
               ) : (
                 <div className="space-y-2">
-                  {nearbyStops.map((stop) => (
-                    <button
-                      key={stop.stopUid}
-                      type="button"
-                      onClick={() => handleStopSelect(stop)}
-                      className="w-full text-left p-3 rounded-xl bg-muted/40 border border-border/30 hover:bg-muted/70 transition-all flex justify-between items-center group"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold truncate group-hover:text-emerald-600 transition-colors">
-                          {stop.stopName}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                          {stop.routes.slice(0, 5).join(" · ")}
-                          {stop.routes.length > 5 &&
-                            ` +${stop.routes.length - 5}條路線`}
-                        </p>
-                      </div>
-                      {stop.distance !== undefined && (
-                        <span className="text-xs font-medium text-emerald-600 bg-emerald-500/10 px-2 py-1 rounded-md shrink-0 ml-2">
-                          {stop.distance}m
-                        </span>
-                      )}
-                    </button>
-                  ))}
+                  {nearbyStops.map((stop) => {
+                    const stopRoutes = Array.isArray(stop.routes)
+                      ? stop.routes
+                      : [];
+                    return (
+                      <button
+                        key={stop.stopUid}
+                        type="button"
+                        onClick={() => handleStopSelect(stop)}
+                        className="w-full text-left p-3 rounded-xl bg-muted/40 border border-border/30 hover:bg-muted/70 transition-all flex justify-between items-center group"
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold truncate group-hover:text-emerald-600 transition-colors">
+                            {stop.stopName}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                            {stopRoutes.slice(0, 5).join(" · ")}
+                            {stopRoutes.length > 5 &&
+                              ` +${stopRoutes.length - 5}條路線`}
+                          </p>
+                        </div>
+                        {stop.distance !== undefined && (
+                          <span className="text-xs font-medium text-emerald-600 bg-emerald-500/10 px-2 py-1 rounded-md shrink-0 ml-2">
+                            {stop.distance}m
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
