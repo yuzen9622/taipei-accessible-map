@@ -135,7 +135,11 @@ export default function BusPanel({
     };
   }, [userLocation]);
 
-  const { results, loading: searchLoading } = useBusSearch(keyword, mode);
+  const { results, loading: searchLoading } = useBusSearch(
+    keyword,
+    mode,
+    userLocation,
+  );
 
   const routeResults = useMemo(
     () => (mode === "route" ? (results as BusSearchResult[]) : []),

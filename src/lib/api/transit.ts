@@ -1,3 +1,4 @@
+import type { LatLng } from "@/types";
 import type { ApiResponse } from "@/types/response";
 import type { LiveBusPositionsData } from "@/types/route";
 import type {
@@ -135,11 +136,23 @@ export async function getTrainData() {
   return data;
 }
 
-export async function searchBusRoutes(keyword: string) {
+export async function searchBusRoutes(
+  keyword: string,
+  location?: LatLng | { lat: number; lng: number } | null,
+) {
+  const params = new URLSearchParams();
+  params.set("keyword", keyword.trim());
+  if (
+    location &&
+    typeof location.lat === "number" &&
+    typeof location.lng === "number"
+  ) {
+    params.set("location", `${location.lat},${location.lng}`);
+  }
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 10_000);
   const data = (await fetchRequest(
-    `${END_POINT}/api/v1/transit/bus/search-routes?keyword=${encodeURIComponent(keyword)}`,
+    `${END_POINT}/api/v1/transit/bus/search-routes?${params.toString()}`,
     { signal: controller.signal },
   )) as ApiResponse<{ routes: BusSearchResult[] }>;
   clearTimeout(timeout);

@@ -1,10 +1,15 @@
 import { useEffect, useState } from "react";
 import { searchBusRoutes, searchBusStops } from "@/lib/api/transit";
+import type { LatLng } from "@/types";
 import type { BusSearchResult, BusStopSearchResult } from "@/types/transit";
 
 export type BusSearchMode = "route" | "stop";
 
-export default function useBusSearch(keyword: string, mode: BusSearchMode) {
+export default function useBusSearch(
+  keyword: string,
+  mode: BusSearchMode,
+  location?: LatLng | null,
+) {
   const [results, setResults] = useState<
     (BusSearchResult | BusStopSearchResult)[]
   >([]);
@@ -25,7 +30,7 @@ export default function useBusSearch(keyword: string, mode: BusSearchMode) {
     const handler = setTimeout(async () => {
       try {
         if (mode === "route") {
-          const res = await searchBusRoutes(keyword.trim());
+          const res = await searchBusRoutes(keyword.trim(), location);
           if (res.ok && res.data?.routes) {
             setResults(res.data.routes);
           } else {
@@ -50,7 +55,7 @@ export default function useBusSearch(keyword: string, mode: BusSearchMode) {
     }, 400);
 
     return () => clearTimeout(handler);
-  }, [keyword, mode]);
+  }, [keyword, mode, location]);
 
   return { results, loading, error };
 }
