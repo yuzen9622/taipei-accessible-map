@@ -28,9 +28,13 @@ import useVoiceStore, {
  * convention and only swaps the http(s) scheme for ws(s).
  */
 function buildWsUrl(): string {
-  const url = new URL(`${END_POINT}/api/v1/voice/ws`);
-  url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
-  return url.toString();
+  try {
+    const url = new URL(`${END_POINT}/api/v1/voice/ws`);
+    url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+    return url.toString();
+  } catch {
+    return "ws://localhost:3000/api/v1/voice/ws";
+  }
 }
 
 const VOICE_WS_URL = buildWsUrl();
@@ -158,6 +162,9 @@ export default function useVoiceSession(): UseVoiceSessionResult {
       createPlayback: () => createPlayback(),
       onStatusChange: bindings.onStatusChange,
       onTranscript: bindings.onTranscript,
+      onTranscriptCorrection: bindings.onTranscriptCorrection,
+      onTurnComplete: bindings.onTurnComplete,
+      onInterrupted: bindings.onInterrupted,
       onToolEvent: bindings.onToolEvent,
       onNavigationEvent: (event) =>
         setNavigationEvents((pending) => [...pending, event]),

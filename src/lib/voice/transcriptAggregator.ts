@@ -19,15 +19,19 @@ export interface AggEntry {
   role: TranscriptRole;
   /**
    * Raw, lossless concatenation of every fragment merged into this entry
-   * (plan rev5 §3.1): appended exactly as received, no trimming/normalizing.
-   * Preserves fragment-boundary whitespace (e.g. a trailing space from
-   * "Hello ") so a later fragment can still form a correct word/character
-   * boundary against it.
+   * (plan rev5 §3.1), or the verbatim sentence from a `final: true` /
+   * `transcript.correction` event. Appended or replaced exactly as received,
+   * no trimming/normalizing.
    */
   raw: string;
-  /** Display value, re-derived from `raw` on every append: `normalizeCjkSpacing(raw).trim()`. */
+  /** Display value, re-derived from `raw` on every update: `normalizeCjkSpacing(raw).trim()`. */
   text: string;
   sealed: boolean;
+  /**
+   * Server utterance id for `role: "user"` (e.g. "u1", "u2").
+   * Shared by interim, final, and transcript.correction events for the same utterance.
+   */
+  utteranceId?: string;
 }
 
 export interface AggState {
@@ -38,6 +42,14 @@ export interface AggState {
 export interface TranscriptFragment {
   role: TranscriptRole;
   text: string;
+  final?: boolean;
+  utteranceId?: string;
+}
+
+export interface TranscriptCorrection {
+  role?: "user";
+  text: string;
+  utteranceId: string;
 }
 
 export function emptyAggState(): AggState {
@@ -67,24 +79,80 @@ export function normalizeCjkSpacing(text: string): string {
 }
 
 /**
- * Merge `f` into the last entry when it shares the same role and that
- * entry is not yet sealed; otherwise start a new, unsealed entry.
+ * Merge `f` into an existing bubble or start a new bubble.
  *
- * Lossless raw/display split (plan rev5 §3.1): `raw` accumulates every
- * fragment verbatim (untrimmed) so no character — including boundary
- * whitespace between fragments — is ever discarded. `text`, the display
- * value, is re-derived from the full `raw` on every append via
- * `normalizeCjkSpacing(raw).trim()`, so CJK-internal fragment spacing never
- * shows up in the UI while a trailing Latin-word space in `raw` (e.g.
- * "Hello ") still naturally joins the next fragment into "Hello world".
+ * For `role: "user"`:
+ * - If `f.utteranceId` is provided, find the matching user entry.
+ * - Otherwise (or if not found), check if the last entry is an unsealed user entry.
+ * - If matching entry found:
+ *     - `if (f.final === true)`: replace `raw` with `f.text`, derive `text`, and mark `sealed: true` (this utterance is complete).
+ *     - `else`: append `f.text` to `raw` and derive `text`.
+ * - If no matching entry found:
+ *     - Ignore empty/whitespace-only fragments.
+ *     - Create a new entry (marked `sealed: true` if `f.final === true`, else unsealed).
  *
- * When there is no unsealed same-role entry to extend, a fragment that is
- * empty/whitespace-only is ignored outright (no empty bubble is created);
- * otherwise a new entry is started with `raw = f.text`.
+ * For `role: "model"`:
+ * - Model fragments stream sequentially without `final` / `utteranceId`.
+ * - If the last entry is model and unsealed, append `f.text` to `raw`.
+ * - Otherwise create a new unsealed model entry.
+ * - Model entries are sealed by `turn.complete`, `interrupted`, or leaving `model-speaking`.
  */
-export function appendFragment(s: AggState, f: TranscriptFragment): AggState {
-  const last = s.entries[s.entries.length - 1];
-  if (last && last.role === f.role && !last.sealed) {
+function appendUserFragment(s: AggState, f: TranscriptFragment): AggState {
+  let targetIdx = -1;
+  if (f.utteranceId) {
+    targetIdx = s.entries.findIndex(
+      (e) => e.role === "user" && e.utteranceId === f.utteranceId,
+    );
+  }
+
+  if (targetIdx === -1) {
+    const lastIdx = s.entries.length - 1;
+    if (
+      lastIdx >= 0 &&
+      s.entries[lastIdx].role === "user" &&
+      !s.entries[lastIdx].sealed &&
+      (!s.entries[lastIdx].utteranceId ||
+        s.entries[lastIdx].utteranceId === f.utteranceId)
+    ) {
+      targetIdx = lastIdx;
+    }
+  }
+
+  if (targetIdx !== -1) {
+    const existing = s.entries[targetIdx];
+    const isFinal = f.final === true;
+    const raw = isFinal ? f.text : existing.raw + f.text;
+    const updated: AggEntry = {
+      ...existing,
+      raw,
+      text: normalizeCjkSpacing(raw).trim(),
+      sealed: isFinal ? true : existing.sealed,
+      utteranceId: f.utteranceId ?? existing.utteranceId,
+    };
+    const entries = [...s.entries];
+    entries[targetIdx] = updated;
+    return { entries, nextId: s.nextId };
+  }
+
+  if (f.text.trim() === "") return s;
+
+  const entry: AggEntry = {
+    id: s.nextId,
+    role: "user",
+    raw: f.text,
+    text: normalizeCjkSpacing(f.text).trim(),
+    sealed: f.final === true,
+    utteranceId: f.utteranceId,
+  };
+  return {
+    entries: [...s.entries, entry],
+    nextId: s.nextId + 1,
+  };
+}
+
+function appendModelFragment(s: AggState, f: TranscriptFragment): AggState {
+  const last = s.entries.at(-1);
+  if (last && last.role === "model" && !last.sealed) {
     const raw = last.raw + f.text;
     const merged: AggEntry = {
       ...last,
@@ -101,7 +169,7 @@ export function appendFragment(s: AggState, f: TranscriptFragment): AggState {
 
   const entry: AggEntry = {
     id: s.nextId,
-    role: f.role,
+    role: "model",
     raw: f.text,
     text: normalizeCjkSpacing(f.text).trim(),
     sealed: false,
@@ -112,18 +180,59 @@ export function appendFragment(s: AggState, f: TranscriptFragment): AggState {
   };
 }
 
+export function appendFragment(s: AggState, f: TranscriptFragment): AggState {
+  return f.role === "user"
+    ? appendUserFragment(s, f)
+    : appendModelFragment(s, f);
+}
+
 /**
- * Seal the last entry if it matches `role` and isn't already sealed.
- * Idempotent: no matching/unsealed last entry means the state is returned
- * unchanged.
+ * Replace the rendered text of an existing user utterance with the corrected text
+ * using `utteranceId` as the key.
+ *
+ * If no matching user entry is found with `utteranceId`, state is returned unchanged.
+ */
+export function applyCorrection(
+  s: AggState,
+  correction: TranscriptCorrection,
+): AggState {
+  if (!correction.utteranceId) return s;
+  const idx = s.entries.findIndex(
+    (e) => e.role === "user" && e.utteranceId === correction.utteranceId,
+  );
+  if (idx === -1) return s;
+
+  const existing = s.entries[idx];
+  const raw = correction.text;
+  const updated: AggEntry = {
+    ...existing,
+    raw,
+    text: normalizeCjkSpacing(raw).trim(),
+  };
+  const entries = [...s.entries];
+  entries[idx] = updated;
+  return {
+    entries,
+    nextId: s.nextId,
+  };
+}
+
+/**
+ * Seal any unsealed entries matching `role`.
+ * Idempotent: no unsealed entry matching `role` means the state is returned unchanged.
  */
 export function sealRole(s: AggState, role: TranscriptRole): AggState {
-  const last = s.entries[s.entries.length - 1];
-  if (!last || last.role !== role || last.sealed) return s;
-
-  const sealed: AggEntry = { ...last, sealed: true };
+  let changed = false;
+  const entries = s.entries.map((entry) => {
+    if (entry.role === role && !entry.sealed) {
+      changed = true;
+      return { ...entry, sealed: true };
+    }
+    return entry;
+  });
+  if (!changed) return s;
   return {
-    entries: [...s.entries.slice(0, -1), sealed],
+    entries,
     nextId: s.nextId,
   };
 }

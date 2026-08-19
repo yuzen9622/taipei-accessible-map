@@ -16,8 +16,11 @@ import {
   type AggEntry,
   type AggState,
   appendFragment,
+  applyCorrection,
   applyStatusTransition,
   emptyAggState,
+  sealRole,
+  type TranscriptCorrection,
   type TranscriptFragment,
 } from "./transcriptAggregator";
 import type {
@@ -41,6 +44,9 @@ export interface BindingSinks {
 
 export interface VoiceBindings {
   onTranscript(transcript: TranscriptFragment): void;
+  onTranscriptCorrection(correction: TranscriptCorrection): void;
+  onTurnComplete(): void;
+  onInterrupted(): void;
   onStatusChange(status: VoiceStatus): void;
   onToolEvent(event: VoiceToolEvent): void;
   /** = `wrapFrameHandler(forward, <gated setMicLevel>)`. */
@@ -59,6 +65,22 @@ export function createVoiceBindings(sinks: BindingSinks): VoiceBindings {
 
   function onTranscript(transcript: TranscriptFragment): void {
     agg = appendFragment(agg, transcript);
+    sinks.publishTranscripts(agg.entries);
+  }
+
+  function onTranscriptCorrection(correction: TranscriptCorrection): void {
+    agg = applyCorrection(agg, correction);
+    sinks.publishTranscripts(agg.entries);
+  }
+
+  function onTurnComplete(): void {
+    agg = sealRole(agg, "model");
+    sinks.publishTranscripts(agg.entries);
+  }
+
+  function onInterrupted(): void {
+    agg = sealRole(agg, "model");
+    agg = sealRole(agg, "user");
     sinks.publishTranscripts(agg.entries);
   }
 
@@ -118,6 +140,9 @@ export function createVoiceBindings(sinks: BindingSinks): VoiceBindings {
 
   return {
     onTranscript,
+    onTranscriptCorrection,
+    onTurnComplete,
+    onInterrupted,
     onStatusChange,
     onToolEvent,
     wrapCaptureFrame,

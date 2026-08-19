@@ -57,6 +57,15 @@ interface TranscriptMessage {
   type: "transcript";
   role: "user" | "model";
   text: string;
+  final?: boolean;
+  utteranceId?: string;
+}
+
+interface TranscriptCorrectionMessage {
+  type: "transcript.correction";
+  role?: "user";
+  text: string;
+  utteranceId: string;
 }
 
 interface ToolCallMessage {
@@ -131,6 +140,7 @@ export type VoiceNavigationEvent =
 type ServerEventMessage =
   | SessionReadyMessage
   | TranscriptMessage
+  | TranscriptCorrectionMessage
   | ToolCallMessage
   | ToolResultMessage
   | InterruptedMessage
@@ -219,6 +229,14 @@ export interface VoiceToolEvent {
 export interface VoiceTranscript {
   role: "user" | "model";
   text: string;
+  final?: boolean;
+  utteranceId?: string;
+}
+
+export interface VoiceTranscriptCorrection {
+  role?: "user";
+  text: string;
+  utteranceId: string;
 }
 
 export interface VoiceSessionDeps {
@@ -232,6 +250,9 @@ export interface VoiceSessionDeps {
   createPlayback(): VoicePlayback;
   onStatusChange(status: VoiceStatus): void;
   onTranscript(transcript: VoiceTranscript): void;
+  onTranscriptCorrection?(correction: VoiceTranscriptCorrection): void;
+  onTurnComplete?(): void;
+  onInterrupted?(): void;
   onToolEvent(event: VoiceToolEvent): void;
   onNavigationEvent(event: VoiceNavigationEvent): void;
 }
@@ -516,7 +537,21 @@ export class VoiceSessionController {
       }
       case "transcript": {
         const m = message as TranscriptMessage;
-        this.deps.onTranscript({ role: m.role, text: m.text });
+        this.deps.onTranscript({
+          role: m.role,
+          text: m.text,
+          final: m.final,
+          utteranceId: m.utteranceId,
+        });
+        return;
+      }
+      case "transcript.correction": {
+        const m = message as TranscriptCorrectionMessage;
+        this.deps.onTranscriptCorrection?.({
+          role: m.role ?? "user",
+          text: m.text,
+          utteranceId: m.utteranceId,
+        });
         return;
       }
       case "tool_call": {
@@ -539,6 +574,7 @@ export class VoiceSessionController {
       case "interrupted": {
         // §5.10: interrupted always clears playback immediately.
         this.playback?.clear();
+        this.deps.onInterrupted?.();
         if (
           this.status.status === "model-speaking" ||
           this.status.status === "listening"
@@ -548,6 +584,7 @@ export class VoiceSessionController {
         return;
       }
       case "turn.complete": {
+        this.deps.onTurnComplete?.();
         if (this.status.status === "model-speaking") {
           this.setStatus({ status: "listening" });
         }

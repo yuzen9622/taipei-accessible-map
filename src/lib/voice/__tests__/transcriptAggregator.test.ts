@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   appendFragment,
+  applyCorrection,
   applyStatusTransition,
   emptyAggState,
   normalizeCjkSpacing,
@@ -152,5 +153,169 @@ describe("transcriptAggregator", () => {
     expect(s.entries).toHaveLength(1);
     expect(s.entries[0].text).toBe(before.text);
     expect(s.entries[0].raw).toBe(`${before.raw}  `);
+  });
+
+  it("case 8: user interim fragments accumulate by utteranceId, final=true replaces whole text and seals the entry", () => {
+    let s = emptyAggState();
+    // Interim fragments
+    s = appendFragment(s, {
+      role: "user",
+      utteranceId: "u1",
+      text: "我想",
+      final: false,
+    });
+    s = appendFragment(s, {
+      role: "user",
+      utteranceId: "u1",
+      text: "去",
+      final: false,
+    });
+
+    expect(s.entries).toHaveLength(1);
+    expect(s.entries[0].text).toBe("我想去");
+    expect(s.entries[0].sealed).toBe(false);
+    expect(s.entries[0].utteranceId).toBe("u1");
+
+    // final: true arrives with full uncorrected sentence -> replaces interim in-place and seals
+    s = appendFragment(s, {
+      role: "user",
+      utteranceId: "u1",
+      text: "我想去珠北車站",
+      final: true,
+    });
+
+    expect(s.entries).toHaveLength(1);
+    expect(s.entries[0].text).toBe("我想去珠北車站");
+    expect(s.entries[0].sealed).toBe(true);
+    expect(s.entries[0].utteranceId).toBe("u1");
+
+    // Next utterance has a new utteranceId -> starts a new bubble
+    s = appendFragment(s, {
+      role: "user",
+      utteranceId: "u2",
+      text: "請問",
+      final: false,
+    });
+
+    expect(s.entries).toHaveLength(2);
+    expect(s.entries[1].text).toBe("請問");
+    expect(s.entries[1].sealed).toBe(false);
+    expect(s.entries[1].utteranceId).toBe("u2");
+  });
+
+  it("case 9: applyCorrection replaces text in-place using utteranceId without creating new bubbles or changing order", () => {
+    let s = emptyAggState();
+    s = appendFragment(s, {
+      role: "user",
+      utteranceId: "u1",
+      text: "我想去珠北車站",
+      final: true,
+    });
+    s = appendFragment(s, {
+      role: "model",
+      text: "好的，為您查詢...",
+    });
+
+    expect(s.entries).toHaveLength(2);
+    expect(s.entries[0].text).toBe("我想去珠北車站");
+
+    // transcript.correction arrives 1s later for u1
+    s = applyCorrection(s, {
+      utteranceId: "u1",
+      text: "我想去竹北車站",
+    });
+
+    expect(s.entries).toHaveLength(2);
+    expect(s.entries[0].text).toBe("我想去竹北車站");
+    expect(s.entries[0].id).toBe(0);
+    expect(s.entries[1].text).toBe("好的，為您查詢...");
+  });
+
+  it("case 10: applyCorrection on unknown utteranceId or empty id is a no-op", () => {
+    let s = emptyAggState();
+    s = appendFragment(s, {
+      role: "user",
+      utteranceId: "u1",
+      text: "台北",
+      final: true,
+    });
+
+    const s2 = applyCorrection(s, {
+      utteranceId: "non-existent",
+      text: "新北",
+    });
+    expect(s2).toBe(s);
+
+    const s3 = applyCorrection(s, {
+      utteranceId: "",
+      text: "新北",
+    });
+    expect(s3).toBe(s);
+  });
+
+  it("case 11: barge-in interleaving — user interim during model speech does not prematurely seal or corrupt model bubble, turn.complete/interrupted seals model", () => {
+    let s = emptyAggState();
+    // Model starts outputting
+    s = appendFragment(s, { role: "model", text: "為您規劃" });
+    s = appendFragment(s, { role: "model", text: "路線中" });
+    expect(s.entries).toHaveLength(1);
+    expect(s.entries[0].text).toBe("為您規劃路線中");
+    expect(s.entries[0].sealed).toBe(false);
+
+    // User interrupts with interim
+    s = appendFragment(s, {
+      role: "user",
+      utteranceId: "u1",
+      text: "等等",
+      final: false,
+    });
+    expect(s.entries).toHaveLength(2);
+    expect(s.entries[0].role).toBe("model");
+    expect(s.entries[0].text).toBe("為您規劃路線中");
+    expect(s.entries[1].role).toBe("user");
+    expect(s.entries[1].text).toBe("等等");
+
+    // Interrupted event seals model and user interim
+    s = sealRole(s, "model");
+    s = sealRole(s, "user");
+    expect(s.entries[0].sealed).toBe(true);
+    expect(s.entries[1].sealed).toBe(true);
+
+    // User finishes sentence with final=true for u1
+    s = appendFragment(s, {
+      role: "user",
+      utteranceId: "u1",
+      text: "等等先不要",
+      final: true,
+    });
+    expect(s.entries).toHaveLength(2);
+    expect(s.entries[1].text).toBe("等等先不要");
+    expect(s.entries[1].sealed).toBe(true);
+
+    // Model responds in next turn
+    s = appendFragment(s, { role: "model", text: "好的，已為您取消。" });
+    expect(s.entries).toHaveLength(3);
+    expect(s.entries[2].role).toBe("model");
+    expect(s.entries[2].text).toBe("好的，已為您取消。");
+    expect(s.entries[2].sealed).toBe(false);
+
+    // turn.complete seals the active model entry
+    s = sealRole(s, "model");
+    expect(s.entries[2].sealed).toBe(true);
+  });
+
+  it("case 12: direct final=true without prior interim creates a sealed user entry", () => {
+    let s = emptyAggState();
+    s = appendFragment(s, {
+      role: "user",
+      utteranceId: "u1",
+      text: "快速指令",
+      final: true,
+    });
+
+    expect(s.entries).toHaveLength(1);
+    expect(s.entries[0].text).toBe("快速指令");
+    expect(s.entries[0].sealed).toBe(true);
+    expect(s.entries[0].utteranceId).toBe("u1");
   });
 });

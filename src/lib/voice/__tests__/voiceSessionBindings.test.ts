@@ -132,4 +132,54 @@ describe("voiceSessionBindings", () => {
     expect(forward).toHaveBeenCalledTimes(1);
     expect(forward.mock.calls[0][0]).toBe(frame);
   });
+
+  it("case 21: onTranscriptCorrection updates user bubble in-place and publishes transcripts", () => {
+    bindings.onTranscript({
+      role: "user",
+      utteranceId: "u1",
+      text: "珠北車站",
+      final: true,
+    });
+
+    bindings.onTranscriptCorrection({
+      utteranceId: "u1",
+      text: "竹北車站",
+    });
+
+    const entries = sinks.publishTranscripts.mock.calls.at(
+      -1,
+    )?.[0] as AggEntry[];
+    expect(entries).toHaveLength(1);
+    expect(entries[0].text).toBe("竹北車站");
+    expect(entries[0].utteranceId).toBe("u1");
+  });
+
+  it("case 22: onTurnComplete seals model entry without requiring a status change", () => {
+    bindings.onTranscript({ role: "model", text: "回覆內容" });
+    bindings.onTurnComplete();
+
+    const entries = sinks.publishTranscripts.mock.calls.at(
+      -1,
+    )?.[0] as AggEntry[];
+    expect(entries).toHaveLength(1);
+    expect(entries[0].sealed).toBe(true);
+  });
+
+  it("case 23: onInterrupted seals model and user entries", () => {
+    bindings.onTranscript({ role: "model", text: "模型說話中" });
+    bindings.onTranscript({
+      role: "user",
+      utteranceId: "u1",
+      text: "打斷",
+      final: false,
+    });
+    bindings.onInterrupted();
+
+    const entries = sinks.publishTranscripts.mock.calls.at(
+      -1,
+    )?.[0] as AggEntry[];
+    expect(entries).toHaveLength(2);
+    expect(entries[0].sealed).toBe(true);
+    expect(entries[1].sealed).toBe(true);
+  });
 });

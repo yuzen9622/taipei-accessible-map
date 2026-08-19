@@ -77,6 +77,9 @@ function createHarness(opts?: {
 
   const onStatusChange = vi.fn();
   const onTranscript = vi.fn();
+  const onTranscriptCorrection = vi.fn();
+  const onTurnComplete = vi.fn();
+  const onInterrupted = vi.fn();
   const onToolEvent = vi.fn();
   const onNavigationEvent = vi.fn();
 
@@ -132,6 +135,9 @@ function createHarness(opts?: {
     createPlayback,
     onStatusChange,
     onTranscript,
+    onTranscriptCorrection,
+    onTurnComplete,
+    onInterrupted,
     onToolEvent,
     onNavigationEvent,
   };
@@ -149,6 +155,9 @@ function createHarness(opts?: {
     createPlayback,
     onStatusChange,
     onTranscript,
+    onTranscriptCorrection,
+    onTurnComplete,
+    onInterrupted,
     onToolEvent,
     onNavigationEvent,
     setIdentity: (v: string | null) => {
@@ -713,5 +722,67 @@ describe("VoiceSessionController", () => {
           JSON.parse(message).routeToken === "route-capability",
       ),
     ).toBe(true);
+  });
+
+  it("case 24: transcript events with final and utteranceId are passed to onTranscript", async () => {
+    const h = createHarness();
+    h.controller.start();
+    h.sockets[0].triggerOpen();
+    h.sockets[0].triggerMessage(readyMessage());
+    await flush();
+
+    h.sockets[0].triggerMessage(
+      JSON.stringify({
+        type: "transcript",
+        role: "user",
+        text: "我想去竹北車站",
+        final: true,
+        utteranceId: "u1",
+      }),
+    );
+
+    expect(h.onTranscript).toHaveBeenCalledWith({
+      role: "user",
+      text: "我想去竹北車站",
+      final: true,
+      utteranceId: "u1",
+    });
+  });
+
+  it("case 25: transcript.correction events trigger onTranscriptCorrection", async () => {
+    const h = createHarness();
+    h.controller.start();
+    h.sockets[0].triggerOpen();
+    h.sockets[0].triggerMessage(readyMessage());
+    await flush();
+
+    h.sockets[0].triggerMessage(
+      JSON.stringify({
+        type: "transcript.correction",
+        role: "user",
+        text: "我想去竹北車站",
+        utteranceId: "u1",
+      }),
+    );
+
+    expect(h.onTranscriptCorrection).toHaveBeenCalledWith({
+      role: "user",
+      text: "我想去竹北車站",
+      utteranceId: "u1",
+    });
+  });
+
+  it("case 26: interrupted and turn.complete invoke onInterrupted and onTurnComplete callbacks", async () => {
+    const h = createHarness();
+    h.controller.start();
+    h.sockets[0].triggerOpen();
+    h.sockets[0].triggerMessage(readyMessage());
+    await flush();
+
+    h.sockets[0].triggerMessage(JSON.stringify({ type: "interrupted" }));
+    expect(h.onInterrupted).toHaveBeenCalledTimes(1);
+
+    h.sockets[0].triggerMessage(JSON.stringify({ type: "turn.complete" }));
+    expect(h.onTurnComplete).toHaveBeenCalledTimes(1);
   });
 });
