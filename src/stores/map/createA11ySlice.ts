@@ -41,6 +41,16 @@ export const createA11ySlice: MapSliceCreator<A11ySlice> = (set, get) => ({
   },
   a11yPlaces: null,
   setA11yPlaces: (places) => set({ a11yPlaces: places }),
+  nearbyParking: [],
+  setNearbyParking: (items) => set({ nearbyParking: items }),
+  selectedParking: null,
+  setSelectedParking: (item) => {
+    if (item?._id === get().selectedParking?._id) {
+      set({ selectedParking: null });
+      return;
+    }
+    set({ selectedParking: item });
+  },
   pendingReportContext: "",
   setPendingReportContext: (context) => set({ pendingReportContext: context }),
 });

@@ -1,5 +1,6 @@
 import type maplibregl from "maplibre-gl";
 import type { StateCreator } from "zustand";
+import type { RouteDetailStop } from "@/lib/api/transit";
 import type {
   AiResultMarker,
   InfoShow,
@@ -13,7 +14,9 @@ import type {
   LiveBus,
   MatchedAlert,
   MetroAlertResult,
+  ParkingNearbyItem,
 } from "@/types/route";
+import type { BusStopSearchResult } from "@/types/transit";
 
 // 無障礙設施 used to be a sheetMode of its own; it's a rail panel now
 // (RailPanel below), so nothing sets a "a11y" sheet mode any more.
@@ -124,6 +127,22 @@ export interface SearchSlice {
 export interface TransitSlice {
   liveBusPositions: LiveBus[];
   setLiveBusPositions: (positions: LiveBus[]) => void;
+  nearbyBusStops: (BusStopSearchResult & { distance?: number })[];
+  setNearbyBusStops: (
+    stops: (BusStopSearchResult & { distance?: number })[],
+  ) => void;
+  busRouteStops: RouteDetailStop[];
+  setBusRouteStops: (stops: RouteDetailStop[]) => void;
+  selectedBusStop:
+    | (BusStopSearchResult & { distance?: number })
+    | RouteDetailStop
+    | null;
+  setSelectedBusStop: (
+    stop:
+      | (BusStopSearchResult & { distance?: number })
+      | RouteDetailStop
+      | null,
+  ) => void;
 }
 
 export interface A11ySlice {
@@ -151,6 +170,10 @@ export interface A11ySlice {
   setSelectA11yPlace: (place: Marker | null) => void;
   a11yPlaces: Marker[] | null;
   setA11yPlaces: (places: Marker[] | null) => void;
+  nearbyParking: ParkingNearbyItem[];
+  setNearbyParking: (items: ParkingNearbyItem[]) => void;
+  selectedParking: ParkingNearbyItem | null;
+  setSelectedParking: (item: ParkingNearbyItem | null) => void;
   /** Set when an unconfirmed a11y checklist item's "我知道 → 回報" link opens
    * the hazard report panel; `HazardReportPanel` consumes it as the initial
    * description so the report already names which facility it's about. */
